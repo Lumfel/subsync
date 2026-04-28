@@ -70,7 +70,7 @@
             </div>
             
         </section>
-<div class="card"><h1>Analytics</h1></div>
+<div class="card"><h1>reports</h1></div>
         <div class="graph_container">
             
             <div class="card"></div> 

@@ -92,4 +92,28 @@
                         </div>
                         <div style="flex: 1;">
                             <label>Lot</label>
-                            <input type="text" placeholder="Lot No." required style="width: 100
+                            <input type="text" placeholder="Lot No." required style="width: 100%; margin-top: 8px;">
+                        </div>
+                    </div>
+             </form>
+          </div>
+        </section>
+        <br><br>
+        <section class="panel">
+            <h3>Records</h3>
+
+            <table id="excelTable">
+                <thead>
+                    <tr>
+                        <th>Household</th>
+                        <th>Location</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+        </section>
+   </main>
+
+</body>
