@@ -591,10 +591,19 @@ receipt modals
 /* Inputs */
 .modal-content input {
     width: 100%;
-    padding: 8px;
-    margin: 5px 0;
-    border-radius: 6px;
-    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    margin-bottom: 15px;
+    padding: 12px;
+    outline: none;
+    transition: 0.3s;
+    backdrop-filter: blur(15px);
+    border-radius: 12px;
+}
+.modal-content input:focus {
+       background: rgba(0, 0, 0, 0.5);
+   backdrop-filter: blur(15px);
 }
 .modal-content p{
      padding: 10px;

@@ -73,7 +73,7 @@
                     <div class="cards" style="margin: 0; gap: 15px;">
                         <div style="flex: 2;">
                             <label>Household Full Name</label>
-                            <input type="text" placeholder="e.g. John Doe" required style="width: 100%; margin-top: 8px;">
+                            <input type="text" placeholder="e.g. John Doe" required style="width: 100%; margin-top: 8px; color: white; select option">
                         </div>
                         <div style="flex: 1;">
                             <label>Member Type</label>
@@ -88,11 +88,11 @@
                     <div class="cards" style="gap: 15px;">
                         <div style="flex: 1;">
                             <label>Block</label>
-                            <input type="text" placeholder="Block No." required style="width: 100%; margin-top: 8px;">
+                            <input type="text" placeholder="Block No." required style="width: 100%; margin-top: 8px; color: white;">
                         </div>
                         <div style="flex: 1;">
                             <label>Lot</label>
-                            <input type="text" placeholder="Lot No." required style="width: 100%; margin-top: 8px;">
+                            <input type="text" placeholder="Lot No." required style="width: 100%; margin-top: 8px;    color: white;">
                         </div>
                     </div>
              </form>
