@@ -153,14 +153,32 @@ body::before {
     backdrop-filter: blur(15px);
     }
     .card.active,.modal-content ul li:hover{    background: rgba(0,0,0,0.5);}
-.cards button{
+
+.cards button, .modal-content button, .manage-modal-box button, .manage-modal-box select, .panel button{
     flex: 1;
+    /*
     padding: 12px;
     border-radius: 12px;
     background: rgba(255,255,255,0.08);
     backdrop-filter: blur(10px);
     color: inherit;
+    */
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    margin-bottom: 15px;
+    padding: 12px;
+    outline: none;
+    transition: 0.3s;
+    backdrop-filter: blur(15px);
+    border-radius: 12px;
+
 }
+button:hover{
+   background: rgba(255, 255, 255, 0.2);
+  
+}
+
 .cards input{
     flex: 1;
     padding: 12px;
@@ -589,7 +607,7 @@ receipt modals
 }
 
 /* Inputs */
-.modal-content input {
+.modal-content input, .manage-modal-box input {
     width: 100%;
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -601,7 +619,7 @@ receipt modals
     backdrop-filter: blur(15px);
     border-radius: 12px;
 }
-.modal-content input:focus {
+.modal-content input:focus, .manage-modal-box input:focus  {
        background: rgba(0, 0, 0, 0.5);
    backdrop-filter: blur(15px);
 }
@@ -782,7 +800,7 @@ receipt modals
     backdrop-filter: blur(15px);
     border-radius: 12px;
 }
-.login_box select option{
+.login_box select option, .manage-form-row select option{
     background: rgba(0,0,0,0.5);
     color: rgb(255, 255, 255);
 }
@@ -878,3 +896,167 @@ receipt modals
     border-radius: 12px;
     backdrop-filter: blur(10px);
 }
+
+
+/* ========================= */
+/* 🧩 MANAGE MODAL SYSTEM */
+/* ========================= */
+
+.manage-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+
+    justify-content: center;
+    align-items: center;
+}
+
+.manage-modal.show {
+    display: flex;
+}
+
+.manage-modal-box {
+    width: 400px;
+    max-width: 90%;
+    padding: 20px;
+    border-radius: 12px;
+
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+
+    animation: managePop 0.25s ease;
+}
+
+@keyframes managePop {
+    from {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.manage-close {
+    float: right;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+
+
+
+/* ========================= */
+/* 🧩 MANAGE MODAL SYSTEM */
+/* ========================= */
+/*
+.manage-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+
+    justify-content: center;
+    align-items: center;
+}
+
+.manage-modal.show {
+    display: flex;
+}
+
+.manage-modal-box {
+    width: 500px;
+    max-width: 90%;
+    padding: 25px;
+    border-radius: 12px;
+
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+
+    animation: managePop 0.25s ease;
+}
+
+@keyframes managePop {
+    from {
+        transform: scale(0.85);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Close button */
+.manage-close {
+    float: right;
+    cursor: pointer;
+    font-size: 18px;
+}
+*/
+/* ========================= */
+/* 🧱 FORM LAYOUT */
+/* ========================= */
+
+.manage-form-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+/* LEFT SIDE (inputs/selects) */
+.manage-left {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* RIGHT SIDE (button) */
+.manage-right {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Inputs & selects inherit your style */
+.manage-modal input,
+.manage-modal select {
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    padding: 12px;
+    border-radius: 12px;
+    outline: none;
+    backdrop-filter: blur(15px);
+}
+
+/* Button */
+.manage-right button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+    background: rgba(0,0,0,0.5);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.manage-right button:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+/* Mobile fix */
+@media (max-width: 600px) {
+    .manage-form-row {
+        flex-direction: column;
+    }
+}
+

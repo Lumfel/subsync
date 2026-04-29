@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subsync - Manage Users</title>
 <link rel="stylesheet" href="{{ asset('styles.css') }}">
+
 </head>
 <body>
 
@@ -38,7 +39,7 @@
         </header>
          <section class="manage-grid">
 
-            <div class="manage-card" onclick="openAction('household')">
+     <div class="manage-card" onclick="openAction('household')">
                 <h3>🏠 Add Household</h3>
                 <p>Create new household records</p>
             </div>
@@ -66,6 +67,7 @@
         </section>
 
         <section class="content" style="grid-template-columns: 1fr; margin-top: 20px;">
+            <!----
             <div class="panel">
                 <h3>Add New Household Member</h3>
                 <br>
@@ -97,12 +99,13 @@
                     </div>
              </form>
           </div>
+          --->
         </section>
         <br><br>
         <section class="panel">
             <h3>Records</h3>
 
-            <table id="excelTable">
+            <table id="households">
                 <thead>
                     <tr>
                         <th>Household</th>
@@ -113,7 +116,142 @@
                 <tbody></tbody>
             </table>
 
-        </section>
+        </section> 
+        <br> <br>
+        <section class="panel">
+            <h3>Officers</h3>
+
+            <table id="Officers">
+                <thead>
+                    <tr>
+                        <th>Postion</th>
+                        <th>Name</th>
+                        <th>Image</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+        </section> 
    </main>
+   <!-- MANAGE MODAL -->
+<div id="manageModal" class="manage-modal" onclick="closeManageModal()">
+    <div class="manage-modal-box" onclick="event.stopPropagation()">
+
+        <span class="manage-close" onclick="closeManageModal()">✖</span>
+
+        <h3 id="manageTitle">Action</h3>
+        <div id="manageBody"></div>
+
+    </div>
+   
 
 </body>
+
+<script>
+function openAction(type){
+    const modal = document.getElementById("manageModal");
+    const title = document.getElementById("manageTitle");
+    const body = document.getElementById("manageBody");
+
+    modal.classList.add("show");
+
+    // 🏠 HOUSEHOLD
+    if(type === "household"){
+        title.innerText = "Add Household";
+        body.innerHTML = `
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input type="text" placeholder="Household Name">
+                    <input type="text" placeholder="Block">
+                    <input type="text" placeholder="Lot">
+                </div>
+                <div class="manage-right">
+                    <button>Add</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // 👤 MEMBER
+    else if(type === "member"){
+        title.innerText = "Add Member";
+        body.innerHTML = `
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input type="text" placeholder="Member Name">
+                    <select>
+                        <option>Family</option>
+                        <option>Relative</option>
+                        <option>Tenant</option>
+                    </select>
+                </div>
+                <div class="manage-right">
+                    <button>Add Member</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // ⚠️ STATUS
+    else if(type === "status"){
+        title.innerText = "Change Status";
+        body.innerHTML = `
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <select>
+                        <option>Household 1</option>
+                        <option>Household 2</option>
+                    </select>
+
+                    <select>
+                        <option>Active</option>
+                        <option>Warning</option>
+                        <option>Delinquent</option>
+                    </select>
+                </div>
+                <div class="manage-right">
+                    <button>Update</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // 🛡️ OFFICER
+    else if(type === "officer"){
+        title.innerText = "Manage Officers";
+        body.innerHTML = `
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input type="text" placeholder="Officer Name">
+                </div>
+                <div class="manage-right">
+                    <button>Assign</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // 📋 VIEW
+    else if(type === "view"){
+        title.innerText = "All Records";
+        body.innerHTML = `
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <p>Display records here</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+/* CLOSE MODAL */
+function closeManageModal(){
+    document.getElementById("manageModal").classList.remove("show");
+}
+
+/* OPTIONAL SIDEBAR FIX */
+function toggleSidebar(){
+    document.querySelector(".sidebar").classList.toggle("active");
+}
+</script>
