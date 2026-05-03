@@ -121,6 +121,79 @@
             </table>
 
         </section> 
+        <br>
+<br>
+<section class="panel">
+    <h3>Users</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach($users as $user)
+            <tr>
+                <td>{{ $user->id }}</td>
+                <td>{{ $user->name }}</td>
+                <td>{{ $user->email }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</section>
+<br>
+<section class="panel">
+    <h3>Families</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Family Name</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach($families as $family)
+            <tr>
+                <td>{{ $family->id }}</td>
+                <td>{{ $family->family_name }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</section>
+<br>
+<section class="panel">
+    <h3>Members</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User ID</th>
+                <th>Household ID</th>
+                <th>Member Type</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach($members as $member)
+            <tr>
+                <td>{{ $member->id }}</td>
+                <td>{{ $member->user_id }}</td>
+                <td>{{ $member->house_id }}</td>
+                <td>{{ $member->member_type }}</td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</section>
         <br> <br>
         <section class="panel">
             <h3>Officers</h3>

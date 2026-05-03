@@ -46,9 +46,19 @@ Route::get('/mapping', function () {
     return view('layouts.mapping');
 })->name('mapping');
 
+use App\Models\User;
+use App\Models\Family;
+use App\Models\Household;
+use App\Models\Member;
+
 Route::get('/manage_users', function () {
-    return view('layouts.manage_users');
-})->name('manage_users');
+    return view('layouts.manage_users', [
+        'users' => User::all(),
+        'families' => Family::all(),
+        'households' => Household::all(),
+        'members' => Member::all(),
+    ]);
+});
 
 Route::get('/reports', function () {
     return view('layouts.reports');
