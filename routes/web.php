@@ -1,11 +1,25 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HouseholdController;
+use App\Http\Controllers\MemberController;
+use App\Http\Controllers\StatusController;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/', function () {
     return view('layouts.main');
-});
+})->name('dashboard');
 
+/* AUTH */
+Route::post('/login', [AuthController::class, 'login']);
+
+/* STATIC PAGES */
 Route::get('/analytics', function () {
     return view('layouts.analytics');
 })->name('analytics');
@@ -26,14 +40,19 @@ Route::get('/residents', function () {
     return view('layouts.residents');
 })->name('residents');
 
-route::get('/mapping', function(){
-return view('layouts.mapping');
+Route::get('/mapping', function () {
+    return view('layouts.mapping');
 })->name('mapping');
 
-route::get('/manage_users', function(){
-    return View('layouts.manage_users');
-})->name('Manage users');
+Route::get('/manage_users', function () {
+    return view('layouts.manage_users');
+})->name('manage_users');
 
-route::get('/reports', function(){
-    return View('layouts.reports');
+Route::get('/reports', function () {
+    return view('layouts.reports');
 })->name('reports');
+
+/* CRUD */
+Route::post('/households', [HouseholdController::class, 'store']);
+Route::post('/members', [MemberController::class, 'store']);
+Route::post('/statuses', [StatusController::class, 'store']);
