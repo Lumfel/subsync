@@ -38,7 +38,11 @@
             <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
             <input type="text" placeholder="Search...">
           
-            <div>Admin</div>
+           @auth
+    <div class="admin-btn">
+        {{ Auth::user()->name }}
+    </div>
+@endauth
         </header>
 
         <!-- Cards -->

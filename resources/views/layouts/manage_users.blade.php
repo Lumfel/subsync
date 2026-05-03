@@ -17,11 +17,11 @@
         <ul>
             <li><a href="/">Dashboard</a></li>
             <li><a href="/finance">Finance</a></li>
-            <li class="active"><a href="manage_users.html">Manage Users</a></li>
+            <li class="active"><a href="manage_users">Manage Users</a></li>
             <li><a href="/deliquents">Deliquents</a></li>
-            <li><a href="/analytics.html">Analytics</a></li>
-            <li><a href="/reports.html">Reports</a></li>
-            <li><a href="/mapping.html">Maps</a></li>
+            <li><a href="/analytics">Analytics</a></li>
+            <li><a href="/reports">Reports</a></li>
+            <li><a href="/mapping">Maps</a></li>
         </ul>
         <hr>
         <br>
@@ -35,7 +35,11 @@
                 <h2>User Management</h2>
                 <p style="font-size: 0.8rem; opacity: 0.7;">Manually add new residents to the system</p>
             </div>
-            <div>Admin</div>
+@auth
+    <div class="admin-btn">
+        {{ Auth::user()->name }}
+    </div>
+@endauth
         </header>
          <section class="manage-grid">
 
@@ -147,7 +151,7 @@
    
 
 </body>
-
+</html>
 <script>
 function openAction(type){
     const modal = document.getElementById("manageModal");
@@ -157,66 +161,81 @@ function openAction(type){
     modal.classList.add("show");
 
     // 🏠 HOUSEHOLD
-    if(type === "household"){
-        title.innerText = "Add Household";
-        body.innerHTML = `
+  if(type === "household"){
+    title.innerText = "Add Household";
+    body.innerHTML = `
+        <form method="POST" action="/households">
+            @csrf
+
             <div class="manage-form-row">
                 <div class="manage-left">
-                    <input type="text" placeholder="Household Name">
-                    <input type="text" placeholder="Block">
-                    <input type="text" placeholder="Lot">
+                    <input type="text" name="location" placeholder="Blk 3 Lot 12" required>
+                    <input type="number" name="family_id" placeholder="Family ID" required>
+                    <input type="number" name="status_id" placeholder="Status ID" required>
+                    <input type="number" name="members" placeholder="Members Count" required>
                 </div>
+
                 <div class="manage-right">
-                    <button>Add</button>
+                    <button type="submit">Add</button>
                 </div>
             </div>
-        `;
-    }
+        </form>
+    `;
+}
 
     // 👤 MEMBER
-    else if(type === "member"){
-        title.innerText = "Add Member";
-        body.innerHTML = `
+   else if(type === "member"){
+    title.innerText = "Add Member";
+
+    body.innerHTML = `
+        <form method="POST" action="/members">
+            @csrf
+
             <div class="manage-form-row">
                 <div class="manage-left">
-                    <input type="text" placeholder="Member Name">
-                    <select>
-                        <option>Family</option>
-                        <option>Relative</option>
-                        <option>Tenant</option>
+                    <input type="number" name="user_id" placeholder="User ID" required>
+                    <input type="number" name="house_id" placeholder="House ID" required>
+
+                    <select name="member_type">
+                        <option value="Family_member">Family Member</option>
+                        <option value="Tenant">Tenant</option>
                     </select>
                 </div>
+
                 <div class="manage-right">
-                    <button>Add Member</button>
+                    <button type="submit">Add Member</button>
                 </div>
             </div>
-        `;
-    }
+        </form>
+    `;
+}
 
     // ⚠️ STATUS
-    else if(type === "status"){
-        title.innerText = "Change Status";
-        body.innerHTML = `
+   else if(type === "status"){
+    title.innerText = "Change Status";
+
+    body.innerHTML = `
+        <form method="POST" action="/statuses">
+            @csrf
+
             <div class="manage-form-row">
                 <div class="manage-left">
-                    <select>
-                        <option>Household 1</option>
-                        <option>Household 2</option>
-                    </select>
+                    <input type="number" name="house_id" placeholder="House ID" required>
 
-                    <select>
-                        <option>Active</option>
-                        <option>Warning</option>
-                        <option>Delinquent</option>
+                    <select name="status_type">
+                        <option value="Active">Active</option>
+                        <option value="Warning">Warning</option>
+                        <option value="Delinquent">Delinquent</option>
                     </select>
                 </div>
+
                 <div class="manage-right">
-                    <button>Update</button>
+                    <button type="submit">Update</button>
                 </div>
             </div>
-        `;
-    }
-
+        </form>
+    `;
+}
     // 🛡️ OFFICER
     else if(type === "officer"){
         title.innerText = "Manage Officers";

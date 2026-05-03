@@ -154,8 +154,8 @@ body::before {
     }
     .card.active,.modal-content ul li:hover{    background: rgba(0,0,0,0.5);}
 
-.cards button, .modal-content button, .manage-modal-box button, .manage-modal-box select, .panel button{
-    flex: 1;
+.cards button, .modal-content button, .manage-modal-box button, .manage-modal-box select, .panel button, .admin-btn{
+
     /*
     padding: 12px;
     border-radius: 12px;
@@ -174,7 +174,10 @@ body::before {
     border-radius: 12px;
 
 }
-button:hover{
+.cards button, .modal-content button, .manage-modal-box button, .manage-modal-box select, .panel button{
+    flex: 1;
+}
+button:hover, .admin-btn:hover{
    background: rgba(255, 255, 255, 0.2);
   
 }
@@ -1120,7 +1123,7 @@ receipt modals
 }
 
 /* Button */
-.main-btn {
+.main-btn{
     width: 100%;
     padding: 12px;
     border-radius: 8px;
