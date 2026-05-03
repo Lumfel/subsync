@@ -43,7 +43,17 @@
             <input type="text" placeholder="Search...">
 
             <!-- CLICKABLE ADMIN -->
-            <div class="admin-btn" onclick="openLogin()">Admin</div>
+          @guest
+    <button class="admin-btn" onclick="openLogin()">
+        Login
+    </button>
+@endguest
+
+@auth
+    <div class="admin-btn">
+        {{ Auth::user()->name }}
+    </div>
+@endauth
         </header>
 
         <!-- CARDS -->

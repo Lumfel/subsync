@@ -17,8 +17,10 @@ Route::get('/', function () {
 })->name('dashboard');
 
 /* AUTH */
+Route::get('/login', function () {
+    return view('layouts.login_1');
+})->name('login_1');
 Route::post('/login', [AuthController::class, 'login']);
-
 /* STATIC PAGES */
 Route::get('/analytics', function () {
     return view('layouts.analytics');
