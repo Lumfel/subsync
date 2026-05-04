@@ -43,11 +43,14 @@
         </header>
          <section class="manage-grid">
 
-     <div class="manage-card" onclick="openAction('household')">
+         <div class="manage-card" onclick="openAction('household')">
                 <h3>🏠 Add Household</h3>
                 <p>Create new household records</p>
             </div>
-
+            <div class="manage-card" onclick="openAction('user')">
+                <h3>➕ Add User</h3>
+                <p>Create new system user</p>
+            </div>
             <div class="manage-card" onclick="openAction('member')">
                 <h3>👤 Add Member / Change Type</h3>
                 <p>Add or update member roles</p>
@@ -379,6 +382,44 @@ function openAction(type){
 
                 <div class="manage-right">
                     <button type="submit">Add Member</button>
+                </div>
+            </div>
+        </form>
+    `;
+}
+else if(type === "user"){
+    title.innerText = "Add User";
+
+    body.innerHTML = `
+        <form method="POST" action="/users">
+            @csrf
+
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="Full Name"
+                        required
+                    >
+
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="Email"
+                        required
+                    >
+
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="Password"
+                        required
+                    >
+                </div>
+
+                <div class="manage-right">
+                    <button type="submit">Add User</button>
                 </div>
             </div>
         </form>
