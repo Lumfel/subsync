@@ -107,20 +107,40 @@
         </section>
         <br><br>
         <section class="panel">
-            <h3>Records</h3>
+    <h3>Households</h3>
 
-            <table id="households">
-                <thead>
-                    <tr>
-                        <th>Household</th>
-                        <th>Location</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+    <table id="households">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Location</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
 
-        </section> 
+        <tbody>
+            @foreach($households as $household)
+            <tr>
+                <td>{{ $household->id }}</td>
+                <td>{{ $household->location }}</td>
+                <td>{{ $household->created_at->format('M d, Y') }}</td>
+                <td>
+                    <button onclick="editHousehold({{ $household->id }}, '{{ $household->location }}')">
+                        Edit
+                    </button>
+
+                    <form action="/households/{{ $household->id }}" method="POST" style="display:inline;">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            @endforeach
+        </tbody>
+    </table>
+</section>
         <br>
 <br>
 <section class="panel">
@@ -132,18 +152,23 @@
                 <th>ID</th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>Actions</th>
             </tr>
         </thead>
 
         <tbody>
-            @foreach($users as $user)
-            <tr>
-                <td>{{ $user->id }}</td>
-                <td>{{ $user->name }}</td>
-                <td>{{ $user->email }}</td>
-            </tr>
-            @endforeach
-        </tbody>
+    @foreach($users as $user)
+    <tr>
+        <td>{{ $user->id }}</td>
+        <td>{{ $user->name }}</td>
+        <td>{{ $user->email }}</td>
+        <td>
+            <button>Edit</button>
+            <button>Delete</button>
+        </td>
+    </tr>
+    @endforeach
+</tbody>
     </table>
 </section>
 <br>
@@ -173,25 +198,30 @@
     <h3>Members</h3>
 
     <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>User ID</th>
-                <th>Household ID</th>
-                <th>Member Type</th>
-            </tr>
-        </thead>
+ <thead>
+    <tr>
+        <th>ID</th>
+        <th>User ID</th>
+        <th>Household ID</th>
+        <th>Member Type</th>
+        <th>Actions</th>
+    </tr>
+</thead>
 
-        <tbody>
-            @foreach($members as $member)
-            <tr>
-                <td>{{ $member->id }}</td>
-                <td>{{ $member->user_id }}</td>
-                <td>{{ $member->house_id }}</td>
-                <td>{{ $member->member_type }}</td>
-            </tr>
-            @endforeach
-        </tbody>
+<tbody>
+    @foreach($members as $member)
+    <tr>
+        <td>{{ $member->id }}</td>
+        <td>{{ $member->user_id }}</td>
+        <td>{{ $member->house_id }}</td>
+        <td>{{ $member->member_type }}</td>
+        <td>
+            <button>Edit</button>
+            <button>Delete</button>
+        </td>
+    </tr>
+    @endforeach
+</tbody>
     </table>
 </section>
         <br> <br>
@@ -234,6 +264,7 @@ function openAction(type){
     modal.classList.add("show");
 
     // 🏠 HOUSEHOLD
+    /*
   if(type === "household"){
     title.innerText = "Add Household";
     body.innerHTML = `
@@ -250,6 +281,37 @@ function openAction(type){
 
                 <div class="manage-right">
                     <button type="submit">Add</button>
+                </div>
+            </div>
+        </form>
+    `;
+}
+    */
+   if(type === "household"){
+    title.innerText = "Add Household";
+
+    body.innerHTML = `
+        <form method="POST" action="/households" enctype="multipart/form-data">
+            @csrf
+
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input
+                        type="text"
+                        name="location"
+                        placeholder="Blk 3 Lot 12"
+                        required
+                    >
+
+                    <input
+                        type="file"
+                        name="image"
+                        accept="image/png,image/jpeg,image/jpg"
+                    >
+                </div>
+
+                <div class="manage-right">
+                    <button type="submit">Add Household</button>
                 </div>
             </div>
         </form>
