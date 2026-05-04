@@ -120,25 +120,23 @@
         </thead>
 
         <tbody>
-            @foreach($households as $household)
-            <tr>
-                <td>{{ $household->id }}</td>
-                <td>{{ $household->location }}</td>
-                <td>{{ $household->created_at->format('M d, Y') }}</td>
-                <td>
-                    <button onclick="editHousehold({{ $household->id }}, '{{ $household->location }}')">
-                        Edit
-                    </button>
-
-                    <form action="/households/{{ $household->id }}" method="POST" style="display:inline;">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            @endforeach
-        </tbody>
+    @foreach($households as $household)
+    <tr>
+        <td>{{ $household->id }}</td>
+        <td>{{ $household->location }}</td>
+        <td>{{ $household->created_at->format('M d, Y') }}</td>
+        <td>
+            <form action="/households/{{ $household->id }}" method="POST"
+                  onsubmit="return confirm('Delete this household?')"
+                  style="display:inline;">
+                @csrf
+                @method('DELETE')
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+    </tr>
+    @endforeach
+</tbody>
     </table>
 </section>
         <br>

@@ -66,5 +66,6 @@ Route::get('/reports', function () {
 
 /* CRUD */
 Route::post('/households', [HouseholdController::class, 'store']);
+Route::delete('/households/{id}', [HouseholdController::class, 'destroy']);
 Route::post('/members', [MemberController::class, 'store']);
 Route::post('/statuses', [StatusController::class, 'store']);

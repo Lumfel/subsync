@@ -35,3 +35,4 @@ class HouseholdController extends Controller
         return redirect('/manage_users')->with('success', 'Household deleted.');
     }
 }
+
