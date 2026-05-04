@@ -126,14 +126,18 @@
         <td>{{ $household->location }}</td>
         <td>{{ $household->created_at->format('M d, Y') }}</td>
         <td>
-            <form action="/households/{{ $household->id }}" method="POST"
-                  onsubmit="return confirm('Delete this household?')"
-                  style="display:inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit">Delete</button>
-            </form>
-        </td>
+    <button onclick="editHouse({{ $household->id }}, '{{ $household->location }}')">
+        Edit
+    </button>
+
+    <form action="/households/{{ $household->id }}" method="POST"
+          style="display:inline;"
+          onsubmit="return confirm('Delete this household?')">
+        @csrf
+        @method('DELETE')
+        <button type="submit">Delete</button>
+    </form>
+</td>
     </tr>
     @endforeach
 </tbody>
@@ -161,9 +165,20 @@
         <td>{{ $user->name }}</td>
         <td>{{ $user->email }}</td>
         <td>
-            <button>Edit</button>
-            <button>Delete</button>
-        </td>
+    <button onclick="editUser(
+        {{ $user->id }},
+        '{{ $user->name }}',
+        '{{ $user->email }}'
+    )">Edit</button>
+
+    <form action="/users/{{ $user->id }}" method="POST"
+          style="display:inline;"
+          onsubmit="return confirm('Delete this user?')">
+        @csrf
+        @method('DELETE')
+        <button type="submit">Delete</button>
+    </form>
+</td>
     </tr>
     @endforeach
 </tbody>
@@ -178,15 +193,30 @@
             <tr>
                 <th>ID</th>
                 <th>Family Name</th>
+                <th>Actions</th>
             </tr>
         </thead>
 
         <tbody>
             @foreach($families as $family)
-            <tr>
-                <td>{{ $family->id }}</td>
-                <td>{{ $family->family_name }}</td>
-            </tr>
+           <tr>
+    <td>{{ $family->id }}</td>
+    <td>{{ $family->family_name }}</td>
+    <td>
+        <button onclick="editFamily(
+            {{ $family->id }},
+            '{{ $family->family_name }}'
+        )">Edit</button>
+
+        <form action="/families/{{ $family->id }}" method="POST"
+              style="display:inline;"
+              onsubmit="return confirm('Delete this family?')">
+            @csrf
+            @method('DELETE')
+            <button type="submit">Delete</button>
+        </form>
+    </td>
+</tr>
             @endforeach
         </tbody>
     </table>
@@ -213,10 +243,22 @@
         <td>{{ $member->user_id }}</td>
         <td>{{ $member->house_id }}</td>
         <td>{{ $member->member_type }}</td>
-        <td>
-            <button>Edit</button>
-            <button>Delete</button>
-        </td>
+      <td>
+    <button onclick="editMember(
+        {{ $member->id }},
+        {{ $member->user_id }},
+        {{ $member->house_id }},
+        '{{ $member->member_type }}'
+    )">Edit</button>
+
+    <form action="/members/{{ $member->id }}" method="POST"
+          style="display:inline;"
+          onsubmit="return confirm('Delete this member?')">
+        @csrf
+        @method('DELETE')
+        <button type="submit">Delete</button>
+    </form>
+</td>
     </tr>
     @endforeach
 </tbody>
@@ -405,5 +447,128 @@ function closeManageModal(){
 /* OPTIONAL SIDEBAR FIX */
 function toggleSidebar(){
     document.querySelector(".sidebar").classList.toggle("active");
+}
+
+
+
+function editHouse(id, location){
+    const modal = document.getElementById("manageModal");
+    const title = document.getElementById("manageTitle");
+    const body = document.getElementById("manageBody");
+
+    modal.classList.add("show");
+    title.innerText = "Edit Household";
+
+    body.innerHTML = `
+        <form method="POST" action="/households/${id}">
+            @csrf
+            @method('PUT')
+
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input
+                        type="text"
+                        name="location"
+                        value="${location}"
+                        required
+                    >
+                </div>
+
+                <div class="manage-right">
+                    <button type="submit">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    `;
+}
+function editUser(id, name, email){
+    const modal = document.getElementById("manageModal");
+    const title = document.getElementById("manageTitle");
+    const body = document.getElementById("manageBody");
+
+    modal.classList.add("show");
+    title.innerText = "Edit User";
+
+    body.innerHTML = `
+        <form method="POST" action="/users/${id}">
+            @csrf
+            @method('PUT')
+
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input type="text" name="name" value="${name}" required>
+                    <input type="email" name="email" value="${email}" required>
+                </div>
+
+                <div class="manage-right">
+                    <button type="submit">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    `;
+}
+
+function editFamily(id, familyName){
+    const modal = document.getElementById("manageModal");
+    const title = document.getElementById("manageTitle");
+    const body = document.getElementById("manageBody");
+
+    modal.classList.add("show");
+    title.innerText = "Edit Family";
+
+    body.innerHTML = `
+        <form method="POST" action="/families/${id}">
+            @csrf
+            @method('PUT')
+
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input type="text" name="family_name" value="${familyName}" required>
+                </div>
+
+                <div class="manage-right">
+                    <button type="submit">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    `;
+}
+
+function editMember(id, userId, houseId, memberType){
+    const modal = document.getElementById("manageModal");
+    const title = document.getElementById("manageTitle");
+    const body = document.getElementById("manageBody");
+
+    modal.classList.add("show");
+    title.innerText = "Edit Member";
+
+    body.innerHTML = `
+        <form method="POST" action="/members/${id}">
+            @csrf
+            @method('PUT')
+
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input type="number" name="user_id" value="${userId}" required>
+                    <input type="number" name="house_id" value="${houseId}" required>
+
+                    <select name="member_type">
+                        <option value="Family_member"
+                            ${memberType === 'Family_member' ? 'selected' : ''}>
+                            Family Member
+                        </option>
+                        <option value="Tenant"
+                            ${memberType === 'Tenant' ? 'selected' : ''}>
+                            Tenant
+                        </option>
+                    </select>
+                </div>
+
+                <div class="manage-right">
+                    <button type="submit">Save Changes</button>
+                </div>
+            </div>
+        </form>
+    `;
 }
 </script>

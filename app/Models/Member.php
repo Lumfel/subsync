@@ -21,4 +21,6 @@ class Member extends Model
     {
         return $this->belongsTo(Household::class, 'house_id');
     }
+
+    
 }

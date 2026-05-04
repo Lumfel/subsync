@@ -5,12 +5,19 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\StatusController;
+use App\Http\Controllers\UserController;
+
+
 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
 */
+Route::resource('households', HouseholdController::class);
+Route::resource('users', UserController::class);
+Route::resource('families', FamilyController::class);
+Route::resource('members', MemberController::class);
 
 Route::get('/', function () {
     return view('layouts.main');
@@ -66,6 +73,8 @@ Route::get('/reports', function () {
 
 /* CRUD */
 Route::post('/households', [HouseholdController::class, 'store']);
+Route::put('/households/{id}', [HouseholdController::class, 'update']);
 Route::delete('/households/{id}', [HouseholdController::class, 'destroy']);
+Route::get('/households/{id}/edit', [HouseholdController::class, 'edit']);
 Route::post('/members', [MemberController::class, 'store']);
 Route::post('/statuses', [StatusController::class, 'store']);

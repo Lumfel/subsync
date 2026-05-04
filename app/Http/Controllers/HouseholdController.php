@@ -34,5 +34,26 @@ class HouseholdController extends Controller
 
         return redirect('/manage_users')->with('success', 'Household deleted.');
     }
+
+    public function edit($id)
+{
+    $household = Household::findOrFail($id);
+    return response()->json($household);
+}
+
+public function update(Request $request, $id)
+{
+    $request->validate([
+        'location' => 'required|string|max:255',
+    ]);
+
+    $household = Household::findOrFail($id);
+
+    $household->update([
+        'location' => $request->location,
+    ]);
+
+    return redirect('/manage_users')->with('success', 'Household updated.');
+}
 }
 

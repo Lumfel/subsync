@@ -1137,3 +1137,7 @@ receipt modals
 .admin-btn {
     cursor: pointer;
 }
+
+.panel tbody tr:nth-of-type(odd){
+    
+}
