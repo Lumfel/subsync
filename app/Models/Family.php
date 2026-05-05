@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Model;
 class Family extends Model
 {
     protected $fillable = [
-        'family_head',
-        'members'
-    ];
+    'family_name',
+    'family_head',
+    'members'
+];
 
     public function head()
     {

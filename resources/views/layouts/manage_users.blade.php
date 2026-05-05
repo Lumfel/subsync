@@ -51,6 +51,10 @@
                 <h3>➕ Add User</h3>
                 <p>Create new system user</p>
             </div>
+            <div class="manage-card" onclick="openAction('family')">
+                    <h3>👨‍👩‍👧 Add Family</h3>
+                     <p>Create family record</p>
+            </div>
             <div class="manage-card" onclick="openAction('member')">
                 <h3>👤 Add Member / Change Type</h3>
                 <p>Add or update member roles</p>
@@ -216,7 +220,10 @@
               onsubmit="return confirm('Delete this family?')">
             @csrf
             @method('DELETE')
-            <button type="submit">Delete</button>
+            <button onclick="editFamily(
+                    {{ $family->id }},
+            '{{ $family->family_name }}'
+            )">Delete</button>
         </form>
     </td>
 </tr>
@@ -420,6 +427,30 @@ else if(type === "user"){
 
                 <div class="manage-right">
                     <button type="submit">Add User</button>
+                </div>
+            </div>
+        </form>
+    `;
+}
+else if(type === "family"){
+    title.innerText = "Add Family";
+
+    body.innerHTML = `
+        <form method="POST" action="/families">
+            @csrf
+
+            <div class="manage-form-row">
+                <div class="manage-left">
+                    <input
+                        type="text"
+                        name="family_name"
+                        placeholder="Family Name"
+                        required
+                    >
+                </div>
+
+                <div class="manage-right">
+                    <button type="submit">Add Family</button>
                 </div>
             </div>
         </form>

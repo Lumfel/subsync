@@ -11,13 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-      Schema::create('families', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('family_head')->constrained('users')->onDelete('cascade');
-            $table->integer('members')->default(1);
-            $table->timestamp('date_added')->useCurrent();
-            $table->timestamps();
-        });
+    Schema::create('families', function (Blueprint $table) {
+    $table->id();
+    $table->string('family_name');
+
+    $table->foreignId('family_head')
+        ->nullable()
+        ->constrained('users')
+        ->nullOnDelete();
+
+    $table->integer('members')->nullable();
+
+    $table->timestamp('date_added')->useCurrent();
+    $table->timestamps();
+});
     }
 
     /**

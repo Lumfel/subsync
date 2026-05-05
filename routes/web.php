@@ -19,6 +19,10 @@ Route::resource('users', UserController::class);
 Route::resource('families', FamilyController::class);
 Route::resource('members', MemberController::class);
 
+Route::post('/families', [FamilyController::class, 'store']);
+Route::put('/families/{id}', [FamilyController::class, 'update']);
+Route::delete('/families/{id}', [FamilyController::class, 'destroy']);
+
 Route::get('/', function () {
     return view('layouts.main');
 })->name('dashboard');
