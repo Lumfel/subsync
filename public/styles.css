@@ -622,7 +622,7 @@ receipt modals
     backdrop-filter: blur(15px);
     border-radius: 12px;
 }
-.modal-content input:focus, .manage-modal-box input:focus  {
+.modal-content input:focus, .manage-modal-box input:focus, .panel input:focus, .panel select:focus  {
        background: rgba(0, 0, 0, 0.5);
    backdrop-filter: blur(15px);
 }
@@ -812,7 +812,7 @@ receipt modals
     background: rgba(0,0,0,0.5);
     backdrop-filter: blur(15px);
   
-}s
+}
 
 .input-row {
     display: flex;
@@ -1029,8 +1029,8 @@ receipt modals
 
 /* Inputs & selects inherit your style */
 .manage-modal input,
-.manage-modal select {
-    width: 100%;
+.manage-modal select, .panel input, .panel select {
+
     background: rgba(255,255,255,0.1);
     border: 1px solid rgba(255,255,255,0.2);
     color: white;
@@ -1038,6 +1038,10 @@ receipt modals
     border-radius: 12px;
     outline: none;
     backdrop-filter: blur(15px);
+}
+.manage-modal input,
+.manage-modal select{
+    width: 100%;
 }
 
 /* Button */

@@ -77,42 +77,194 @@
 
         </section>
 
-        <section class="content" style="grid-template-columns: 1fr; margin-top: 20px;">
-            <!----
-            <div class="panel">
-                <h3>Add New Household Member</h3>
-                <br>
-                <form class="admin-registration-form">
-                    <div class="cards" style="margin: 0; gap: 15px;">
-                        <div style="flex: 2;">
-                            <label>Household Full Name</label>
-                            <input type="text" placeholder="e.g. John Doe" required style="width: 100%; margin-top: 8px; color: white; select option">
-                        </div>
-                        <div style="flex: 1;">
-                            <label>Member Type</label>
-                            <select style="width: 100%; margin-top: 8px; padding: 12px; border-radius: 12px; background: rgba(255,255,255,0.08); color: white; border: none; backdrop-filter: blur(10px);">
-                                <option value="family">Family Member</option>
-                                <option value="relative">Relative</option>
-                                <option value="tenant">Tenant</option>
-                            </select>
-                        </div>
-                    </div>
+        <!-- FILTER + TABLE SWITCH -->
+<section class="panel" style="margin-top:20px;">
+    <div style="display:flex; gap:15px; align-items:center;">
+        <input
+            type="text"
+            id="searchBar"
+            placeholder="Search..."
+            onkeyup="filterTable()"
+            style="flex:1;"
+        >
 
-                    <div class="cards" style="gap: 15px;">
-                        <div style="flex: 1;">
-                            <label>Block</label>
-                            <input type="text" placeholder="Block No." required style="width: 100%; margin-top: 8px; color: white;">
-                        </div>
-                        <div style="flex: 1;">
-                            <label>Lot</label>
-                            <input type="text" placeholder="Lot No." required style="width: 100%; margin-top: 8px;    color: white;">
-                        </div>
-                    </div>
-             </form>
-          </div>
-          --->
+        <select id="tableSelector" onchange="switchPanel()">
+            <option value="householdsPanel">Households</option>
+            <option value="usersPanel">Users</option>
+            <option value="familiesPanel">Families</option>
+            <option value="membersPanel">Members</option>
+        </select>
+    </div>
+</section>
+
+<br>
+
+<section class="panel">
+
+    <div id="householdsPanel" class="table-panel" style="display:none;">
+        <h3>Households</h3>
+                <table id="households">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Location</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+            @foreach($households as $household)
+            <tr>
+                <td>{{ $household->id }}</td>
+                <td>{{ $household->location }}</td>
+                <td>{{ $household->created_at->format('M d, Y') }}</td>
+                <td>
+            <button onclick="editHouse({{ $household->id }}, '{{ $household->location }}')">
+                Edit
+            </button>
+
+            <form action="/households/{{ $household->id }}" method="POST"
+                style="display:inline;"
+                onsubmit="return confirm('Delete this household?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+            </tr>
+            @endforeach
+        </tbody>
+            </table>
+    </div>
+
+    <div id="usersPanel" class="table-panel" style="display:none;">
+        <h3>Users</h3>
+                <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+            @foreach($users as $user)
+            <tr>
+                <td>{{ $user->id }}</td>
+                <td>{{ $user->name }}</td>
+                <td>{{ $user->email }}</td>
+                <td>
+            <button onclick="editUser(
+                {{ $user->id }},
+                '{{ $user->name }}',
+                '{{ $user->email }}'
+            )">Edit</button>
+
+            <form action="/users/{{ $user->id }}" method="POST"
+                style="display:inline;"
+                onsubmit="return confirm('Delete this user?')">
+                @csrf
+                @method('DELETE')
+                <button type="submit">Delete</button>
+            </form>
+        </td>
+            </tr>
+            @endforeach
+        </tbody>
+            </table>
+    </div>
+
+    <div id="familiesPanel" class="table-panel" style="display:none;">
+        <h3>Families</h3>
+                <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Family Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach($families as $family)
+                <tr>
+            <td>{{ $family->id }}</td>
+            <td>{{ $family->family_name }}</td>
+            <td>
+                <button onclick="editFamily(
+                    {{ $family->id }},
+                    '{{ $family->family_name }}'
+                )">Edit</button>
+
+                <form action="/families/{{ $family->id }}" method="POST"
+                    style="display:inline;"
+                    onsubmit="return confirm('Delete this family?')">
+                    @csrf
+                    @method('DELETE')
+                    <button onclick="editFamily(
+                            {{ $family->id }},
+                    '{{ $family->family_name }}'
+                    )">Delete</button>
+                </form>
+            </td>
+        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+    </div>
+
+    <div id="membersPanel" class="table-panel" style="display:none;">
+        <h3>Members</h3>
+                <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>User ID</th>
+                <th>Household ID</th>
+                <th>Member Type</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach($members as $member)
+            <tr>
+                <td>{{ $member->id }}</td>
+                <td>{{ $member->user_id }}</td>
+                <td>{{ $member->house_id }}</td>
+                <td>{{ $member->member_type }}</td>
+            <td>
+            <button onclick="editMember(
+                {{ $member->id }},
+                {{ $member->user_id }},
+                {{ $member->house_id }},
+                '{{ $member->member_type }}'
+            )">Edit</button>
+
+        <form action="/families/{{ $family->id }}" method="POST"
+            style="display:inline;"
+            onsubmit="return confirm('Delete this family?')">
+            @csrf
+            @method('DELETE')
+            <button onclick="editFamily(
+                    {{ $family->id }},
+            '{{ $family->family_name }}'
+            )">Delete</button>
+        </form>
+            </td>
+                </tr>
+                @endforeach
+        </tbody>
+            </table>
+    </div>
+
+</section>
         </section>
         <br><br>
+    <!-----
         <section class="panel">
     <h3>Households</h3>
 
@@ -261,16 +413,19 @@
         '{{ $member->member_type }}'
     )">Edit</button>
 
-    <form action="/members/{{ $member->id }}" method="POST"
-          style="display:inline;"
-          onsubmit="return confirm('Delete this member?')">
-        @csrf
-        @method('DELETE')
-        <button type="submit">Delete</button>
-    </form>
-</td>
-    </tr>
-    @endforeach
+   <form action="/families/{{ $family->id }}" method="POST"
+      style="display:inline;"
+      onsubmit="return confirm('Delete this family?')">
+    @csrf
+    @method('DELETE')
+    <button onclick="editFamily(
+            {{ $family->id }},
+    '{{ $family->family_name }}'
+    )">Delete</button>
+</form>
+    </td>
+        </tr>
+        @endforeach
 </tbody>
     </table>
 </section>
@@ -290,6 +445,7 @@
             </table>
 
         </section> 
+     --->
    </main>
    <!-- MANAGE MODAL -->
 <div id="manageModal" class="manage-modal" onclick="closeManageModal()">
@@ -642,5 +798,37 @@ function editMember(id, userId, houseId, memberType){
             </div>
         </form>
     `;
+}
+
+
+function switchPanel() {
+    const selected = document.getElementById("tableSelector").value;
+
+    document.querySelectorAll(".table-panel").forEach(panel => {
+        panel.style.display = "none";
+    });
+
+    document.getElementById(selected).style.display = "block";
+
+    document.getElementById("searchBar").value = "";
+    filterTable();
+}
+
+function filterTable() {
+    const input = document.getElementById("searchBar").value.toLowerCase();
+
+    const activePanel = Array.from(
+        document.querySelectorAll(".table-panel")
+    ).find(panel => panel.style.display !== "none");
+
+    if (!activePanel) return;
+
+    const rows = activePanel.querySelectorAll("tbody tr");
+
+    rows.forEach(row => {
+        row.style.display = row.innerText.toLowerCase().includes(input)
+            ? ""
+            : "none";
+    });
 }
 </script>

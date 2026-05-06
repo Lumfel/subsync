@@ -6,6 +6,7 @@ use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\MemberController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FamilyController;
 
 
 
