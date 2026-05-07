@@ -69,11 +69,12 @@
                 <h3>🛡️ Manage Officers</h3>
                 <p>Assign admin roles</p>
             </div>
-
+            <!-----
             <div class="manage-card" onclick="openAction('view')">
                 <h3>📋 View All Records</h3>
                 <p>Inspect all households & members</p>
             </div>
+            --->
 
         </section>
 
@@ -101,7 +102,7 @@
 
 <section class="panel">
 
-    <div id="householdsPanel" class="table-panel" style="display:none;">
+    <div id="householdsPanel" class="table-panel" style="display:block;">
         <h3>Households</h3>
                 <table id="households">
                 <thead>
@@ -199,15 +200,14 @@
                     '{{ $family->family_name }}'
                 )">Edit</button>
 
-                <form action="/families/{{ $family->id }}" method="POST"
+               <form action="/families/{{ $family->id }}" method="POST"
                     style="display:inline;"
                     onsubmit="return confirm('Delete this family?')">
+
                     @csrf
                     @method('DELETE')
-                    <button onclick="editFamily(
-                            {{ $family->id }},
-                    '{{ $family->family_name }}'
-                    )">Delete</button>
+
+                    <button type="submit">Delete</button>
                 </form>
             </td>
         </tr>
@@ -244,16 +244,15 @@
                 '{{ $member->member_type }}'
             )">Edit</button>
 
-        <form action="/families/{{ $family->id }}" method="POST"
-            style="display:inline;"
-            onsubmit="return confirm('Delete this family?')">
-            @csrf
-            @method('DELETE')
-            <button onclick="editFamily(
-                    {{ $family->id }},
-            '{{ $family->family_name }}'
-            )">Delete</button>
-        </form>
+                    <form action="/members/{{ $member->id }}" method="POST"
+                style="display:inline;"
+                onsubmit="return confirm('Delete this member?')">
+
+                @csrf
+                @method('DELETE')
+
+                <button type="submit">Delete</button>
+            </form>
             </td>
                 </tr>
                 @endforeach
@@ -264,188 +263,6 @@
 </section>
         </section>
         <br><br>
-    <!-----
-        <section class="panel">
-    <h3>Households</h3>
-
-    <table id="households">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Location</th>
-                <th>Date</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-    @foreach($households as $household)
-    <tr>
-        <td>{{ $household->id }}</td>
-        <td>{{ $household->location }}</td>
-        <td>{{ $household->created_at->format('M d, Y') }}</td>
-        <td>
-    <button onclick="editHouse({{ $household->id }}, '{{ $household->location }}')">
-        Edit
-    </button>
-
-    <form action="/households/{{ $household->id }}" method="POST"
-          style="display:inline;"
-          onsubmit="return confirm('Delete this household?')">
-        @csrf
-        @method('DELETE')
-        <button type="submit">Delete</button>
-    </form>
-</td>
-    </tr>
-    @endforeach
-</tbody>
-    </table>
-</section>
-        <br>
-<br>
-<section class="panel">
-    <h3>Users</h3>
-
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-    @foreach($users as $user)
-    <tr>
-        <td>{{ $user->id }}</td>
-        <td>{{ $user->name }}</td>
-        <td>{{ $user->email }}</td>
-        <td>
-    <button onclick="editUser(
-        {{ $user->id }},
-        '{{ $user->name }}',
-        '{{ $user->email }}'
-    )">Edit</button>
-
-    <form action="/users/{{ $user->id }}" method="POST"
-          style="display:inline;"
-          onsubmit="return confirm('Delete this user?')">
-        @csrf
-        @method('DELETE')
-        <button type="submit">Delete</button>
-    </form>
-</td>
-    </tr>
-    @endforeach
-</tbody>
-    </table>
-</section>
-<br>
-<section class="panel">
-    <h3>Families</h3>
-
-    <table>
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Family Name</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            @foreach($families as $family)
-           <tr>
-    <td>{{ $family->id }}</td>
-    <td>{{ $family->family_name }}</td>
-    <td>
-        <button onclick="editFamily(
-            {{ $family->id }},
-            '{{ $family->family_name }}'
-        )">Edit</button>
-
-        <form action="/families/{{ $family->id }}" method="POST"
-              style="display:inline;"
-              onsubmit="return confirm('Delete this family?')">
-            @csrf
-            @method('DELETE')
-            <button onclick="editFamily(
-                    {{ $family->id }},
-            '{{ $family->family_name }}'
-            )">Delete</button>
-        </form>
-    </td>
-</tr>
-            @endforeach
-        </tbody>
-    </table>
-</section>
-<br>
-<section class="panel">
-    <h3>Members</h3>
-
-    <table>
- <thead>
-    <tr>
-        <th>ID</th>
-        <th>User ID</th>
-        <th>Household ID</th>
-        <th>Member Type</th>
-        <th>Actions</th>
-    </tr>
-</thead>
-
-<tbody>
-    @foreach($members as $member)
-    <tr>
-        <td>{{ $member->id }}</td>
-        <td>{{ $member->user_id }}</td>
-        <td>{{ $member->house_id }}</td>
-        <td>{{ $member->member_type }}</td>
-      <td>
-    <button onclick="editMember(
-        {{ $member->id }},
-        {{ $member->user_id }},
-        {{ $member->house_id }},
-        '{{ $member->member_type }}'
-    )">Edit</button>
-
-   <form action="/families/{{ $family->id }}" method="POST"
-      style="display:inline;"
-      onsubmit="return confirm('Delete this family?')">
-    @csrf
-    @method('DELETE')
-    <button onclick="editFamily(
-            {{ $family->id }},
-    '{{ $family->family_name }}'
-    )">Delete</button>
-</form>
-    </td>
-        </tr>
-        @endforeach
-</tbody>
-    </table>
-</section>
-        <br> <br>
-        <section class="panel">
-            <h3>Officers</h3>
-
-            <table id="Officers">
-                <thead>
-                    <tr>
-                        <th>Postion</th>
-                        <th>Name</th>
-                        <th>Image</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-
-        </section> 
-     --->
    </main>
    <!-- MANAGE MODAL -->
 <div id="manageModal" class="manage-modal" onclick="closeManageModal()">

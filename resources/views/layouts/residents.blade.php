@@ -51,13 +51,13 @@
             <div class="card">
                 <a href="/members">
                 <h3>Members</h3>
-                <p>128</p>
+                <p></p>
                 </a>
             </div>
         
             <div class="card active">
                 <h3>Houses</h3>
-                <p>96</p>
+                <p></p>
             </div>
         </section>
         <section class="cards">

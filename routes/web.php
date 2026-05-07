@@ -10,6 +10,8 @@ use App\Http\Controllers\FamilyController;
 
 
 
+
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -19,6 +21,7 @@ Route::resource('households', HouseholdController::class);
 Route::resource('users', UserController::class);
 Route::resource('families', FamilyController::class);
 Route::resource('members', MemberController::class);
+Route::resource('statuses', StatusController::class);
 
 Route::post('/families', [FamilyController::class, 'store']);
 Route::put('/families/{id}', [FamilyController::class, 'update']);

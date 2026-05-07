@@ -9,13 +9,21 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('statuses', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
-        });
-    }
+ public function up(): void
+{
+    Schema::create('statuses', function (Blueprint $table) {
+        $table->id();
+
+        $table->foreignId('house_id')
+              ->constrained('households')
+              ->onDelete('cascade');
+
+        $table->string('status');
+        $table->text('reason')->nullable();
+
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.

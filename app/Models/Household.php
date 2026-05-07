@@ -3,13 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Status;
 
 class Household extends Model
 {
     protected $fillable = [
         'location',
         'family_id',
-        'members'
+        'members',
+        'image'
     ];
 
     public function family()

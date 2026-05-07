@@ -7,59 +7,34 @@ use Illuminate\Http\Request;
 
 class StatusController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'house_id' => 'required|exists:households,id',
+            'status' => 'required|string',
+            'reason' => 'nullable|string'
+        ]);
+
+        Status::create($request->all());
+
+        return redirect('/manage_users');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Status $status)
+    public function update(Request $request, $id)
     {
-        //
+        $status = Status::findOrFail($id);
+
+        $status->update([
+            'status' => $request->status,
+            'reason' => $request->reason
+        ]);
+
+        return redirect('/manage_users');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Status $status)
+    public function destroy($id)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Status $status)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Status $status)
-    {
-        //
+        Status::findOrFail($id)->delete();
+        return redirect('/manage_users');
     }
 }

@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('statuses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('house_id')->constrained('households')->onDelete('cascade');
-            $table->string('status_type');
-            $table->timestamps();
+        Schema::table('households', function (Blueprint $table) {
+            $table->string('image')->nullable();
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('statuses');
+        Schema::table('households', function (Blueprint $table) {
+            $table->dropColumn('image');
+        });
     }
 };
