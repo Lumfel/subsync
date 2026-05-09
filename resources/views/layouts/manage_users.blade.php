@@ -284,5 +284,27 @@
 </div>
 
 <script src="{{ asset('js/manage_user.js') }}" defer></script>
+
+<script>
+window.householdsHTML = `
+@foreach($households as $household)
+    <div class="household-item"
+         data-family="{{ $household->family->family_name ?? 'No Family' }}"
+         data-status="{{ $household->status ?? 'Active' }}"
+       data-members="{{ $household->householdMembers()->count() }}"
+        <h3>{{ $household->location }}</h3>
+        <p>ID: {{ $household->id }}</p>
+    </div>
+@endforeach
+`;
+
+window.usersHTML = `
+@foreach($users as $user)
+    <div class="user-item" draggable="true">
+        {{ $user->name }}
+    </div>
+@endforeach
+`;
+</script>
 </body>
 </html>

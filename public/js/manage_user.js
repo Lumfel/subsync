@@ -51,6 +51,7 @@ function openAction(type) {
 
         case "member":
             openDropdown(selectHouseholdPanel());
+            bindHouseholdClicks();
             break;
 
         case "status":
@@ -171,7 +172,6 @@ function officerForm() {
 function selectHouseholdPanel() {
     return `
         <div class="household-select-layout">
-
             <h2>Select Household</h2>
 
             <input
@@ -182,34 +182,31 @@ function selectHouseholdPanel() {
             >
 
             <div class="household-list">
-
-                <div class="household-item"
-                     onclick="openHouseholdMembers('Tibo-oc Family','Active',2)">
-                    <div>
-                        <h3>Tibo-oc Family</h3>
-                        <p>Status: Active</p>
-                    </div>
-                </div>
-
-                <div class="household-item"
-                     onclick="openHouseholdMembers('Cruz Family','Warning',4)">
-                    <div>
-                        <h3>Cruz Family</h3>
-                        <p>Status: Warning</p>
-                    </div>
-                </div>
-
+                ${window.householdsHTML || '<p>No households found.</p>'}
             </div>
         </div>
     `;
 }
+
 function filterHouseholds(search) {
     search = search.toLowerCase();
 
     document.querySelectorAll(".household-item").forEach(item => {
         item.style.display = item.innerText.toLowerCase().includes(search)
-            ? "flex"
+            ? "block"
             : "none";
+    });
+}
+
+function bindHouseholdClicks() {
+    document.querySelectorAll(".household-item").forEach(item => {
+        item.onclick = function () {
+            openHouseholdMembers(
+                this.dataset.family,
+                this.dataset.status,
+                this.dataset.members
+            );
+        };
     });
 }
 
@@ -248,22 +245,23 @@ function openHouseholdMembers(familyName, status, members) {
                 >
 
                 <div class="user-list">
-                    <div class="user-item" draggable="true">John Doe</div>
-                    <div class="user-item" draggable="true">Maria Cruz</div>
-                    <div class="user-item" draggable="true">Alex Reyes</div>
+                    ${renderUsers()}
                 </div>
             </div>
-
         </div>
-    `);   // <-- THIS backtick + parenthesis must exist
+    `);
 
     initDragDrop();
 }
 
 
 /* =========================
-   SEARCH USERS
+   USERS
 ========================= */
+function renderUsers() {
+    return window.usersHTML || '<p>No users found.</p>';
+}
+
 function filterUsers(search) {
     search = search.toLowerCase();
 
@@ -314,7 +312,7 @@ function initDragDrop() {
 
 
 /* =========================
-   EDIT FUNCTIONS
+   TABLE SWITCH + SEARCH
 ========================= */
 function editHouse(id, location) {
     openManageModal("Edit Household", `
@@ -384,15 +382,6 @@ function editMember(id, userId, houseId, memberType) {
                 <div class="manage-left">
                     <input type="number" name="user_id" value="${userId}" required>
                     <input type="number" name="house_id" value="${houseId}" required>
-
-                    <select name="member_type">
-                        <option value="Family_member" ${memberType === 'Family_member' ? 'selected' : ''}>
-                            Family Member
-                        </option>
-                        <option value="Tenant" ${memberType === 'Tenant' ? 'selected' : ''}>
-                            Tenant
-                        </option>
-                    </select>
                 </div>
 
                 <div class="manage-right">
@@ -402,11 +391,6 @@ function editMember(id, userId, houseId, memberType) {
         </form>
     `);
 }
-
-
-/* =========================
-   TABLE SWITCH + SEARCH
-========================= */
 function switchPanel() {
     const selected = document.getElementById("tableSelector").value;
 
@@ -451,18 +435,18 @@ function csrfToken() {
 }
 
 
-/* =========================
-   GLOBAL EXPORTS
-========================= */
+
 window.openAction = openAction;
 window.closeManageModal = closeManageModal;
 window.closeDropdownModal = closeDropdownModal;
 window.openHouseholdMembers = openHouseholdMembers;
 window.filterUsers = filterUsers;
+window.filterHouseholds = filterHouseholds;
+window.switchPanel = switchPanel;
+window.filterTable = filterTable;
+window.toggleSidebar = toggleSidebar;
+
 window.editHouse = editHouse;
 window.editUser = editUser;
 window.editFamily = editFamily;
 window.editMember = editMember;
-window.switchPanel = switchPanel;
-window.filterTable = filterTable;
-window.toggleSidebar = toggleSidebar;

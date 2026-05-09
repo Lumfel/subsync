@@ -1351,6 +1351,19 @@ receipt modals
     display: flex;
     align-items: center;
 }
+.household-item {
+    cursor: pointer;
+    pointer-events: auto;
+    position: relative;
+    z-index: 5;
+}
+.household-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+    z-index: 4;
+}
 
 .household-item:hover {
     background: rgba(255,255,255,0.14);

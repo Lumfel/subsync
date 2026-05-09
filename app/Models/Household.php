@@ -32,4 +32,5 @@ class Household extends Model
     {
         return $this->hasMany(Member::class, 'house_id');
     }
+    
 }
