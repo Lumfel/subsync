@@ -229,9 +229,14 @@ function openHouseholdMembers(familyName, status, members) {
                     <span>Members: ${members}</span>
                 </div>
 
-                <div id="dropZone" class="drop-zone">
-                    Drag users here
+              <div id="dropZone" class="drop-zone">
+                 Drag users here
                 </div>
+
+                <button onclick="saveMembers()" class="save-members-btn">
+                    Save Changes
+                    </button>
+                
             </div>
 
             <div class="drop-user-panel">
