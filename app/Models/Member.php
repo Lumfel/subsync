@@ -12,15 +12,15 @@ class Member extends Model
         'member_type'
     ];
 
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
+  public function user()
+{
+    return $this->belongsTo(User::class);
+}
 
-    public function household()
-    {
-        return $this->belongsTo(Household::class, 'house_id');
-    }
+public function household()
+{
+    return $this->belongsTo(Household::class, 'house_id', 'id');
+}
 
     
 }

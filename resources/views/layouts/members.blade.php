@@ -49,7 +49,7 @@
        
             <div class="card active">
                 <h3>Members</h3>
-                <p>128</p>
+               <p>{{ $members->count() }}</p>
             </div>
             <div class="card">
                 <a href="/residents">
@@ -69,21 +69,35 @@
             </div>
         </section>
         
-    <div class="res_content " id="res_members">
+    <div class="res_content " id="">
 
 
-    <!-- Card 1 ex 
-    <div class="res_card yt">
-        <div class="thumb">
-            <img src="ChatGPT Image Mar 15, 2026, 07_38_59 AM.png" alt="">
-        </div>
-        <div class="info">
-            <h3 class="ok">Paul Felippe G. Tibo-oc</h3>
-            <h4>Household: Tibo-oc Family</h4>
-            <p class="location">Blk 5 Lot 8</p>
-        </div>
+  @foreach($members as $member)
+<div class="res_card yt">
+    <div class="thumb">
+        @if($member->household && $member->household->image)
+            <img src="{{ asset('storage/' . $member->household->image) }}" alt="">
+        @else
+            <img src="{{ asset('default-house.png') }}" alt="">
+        @endif
     </div>
-    -->
+
+    <div class="info">
+        <h3 class="ok">
+            {{ $member->user->name ?? 'Unknown User' }}
+        </h3>
+
+        <h4>
+            Household:
+            {{ $member->household->location ?? 'No Household' }}
+        </h4>
+
+        <p class="location">
+            Type: {{ $member->member_type }}
+        </p>
+    </div>
+</div>
+@endforeach
 
 </div>
 

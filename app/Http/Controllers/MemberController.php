@@ -42,4 +42,5 @@ class MemberController extends Controller
         Member::findOrFail($id)->delete();
         return redirect('/manage_users');
     }
+    
 }

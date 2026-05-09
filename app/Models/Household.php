@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Status;
 
 class Household extends Model
 {
@@ -19,13 +18,18 @@ class Household extends Model
         return $this->belongsTo(Family::class);
     }
 
-    public function members()
-    {
-        return $this->hasMany(Member::class, 'house_id');
-    }
-
     public function statuses()
     {
         return $this->hasMany(Status::class, 'house_id');
+    }
+
+    public function delinquents()
+    {
+        return $this->hasMany(Delinquent::class, 'house_id');
+    }
+
+    public function householdMembers()
+    {
+        return $this->hasMany(Member::class, 'house_id');
     }
 }

@@ -70,8 +70,42 @@
               
             </div>
         </section>
-        
-     <div class="res_content" id="residents">
+        <div class="res_content">
+    @foreach($households as $household)
+
+        @php
+            $latestStatus = $household->statuses->last();
+        @endphp
+
+        <div class="res_card yt" onclick="openHouseModal({{ $household->id }})">
+
+            <div class="thumb">
+                @if($household->image)
+                    <img src="{{ asset('storage/' . $household->image) }}" alt="">
+                @else
+                    <img src="{{ asset('default-house.png') }}" alt="">
+                @endif
+            </div>
+
+            <div class="info">
+                <h4>
+                    {{ $household->family->family_name ?? 'No Family Assigned' }}
+                </h4>
+
+                <p class="location">{{ $household->location }}</p>
+
+                <p>Members: {{ $household->members }}</p>
+
+                @if($latestStatus)
+                    <p class="reason">{{ $latestStatus->status }}</p>
+                @else
+                    <p class="reason ok">Active</p>
+                @endif
+            </div>
+
+        </div>
+    @endforeach
+</div>
     <!----
 
     <div class="res_card yt">

@@ -61,14 +61,14 @@
             <div class="card">
                 <a href="/members">
                     <h3>Members</h3>
-                    <p>128</p>
+                    <p>{{ $members->count() }}</p>
                 </a>
             </div>
 
             <div class="card">
                 <a href="/residents">
                     <h3>Houses</h3>
-                    <p>96</p>
+                    <p>{{ $households->count() }}</p>
                 </a>
             </div>
         </section>

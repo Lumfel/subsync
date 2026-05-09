@@ -73,8 +73,39 @@
         </section>
         
        <div class="res_content">
+         @foreach($delinquents as $delinquent)
+    <div class="res_card yt">
+        <div class="thumb">
+            @if($delinquent->household && $delinquent->household->image)
+                <img src="{{ asset('storage/' . $delinquent->household->image) }}" alt="">
+            @else
+                <img src="{{ asset('default-house.png') }}" alt="">
+            @endif
+        </div>
 
-    <!-- Card 1 -->
+        <div class="info">
+            <h4>
+                Household #{{ $delinquent->house_id }}
+            </h4>
+
+            <p class="reason">
+                {{ $delinquent->reason }}
+            </p>
+
+            <p class="location">
+                {{ $delinquent->household->location ?? 'No location' }}
+            </p>
+
+            <small>
+                Flagged: {{ \Carbon\Carbon::parse($delinquent->date_flagged)->format('M d, Y') }}
+            </small>
+        </div>
+    </div>
+    @endforeach
+        </div>
+
+<!----       {
+  
     <div class="res_card yt">
         <div class="thumb">
             <img src="ChatGPT Image Mar 14, 2026, 05_18_38 PM.png" alt="">
@@ -86,7 +117,7 @@
         </div>
     </div>
 
-    <!-- Card 2 -->
+ 
     <div class="res_card yt">
         <div class="thumb">
             <img src="ChatGPT Image Mar 15, 2026, 07_38_59 AM.png" alt="">
@@ -98,7 +129,7 @@
         </div>
     </div>
 
-    <!-- Card 3 -->
+
     <div class="res_card yt">
         <div class="thumb">
             <img src="ChatGPT Image Mar 14, 2026, 06_37_33 PM (1).png" alt="">
@@ -109,8 +140,9 @@
             <p class="location">Blk 2 Lot 4</p>
         </div>
     </div>
+}
+--->
 
-</div>
 
 
     </main>
@@ -118,9 +150,7 @@
 </div>
 
 <script>
-function toggleSidebar() {
-    document.querySelector(".sidebar").classList.toggle("active");
-}
+
 </script>
 
 </body>

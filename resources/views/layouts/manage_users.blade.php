@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subsync - Manage Users</title>
 <link rel="stylesheet" href="{{ asset('styles.css') }}">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+
 
 </head>
 <body>
@@ -233,8 +235,8 @@
             @foreach($members as $member)
             <tr>
                 <td>{{ $member->id }}</td>
-                <td>{{ $member->user_id }}</td>
-                <td>{{ $member->house_id }}</td>
+                <td>{{ $member->user->name ?? 'N/A' }}</td>
+               <td>{{ $member->household->location ?? 'N/A' }}</td>
                 <td>{{ $member->member_type }}</td>
             <td>
             <button onclick="editMember(
@@ -261,391 +263,26 @@
     </div>
 
 </section>
-        </section>
+      
         <br><br>
    </main>
    <!-- MANAGE MODAL -->
-<div id="manageModal" class="manage-modal" onclick="closeManageModal()">
+    <div id="manageModal" class="manage-modal" onclick="closeManageModal()">
     <div class="manage-modal-box" onclick="event.stopPropagation()">
-
         <span class="manage-close" onclick="closeManageModal()">✖</span>
-
         <h3 id="manageTitle">Action</h3>
         <div id="manageBody"></div>
-
     </div>
-   
+</div> <!-- THIS WAS MISSING -->
 
+<div id="dropdownModal" class="manage-modal" onclick="closeDropdownModal()">
+    <div class="manage-modal-dropdown-box" onclick="event.stopPropagation()">
+        <span class="manage-close" onclick="closeDropdownModal()">✖</span>
+        <h3 id="dropdownTitle">Manage Members</h3>
+        <div id="dropdownBody"></div>
+    </div>
+</div>
+
+<script src="{{ asset('js/manage_user.js') }}" defer></script>
 </body>
 </html>
-<script>
-function openAction(type){
-    const modal = document.getElementById("manageModal");
-    const title = document.getElementById("manageTitle");
-    const body = document.getElementById("manageBody");
-
-    modal.classList.add("show");
-
-    // 🏠 HOUSEHOLD
-    /*
-  if(type === "household"){
-    title.innerText = "Add Household";
-    body.innerHTML = `
-        <form method="POST" action="/households">
-            @csrf
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input type="text" name="location" placeholder="Blk 3 Lot 12" required>
-                    <input type="number" name="family_id" placeholder="Family ID" required>
-                    <input type="number" name="status_id" placeholder="Status ID" required>
-                    <input type="number" name="members" placeholder="Members Count" required>
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Add</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-    */
-   if(type === "household"){
-    title.innerText = "Add Household";
-
-    body.innerHTML = `
-        <form method="POST" action="/households" enctype="multipart/form-data">
-            @csrf
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input
-                        type="text"
-                        name="location"
-                        placeholder="Blk 3 Lot 12"
-                        required
-                    >
-
-                    <input
-                        type="file"
-                        name="image"
-                        accept="image/png,image/jpeg,image/jpg"
-                    >
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Add Household</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-
-    // 👤 MEMBER
-   else if(type === "member"){
-    title.innerText = "Add Member";
-
-    body.innerHTML = `
-        <form method="POST" action="/members">
-            @csrf
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input type="number" name="user_id" placeholder="User ID" required>
-                    <input type="number" name="house_id" placeholder="House ID" required>
-
-                    <select name="member_type">
-                        <option value="Family_member">Family Member</option>
-                        <option value="Tenant">Tenant</option>
-                    </select>
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Add Member</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-else if(type === "user"){
-    title.innerText = "Add User";
-
-    body.innerHTML = `
-        <form method="POST" action="/users">
-            @csrf
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input
-                        type="text"
-                        name="name"
-                        placeholder="Full Name"
-                        required
-                    >
-
-                    <input
-                        type="email"
-                        name="email"
-                        placeholder="Email"
-                        required
-                    >
-
-                    <input
-                        type="password"
-                        name="password"
-                        placeholder="Password"
-                        required
-                    >
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Add User</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-else if(type === "family"){
-    title.innerText = "Add Family";
-
-    body.innerHTML = `
-        <form method="POST" action="/families">
-            @csrf
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input
-                        type="text"
-                        name="family_name"
-                        placeholder="Family Name"
-                        required
-                    >
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Add Family</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-
-    // ⚠️ STATUS
-   else if(type === "status"){
-    title.innerText = "Change Status";
-
-    body.innerHTML = `
-        <form method="POST" action="/statuses">
-            @csrf
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input type="number" name="house_id" placeholder="House ID" required>
-
-                    <select name="status_type">
-                        <option value="Active">Active</option>
-                        <option value="Warning">Warning</option>
-                        <option value="Delinquent">Delinquent</option>
-                    </select>
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Update</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-    // 🛡️ OFFICER
-    else if(type === "officer"){
-        title.innerText = "Manage Officers";
-        body.innerHTML = `
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input type="text" placeholder="Officer Name">
-                </div>
-                <div class="manage-right">
-                    <button>Assign</button>
-                </div>
-            </div>
-        `;
-    }
-
-    // 📋 VIEW
-    else if(type === "view"){
-        title.innerText = "All Records";
-        body.innerHTML = `
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <p>Display records here</p>
-                </div>
-            </div>
-        `;
-    }
-}
-
-/* CLOSE MODAL */
-function closeManageModal(){
-    document.getElementById("manageModal").classList.remove("show");
-}
-
-/* OPTIONAL SIDEBAR FIX */
-function toggleSidebar(){
-    document.querySelector(".sidebar").classList.toggle("active");
-}
-
-
-
-function editHouse(id, location){
-    const modal = document.getElementById("manageModal");
-    const title = document.getElementById("manageTitle");
-    const body = document.getElementById("manageBody");
-
-    modal.classList.add("show");
-    title.innerText = "Edit Household";
-
-    body.innerHTML = `
-        <form method="POST" action="/households/${id}">
-            @csrf
-            @method('PUT')
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input
-                        type="text"
-                        name="location"
-                        value="${location}"
-                        required
-                    >
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Save Changes</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-function editUser(id, name, email){
-    const modal = document.getElementById("manageModal");
-    const title = document.getElementById("manageTitle");
-    const body = document.getElementById("manageBody");
-
-    modal.classList.add("show");
-    title.innerText = "Edit User";
-
-    body.innerHTML = `
-        <form method="POST" action="/users/${id}">
-            @csrf
-            @method('PUT')
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input type="text" name="name" value="${name}" required>
-                    <input type="email" name="email" value="${email}" required>
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Save Changes</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-
-function editFamily(id, familyName){
-    const modal = document.getElementById("manageModal");
-    const title = document.getElementById("manageTitle");
-    const body = document.getElementById("manageBody");
-
-    modal.classList.add("show");
-    title.innerText = "Edit Family";
-
-    body.innerHTML = `
-        <form method="POST" action="/families/${id}">
-            @csrf
-            @method('PUT')
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input type="text" name="family_name" value="${familyName}" required>
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Save Changes</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-
-function editMember(id, userId, houseId, memberType){
-    const modal = document.getElementById("manageModal");
-    const title = document.getElementById("manageTitle");
-    const body = document.getElementById("manageBody");
-
-    modal.classList.add("show");
-    title.innerText = "Edit Member";
-
-    body.innerHTML = `
-        <form method="POST" action="/members/${id}">
-            @csrf
-            @method('PUT')
-
-            <div class="manage-form-row">
-                <div class="manage-left">
-                    <input type="number" name="user_id" value="${userId}" required>
-                    <input type="number" name="house_id" value="${houseId}" required>
-
-                    <select name="member_type">
-                        <option value="Family_member"
-                            ${memberType === 'Family_member' ? 'selected' : ''}>
-                            Family Member
-                        </option>
-                        <option value="Tenant"
-                            ${memberType === 'Tenant' ? 'selected' : ''}>
-                            Tenant
-                        </option>
-                    </select>
-                </div>
-
-                <div class="manage-right">
-                    <button type="submit">Save Changes</button>
-                </div>
-            </div>
-        </form>
-    `;
-}
-
-
-function switchPanel() {
-    const selected = document.getElementById("tableSelector").value;
-
-    document.querySelectorAll(".table-panel").forEach(panel => {
-        panel.style.display = "none";
-    });
-
-    document.getElementById(selected).style.display = "block";
-
-    document.getElementById("searchBar").value = "";
-    filterTable();
-}
-
-function filterTable() {
-    const input = document.getElementById("searchBar").value.toLowerCase();
-
-    const activePanel = Array.from(
-        document.querySelectorAll(".table-panel")
-    ).find(panel => panel.style.display !== "none");
-
-    if (!activePanel) return;
-
-    const rows = activePanel.querySelectorAll("tbody tr");
-
-    rows.forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(input)
-            ? ""
-            : "none";
-    });
-}
-</script>

@@ -9,17 +9,18 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::create('households', function (Blueprint $table) {
-            $table->id();
-            $table->string('location');
-            $table->foreignId('family_id')->constrained('families')->onDelete('cascade');
-            $table->integer('members')->default(1);
-            $table->timestamp('date_added')->useCurrent();
-            $table->timestamps();
-        });
-    }
+public function up(): void
+{
+    Schema::create('households', function (Blueprint $table) {
+        $table->id();
+        $table->string('location');
+        $table->foreignId('family_id')->nullable()->constrained('families')->onDelete('cascade');
+        $table->integer('members')->default(1);
+        $table->string('image')->nullable();
+        $table->timestamp('date_added')->useCurrent();
+        $table->timestamps();
+    });
+}
 
     /**
      * Reverse the migrations.

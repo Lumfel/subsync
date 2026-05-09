@@ -3,13 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Household;
 
-class Status extends Model
+class Delinquent extends Model
 {
     protected $fillable = [
         'house_id',
-        'status',
-        'reason'
+        'reason',
+        'date_flagged'
     ];
 
     public function household()

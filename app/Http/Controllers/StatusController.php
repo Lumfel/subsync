@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Status;
+use App\Models\Delinquent;
 use Illuminate\Http\Request;
 
 class StatusController extends Controller
@@ -15,7 +16,21 @@ class StatusController extends Controller
             'reason' => 'nullable|string'
         ]);
 
-        Status::create($request->all());
+        $status = Status::create([
+            'house_id' => $request->house_id,
+            'status' => $request->status,
+            'reason' => $request->reason
+        ]);
+
+        if ($request->status === 'Delinquent') {
+            Delinquent::firstOrCreate(
+                ['house_id' => $request->house_id],
+                [
+                    'reason' => $request->reason ?? 'Status marked delinquent',
+                    'date_flagged' => now(),
+                ]
+            );
+        }
 
         return redirect('/manage_users');
     }
@@ -28,6 +43,20 @@ class StatusController extends Controller
             'status' => $request->status,
             'reason' => $request->reason
         ]);
+
+        if ($request->status === 'Delinquent') {
+            Delinquent::firstOrCreate(
+                ['house_id' => $status->house_id],
+                [
+                    'reason' => $request->reason ?? 'Status marked delinquent',
+                    'date_flagged' => now(),
+                ]
+            );
+        }
+
+        if ($request->status === 'Active') {
+            Delinquent::where('house_id', $status->house_id)->delete();
+        }
 
         return redirect('/manage_users');
     }

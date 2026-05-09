@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HouseholdController;
 use App\Http\Controllers\MemberController;
@@ -8,13 +9,15 @@ use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\FamilyController;
 
-
-
-
+use App\Models\User;
+use App\Models\Family;
+use App\Models\Household;
+use App\Models\Member;
+use App\Models\Delinquent;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| RESOURCE ROUTES
 |--------------------------------------------------------------------------
 */
 Route::resource('households', HouseholdController::class);
@@ -23,66 +26,111 @@ Route::resource('families', FamilyController::class);
 Route::resource('members', MemberController::class);
 Route::resource('statuses', StatusController::class);
 
-Route::post('/families', [FamilyController::class, 'store']);
-Route::put('/families/{id}', [FamilyController::class, 'update']);
-Route::delete('/families/{id}', [FamilyController::class, 'destroy']);
 
-Route::get('/', function () {
-    return view('layouts.main');
-})->name('dashboard');
-
-/* AUTH */
+/*
+|--------------------------------------------------------------------------
+| AUTH
+|--------------------------------------------------------------------------
+*/
 Route::get('/login', function () {
     return view('layouts.login_1');
-})->name('login_1');
+})->name('login');
+
 Route::post('/login', [AuthController::class, 'login']);
-/* STATIC PAGES */
-Route::get('/analytics', function () {
-    return view('layouts.analytics');
-})->name('analytics');
 
-Route::get('/finance', function () {
-    return view('layouts.finance');
-})->name('finance');
 
+/*
+|--------------------------------------------------------------------------
+| DASHBOARD
+|--------------------------------------------------------------------------
+*/
+Route::get('/', function () {
+    $members = Member::all();
+    $households = Household::all();
+
+    return view('layouts.main', compact('members', 'households'));
+})->name('dashboard');
+
+
+/*
+|--------------------------------------------------------------------------
+| STATIC PAGES
+|--------------------------------------------------------------------------
+*/
+Route::view('/analytics', 'layouts.analytics')->name('analytics');
+Route::view('/finance', 'layouts.finance')->name('finance');
+Route::view('/mapping', 'layouts.mapping')->name('mapping');
+Route::view('/reports', 'layouts.reports')->name('reports');
+
+
+/*
+|--------------------------------------------------------------------------
+| MEMBERS PAGE
+|--------------------------------------------------------------------------
+*/
 Route::get('/members', function () {
-    return view('layouts.members');
+    $members = Member::with(['user', 'household'])->get();
+
+    return view('layouts.members', compact('members'));
 })->name('members');
 
+
+/*
+|--------------------------------------------------------------------------
+| DELINQUENTS PAGE
+|--------------------------------------------------------------------------
+*/
 Route::get('/deliquents', function () {
-    return view('layouts.deliquents');
+    $delinquents = Delinquent::with('household')->get();
+
+    return view('layouts.deliquents', compact('delinquents'));
 })->name('delinquents');
 
+
+/*
+|--------------------------------------------------------------------------
+| RESIDENTS PAGE
+|--------------------------------------------------------------------------
+*/
 Route::get('/residents', function () {
-    return view('layouts.residents');
+    $households = Household::with([
+        'family',
+        'statuses',
+        'delinquents',
+        'householdMembers'
+    ])->get();
+
+    return view('layouts.residents', compact('households'));
 })->name('residents');
 
-Route::get('/mapping', function () {
-    return view('layouts.mapping');
-})->name('mapping');
 
-use App\Models\User;
-use App\Models\Family;
-use App\Models\Household;
-use App\Models\Member;
-
+/*
+|--------------------------------------------------------------------------
+| MANAGE USERS
+|--------------------------------------------------------------------------
+*/
 Route::get('/manage_users', function () {
     return view('layouts.manage_users', [
         'users' => User::all(),
         'families' => Family::all(),
         'households' => Household::all(),
-        'members' => Member::all(),
+        'members' => Member::with(['user', 'household'])->get(),
     ]);
+})->name('manage_users');
+
+
+/*
+|--------------------------------------------------------------------------
+| TEST ROUTE
+|--------------------------------------------------------------------------
+*/
+Route::get('/test-relations', function () {
+    $household = Household::with([
+        'family',
+        'statuses',
+        'delinquents',
+        'householdMembers'
+    ])->first();
+
+    return $household;
 });
-
-Route::get('/reports', function () {
-    return view('layouts.reports');
-})->name('reports');
-
-/* CRUD */
-Route::post('/households', [HouseholdController::class, 'store']);
-Route::put('/households/{id}', [HouseholdController::class, 'update']);
-Route::delete('/households/{id}', [HouseholdController::class, 'destroy']);
-Route::get('/households/{id}/edit', [HouseholdController::class, 'edit']);
-Route::post('/members', [MemberController::class, 'store']);
-Route::post('/statuses', [StatusController::class, 'store']);
