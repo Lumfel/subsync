@@ -7,31 +7,48 @@ use App\Models\Member;
 
 class MemberController extends Controller
 {
-    public function store(Request $request)
+    public function index()
     {
-        $request->validate([
-            'user_id' => 'required|integer',
-            'house_id' => 'required|integer',
-            'member_type' => 'required|string'
-        ]);
-
-        Member::create([
-            'user_id' => $request->user_id,
-            'house_id' => $request->house_id,
-            'member_type' => $request->member_type
-        ]);
-
-        return redirect('/manage_users');
+        $members = Member::with(['user', 'household'])->get();
+        return view('layouts.members', compact('members'));
     }
 
+public function store(Request $request)
+{
+    $request->validate([
+        'house_id' => 'required|integer',
+        'users' => 'required|array',
+        'member_type' => 'required|string',
+        'family_id' => 'nullable|integer'
+    ]);
+
+    foreach ($request->users as $userId) {
+        Member::firstOrCreate(
+            [
+                'user_id' => $userId,
+                'house_id' => $request->house_id
+            ],
+            [
+                'family_id' => $request->family_id,
+                'member_type' => $request->member_type,
+                'date_added' => now()
+            ]
+        );
+    }
+
+    return response()->json([
+        'success' => true
+    ]);
+}
     public function update(Request $request, $id)
     {
         $member = Member::findOrFail($id);
 
-        $member->update([
-            'user_id' => $request->user_id,
-            'house_id' => $request->house_id,
-            'member_type' => $request->member_type
+      $member->update([
+        'user_id' => $request->user_id,
+        'house_id' => $request->house_id,
+        'family_id' => $request->family_id,
+        'member_type' => $request->member_type
         ]);
 
         return redirect('/manage_users');
@@ -42,5 +59,4 @@ class MemberController extends Controller
         Member::findOrFail($id)->delete();
         return redirect('/manage_users');
     }
-    
 }

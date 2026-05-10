@@ -9,7 +9,8 @@ class Member extends Model
     protected $fillable = [
         'user_id',
         'house_id',
-        'member_type'
+        'member_type',
+        'date_added'
     ];
 
   public function user()
@@ -23,4 +24,8 @@ public function household()
 }
 
     
+public function family()
+{
+    return $this->belongsTo(FamilyModel::class, 'family_id');
+}
 }

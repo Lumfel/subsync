@@ -1049,7 +1049,7 @@ receipt modals
 }
 
 /* Button */
-.manage-right button {
+.manage-right button, .drop-user-panel button {
     width: 100%;
     padding: 12px;
     border-radius: 12px;
@@ -1060,7 +1060,7 @@ receipt modals
     transition: 0.3s;
 }
 
-.manage-right button:hover {
+.manage-right button:hover, .drop-user-panel button:hover {
     background: rgba(255,255,255,0.2);
 }
 

@@ -68,11 +68,6 @@ Route::view('/reports', 'layouts.reports')->name('reports');
 | MEMBERS PAGE
 |--------------------------------------------------------------------------
 */
-Route::get('/members', function () {
-    $members = Member::with(['user', 'household'])->get();
-
-    return view('layouts.members', compact('members'));
-})->name('members');
 
 
 /*

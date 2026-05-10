@@ -204,7 +204,8 @@ function bindHouseholdClicks() {
             openHouseholdMembers(
                 this.dataset.family,
                 this.dataset.status,
-                this.dataset.members
+                this.dataset.members,
+                this.dataset.id
             );
         };
     });
@@ -214,7 +215,7 @@ function bindHouseholdClicks() {
 /* =========================
    HOUSEHOLD MEMBER PANEL
 ========================= */
-function openHouseholdMembers(familyName, status, members) {
+function openHouseholdMembers(familyName, status, members, houseId) {
     openDropdown(`
         <div class="drop-layout">
 
@@ -229,14 +230,14 @@ function openHouseholdMembers(familyName, status, members) {
                     <span>Members: ${members}</span>
                 </div>
 
-              <div id="dropZone" class="drop-zone">
-                 Drag users here
-                </div>
+                <select id="familySelect" class="family-select">
+                    <option value="">Select Family</option>
+                    ${window.familiesHTML || ''}
+                </select>
 
-                <button onclick="saveMembers()" class="save-members-btn">
-                    Save Changes
-                    </button>
-                
+                <div id="dropZone" class="drop-zone">
+                    Drag users here
+                </div>
             </div>
 
             <div class="drop-user-panel">
@@ -252,13 +253,66 @@ function openHouseholdMembers(familyName, status, members) {
                 <div class="user-list">
                     ${renderUsers()}
                 </div>
+                <select class="member-type">
+                <option value="Head">Head</option>
+                <option value="Tenant">Tenant</option>
+                <option value="Family_member">Family Member</option>
+                <option value="Spouse">Spouse</option>
+                <option value="Child">Child</option>
+                </select>
+
+                <button onclick="saveMembers(${houseId})" class="save-btn">
+                    Save Changes
+                </button>
             </div>
         </div>
     `);
 
     initDragDrop();
 }
+function saveMembers(houseId) {
+    const droppedUsers = document.querySelectorAll('#dropZone .user-item');
+    const memberType = document.querySelector('.member-type').value;
+    const familyId = document.getElementById('familySelect').value;
 
+    const users = [];
+
+    droppedUsers.forEach(user => {
+        users.push(user.dataset.id);
+    });
+
+    fetch('/members', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken(),
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            house_id: houseId,
+            users: users,
+            member_type: memberType,
+            family_id: familyId
+        })
+    })
+.then(async res => {
+    const data = await res.json();
+
+    console.log('STATUS:', res.status);
+    console.log('RESPONSE:', data);
+
+    if (!res.ok) {
+        alert('Save failed');
+        return;
+    }
+
+    alert('Saved successfully!');
+    location.reload();
+})
+.catch(err => {
+    console.error(err);
+});
+}
 
 /* =========================
    USERS
@@ -304,14 +358,18 @@ function initDragDrop() {
 
         const dragged = document.querySelector(".dragging");
 
-        if (dragged) {
-            const clone = dragged.cloneNode(true);
-            clone.classList.remove("dragging");
-            clone.draggable = false;
+       if (dragged) {
+    const clone = dragged.cloneNode(true);
+    clone.classList.remove("dragging");
+    clone.draggable = false;
 
-            dropZone.appendChild(clone);
-            dragged.remove();
-        }
+    clone.innerHTML += `
+        <span class="remove-user" onclick="this.parentElement.remove()">✖</span>
+    `;
+
+    dropZone.appendChild(clone);
+    dragged.remove();
+}
     });
 }
 
