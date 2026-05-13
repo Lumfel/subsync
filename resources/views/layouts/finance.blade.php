@@ -140,14 +140,16 @@
         </section>
         <section class="cards">
             <div class="card">
-            <h3>Upload Excel File</h3>
+            <h3>Upload File</h3>
             <input type="file" id="excelFile" accept=".xlsx, .xls">
             <button onclick="uploadExcel()">Upload</button>
             <p id="fileName"></p>
             </div>
             <div class="cards-main">
+            <!--
             <div class="card" style="cursor: pointer;" onclick="openModal()">
             <h1>Manual</h1>
+            --->
             </div>
             </div>
             
