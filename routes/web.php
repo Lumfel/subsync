@@ -20,7 +20,7 @@ Route::get('/', function () {
 
 // Resident / Officer login
 Route::get('/login', function () {
-    return view('layouts.login_1');
+    return view('layouts.login_residen_officers');
 })->name('login');
 
 Route::post('/login', [AuthController::class, 'residentLogin'])->name('login.post');
