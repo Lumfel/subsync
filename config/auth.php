@@ -1,6 +1,8 @@
 <?php
 
-use App\Models\User;
+use App\Models\Admin;
+use App\Models\Officer;
+use App\Models\Resident;
 
 return [
 
@@ -16,8 +18,8 @@ return [
     */
 
     'defaults' => [
-        'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'guard' => env('AUTH_GUARD', 'resident'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'residents'),
     ],
 
     /*
@@ -40,7 +42,19 @@ return [
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'residents',
+        ],
+        'resident' => [
+            'driver' => 'session',
+            'provider' => 'residents',
+        ],
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'admins',
+        ],
+        'officer' => [
+            'driver' => 'session',
+            'provider' => 'officers',
         ],
     ],
 
@@ -62,15 +76,18 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'residents' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => Resident::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'admins' => [
+            'driver' => 'eloquent',
+            'model' => Admin::class,
+        ],
+        'officers' => [
+            'driver' => 'eloquent',
+            'model' => Officer::class,
+        ],
     ],
 
     /*

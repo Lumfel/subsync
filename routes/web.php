@@ -1,131 +1,155 @@
 <?php
 
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\FinancialController;
+use App\Http\Controllers\IssueController;
+use App\Http\Controllers\MapController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\OfficerController;
+use App\Http\Controllers\OfficerFileController;
+use App\Http\Controllers\RecommendationController;
+use App\Http\Controllers\ResidentController;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\HouseholdController;
-use App\Http\Controllers\MemberController;
-use App\Http\Controllers\StatusController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\FamilyController;
+// Root redirect
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
-use App\Models\User;
-use App\Models\Family;
-use App\Models\Household;
-use App\Models\Member;
-use App\Models\Delinquent;
-
-/*
-|--------------------------------------------------------------------------
-| RESOURCE ROUTES
-|--------------------------------------------------------------------------
-*/
-Route::resource('households', HouseholdController::class);
-Route::resource('users', UserController::class);
-Route::resource('families', FamilyController::class);
-Route::resource('members', MemberController::class);
-Route::resource('statuses', StatusController::class);
-
-
-/*
-|--------------------------------------------------------------------------
-| AUTH
-|--------------------------------------------------------------------------
-*/
+// Resident / Officer login
 Route::get('/login', function () {
     return view('layouts.login_1');
 })->name('login');
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'residentLogin'])->name('login.post');
 
+// Admin login
+Route::get('/admin/login', function () {
+    return view('layouts.login_admin');
+})->name('admin.login');
 
-/*
-|--------------------------------------------------------------------------
-| DASHBOARD
-|--------------------------------------------------------------------------
-*/
-Route::get('/', function () {
-    $members = Member::all();
-    $households = Household::all();
+Route::post('/admin/login', [AuthController::class, 'adminLogin'])->name('admin.login.post');
 
-    return view('layouts.main', compact('members', 'households'));
-})->name('dashboard');
-
-
-/*
-|--------------------------------------------------------------------------
-| STATIC PAGES
-|--------------------------------------------------------------------------
-*/
-Route::view('/analytics', 'layouts.analytics')->name('analytics');
-Route::view('/finance', 'layouts.finance')->name('finance');
-Route::view('/mapping', 'layouts.mapping')->name('mapping');
-Route::view('/reports', 'layouts.reports')->name('reports');
-
-
-/*
-|--------------------------------------------------------------------------
-| MEMBERS PAGE
-|--------------------------------------------------------------------------
-*/
-
-
-/*
-|--------------------------------------------------------------------------
-| DELINQUENTS PAGE
-|--------------------------------------------------------------------------
-*/
-Route::get('/deliquents', function () {
-    $delinquents = Delinquent::with('household')->get();
-
-    return view('layouts.deliquents', compact('delinquents'));
-})->name('delinquents');
-
-
-/*
-|--------------------------------------------------------------------------
-| RESIDENTS PAGE
-|--------------------------------------------------------------------------
-*/
-Route::get('/residents', function () {
-    $households = Household::with([
-        'family',
-        'statuses',
-        'delinquents',
-        'householdMembers'
-    ])->get();
-
-    return view('layouts.residents', compact('households'));
-})->name('residents');
-
-
-/*
-|--------------------------------------------------------------------------
-| MANAGE USERS
-|--------------------------------------------------------------------------
-*/
-Route::get('/manage_users', function () {
-    return view('layouts.manage_users', [
-        'users' => User::all(),
-        'families' => Family::all(),
-        'households' => Household::all(),
-        'members' => Member::with(['user', 'household'])->get(),
+// Protected views
+Route::get('/dashboard', function () {
+    return view('layouts.admin-dashboard', [
+        'adminName' => session('admin_name', 'Admin'),
+        'adminId'   => session('admin_id'),
     ]);
-})->name('manage_users');
+})->name('dashboard')->middleware('admin.auth');
 
+Route::get('/officer-portal', function () {
+    $officer = \Illuminate\Support\Facades\Auth::guard('officer')->user();
+    return view('layouts.officer-portal', [
+        'officerName' => $officer?->name ?? 'Officer',
+        'officerId'   => $officer?->id,
+        'officerRole' => $officer?->role_description ?? 'HOA Officer',
+    ]);
+})->name('officer.portal')->middleware('officer.auth');
 
-/*
-|--------------------------------------------------------------------------
-| TEST ROUTE
-|--------------------------------------------------------------------------
-*/
-Route::get('/test-relations', function () {
-    $household = Household::with([
-        'family',
-        'statuses',
-        'delinquents',
-        'householdMembers'
-    ])->first();
+Route::get('/residents', function () {
+    $resident = \Illuminate\Support\Facades\Auth::guard('resident')->user();
+    $household = $resident?->house_id
+        ? \App\Models\Household::query()->find($resident->house_id)
+        : null;
+    return view('layouts.Residents', [
+        'residentName'    => $resident?->name ?? 'Resident',
+        'residentId'      => $resident?->id,
+        'houseId'         => $resident?->house_id,
+        'blockLot'        => $household?->block_lot_number ?? '',
+        'residentBalance' => $resident?->current_balance ?? 0,
+    ]);
+})->name('residents')->middleware('auth:resident');
 
-    return $household;
+// Logout
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// ═══ API ROUTES ═══
+
+// Map API
+Route::prefix('api/map')->group(function () {
+    Route::get('/households', [MapController::class, 'households']);
+    Route::get('/facilities', [MapController::class, 'facilities']);
+    Route::get('/issues', [MapController::class, 'issues']);
+    Route::post('/facility', [MapController::class, 'storeFacility']);
+    Route::put('/facility/{id}', [MapController::class, 'updateFacility']);
+    Route::delete('/facility/{id}', [MapController::class, 'deleteFacility']);
+    Route::put('/household/{id}/location', [MapController::class, 'updateHouseholdLocation']);
+});
+
+// Residents & Households API
+Route::prefix('api')->group(function () {
+    // Stats
+    Route::get('/stats', [ResidentController::class, 'stats']);
+
+    // Residents
+    Route::get('/residents', [ResidentController::class, 'index']);
+    Route::post('/residents', [ResidentController::class, 'store']);
+    Route::put('/residents/{id}', [ResidentController::class, 'update']);
+    Route::delete('/residents/{id}', [ResidentController::class, 'destroy']);
+
+    // Households
+    Route::get('/households', [ResidentController::class, 'households']);
+    Route::post('/households', [ResidentController::class, 'storeHousehold']);
+    Route::put('/households/{id}', [ResidentController::class, 'updateHousehold']);
+    Route::delete('/households/{id}', [ResidentController::class, 'destroyHousehold']);
+
+    // Household Members
+    Route::get('/household-members', [ResidentController::class, 'members']);
+    Route::post('/household-members', [ResidentController::class, 'storeMember']);
+    Route::delete('/household-members/{id}', [ResidentController::class, 'destroyMember']);
+
+    // Announcements
+    Route::get('/announcements', [AnnouncementController::class, 'index']);
+    Route::post('/announcements', [AnnouncementController::class, 'store']);
+    Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+    Route::post('/announcements/{id}/view', [AnnouncementController::class, 'markViewed']);
+
+    // Issues
+    Route::get('/issues', [IssueController::class, 'index']);
+    Route::get('/issues/my', [IssueController::class, 'myIssues']);
+    Route::post('/issues', [IssueController::class, 'store']);
+    Route::put('/issues/{id}/status', [IssueController::class, 'updateStatus']);
+    Route::post('/issues/{id}/respond', [IssueController::class, 'respond']);
+
+    // Financial
+    Route::get('/financial', [FinancialController::class, 'index']);
+    Route::get('/financial/my', [FinancialController::class, 'myRecords']);
+    Route::get('/financial/summary', [FinancialController::class, 'summary']);
+    Route::get('/financial/payments', [FinancialController::class, 'payments']);
+    Route::post('/financial', [FinancialController::class, 'store']);
+
+    // Financial Reports (monthly treasurer receipts)
+    Route::get('/financial-reports', [FinancialController::class, 'reportIndex']);
+    Route::post('/financial-reports', [FinancialController::class, 'reportStore']);
+    Route::delete('/financial-reports/{id}', [FinancialController::class, 'reportDestroy']);
+
+    // Families
+    Route::get('/families', [FamilyController::class, 'index']);
+    Route::delete('/families/{id}', [FamilyController::class, 'destroy']);
+
+    // Recommendations
+    Route::get('/recommendations', [RecommendationController::class, 'index']);
+    Route::get('/recommendations/my', [RecommendationController::class, 'myRecs']);
+    Route::post('/recommendations', [RecommendationController::class, 'store']);
+    Route::put('/recommendations/{id}/status', [RecommendationController::class, 'updateStatus']);
+
+    // Officers
+    Route::get('/officers', [OfficerController::class, 'index']);
+    Route::post('/officers', [OfficerController::class, 'store']);
+    Route::put('/officers/{id}', [OfficerController::class, 'update']);
+    Route::delete('/officers/{id}', [OfficerController::class, 'destroy']);
+
+    // Messages  (static routes MUST come before wildcard {convId})
+    Route::get('/messages/threads', [MessageController::class, 'threads']);
+    Route::post('/messages/start', [MessageController::class, 'start']);
+    Route::get('/messages/{convId}', [MessageController::class, 'show']);
+    Route::post('/messages/{convId}', [MessageController::class, 'send']);
+
+    // Officer Files
+    Route::get('/officer-files', [OfficerFileController::class, 'index']);
+    Route::post('/officer-files', [OfficerFileController::class, 'store']);
+    Route::delete('/officer-files/{id}', [OfficerFileController::class, 'destroy']);
 });

@@ -7,6 +7,19 @@ use App\Models\Family;
 
 class FamilyController extends Controller
 {
+    /** GET /api/families */
+    public function index()
+    {
+        try {
+            $families = Family::select('id', 'family_name', 'family_head', 'members')
+                ->orderBy('family_name')
+                ->get();
+            return response()->json($families);
+        } catch (\Exception $e) {
+            return response()->json([]);
+        }
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -36,6 +49,6 @@ class FamilyController extends Controller
     public function destroy($id)
     {
         Family::findOrFail($id)->delete();
-        return redirect('/manage_users');
+        return response()->json(['success' => true]);
     }
 }
