@@ -53,7 +53,9 @@ body {
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: rgba(0,0,0,0.38);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
@@ -714,19 +716,49 @@ select option { background: #1a120d; color: var(--text); }
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
-  .sidebar { position:fixed; left:-100%; top:0; height:100%; z-index:50; transition:left 0.3s; }
-  .sidebar.open { left:0; }
-  .menu-toggle { display:block; }
-  .main { margin-left:0; }
-  .graph-grid { grid-template-columns:1fr; }
-  .graph-grid-wide { grid-template-columns:1fr; }
-  .finance-stats { grid-template-columns:1fr 1fr; }
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    height: 100%;
+    z-index: 200;
+    transition: left 0.3s ease;
+    background: rgba(0,0,0,0.72);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 4px 0 32px rgba(0,0,0,0.6);
+  }
+  .sidebar.open { left: 0; }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 199;
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-overlay.show { display: block; }
+  .menu-toggle { display: block; }
+  .main { margin-left: 0; }
+  .topbar { position: sticky; top: 0; z-index: 100; }
+  .topbar-title { font-size: 14px; }
+  .topbar-actions .topbar-btn:not(.primary) { display: none; }
+  .content { padding: 16px 14px; }
+  .graph-grid { grid-template-columns: 1fr; }
+  .graph-grid-wide { grid-template-columns: 1fr; }
+  .finance-stats { grid-template-columns: 1fr 1fr; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .msg-layout { flex-direction: column; height: auto; }
+  .msg-sidebar { width: 100%; height: auto; max-height: 200px; }
+  .msg-body { min-height: 260px; max-height: 320px; }
 }
 </style>
 </head>
 <body>
 
 <!-- ═══ SIDEBAR ═══ -->
+ <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-logo">
@@ -775,7 +807,7 @@ select option { background: #1a120d; color: var(--text); }
 <main class="main">
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;">
-      <button class="menu-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+   <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
       <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
     </div>
     <div class="topbar-actions">
@@ -1682,7 +1714,9 @@ const panelTitles={
   manageusers:'Manage Users',officers:'Officers',recommendations:'Recommendations',analytics:'Analytics',
   mapping:'Maps · Terra Nova',reports:'Reports & Files'
 };
+
 function nav(name, el){
+  if(window.innerWidth <= 768) closeSidebar();
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const panel=document.getElementById('panel-'+name);
@@ -2862,6 +2896,20 @@ renderReceipts();
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
+  function toggleSidebar(){
+  const sb  = document.getElementById('sidebar');
+  const ov  = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('menuToggle');
+  const isOpen = sb.classList.contains('open');
+  sb.classList.toggle('open');
+  ov.classList.toggle('show');
+  btn.textContent = isOpen ? '☰' : '✕';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+  document.getElementById('menuToggle').textContent = '☰';
+}
 /* ══════════════ LEAFLET MAP ══════════════ */
 const MAP_CENTER = [10.62269, 122.96134];
 let mapInst = null, layerHouseholds, layerFacilities, layerIssues, layerHeatmap;
