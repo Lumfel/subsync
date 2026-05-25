@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Household;
 use App\Models\HouseholdMember;
 use App\Models\Resident;
+use App\Models\Delinquent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -110,9 +111,22 @@ class ResidentController extends Controller
         $data = $request->validate([
             'block_lot_number' => 'sometimes|required|string|max:50|unique:households,block_lot_number,' . $id,
             'status'           => 'sometimes|in:Active,Inactive,Delinquent',
+            'reason'           => 'nullable|string|max:255',
         ]);
 
-        $household->update($data);
+        $household->update(\Illuminate\Support\Arr::except($data, ['reason']));
+
+        if (($data['status'] ?? null) === 'Delinquent') {
+            Delinquent::updateOrCreate(
+                ['house_id' => $id],
+                [
+                    'reason'       => $data['reason'] ?? 'Status marked delinquent',
+                    'date_flagged' => now()->toDateString(),
+                ]
+            );
+        } elseif (isset($data['status']) && in_array($data['status'], ['Active', 'Inactive'])) {
+            Delinquent::where('house_id', $id)->delete();
+        }
 
         return response()->json(['success' => true, 'household' => $household->fresh()]);
     }

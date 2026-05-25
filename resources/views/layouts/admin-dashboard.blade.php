@@ -1537,7 +1537,7 @@ select option { background: #1a120d; color: var(--text); }
     </div>
     <div class="f-row">
       <div class="f-field"><span class="f-label">New Status</span>
-        <select id="statusHNew"><option>Active</option><option>Inactive</option><option>Suspended</option><option>Under Review</option></select>
+        <select id="statusHNew"><option>Active</option><option>Inactive</option><option>Delinquent</option></select>
       </div>
     </div>
     <div class="f-row">
@@ -2178,10 +2178,12 @@ async function saveChangeStatus(){
   const status=document.getElementById('statusHNew').value;
   const remarks=document.getElementById('statusHRemarks').value.trim();
   if(!id){showToast('⚠ No household selected.');return;}
-  const res=await apiPut('/api/households/'+id,{status});
+  const reason=document.getElementById('statusHReason').value;
+  const res=await apiPut('/api/households/'+id,{status,reason});
   if(res.success){
     closeModal('muChangeStatus');
     await loadManageData();
+    loadAllData();
     showToast('✅ Household status updated to '+status+'.');
   } else {
     showToast('⚠ '+(res.message||'Failed to update status.'));
@@ -2294,8 +2296,13 @@ async function addResident(){
 
   let house_id=null;
   if(block_lot_number){
-    const hRes=await apiPost('/api/households',{block_lot_number,status:'Active'});
-    if(hRes.success) house_id=hRes.household.id;
+    const existing=households.find(h=>h.block_lot_number.toLowerCase()===block_lot_number.toLowerCase());
+    if(existing){
+      house_id=existing.id;
+    } else {
+      const hRes=await apiPost('/api/households',{block_lot_number,status:'Active'});
+      if(hRes.success) house_id=hRes.household.id;
+    }
   }
 
   if(!password){showToast('⚠ Password is required.');return;}
