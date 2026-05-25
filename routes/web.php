@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\FinancialController;
 use App\Http\Controllers\IssueController;
@@ -68,6 +69,9 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // ═══ API ROUTES ═══
 
+// Combined dashboard data (single request replaces 11+ parallel calls)
+Route::get('/api/dashboard-data', [DashboardController::class, 'data']);
+
 // Map API
 Route::prefix('api/map')->group(function () {
     Route::get('/households', [MapController::class, 'households']);
@@ -124,6 +128,7 @@ Route::prefix('api')->group(function () {
     Route::get('/financial/summary', [FinancialController::class, 'summary']);
     Route::get('/financial/payments', [FinancialController::class, 'payments']);
     Route::post('/financial', [FinancialController::class, 'store']);
+    Route::delete('/financial/{id}', [FinancialController::class, 'destroy']);
 
     // Financial Reports (monthly treasurer receipts)
     Route::get('/financial-reports', [FinancialController::class, 'reportIndex']);

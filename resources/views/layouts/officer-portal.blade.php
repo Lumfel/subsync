@@ -340,6 +340,13 @@ select option { background: #0a0e1a; color: var(--text); }
 /* ── TOAST ── */
 #toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(18,16,26,0.96); border:1px solid var(--glass-border); backdrop-filter:blur(12px); color:var(--text); font-size:13px; padding:10px 22px; border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s, transform 0.25s; z-index:999; white-space:nowrap; }
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+/* ── Live Announcement Banner ── */
+#annNotif { position:fixed; top:-90px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,rgba(30,22,50,0.98),rgba(18,16,26,0.98)); border:1px solid rgba(122,180,240,0.35); backdrop-filter:blur(14px); color:var(--text); font-size:13px; padding:10px 14px 10px 16px; border-radius:14px; z-index:9999; display:flex; align-items:center; gap:10px; max-width:420px; box-shadow:0 4px 24px rgba(0,0,0,0.45); transition:top 0.38s cubic-bezier(.22,.68,0,1.2); }
+#annNotif.show { top:18px; }
+#annNotif .ann-notif-title { font-weight:600; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#annNotif .ann-meta { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
+#annNotif .btn-view { background:var(--accent); color:#fff; border:none; padding:5px 11px; border-radius:8px; font-size:11px; cursor:pointer; }
+#annNotif .btn-close { background:rgba(255,255,255,0.08); color:var(--text-dim); border:none; padding:5px 9px; border-radius:8px; font-size:11px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -622,6 +629,15 @@ select option { background: #0a0e1a; color: var(--text); }
 </div><!-- end .page -->
 
 <div id="toast"></div>
+<div id="annNotif">
+  <span style="font-size:18px;">📢</span>
+  <div style="flex:1;min-width:0;">
+    <div class="ann-meta">New Announcement</div>
+    <div class="ann-notif-title" id="annNotifTitle">—</div>
+  </div>
+  <button class="btn-view" id="annNotifViewBtn">View</button>
+  <button class="btn-close" onclick="document.getElementById('annNotif').classList.remove('show')">✕</button>
+</div>
 
 <script>
 /* ══ UTILS ══ */
@@ -658,6 +674,7 @@ let adminAnnouncements=[];
 let myAnnouncements=[];
 let officerIssues=[];
 let sentFiles=[];
+let lastAnnouncementId=0;
 
 const csrfToken=()=>document.querySelector('meta[name=csrf-token]').content;
 async function apiGet(url){const r=await fetch(url,{headers:{'Accept':'application/json'}});return r.json();}
@@ -674,6 +691,7 @@ async function loadOfficerData(){
     fetch('/api/residents').then(r=>r.json()).catch(()=>[]),
   ]);
   adminAnnouncements=ann;
+  if(ann.length) lastAnnouncementId=ann[0].id;
   myAnnouncements=ann.filter(a=>a.posted_by&&a.posted_by==='{{ $officerName }}');
   officerIssues=iss;
   renderOverviewAnn();
@@ -1022,6 +1040,36 @@ async function deleteSentFile(id){
 
 /* ══ INIT ══ */
 loadOfficerData();
+
+function showAnnBanner(ann){
+  document.getElementById('annNotifTitle').textContent=ann.title;
+  const notif=document.getElementById('annNotif');
+  notif.classList.add('show');
+  clearTimeout(notif._t);
+  notif._t=setTimeout(()=>notif.classList.remove('show'),8000);
+}
+
+document.getElementById('annNotifViewBtn').onclick=()=>{
+  document.getElementById('annNotif').classList.remove('show');
+  switchTab('announcements');
+};
+
+setInterval(async()=>{
+  if(document.hidden) return;
+  try{
+    const data=await fetch('/api/announcements').then(r=>r.json());
+    if(!Array.isArray(data)||!data.length) return;
+    if(data[0].id>lastAnnouncementId){
+      const newOnes=data.filter(a=>a.id>lastAnnouncementId);
+      lastAnnouncementId=data[0].id;
+      adminAnnouncements=data;
+      myAnnouncements=data.filter(a=>a.posted_by&&a.posted_by==='{{ $officerName }}');
+      renderOverviewAnn();
+      renderMyAnn();
+      showAnnBanner(newOnes[0]);
+    }
+  }catch(e){}
+},15000);
 // Load previously sent files from server
 (async()=>{
   try{

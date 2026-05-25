@@ -103,6 +103,23 @@ class FinancialController extends Controller
         return response()->json($residents);
     }
 
+    /** DELETE /api/financial/{id} */
+    public function destroy($id)
+    {
+        $record = FinancialRecord::findOrFail($id);
+        $resident = Resident::where('id', $record->resident_id)->first();
+        if ($resident) {
+            // Reverse the balance effect
+            if ($record->record_type === 'Payment') {
+                $resident->increment('current_balance', abs($record->amount));
+            } else {
+                $resident->decrement('current_balance', abs($record->amount));
+            }
+        }
+        $record->delete();
+        return response()->json(['success' => true]);
+    }
+
     /** GET /api/financial-reports */
     public function reportIndex()
     {

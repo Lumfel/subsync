@@ -409,6 +409,21 @@ select option { background: #1a120d; color: var(--text); }
   z-index: 999; white-space: nowrap;
 }
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+/* ───── Live Announcement Banner ───── */
+#annNotif {
+  position: fixed; top: -90px; left: 50%; transform: translateX(-50%);
+  background: linear-gradient(135deg,rgba(30,22,50,0.98),rgba(18,16,26,0.98));
+  border: 1px solid rgba(122,180,240,0.35); backdrop-filter: blur(14px);
+  color: var(--text); font-size: 13px; padding: 10px 14px 10px 16px;
+  border-radius: 14px; z-index: 9999; display: flex; align-items: center; gap: 10px;
+  max-width: 420px; box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+  transition: top 0.38s cubic-bezier(.22,.68,0,1.2);
+}
+#annNotif.show { top: 18px; }
+#annNotif .ann-notif-title { font-weight:600; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#annNotif .ann-meta { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
+#annNotif .btn-view { background:var(--accent); color:#fff; border:none; padding:5px 11px; border-radius:8px; font-size:11px; cursor:pointer; }
+#annNotif .btn-close { background:rgba(255,255,255,0.08); color:var(--text-dim); border:none; padding:5px 9px; border-radius:8px; font-size:11px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -648,6 +663,15 @@ select option { background: #1a120d; color: var(--text); }
 </div><!-- end .page -->
 
 <div id="toast"></div>
+<div id="annNotif">
+  <span style="font-size:18px;">📢</span>
+  <div style="flex:1;min-width:0;">
+    <div class="ann-meta">New Announcement</div>
+    <div class="ann-notif-title" id="annNotifTitle">—</div>
+  </div>
+  <button class="btn-view" id="annNotifViewBtn">View</button>
+  <button class="btn-close" onclick="document.getElementById('annNotif').classList.remove('show')">✕</button>
+</div>
 
 <script>
 /* ══ UTILS ══ */
@@ -729,11 +753,44 @@ document.getElementById('memberRole').addEventListener('keydown',e=>{if(e.key===
 /* ══ ANNOUNCEMENTS ══ */
 /* ══ ANNOUNCEMENTS ══ */
 let announcements = [];
+let lastAnnouncementId = 0;
 
 async function loadAnnouncements(){
-  announcements = await fetch('/api/announcements').then(r=>r.json());
+  const data = await fetch('/api/announcements').then(r=>r.json()).catch(()=>[]);
+  announcements = Array.isArray(data) ? data : [];
+  if(announcements.length) lastAnnouncementId = announcements[0].id;
   renderAnnouncements();
 }
+
+function showAnnBanner(ann){
+  document.getElementById('annNotifTitle').textContent = ann.title;
+  document.getElementById('annNotif').classList.add('show');
+  const notif = document.getElementById('annNotif');
+  clearTimeout(notif._t);
+  notif._t = setTimeout(()=>notif.classList.remove('show'), 8000);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('annNotifViewBtn').onclick = ()=>{
+    document.getElementById('annNotif').classList.remove('show');
+    document.getElementById('announcementList').closest('.card').scrollIntoView({behavior:'smooth'});
+  };
+  // Poll for new announcements every 15 s (skip if tab hidden)
+  setInterval(async ()=>{
+    if(document.hidden) return;
+    try {
+      const data = await fetch('/api/announcements').then(r=>r.json());
+      if(!Array.isArray(data)||!data.length) return;
+      if(data[0].id > lastAnnouncementId){
+        const newOnes = data.filter(a=>a.id > lastAnnouncementId);
+        lastAnnouncementId = data[0].id;
+        announcements = data;
+        renderAnnouncements();
+        showAnnBanner(newOnes[0]);
+      }
+    } catch(e){}
+  }, 15000);
+});
 function renderAnnouncements(){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   document.getElementById('announcementList').innerHTML=announcements.length?announcements.map(a=>{

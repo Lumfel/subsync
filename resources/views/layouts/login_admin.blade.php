@@ -259,7 +259,7 @@
     <!-- HEADER -->
     <div class="admin-header">
         <div class="admin-emblem">
-            <img src="emblem_white_1.svg" alt="SubSync">
+            <img src="{{ asset('emblem_white_1.svg') }}" alt="SubSync">
         </div>
         <h1>Admin Access</h1>
         <p>Authorized Personnel Only</p>

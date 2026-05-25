@@ -35,6 +35,11 @@ class MapController extends Controller
             IssueReport::select('id', 'title', 'category', 'status', 'latitude', 'longitude', 'created_at')
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
+                ->where(function ($q) {
+                    // Keep all non-resolved issues; only keep resolved ones from the last 7 days
+                    $q->where('status', '!=', 'Resolved')
+                      ->orWhere('updated_at', '>=', now()->subDays(7));
+                })
                 ->get()
         );
     }

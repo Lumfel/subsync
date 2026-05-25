@@ -385,7 +385,7 @@
 
     <!-- LOGO -->
     <div class="portal-logo">
-        <img src="emblem_white_1.svg" alt="SubSync">
+        <img src="{{ asset('emblem_white_1.svg') }}" alt="SubSync">
         <h1>SubSync</h1>
         <p>TERRA NOVA SUBDIVISION PORTAL</p>
     </div>

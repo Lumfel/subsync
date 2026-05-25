@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -228,8 +228,11 @@ body {
   border-radius: var(--radius-sm);
   padding: 18px;
   transition: background 0.2s;
+  cursor: pointer;
+  user-select: none;
 }
 .stat-card:hover { background: var(--glass-hover); }
+.stat-card:active { opacity: 0.85; }
 .stat-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
 .stat-value { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); line-height: 1; margin-bottom: 4px; }
 .stat-sub { font-size: 11px; color: var(--text-dim); }
@@ -790,7 +793,7 @@ select option { background: #1a120d; color: var(--text); }
     <div class="nav-item" onclick="nav('recommendations',this)"><span class="nav-icon">💡</span> Recommendations</div>
     <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon">📈</span> Analytics</div>
     <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon">🗺️</span> Maps</div>
-    <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon">📁</span> Reports</div>
+    <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon">📁</span> Reports <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
   </nav>
   <div class="sidebar-footer">
     <div class="admin-profile">
@@ -821,33 +824,33 @@ select option { background: #1a120d; color: var(--text); }
     <!-- ══════════ DASHBOARD ══════════ -->
     <div class="panel active" id="panel-dashboard">
       <div class="stat-grid">
-        <div class="stat-card">
+        <div class="stat-card" onclick="nav('residents',null)" title="View Residents">
           <div class="stat-label">Total Residents</div>
           <div class="stat-value stat-accent" id="statResidents">—</div>
           <div class="stat-sub">Blk 1–5 registered</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="nav('residents',null)" title="View Residents">
           <div class="stat-label">Active Residents</div>
           <div class="stat-value stat-blue" id="statActive">—</div>
           <div class="stat-sub">Currently active</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="nav('payments',null)" title="View Payments">
           <div class="stat-label">Payment Collection</div>
           <div class="stat-value stat-green" id="statPayPct">—</div>
           <div class="stat-sub" id="statPaySub">May 2026 dues</div>
           <div class="progress-wrap"><div class="progress-bar" id="statPayBar" style="width:0%;background:var(--green);"></div></div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="nav('issues',null)" title="View Issues">
           <div class="stat-label">Open Issues</div>
           <div class="stat-value stat-yellow" id="statIssues">—</div>
           <div class="stat-sub">Pending reports</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="nav('delinquents',null)" title="View Delinquents">
           <div class="stat-label">Delinquents</div>
           <div class="stat-value" style="color:#f08080;" id="statDelinq">—</div>
           <div class="stat-sub">Flagged households</div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" onclick="nav('finance',null)" title="View Finance">
           <div class="stat-label">Outstanding Balance</div>
           <div class="stat-value stat-blue" id="statBalance">—</div>
           <div class="stat-sub">Total unpaid dues</div>
@@ -955,14 +958,16 @@ select option { background: #1a120d; color: var(--text); }
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title">Upload & Import</div>
         <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
-          <div class="upload-zone" style="flex:1;min-width:220px;">
-            <div style="font-size:22px;margin-bottom:6px;">📂</div>
-            <div>Drop Excel file here or <label for="excelFile" style="color:var(--accent);cursor:pointer;text-decoration:underline;">browse</label></div>
+          <div class="upload-zone" id="excelDropZone" style="flex:1;min-width:220px;position:relative;">
+            <div style="font-size:22px;margin-bottom:6px;pointer-events:none;">📂</div>
+            <div style="pointer-events:none;">Drop Excel file here or <label for="excelFile" style="color:var(--accent);cursor:pointer;text-decoration:underline;pointer-events:auto;">browse</label></div>
             <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="uploadExcel()">
-            <div id="excelFileName" style="font-size:11px;margin-top:6px;color:var(--green);"></div>
+            <div id="excelFileName" style="font-size:11px;margin-top:6px;color:var(--green);pointer-events:none;"></div>
           </div>
-          <button class="btn" onclick="openModal('addReceipt')">+ Add Receipt Manually</button>
-          <button class="btn btn-green" onclick="openAddRecordModal()">+ Add Financial Record</button>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <button class="btn" onclick="openModal('addReceipt')">+ Add Receipt Manually</button>
+            <button class="btn btn-green" onclick="openAddRecordModal()">+ Add Financial Record</button>
+          </div>
         </div>
       </div>
 
@@ -979,18 +984,26 @@ select option { background: #1a120d; color: var(--text); }
         </button>
       </div>
 
-      <!-- Excel Table -->
+      <!-- Financial Records Table -->
       <div class="card">
-        <div class="card-title">Imported Records</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+          <div class="card-title" style="margin-bottom:0;">Financial Records</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="finSearch" placeholder="Search resident…" style="width:150px;" oninput="filterFinRecords()">
+            <select id="finTypeFilter" onchange="filterFinRecords()">
+              <option value="">All Types</option>
+              <option>Due</option><option>Payment</option><option>Penalty</option><option>Adjustment</option>
+            </select>
+            <button class="btn btn-sm btn-green" onclick="exportFinRecordsCSV()">⬇ Export CSV</button>
+          </div>
+        </div>
         <table class="panel-table" id="excelTable">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Amount</th>
-              <th>Date</th>
+              <th>Resident</th><th>Type</th><th>Description</th><th>Amount</th><th>Date</th><th></th>
             </tr>
           </thead>
-          <tbody><tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px;">No records uploaded yet.</td></tr></tbody>
+          <tbody><tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;">No financial records yet.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1017,8 +1030,10 @@ select option { background: #1a120d; color: var(--text); }
       <div class="card">
         <div class="card-title">Payment Records</div>
         <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-          <input type="text" placeholder="Search household…" style="flex:1;min-width:160px;">
-          <select style="width:auto;"><option>All Status</option><option>Paid</option><option>Partial</option><option>Unpaid</option></select>
+          <input type="text" id="paySearch" placeholder="Search household…" style="flex:1;min-width:160px;" oninput="filterPayments()">
+          <select id="payStatusFilter" style="width:auto;" onchange="filterPayments()">
+            <option value="">All Status</option><option>Paid</option><option>Partial</option><option>Unpaid</option>
+          </select>
           <button class="btn btn-sm btn-green" onclick="exportPaymentsCSV()">&#8595; Export Excel</button>
         </div>
         <div id="paymentList"></div>
@@ -1238,8 +1253,8 @@ select option { background: #1a120d; color: var(--text); }
           <span><span class="map-dot" style="background:#f08080;"></span>Household (Delinquent)</span>
           <span><span class="map-dot" style="background:#e05555;"></span>Issue (Pending)</span>
           <span><span class="map-dot" style="background:#f5a623;"></span>Issue (In Progress)</span>
-          <span><span class="map-dot" style="background:#888;"></span>Issue (Resolved)</span>
-          <span><span class="map-dot" style="background:linear-gradient(to right,#0000ff,#00ff00,#ff0000);border-radius:2px;"></span>Issue Density</span>
+          <span><span class="map-dot" style="background:#888;"></span>Issue (Resolved, ≤7d)</span>
+          <span><span class="map-dot" style="background:linear-gradient(to right,#1a003e,#5c0099,#0044bb,#cc4400,#ff2200);border-radius:2px;"></span>Issue Frequency</span>
         </div>
       </div>
 
@@ -1264,10 +1279,10 @@ select option { background: #1a120d; color: var(--text); }
         <div class="card">
           <div class="card-title">Generate Reports</div>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn" onclick="showToast('📊 Generating Monthly Summary Report…')">📊 Monthly Summary</button>
-            <button class="btn btn-blue" onclick="showToast('💳 Generating Payment Report…')">💳 Payment Report</button>
-            <button class="btn btn-green" onclick="showToast('🔧 Generating Issue Report…')">🔧 Issue Report</button>
-            <button class="btn" style="background:var(--purple-dim);border-color:rgba(185,154,245,0.25);color:var(--purple);" onclick="showToast('👥 Generating Resident Report…')">👥 Resident Directory</button>
+            <button class="btn" onclick="reportMonthlySummary()">📊 Monthly Summary</button>
+            <button class="btn btn-blue" onclick="reportPayments()">💳 Payment Report</button>
+            <button class="btn btn-green" onclick="reportIssues()">🔧 Issue Report</button>
+            <button class="btn" style="background:var(--purple-dim);border-color:rgba(185,154,245,0.25);color:var(--purple);" onclick="reportResidentDirectory()">👥 Resident Directory</button>
           </div>
         </div>
       </div>
@@ -1792,27 +1807,26 @@ async function apiDelete(url){ const r=await fetch(url,{method:'DELETE',headers:
 
 /* ══════════════ LOAD ALL DATA ══════════════ */
 async function loadAllData(){
-  const [r, a, iss, off, recs, pay, fin, finRecsData, hh, delin] = await Promise.all([
-    apiGet('/api/residents'),
-    apiGet('/api/announcements'),
-    apiGet('/api/issues'),
-    apiGet('/api/officers'),
-    apiGet('/api/recommendations'),
-    apiGet('/api/financial/payments'),
-    apiGet('/api/financial/summary'),
-    apiGet('/api/financial'),
-    apiGet('/api/households'),
-    apiGet('/api/delinquents'),
-  ]);
-  residents = r.map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
-  households = Array.isArray(hh) ? hh : [];
-  finRecs = Array.isArray(finRecsData) ? finRecsData : [];
-  announcements = a;
-  issues = iss;
-  officers = off.map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
-  recommendations = recs;
-  payments = pay.map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
-  delinquents = Array.isArray(delin) ? delin : [];
+  const d = await apiGet('/api/dashboard-data');
+
+  residents = (d.residents||[]).map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
+  households = Array.isArray(d.households) ? d.households : [];
+  hhMembers  = Array.isArray(d.hhMembers)  ? d.hhMembers  : [];
+  finRecs    = Array.isArray(d.finRecs)    ? d.finRecs    : [];
+  announcements = d.announcements||[];
+  issues        = d.issues||[];
+  officers      = (d.officers||[]).map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
+  recommendations = d.recommendations||[];
+  delinquents   = Array.isArray(d.delinquents) ? d.delinquents : [];
+  payments      = residents; // same data, pay_status computed in renderPayments()
+
+  // Reuse for Manage panel — no extra API calls needed
+  muHouseholds = households;
+  muResidents  = residents;
+  muMembers    = hhMembers;
+  muFamilies   = Array.isArray(d.families) ? d.families : [];
+
+  const fin = d.finSummary||{};
 
   // update stat cards
   if(document.getElementById('statResidents')) document.getElementById('statResidents').textContent = residents.length;
@@ -1828,7 +1842,7 @@ async function loadAllData(){
   if(document.getElementById('payBalance'))     document.getElementById('payBalance').textContent    = '₱'+Number(fin.total_balance||0).toLocaleString();
   if(document.getElementById('statIssues'))    document.getElementById('statIssues').textContent    = issues.filter(i=>i.status!=='Resolved').length;
   if(document.getElementById('issueBadge'))    document.getElementById('issueBadge').textContent    = issues.filter(i=>i.status!=='Resolved').length;
-  if(document.getElementById('msgBadge')) document.getElementById('msgBadge').textContent = await (async()=>{try{const t=await apiGet('/api/messages/threads');return t.length||0;}catch(e){return 0;}})();
+  if(document.getElementById('msgBadge'))      document.getElementById('msgBadge').textContent      = d.msgCount||0;
 
   // Payment collection stats computed from payments array
   const totalPay=payments.length||1;
@@ -1846,7 +1860,7 @@ async function loadAllData(){
   if(document.getElementById('payBarUnpaid'))  document.getElementById('payBarUnpaid').style.width=Math.round(unpaidC/totalPay*100)+'%';
 
   // Members panel stats
-  if(document.getElementById('statTotalMembers')) document.getElementById('statTotalMembers').textContent=residents.length;
+  if(document.getElementById('statTotalMembers')) document.getElementById('statTotalMembers').textContent=hhMembers.length;
   if(document.getElementById('statTotalHouses'))  document.getElementById('statTotalHouses').textContent=households.length;
 
   renderDashboard();
@@ -1859,7 +1873,7 @@ async function loadAllData(){
   renderOfficers();
   renderRecommendations();
   renderFinancialRecords(finRecs);
-  loadManageData();
+  renderManageTables();
 }
 
 /* ══════════════ RENDER FUNCTIONS ══════════════ */
@@ -1876,7 +1890,19 @@ function renderDashboard(){
       ${statusPill[i.status]||''}
     </div>`).join(''):'<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">No issues yet.</div>';
 
-  document.getElementById('activityFeed').innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">Activity feed powered by live data.</div>';
+  document.getElementById('activityFeed').innerHTML=(()=>{
+    const events=[];
+    issues.slice(0,3).forEach(i=>events.push({ts:i.created_at||'',icon:'🚨',color:'var(--yellow)',text:`<b>${i.resident||'A resident'}</b> filed an issue: <i>${i.title}</i>`,pill:i.status==='Resolved'?'<span class="pill pill-resolved">Resolved</span>':i.status==='In Progress'?'<span class="pill pill-progress">In Progress</span>':'<span class="pill pill-pending">Pending</span>'  }));
+    announcements.slice(0,2).forEach(a=>events.push({ts:a.created_at||'',icon:'📢',color:'var(--accent)',text:`Announcement posted: <b>${a.title||a.message?.substring(0,50)+'...'}</b>`,pill:''}));
+    finRecs.slice(0,3).forEach(f=>events.push({ts:f.record_date||'',icon:f.record_type==='Payment'?'💰':'📄',color:f.record_type==='Payment'?'var(--green)':'#f08080',text:`<b>${f.resident||'Resident'}</b> — ${f.record_type}: ₱${Number(f.amount).toLocaleString()}`,pill:''}));
+    if(!events.length) return '<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">No recent activity.</div>';
+    return events.slice(0,6).map(e=>`
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+        <span style="font-size:18px;flex-shrink:0;">${e.icon}</span>
+        <div style="flex:1;font-size:12px;color:var(--text-mid);line-height:1.5;">${e.text}</div>
+        ${e.pill}
+      </div>`).join('');
+  })();
 }
 
 function renderResidents(){
@@ -1908,15 +1934,27 @@ function renderResidents(){
 function filterResidents(){ renderResidents(); }
 
 function renderMembers(){
-  document.getElementById('membersGrid').innerHTML=residents.map(m=>`
-    <div class="member-card">
-      <div class="member-avatar ${m.color}">${m.initials}</div>
+  const colorFor2=(n)=>{const colors=['bg-teal','bg-blue','bg-purple','bg-orange','bg-green','bg-red'];let h=0;for(let c of(n||''))h=(h*31+c.charCodeAt(0))%colors.length;return colors[h];};
+  const ini=n=>{const p=(n||'').trim().split(/\s+/);return(p[0]?.[0]||'')+(p[1]?.[0]||'');};
+  const relColor={Owner:'var(--blue)',Spouse:'var(--purple)',Child:'var(--green)',Tenant:'var(--yellow)',Parent:'var(--accent)'};
+  if(!hhMembers.length){
+    document.getElementById('membersGrid').innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>No household members yet.</div>';
+    return;
+  }
+  document.getElementById('membersGrid').innerHTML=hhMembers.map(m=>{
+    const initStr=ini(m.name);
+    const col=colorFor2(m.name);
+    const rel=m.relationship||'Member';
+    const relStyle=`color:${relColor[rel]||'var(--text-dim)'};`;
+    return `<div class="member-card">
+      <div class="member-avatar ${col}">${initStr}</div>
       <div class="member-info">
-        <h4>${m.name}</h4>
-        <p>${m.block_lot}</p>
-        <div class="m-type">Resident</div>
+        <h4>${m.name||'—'}</h4>
+        <p>${m.block_lot||'—'}</p>
+        <div class="m-type" style="${relStyle}">${rel}</div>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderDelinquents(){
@@ -2346,22 +2384,27 @@ async function updateRecStatus(id,status){
 
 function renderFinancialRecords(records){
   if(!records||!Array.isArray(records)) return;
+  const thead=document.querySelector('#excelTable thead tr');
   const tbody=document.querySelector('#excelTable tbody');
   if(!tbody) return;
+  if(thead) thead.innerHTML='<th>Resident</th><th>Type</th><th>Description</th><th style="text-align:right">Amount</th><th>Date</th><th></th>';
   if(!records.length){
-    tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:20px;">No financial records yet.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;">No financial records yet.</td></tr>';
     return;
   }
-  tbody.innerHTML=records.map(r=>`<tr>
-    <td>${r.resident||'—'}</td>
-    <td><span class="pill ${r.record_type==='Payment'?'pill-resolved':'pill-pending'}">${r.record_type}</span></td>
-    <td>${r.description||'—'}</td>
-    <td style="text-align:right;">₱${Number(r.amount).toLocaleString()}</td>
-    <td>${r.record_date ? new Date(r.record_date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}</td>
+  tbody.innerHTML=records.map(r=>`<tr data-res="${(r.resident||'').toLowerCase()}" data-type="${r.record_type}">
+    <td>
+      <div style="font-size:13px;">${r.resident||'—'}</div>
+      ${r.block_lot&&r.block_lot!=='—'?`<div style="font-size:10px;color:var(--text-dim);">${r.block_lot}</div>`:''}
+    </td>
+    <td><span class="pill ${r.record_type==='Payment'?'pill-resolved':r.record_type==='Penalty'?'pill-urgent':'pill-pending'}">${r.record_type}</span></td>
+    <td style="font-size:12px;">${r.description||'—'}</td>
+    <td style="text-align:right;font-weight:500;color:${r.record_type==='Payment'?'var(--green)':r.record_type==='Adjustment'&&r.amount<0?'var(--green)':'#f08080'}">
+      ${r.record_type==='Payment'?'−':'+'}&#8369;${Number(Math.abs(r.amount)).toLocaleString()}
+    </td>
+    <td style="font-size:12px;">${r.record_date?new Date(r.record_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
+    <td><button class="btn btn-sm btn-danger" onclick="deleteFinRecord(${r.id})">Delete</button></td>
   </tr>`).join('');
-  // Update table headers
-  const thead=document.querySelector('#excelTable thead tr');
-  if(thead) thead.innerHTML='<th>Resident</th><th>Type</th><th>Description</th><th>Amount</th><th>Date</th>';
 }
 
 
@@ -2439,6 +2482,72 @@ async function renderReports(){
   } catch(e) {
     el.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:8px 0;">Could not load files.</div>';
   }
+}
+
+/* ══════════════ REPORT GENERATION (CSV downloads) ══════════════ */
+function downloadCSV(filename, headers, rows){
+  const escape = v => '"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const csv = [headers.map(escape).join(','), ...rows.map(r=>r.map(escape).join(','))].join('\r\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+function reportMonthlySummary(){
+  if(!residents||!residents.length){ showToast('⚠ No resident data loaded yet.'); return; }
+  const now = new Date();
+  const label = now.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
+  const fname = `monthly-summary-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
+  const rows = residents.map(r=>{
+    const recs = Array.isArray(finRecs)?finRecs.filter(f=>String(f.resident_id)===String(r.id)):[];
+    const dues = recs.filter(f=>['Due','Penalty'].includes(f.record_type)).reduce((s,f)=>s+Number(f.amount||0),0);
+    const paid = recs.filter(f=>f.record_type==='Payment').reduce((s,f)=>s+Number(f.amount||0),0);
+    return [r.id, r.name, r.block_lot||r.block_lot_number||'', dues.toFixed(2), paid.toFixed(2), Number(r.current_balance||0).toFixed(2), r.status||''];
+  });
+  downloadCSV(fname, ['ID','Name','Block/Lot','Total Dues (₱)','Total Paid (₱)','Outstanding (₱)','Status'], rows);
+  showToast('📊 Monthly Summary downloaded!');
+}
+
+function reportPayments(){
+  const src = Array.isArray(payments)&&payments.length ? payments : residents;
+  if(!src||!src.length){ showToast('⚠ No payment data loaded yet.'); return; }
+  const fname = `payment-report-${new Date().toISOString().slice(0,10)}.csv`;
+  const rows = src.map(r=>{
+    const bal = Number(r.current_balance||0);
+    const payStatus = bal<=0?'Paid':(bal<500?'Partial':'Unpaid');
+    return [r.id, r.name, r.block_lot||r.block_lot_number||'', r.email||'', r.contact_number||'', bal.toFixed(2), payStatus, r.status||''];
+  });
+  downloadCSV(fname, ['ID','Name','Block/Lot','Email','Contact','Balance (₱)','Payment Status','Account Status'], rows);
+  showToast('💳 Payment Report downloaded!');
+}
+
+function reportIssues(){
+  if(!issues||!issues.length){ showToast('⚠ No issue data loaded yet.'); return; }
+  const fname = `issue-report-${new Date().toISOString().slice(0,10)}.csv`;
+  const rows = issues.map(i=>[
+    i.id, i.category||'', i.title||i.description||'', i.resident||i.resident_name||'',
+    i.block_lot||'', i.status||'', i.priority||'',
+    i.created_at?new Date(i.created_at).toLocaleDateString('en-PH'):''
+  ]);
+  downloadCSV(fname, ['ID','Category','Title','Resident','Block/Lot','Status','Priority','Date Filed'], rows);
+  showToast('🔧 Issue Report downloaded!');
+}
+
+function reportResidentDirectory(){
+  if(!residents||!residents.length){ showToast('⚠ No resident data loaded yet.'); return; }
+  const fname = `resident-directory-${new Date().toISOString().slice(0,10)}.csv`;
+  const rows = residents.map(r=>[
+    r.id, r.name, r.email||'', r.contact_number||'',
+    r.block_lot||r.block_lot_number||'', r.status||'',
+    Number(r.current_balance||0).toFixed(2)
+  ]);
+  downloadCSV(fname, ['ID','Name','Email','Contact','Block/Lot','Status','Balance (₱)'], rows);
+  showToast('👥 Resident Directory downloaded!');
 }
 
 /* ══════════════ MANAGE USERS TABLES ══════════════ */
@@ -2615,6 +2724,7 @@ async function saveEditMember(){
 
 /* ══════════════ ANALYTICS ══════════════ */
 let finRecs = [];
+let hhMembers = [];
 
 function renderAnalytics(){
   if(document.getElementById('analyticMembers')) document.getElementById('analyticMembers').textContent = residents.length||'—';
@@ -2860,15 +2970,174 @@ async function deleteReceipt(id){
   }
 }
 
-/* Excel Upload */
+/* Excel Upload — document-level guard prevents browser navigating to the file */
+document.addEventListener('dragover',function(e){e.preventDefault();});
+document.addEventListener('drop',function(e){
+  e.preventDefault();
+  const zone=document.getElementById('excelDropZone');
+  if(!zone) return;
+  const file=e.dataTransfer&&e.dataTransfer.files[0];
+  if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='xlsx'||ext==='xls'){
+    zone.style.borderColor='';
+    processExcelFile(file);
+  }
+});
+/* Drop zone highlight */
+const _dz=document.getElementById('excelDropZone');
+if(_dz){
+  _dz.addEventListener('dragover',function(e){e.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(120,180,255,0.08)';});
+  _dz.addEventListener('dragleave',function(){this.style.borderColor='';this.style.background='';});
+  _dz.addEventListener('drop',function(e){e.preventDefault();this.style.borderColor='';this.style.background='';const f=e.dataTransfer&&e.dataTransfer.files[0];if(f) processExcelFile(f);});
+}
+function handleExcelDrop(e){
+  e.preventDefault();
+  document.getElementById('excelDropZone').style.borderColor='';
+  const file=e.dataTransfer.files[0];
+  if(!file) return;
+  processExcelFile(file);
+}
 function uploadExcel(){
   const file=document.getElementById('excelFile').files[0];
-  if(!file){return;}
-  const fn=document.getElementById('excelFileName');
-  if(fn) fn.textContent='Selected: '+file.name;
-  showToast('⚠ Excel import is not yet supported. Use “+ Add Financial Record” to enter records manually.');
+  if(!file) return;
+  processExcelFile(file);
   document.getElementById('excelFile').value='';
+}
+let pendingImportRows=[];
+function processExcelFile(file){
+  if(!window.XLSX){showToast('⚠ Excel library not loaded yet. Please try again.');return;}
+  const fn=document.getElementById('excelFileName');
+  if(fn) fn.textContent='Reading: '+file.name+'…';
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      // Get all rows as arrays to find the actual header row (handles title/spacer rows)
+      const allRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      // Find the row index that contains 'resident_id' (case-insensitive)
+      const headerIdx=allRows.findIndex(row=>row.some(cell=>cell!=null&&cell.toString().toLowerCase().trim()==='resident_id'));
+      // If no header row found, fall back to row 0
+      const startIdx=headerIdx>=0?headerIdx:0;
+      const headers=allRows[startIdx].map(h=>h.toString().toLowerCase().trim().replace(/[^a-z0-9_]/g,'_'));
+      const dataRows=allRows.slice(startIdx+1).filter(row=>row.some(c=>c!==''&&c!=null));
+      const raw=dataRows.map(row=>{
+        const obj={};
+        headers.forEach((h,i)=>{ obj[h]=row[i]!==undefined?row[i]:''; });
+        return obj;
+      });
+      if(!raw.length){showToast('⚠ No data rows found.');if(fn) fn.textContent='';return;}
+      const rows=raw;
+      const validTypes=['Due','Payment','Penalty','Adjustment'];
+      pendingImportRows=[];
+      const errors=[];
+      rows.forEach((r,i)=>{
+        const rowNum=i+1;
+        const rid=parseInt(r['resident_id']||r['residentid']||r['id']);
+        const rtype=(r['record_type']||r['recordtype']||r['type']||'').toString().trim();
+        const desc=(r['description']||r['desc']||r['notes']||'').toString().trim();
+        const amt=parseFloat(r['amount']||r['amt']||0);
+        let rdate=r['record_date']||r['recorddate']||r['date']||'';
+        if(rdate instanceof Date){const d=rdate;rdate=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+        else{rdate=rdate.toString().trim();}
+        if(!rid){errors.push('Row '+rowNum+': missing resident_id');return;}
+        if(!validTypes.includes(rtype)){errors.push('Row '+rowNum+': invalid record_type "'+rtype+'" (must be Due/Payment/Penalty/Adjustment)');return;}
+        if(!amt){errors.push('Row '+rowNum+': missing or zero amount');return;}
+        if(!rdate){errors.push('Row '+rowNum+': missing record_date');return;}
+        pendingImportRows.push({resident_id:rid,record_type:rtype,description:desc,amount:amt,record_date:rdate});
+      });
+      if(fn) fn.textContent=file.name+' — '+pendingImportRows.length+' valid row(s)'+(errors.length?' | '+errors.length+' skipped':'');
+      renderImportPreview(pendingImportRows,errors);
+    }catch(err){
+      showToast('⚠ Could not read file: '+err.message);
+      if(fn) fn.textContent='';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function renderImportPreview(rows,errors){
+  const thead=document.querySelector('#excelTable thead tr');
+  const tbody=document.querySelector('#excelTable tbody');
+  if(thead) thead.innerHTML='<th>#</th><th>Resident ID</th><th>Type</th><th>Description</th><th style="text-align:right">Amount</th><th>Date</th><th>Status</th>';
+  if(tbody) tbody.innerHTML=rows.map((r,i)=>`<tr data-import-row="${i}">
+    <td>${i+1}</td>
+    <td>${r.resident_id}</td>
+    <td><span class="pill ${r.record_type==='Payment'?'pill-resolved':'pill-pending'}">${r.record_type}</span></td>
+    <td>${r.description||'—'}</td>
+    <td style="text-align:right">₱${Number(r.amount).toLocaleString()}</td>
+    <td>${r.record_date}</td>
+    <td class="import-status" style="color:var(--green);font-size:11px;">✓ Ready</td>
+  </tr>`).join('')+
+  (errors.length?errors.map(e=>`<tr><td colspan="7" style="color:var(--red,#f08080);font-size:11px;padding:4px 8px;">⚠ ${e}</td></tr>`).join(''):'');
+  const card=document.querySelector('#excelTable').closest('.card');
+  let bar=card.querySelector('.import-confirm-bar');
+  if(!bar){
+    bar=document.createElement('div');
+    bar.className='import-confirm-bar';
+    bar.style.cssText='display:flex;gap:10px;align-items:center;margin-top:12px;';
+    card.appendChild(bar);
+  }
+  bar.innerHTML=rows.length
+    ?`<button class="btn btn-green" onclick="confirmImport()">⬆ Import ${rows.length} Record${rows.length>1?'s':''}</button>
+       <button class="btn" onclick="cancelImport()">Cancel</button>
+       <span style="font-size:11px;color:var(--text-dim);">${errors.length?errors.length+' row(s) skipped due to errors':''}</span>`
+    :`<span style="font-size:12px;color:var(--red,#f08080);">No valid rows to import.</span>
+      <button class="btn" onclick="cancelImport()">Clear</button>`;
+}
+async function confirmImport(){
+  if(!pendingImportRows.length){showToast('⚠ Nothing to import.');return;}
+  const btn=document.querySelector('.import-confirm-bar .btn-green');
+  if(btn){btn.disabled=true;btn.textContent='Importing…';}
+  const tbody=document.querySelector('#excelTable tbody');
+  const trs=tbody?[...tbody.querySelectorAll('tr[data-import-row]')]:[];
+  let ok=0,fail=0;
+  const results=[];
+  for(let i=0;i<pendingImportRows.length;i++){
+    const row=pendingImportRows[i];
+    const res=await apiPost('/api/financial',row);
+    const tr=trs[i];
+    if(res&&res.success){
+      ok++;
+      results.push({ok:true});
+      if(tr)tr.querySelector('.import-status').innerHTML='<span style="color:var(--green);">✓ Saved</span>';
+    } else {
+      fail++;
+      const msg=res.message||(res.errors?Object.values(res.errors).flat()[0]:'Failed');
+      results.push({ok:false,msg});
+      if(tr)tr.querySelector('.import-status').innerHTML='<span style="color:var(--red,#f08080);font-size:11px;">✗ '+msg+'</span>';
+    }
+  }
+  pendingImportRows=pendingImportRows.filter((_,i)=>!results[i].ok);
+  const newFinData=await apiGet('/api/financial');
+  finRecs=Array.isArray(newFinData)?newFinData:[];
+  const summary=await apiGet('/api/financial/summary');
+  if(document.getElementById('finCollected')) document.getElementById('finCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
+  if(document.getElementById('finDues'))      document.getElementById('finDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
+  if(document.getElementById('finBalance'))   document.getElementById('finBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
+  if(document.getElementById('payCollected')) document.getElementById('payCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
+  if(document.getElementById('payDues'))      document.getElementById('payDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
+  if(document.getElementById('payBalance'))   document.getElementById('payBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
+  const bar=document.querySelector('.import-confirm-bar');
+  if(bar){
+    if(fail>0){
+      bar.innerHTML=`<span style="font-size:12px;color:var(--green)">✅ ${ok} imported</span>
+        <span style="font-size:12px;color:var(--red,#f08080);">⚠ ${fail} failed — fix errors above then re-import</span>
+        <button class="btn" onclick="cancelImport()">Clear</button>`;
+      renderFinancialRecords(finRecs);
+    } else {
+      cancelImport();
+    }
+  }
+  showToast(ok>0?'✅ Imported '+ok+' record'+(ok>1?'s':'')+(fail>0?' | '+fail+' failed (see table)':'')+'.':(fail>0?'⚠ All '+fail+' records failed. Check the error details in the table.':''));
+}
+function cancelImport(){
+  pendingImportRows=[];
+  const bar=document.querySelector('.import-confirm-bar');
+  if(bar) bar.remove();
+  const fn=document.getElementById('excelFileName');
   if(fn) fn.textContent='';
+  renderFinancialRecords(finRecs);
 }
 async function adminSend(){
   const inp=document.getElementById('msgInput');
@@ -2889,6 +3158,56 @@ function exportCSV(rows, filename){
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download=filename; a.click();
+}
+/* ══ FINANCIAL RECORDS — delete, filter, export ══ */
+async function deleteFinRecord(id){
+  if(!confirm('Delete this financial record? The resident balance will be adjusted.')) return;
+  const res=await apiDelete('/api/financial/'+id);
+  if(res&&res.success){
+    finRecs=finRecs.filter(r=>r.id!==id);
+    renderFinancialRecords(finRecs);
+    filterFinRecords();
+    const summary=await apiGet('/api/financial/summary');
+    if(document.getElementById('finCollected')) document.getElementById('finCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
+    if(document.getElementById('finDues'))      document.getElementById('finDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
+    if(document.getElementById('finBalance'))   document.getElementById('finBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
+    if(document.getElementById('payCollected')) document.getElementById('payCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
+    if(document.getElementById('payDues'))      document.getElementById('payDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
+    if(document.getElementById('payBalance'))   document.getElementById('payBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
+    showToast('✅ Record deleted and balance adjusted.');
+  } else {
+    showToast('⚠ '+(res&&res.message||'Failed to delete record.'));
+  }
+}
+function filterFinRecords(){
+  const q=(document.getElementById('finSearch')||{}).value?.toLowerCase()||'';
+  const t=(document.getElementById('finTypeFilter')||{}).value||'';
+  document.querySelectorAll('#excelTable tbody tr[data-res]').forEach(row=>{
+    const matchQ=!q||row.dataset.res.includes(q);
+    const matchT=!t||row.dataset.type===t;
+    row.style.display=(matchQ&&matchT)?'':'none';
+  });
+}
+function exportFinRecordsCSV(){
+  if(!finRecs.length){showToast('⚠ No records to export.');return;}
+  const rows=[['Resident','Block/Lot','Type','Description','Amount','Date'],
+    ...finRecs.map(r=>[r.resident,r.block_lot,r.record_type,r.description||'',r.amount,r.record_date])];
+  exportCSV(rows,'financial_records_'+new Date().toISOString().slice(0,10)+'.csv');
+  showToast('✅ Financial records exported.');
+}
+/* ══ PAYMENTS — filter ══ */
+function filterPayments(){
+  const q=(document.getElementById('paySearch')||{}).value?.toLowerCase()||'';
+  const s=(document.getElementById('payStatusFilter')||{}).value||'';
+  const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
+  document.querySelectorAll('#paymentList .payment-row').forEach(row=>{
+    const name=row.querySelector('.pay-name')?.textContent.toLowerCase()||'';
+    const block=row.querySelector('.pay-block')?.textContent.toLowerCase()||'';
+    const pill=row.querySelector('.pill')?.textContent||'';
+    const matchQ=!q||(name.includes(q)||block.includes(q));
+    const matchS=!s||pill===s;
+    row.style.display=(matchQ&&matchS)?'':'none';
+  });
 }
 function exportPaymentsCSV(){
   if(!payments.length){showToast('⚠ No payment data.');return;}
@@ -2938,15 +3257,10 @@ async function openPaymentDetail(residentId){
 }
 
 /* ══ HEATMAP WEIGHT ══ */
-// Combines status urgency × category severity → used as leaflet.heat point weight
+// Each issue contributes a flat weight of 1 — heat intensity reflects issue frequency only.
+// max:4 means 4+ overlapping issues → full red; fewer issues → cooler colours.
 function heatWeight(issue) {
-  const sw = {Pending: 1.0, 'In Progress': 0.65, Resolved: 0.2}[issue.status] ?? 0.7;
-  const cw = {
-    Security: 1.5, Vandalism: 1.4, 'Illegal Parking': 1.3,
-    Sanitation: 1.2, Noise: 1.1, Maintenance: 1.0, Other: 0.9,
-    'Street Lights': 0.9, Cleanliness: 1.1, Infrastructure: 1.0,
-  }[issue.category] ?? 1.0;
-  return sw * cw;  // max ~1.5 for Security+Pending; higher frequency naturally stacks
+  return 1.0;
 }
 
 /* ══════════════ ANALYTICS HEATMAP (MINI MAP) ══════════════ */
@@ -2976,6 +3290,53 @@ function renderAnalyticsHeatMap(){
 /* ══════════════ INIT ══════════════ */
 const ADMIN_ID = {{ $adminId ?? 'null' }};
 const ADMIN_NAME = @json($adminName);
+
+/* — Live polling: officer file uploads — */
+let lastOfficerFileCount = -1; // -1 = baseline not yet set
+let newOfficerFileCount  = 0;
+
+async function pollOfficerFiles(){
+  try {
+    const data = await apiGet('/api/officer-files');
+    if(!Array.isArray(data)) return;
+    const count = data.length;
+    if(lastOfficerFileCount === -1){ lastOfficerFileCount = count; return; }
+    if(count > lastOfficerFileCount){
+      const added = count - lastOfficerFileCount;
+      newOfficerFileCount += added;
+      lastOfficerFileCount = count;
+      // Update badge on nav item
+      const badge = document.getElementById('reportsBadge');
+      if(badge){
+        badge.textContent = newOfficerFileCount;
+        badge.style.display = '';
+      }
+      // If reports panel is open, refresh the list silently
+      const panel = document.getElementById('panel-reports');
+      if(panel && panel.classList.contains('active')){
+        newOfficerFileCount = 0;
+        if(badge){ badge.style.display = 'none'; }
+        renderReports();
+      }
+      // Toast notification
+      const latest = data[0];
+      showToast(`📁 New file from ${latest.officer_name||'officer'}: ${latest.original_name||'report'}`);
+    }
+  } catch(e){}
+}
+
+// Clear badge when admin opens Reports panel
+const _origNav = window.nav;
+window.nav = function(name, el){
+  _origNav(name, el);
+  if(name === 'reports'){
+    newOfficerFileCount = 0;
+    const badge = document.getElementById('reportsBadge');
+    if(badge){ badge.style.display = 'none'; }
+  }
+};
+
+setInterval(pollOfficerFiles, 30000);
 
 loadAllData();
 loadReceipts();
@@ -3027,6 +3388,7 @@ renderReceipts();
 </div>
 
 <script src="/js/d3.v7.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
@@ -3071,7 +3433,19 @@ function initMap() {
   layerHouseholds = L.layerGroup().addTo(mapInst);
   layerFacilities = L.layerGroup().addTo(mapInst);
   layerIssues     = L.layerGroup().addTo(mapInst);
-  layerHeatmap    = L.heatLayer([], {radius: 30, blur: 20, maxZoom: 17, max: 1.5, gradient: {0.4:'#0000ff', 0.65:'#00ff00', 0.85:'#ffff00', 1:'#ff0000'}}).addTo(mapInst);
+  layerHeatmap    = L.heatLayer([], {
+    radius: 42, blur: 32, maxZoom: 17, max: 4, minOpacity: 0.0,
+    gradient: {
+      0.15: '#1a003e',   // dark indigo — sparse
+      0.35: '#5c0099',   // deep purple
+      0.5:  '#0044bb',   // cool blue
+      0.65: '#cc4400',   // amber — warming
+      0.82: '#cc1400',   // orange-red
+      1.0:  '#ff2200'    // hot red — dense cluster
+    }
+  }).addTo(mapInst);
+  // tone down canvas so map tiles stay readable beneath the heat
+  setTimeout(() => { if (layerHeatmap._canvas) layerHeatmap._canvas.style.opacity = '0.70'; }, 150);
 
   loadMapData();
 
