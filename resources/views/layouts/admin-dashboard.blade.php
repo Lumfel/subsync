@@ -1578,8 +1578,6 @@ select option { background: #1a120d; color: var(--text); }
         <select id="muURole">
           <option>Resident</option>
           <option>Officer</option>
-          <option>Admin</option>
-          <option>Super Admin</option>
         </select>
       </div>
       <div class="f-field"><span class="f-label">Linked Household</span>
@@ -1611,7 +1609,7 @@ select option { background: #1a120d; color: var(--text); }
     </div>
     <div class="f-row">
       <div class="f-field"><span class="f-label">Role</span>
-        <select id="editURole"><option>Resident</option><option>Officer</option><option>Admin</option><option>Super Admin</option></select>
+        <select id="editURole"><option>Resident</option><option>Officer</option></select>
       </div>
       <div class="f-field"><span class="f-label">Account Status</span>
         <select id="editUStatus"><option>Active</option><option>Suspended</option><option>Deactivated</option></select>
@@ -1678,8 +1676,8 @@ select option { background: #1a120d; color: var(--text); }
       <div class="f-field"><span class="f-label">Household</span><input type="text" id="editMHousehold"></div>
     </div>
     <div class="f-row">
-      <div class="f-field"><span class="f-label">Member Type</span>
-        <select id="editMType"><option>HOA Member</option><option>Officer</option><option>Tenant</option></select>
+      <div class="f-field"><span class="f-label">Relationship to Head</span>
+        <select id="editMType"><option>Head of Household</option><option>Spouse</option><option>Child</option><option>Parent</option><option>Sibling</option><option>Relative</option><option>Tenant</option></select>
       </div>
     </div>
     <div class="modal-actions">
@@ -1728,6 +1726,8 @@ function nav(name, el){
   document.getElementById('topbarTitle').textContent = panelTitles[name]||name;
   if(name==='messages'){document.getElementById('msgBadge').style.display='none';loadThreads();}
   if(name==='issues') renderIssues();
+  if(name==='members') renderMembers();
+  if(name==='finance') loadReceipts();
   if(name==='analytics') setTimeout(renderAnalytics, 80);
   if(name==='reports') renderReports();
   if(name==='mapping') setTimeout(initMap, 80);
@@ -1817,6 +1817,7 @@ async function loadAllData(){
 
   renderDashboard();
   renderResidents();
+  renderMembers();
   renderDelinquents();
   renderPayments();
   renderAnnouncements();
@@ -2356,9 +2357,9 @@ async function loadManageData(){
 
 function renderManageTables(){
   if(document.getElementById('householdTbody'))
-    document.getElementById('householdTbody').innerHTML=muHouseholds.map((h,i)=>`
+    document.getElementById('householdTbody').innerHTML=muHouseholds.map((h,i)=>{const mc=muMembers.filter(m=>m.house_id===h.id).length;return `
       <tr>
-        <td>${h.id}</td><td>${h.block_lot_number}</td><td>—</td><td>—</td>
+        <td>${h.id}</td><td>${h.block_lot_number}</td><td>—</td><td>${mc||'—'}</td>
         <td><span class="pill ${h.status==='Active'?'pill-active':'pill-inactive'}">${h.status}</span></td>
         <td>
           <div style="display:flex;gap:6px;">
@@ -2367,7 +2368,7 @@ function renderManageTables(){
             <button class="btn btn-sm btn-danger" onclick="deleteHousehold(${h.id})">Deactivate</button>
           </div>
         </td>
-      </tr>`).join('');
+      </tr>`}).join('');
 
   if(document.getElementById('userTbody'))
     document.getElementById('userTbody').innerHTML=muResidents.map((u,i)=>`
@@ -2388,6 +2389,7 @@ function renderManageTables(){
         <td>${m.id}</td><td>${m.name||'—'}</td><td>${m.block_lot||m.house_id||'—'}</td><td>${m.relationship||'Member'}</td>
         <td>
           <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-blue" onclick="openEditMember(${m.id})">Edit</button>
             <button class="btn btn-sm btn-danger" onclick="deleteMember(${m.id})">Remove</button>
           </div>
         </td>
@@ -2426,8 +2428,9 @@ function filterManageTable(){
 /* ══════════════ MANAGE USERS MODAL FUNCTIONS (Households & Residents) ══════════════ */
 async function saveAddHousehold(){
   const loc=document.getElementById('muHLoc').value.trim();
+  const status=document.getElementById('muHStatus').value||'Active';
   if(!loc){showToast('⚠ Please fill in required fields.');return;}
-  const res=await apiPost('/api/households',{block_lot_number:loc,status:'Active'});
+  const res=await apiPost('/api/households',{block_lot_number:loc,status});
   if(res.success){
     closeModal('muAddHousehold');
     document.getElementById('muHLoc').value='';
@@ -2476,6 +2479,31 @@ async function saveAddMember(){
     showToast('✅ Member added.');
   } else {
     showToast('⚠ '+(res.message||'Failed to add member.'));
+  }
+}
+
+function openEditMember(id){
+  const m=muMembers.find(x=>x.id===id);
+  if(!m) return;
+  document.getElementById('editMIdx').value=id;
+  document.getElementById('editMName').value=m.name||'';
+  document.getElementById('editMHousehold').value=m.block_lot||'';
+  document.getElementById('editMType').value=m.relationship||'Spouse';
+  openModal('muEditMember');
+}
+
+async function saveEditMember(){
+  const id=document.getElementById('editMIdx').value;
+  const name=document.getElementById('editMName').value.trim();
+  const relationship=document.getElementById('editMType').value;
+  if(!name){showToast('⚠ Name is required.');return;}
+  const res=await apiPut('/api/household-members/'+id,{name,relationship});
+  if(res.success){
+    closeModal('muEditMember');
+    await loadManageData();
+    showToast('✅ Member updated.');
+  } else {
+    showToast('⚠ '+(res.message||'Failed to update member.'));
   }
 }
 

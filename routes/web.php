@@ -99,6 +99,7 @@ Route::prefix('api')->group(function () {
     // Household Members
     Route::get('/household-members', [ResidentController::class, 'members']);
     Route::post('/household-members', [ResidentController::class, 'storeMember']);
+    Route::put('/household-members/{id}', [ResidentController::class, 'updateMember']);
     Route::delete('/household-members/{id}', [ResidentController::class, 'destroyMember']);
 
     // Announcements

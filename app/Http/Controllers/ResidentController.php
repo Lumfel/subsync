@@ -158,6 +158,19 @@ class ResidentController extends Controller
         return response()->json(['success' => true, 'member' => $member]);
     }
 
+    /** PUT /api/household-members/{id} */
+    public function updateMember(Request $request, int $id)
+    {
+        $member = HouseholdMember::findOrFail($id);
+        $data = $request->validate([
+            'name'           => 'sometimes|string|max:150',
+            'relationship'   => 'nullable|string|max:50',
+            'contact_number' => 'nullable|string|max:20',
+        ]);
+        $member->update($data);
+        return response()->json(['success' => true, 'member' => $member]);
+    }
+
     /** DELETE /api/household-members/{id} */
     public function destroyMember(int $id)
     {
