@@ -63,7 +63,14 @@ class ResidentController extends Controller
             'contact_number' => 'nullable|string|max:20',
             'house_id'       => 'nullable|exists:households,id',
             'status'         => 'sometimes|in:Active,Inactive,Delinquent',
+            'password'       => 'sometimes|nullable|string|min:8',
         ]);
+
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
 
         $resident->update($data);
 
@@ -192,6 +199,28 @@ class ResidentController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /** GET /api/delinquents — delinquent households with reason/date */
+    public function delinquents()
+    {
+        $records = Delinquent::with([
+            'household:id,block_lot_number,status',
+            'household.residents:id,house_id,name,contact_number,current_balance',
+        ])->orderByDesc('date_flagged')->get()->map(fn($d) => [
+            'id'           => $d->id,
+            'house_id'     => $d->house_id,
+            'reason'       => $d->reason,
+            'date_flagged' => $d->date_flagged,
+            'block_lot'    => $d->household?->block_lot_number ?? '—',
+            'residents'    => $d->household?->residents->map(fn($r) => [
+                'id'              => $r->id,
+                'name'            => $r->name,
+                'current_balance' => $r->current_balance,
+            ]) ?? [],
+        ]);
+
+        return response()->json($records);
+    }
+
     /** GET /api/stats — dashboard counts */
     public function stats()
     {
@@ -199,7 +228,7 @@ class ResidentController extends Controller
             'total_households'  => Household::count(),
             'total_residents'   => Resident::count(),
             'active_residents'  => Resident::where('status', 'Active')->count(),
-            'delinquent_count'  => Resident::where('status', 'Delinquent')->count(),
+            'delinquent_count'  => Delinquent::count(),
         ]);
     }
 }

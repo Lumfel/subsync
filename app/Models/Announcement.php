@@ -36,7 +36,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Announcement extends Model
 {
-    protected $fillable = ['admin_id', 'officer_id', 'title', 'content', 'tag'];
+    protected $fillable = ['admin_id', 'officer_id', 'title', 'content', 'tag', 'target', 'priority', 'event_date'];
 
     public function admin()
     {

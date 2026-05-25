@@ -96,6 +96,9 @@ Route::prefix('api')->group(function () {
     Route::put('/households/{id}', [ResidentController::class, 'updateHousehold']);
     Route::delete('/households/{id}', [ResidentController::class, 'destroyHousehold']);
 
+    // Delinquents
+    Route::get('/delinquents', [ResidentController::class, 'delinquents']);
+
     // Household Members
     Route::get('/household-members', [ResidentController::class, 'members']);
     Route::post('/household-members', [ResidentController::class, 'storeMember']);

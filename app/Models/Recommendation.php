@@ -29,7 +29,7 @@ class Recommendation extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['resident_id', 'title', 'description', 'status', 'created_at'];
+    protected $fillable = ['resident_id', 'category', 'title', 'description', 'status', 'created_at'];
 
     protected $casts = ['created_at' => 'datetime'];
 

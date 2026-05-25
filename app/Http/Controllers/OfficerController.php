@@ -46,7 +46,14 @@ class OfficerController extends Controller
             'contact_number'   => 'nullable|string|max:20',
             'role_description' => 'nullable|string|max:150',
             'status'           => 'sometimes|in:Active,Inactive',
+            'password'         => 'sometimes|nullable|string|min:8',
         ]);
+
+        if (!empty($data['password'])) {
+            $data['password'] = Hash::make($data['password']);
+        } else {
+            unset($data['password']);
+        }
 
         $officer->update($data);
 

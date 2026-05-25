@@ -1106,7 +1106,7 @@ select option { background: #1a120d; color: var(--text); }
           <h3>Add HH Member</h3>
           <p>Add a household member</p>
         </div>
-        <div class="manage-card" onclick="openModal('muChangeStatus')">
+        <div class="manage-card" onclick="nav('manageusers',null);showToast('ℹ️ Click Status on a household row to change its status.')">
           <div class="manage-card-icon">⚠️</div>
           <h3>Change Status</h3>
           <p>Update household condition</p>
@@ -1286,8 +1286,16 @@ select option { background: #1a120d; color: var(--text); }
       <div class="f-field"><span class="f-label">Type</span>
         <select id="annType"><option value="notice">Notice</option><option value="urgent">Urgent</option><option value="event">Event</option></select>
       </div>
-      <div class="f-field"><span class="f-label">Target</span>
-        <select><option>All Residents</option><option>Block 1</option><option>Block 2</option><option>Block 3</option><option>Block 4</option><option>Block 5</option></select>
+      <div class="f-field"><span class="f-label">Target Audience</span>
+        <select id="annTarget"><option>All Residents</option><option>Block 1 Only</option><option>Block 2 Only</option><option>Block 3 Only</option><option>Block 4 Only</option><option>Block 5 Only</option></select>
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Priority</span>
+        <select id="annPriority"><option>Normal</option><option>High</option></select>
+      </div>
+      <div class="f-field"><span class="f-label">Event Date (optional)</span>
+        <input type="date" id="annDate">
       </div>
     </div>
     <div class="f-row"><div class="f-field"><span class="f-label">Title</span><input type="text" id="annTitle" placeholder="Announcement title"></div></div>
@@ -1312,7 +1320,7 @@ select option { background: #1a120d; color: var(--text); }
       <div class="f-field"><span class="f-label">Contact Number</span><input type="text" id="newResContact" placeholder="09xx-xxx-xxxx"></div>
     </div>
     <div class="f-row">
-      <div class="f-field"><span class="f-label">Password</span><input type="password" id="newResPass" placeholder="Leave blank for default"></div>
+      <div class="f-field"><span class="f-label">Password</span><input type="password" id="newResPass" placeholder="Required – min 8 characters"></div>
     </div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('addResident')">Cancel</button>
@@ -1337,7 +1345,7 @@ select option { background: #1a120d; color: var(--text); }
     </div>
     <div class="f-row">
       <div class="f-field"><span class="f-label">Email</span><input type="email" id="newOfficerEmail" placeholder="officer@email.com"></div>
-      <div class="f-field"><span class="f-label">Password</span><input type="password" id="newOfficerPass" placeholder="Leave blank for default"></div>
+      <div class="f-field"><span class="f-label">Password</span><input type="password" id="newOfficerPass" placeholder="Required – min 8 characters"></div>
     </div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('addOfficer')">Cancel</button>
@@ -1608,11 +1616,8 @@ select option { background: #1a120d; color: var(--text); }
       <div class="f-field"><span class="f-label">Email Address</span><input type="email" id="editUEmail"></div>
     </div>
     <div class="f-row">
-      <div class="f-field"><span class="f-label">Role</span>
-        <select id="editURole"><option>Resident</option><option>Officer</option></select>
-      </div>
       <div class="f-field"><span class="f-label">Account Status</span>
-        <select id="editUStatus"><option>Active</option><option>Suspended</option><option>Deactivated</option></select>
+        <select id="editUStatus"><option>Active</option><option>Inactive</option></select>
       </div>
     </div>
     <div class="f-row">
@@ -1626,6 +1631,34 @@ select option { background: #1a120d; color: var(--text); }
 </div>
 
 <!-- (Add Resident handled by modal-addResident) -->
+
+<!-- Edit Officer -->
+<div class="modal-overlay" id="modal-editOfficer">
+  <div class="modal-box">
+    <div class="modal-title">Edit Officer</div>
+    <input type="hidden" id="editOfficerIdx">
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Full Name</span><input type="text" id="editOfficerName" placeholder="Full name"></div>
+      <div class="f-field"><span class="f-label">Email</span><input type="email" id="editOfficerEmail" placeholder="email@example.com"></div>
+    </div>
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Contact Number</span><input type="text" id="editOfficerContact" placeholder="09xxxxxxxxx"></div>
+      <div class="f-field"><span class="f-label">Role / Position</span><input type="text" id="editOfficerRole" placeholder="e.g. Secretary"></div>
+    </div>
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Account Status</span>
+        <select id="editOfficerStatus"><option>Active</option><option>Inactive</option></select>
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Reset Password (leave blank to keep current)</span><input type="password" id="editOfficerPass" placeholder="New password"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" onclick="closeModal('editOfficer')">Cancel</button>
+      <button class="btn btn-sm" onclick="saveEditOfficer()">Save Changes</button>
+    </div>
+  </div>
+</div>
 
 <!-- (Edit Resident handled inline) -->
 
@@ -1759,7 +1792,7 @@ async function apiDelete(url){ const r=await fetch(url,{method:'DELETE',headers:
 
 /* ══════════════ LOAD ALL DATA ══════════════ */
 async function loadAllData(){
-  const [r, a, iss, off, recs, pay, fin, finRecsData, hh] = await Promise.all([
+  const [r, a, iss, off, recs, pay, fin, finRecsData, hh, delin] = await Promise.all([
     apiGet('/api/residents'),
     apiGet('/api/announcements'),
     apiGet('/api/issues'),
@@ -1769,6 +1802,7 @@ async function loadAllData(){
     apiGet('/api/financial/summary'),
     apiGet('/api/financial'),
     apiGet('/api/households'),
+    apiGet('/api/delinquents'),
   ]);
   residents = r.map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
   households = Array.isArray(hh) ? hh : [];
@@ -1778,12 +1812,13 @@ async function loadAllData(){
   officers = off.map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
   recommendations = recs;
   payments = pay.map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
-  delinquents = residents.filter(r=>r.status==='Delinquent'||r.current_balance>0);
+  delinquents = Array.isArray(delin) ? delin : [];
 
   // update stat cards
   if(document.getElementById('statResidents')) document.getElementById('statResidents').textContent = residents.length;
   if(document.getElementById('statActive'))    document.getElementById('statActive').textContent    = residents.filter(r=>r.status==='Active').length;
   if(document.getElementById('statDelinq'))    document.getElementById('statDelinq').textContent    = delinquents.length;
+  if(document.getElementById('delinBadge'))     document.getElementById('delinBadge').textContent    = delinquents.length;
   if(document.getElementById('statBalance'))   document.getElementById('statBalance').textContent   = '₱'+Number(fin.total_balance||0).toLocaleString();
   if(document.getElementById('finCollected'))   document.getElementById('finCollected').textContent  = '₱'+Number(fin.total_collected||0).toLocaleString();
   if(document.getElementById('finDues'))        document.getElementById('finDues').textContent       = '₱'+Number(fin.total_dues||0).toLocaleString();
@@ -1791,7 +1826,6 @@ async function loadAllData(){
   if(document.getElementById('payCollected'))   document.getElementById('payCollected').textContent  = '₱'+Number(fin.total_collected||0).toLocaleString();
   if(document.getElementById('payDues'))        document.getElementById('payDues').textContent       = '₱'+Number(fin.total_dues||0).toLocaleString();
   if(document.getElementById('payBalance'))     document.getElementById('payBalance').textContent    = '₱'+Number(fin.total_balance||0).toLocaleString();
-  if(document.getElementById('delinBadge'))     document.getElementById('delinBadge').textContent    = fin.delinquent_count||0;
   if(document.getElementById('statIssues'))    document.getElementById('statIssues').textContent    = issues.filter(i=>i.status!=='Resolved').length;
   if(document.getElementById('issueBadge'))    document.getElementById('issueBadge').textContent    = issues.filter(i=>i.status!=='Resolved').length;
   if(document.getElementById('msgBadge')) document.getElementById('msgBadge').textContent = await (async()=>{try{const t=await apiGet('/api/messages/threads');return t.length||0;}catch(e){return 0;}})();
@@ -1886,18 +1920,22 @@ function renderMembers(){
 }
 
 function renderDelinquents(){
-  document.getElementById('delinquentGrid').innerHTML=delinquents.length?delinquents.map(d=>`
+  document.getElementById('delinquentGrid').innerHTML=delinquents.length?delinquents.map(d=>{
+    const residentNames=(d.residents||[]).map(r=>r.name).join(', ')||'—';
+    const totalBal=(d.residents||[]).reduce((s,r)=>s+(r.current_balance||0),0);
+    return `
     <div class="res-card">
       <div class="res-thumb">
         <div style="width:100%;height:100%;background:rgba(240,100,100,0.1);display:flex;align-items:center;justify-content:center;font-size:36px;">🏠</div>
       </div>
       <div class="res-info">
-        <h4>${d.name}</h4>
-        <div class="res-reason">Balance: ₱${Number(d.current_balance||0).toLocaleString()}</div>
-        <div class="res-location">${d.block_lot}</div>
-        <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">Status: ${d.status}</div>
+        <h4>${d.block_lot}</h4>
+        <div class="res-reason">${d.reason||'—'}</div>
+        <div class="res-location">Residents: ${residentNames}</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Outstanding: ₱${Number(totalBal).toLocaleString()} · Flagged: ${d.date_flagged||'—'}</div>
       </div>
-    </div>`).join(''):'<div class="empty-state"><div class="empty-icon">✅</div>No delinquent residents.</div>';
+    </div>`;
+  }).join(''):'<div class="empty-state"><div class="empty-icon">✅</div>No delinquent households.</div>';
 }
 
 function renderPayments(){
@@ -1968,39 +2006,55 @@ async function loadThreads(){
 
 function renderAnnouncements(){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
-  document.getElementById('annList').innerHTML=announcements.length?announcements.map(a=>`
+  document.getElementById('annList').innerHTML=announcements.length?announcements.map(a=>{
+    const meta=[];
+    if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
+    if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
+    if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
+    return `
     <div class="ann-item">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         <span class="ann-date">${a.created_at}</span>
       </div>
+      ${meta.length?'<div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0;">'+meta.join('')+'</div>':''}
       <div class="ann-title">${a.title}</div>
       <div class="ann-body">${a.content}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">By: ${a.posted_by}</div>
       <div class="ann-actions">
         <button class="btn btn-sm btn-danger" onclick="deleteAnn(${a.id})">Delete</button>
       </div>
-    </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
+    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
 }
 async function deleteAnn(id){
-  await apiDelete('/api/announcements/'+id);
-  announcements=announcements.filter(a=>a.id!==id);
-  renderAnnouncements();
-  showToast('🗑️ Announcement deleted.');
+  const res=await apiDelete('/api/announcements/'+id);
+  if(res.success){
+    announcements=announcements.filter(a=>a.id!==id);
+    renderAnnouncements();
+    showToast('🗑️ Announcement deleted.');
+  } else {
+    showToast('⚠ Failed to delete announcement.');
+  }
 }
 async function postAnnouncement(){
   const tag=document.getElementById('annType').value;
   const title=document.getElementById('annTitle').value.trim();
   const content=document.getElementById('annBody').value.trim();
+  const target=document.getElementById('annTarget').value;
+  const priority=document.getElementById('annPriority').value;
+  const event_date=document.getElementById('annDate').value||null;
   if(!title||!content){showToast('⚠ Please fill in all fields.');return;}
-  const res=await apiPost('/api/announcements',{tag,title,content});
+  const res=await apiPost('/api/announcements',{tag,title,content,target,priority,event_date});
   if(res.success){
     announcements.unshift(res.announcement);
     closeModal('ann');
     document.getElementById('annTitle').value='';
     document.getElementById('annBody').value='';
+    document.getElementById('annDate').value='';
     renderAnnouncements();
     showToast('✅ Announcement posted to all residents.');
+  } else {
+    showToast('⚠ '+(res.message||'Failed to post announcement.'));
   }
 }
 
@@ -2075,6 +2129,8 @@ async function submitResponse(){
     closeModal('respond');
     renderIssues();
     showToast('✅ Response sent.');
+  } else {
+    showToast('⚠ Failed to update status.');
   }
 }
 
@@ -2087,8 +2143,9 @@ function renderOfficers(){
       <td><span class="pill ${o.status==='Active'?'pill-active':'pill-inactive'}">${o.status||'Active'}</span></td>
       <td>
         <div style="display:flex;gap:6px;">
-          <button class="btn btn-sm btn-danger" onclick="removeOfficer(${o.id})">Remove</button>
-        </div>
+            <button class="btn btn-sm btn-blue" onclick="openEditOfficer(${o.id})">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="removeOfficer(${o.id})">Remove</button>
+          </div>
       </td>
     </tr>`).join('');
 }
@@ -2118,7 +2175,46 @@ async function adminStartThread(){
   }
 }
 
-async function removeOfficer(id){ await apiDelete('/api/officers/'+id); officers=officers.filter(o=>o.id!==id); renderOfficers(); showToast('🗑️ Officer removed.'); }
+async function removeOfficer(id){
+  const res=await apiDelete('/api/officers/'+id);
+  if(res.success){officers=officers.filter(o=>o.id!==id);renderOfficers();showToast('🗑️ Officer removed.');}
+  else{showToast('⚠ Failed to remove officer.');}
+}
+
+function openEditOfficer(id){
+  const o=officers.find(x=>x.id===id);
+  if(!o) return;
+  document.getElementById('editOfficerIdx').value=id;
+  document.getElementById('editOfficerName').value=o.name||'';
+  document.getElementById('editOfficerEmail').value=o.email||'';
+  document.getElementById('editOfficerContact').value=o.contact_number||'';
+  document.getElementById('editOfficerRole').value=o.role_description||'';
+  document.getElementById('editOfficerStatus').value=o.status==='Active'?'Active':'Inactive';
+  document.getElementById('editOfficerPass').value='';
+  openModal('editOfficer');
+}
+async function saveEditOfficer(){
+  const id=document.getElementById('editOfficerIdx').value;
+  const name=document.getElementById('editOfficerName').value.trim();
+  const email=document.getElementById('editOfficerEmail').value.trim();
+  const contact_number=document.getElementById('editOfficerContact').value.trim();
+  const role_description=document.getElementById('editOfficerRole').value.trim();
+  const status=document.getElementById('editOfficerStatus').value;
+  if(!name||!email){showToast('⚠ Name and email required.');return;}
+  const payload={name,email,contact_number,role_description,status};
+  const newPass=document.getElementById('editOfficerPass').value;
+  if(newPass) payload.password=newPass;
+  const res=await apiPut('/api/officers/'+id,payload);
+  if(res.success){
+    const idx=officers.findIndex(o=>o.id===parseInt(id));
+    if(idx>=0) officers[idx]=res.officer;
+    closeModal('editOfficer');
+    renderOfficers();
+    showToast('✅ Officer updated.');
+  } else {
+    showToast('⚠ '+(res.message||'Failed to update officer.'));
+  }
+}
 
 async function openEditHousehold(id){
   const h=muHouseholds.find(x=>x.id===id);
@@ -2142,7 +2238,8 @@ async function openEditUser(id){
   document.getElementById('editUIdx').value=id;
   document.getElementById('editUName').value=u.name||'';
   document.getElementById('editUEmail').value=u.email||'';
-  document.getElementById('editUStatus').value=u.status==='Active'?'Active':'Deactivated';
+  document.getElementById('editUStatus').value=u.status==='Active'?'Active':'Inactive';
+  document.getElementById('editUPass').value='';
   openModal('muEditUser');
 }
 async function saveEditUser(){
@@ -2179,7 +2276,8 @@ async function saveChangeStatus(){
   const remarks=document.getElementById('statusHRemarks').value.trim();
   if(!id){showToast('⚠ No household selected.');return;}
   const reason=document.getElementById('statusHReason').value;
-  const res=await apiPut('/api/households/'+id,{status,reason});
+  const fullReason=remarks ? reason+': '+remarks : reason;
+  const res=await apiPut('/api/households/'+id,{status,reason:fullReason});
   if(res.success){
     closeModal('muChangeStatus');
     await loadManageData();
@@ -2222,7 +2320,7 @@ function renderRecommendations(){
     <div class="issue-item" style="margin-bottom:12px;">
       <div class="issue-top">
         <div>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${r.resident} · ${r.created_at}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${r.resident} · ${r.created_at}${r.category?' · '+r.category:''}</div>
           <div class="issue-title">${r.title}</div>
         </div>
         ${statusPill[r.status]||''}
@@ -2308,11 +2406,12 @@ async function addResident(){
   if(!password){showToast('⚠ Password is required.');return;}
   const res=await apiPost('/api/residents',{name,email,password:password,house_id,contact_number});
   if(res.success){
-    const r=res.resident;
-    residents.push({...r,block_lot:block_lot_number||'—',color:colorFor(residents.length),initials:initials(r.name)});
     closeModal('addResident');
-    renderResidents();
+    await loadManageData();
+    loadAllData();
     showToast('✅ Resident added successfully.');
+  } else {
+    showToast('⚠ '+(res.message||'Failed to add resident.'));
   }
 }
 

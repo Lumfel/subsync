@@ -20,6 +20,9 @@ class AnnouncementController extends Controller
                 'title'      => $a->title,
                 'content'    => $a->content,
                 'tag'        => $a->tag ?? 'notice',
+                'target'     => $a->target ?? 'All Residents',
+                'priority'   => $a->priority ?? 'Normal',
+                'event_date' => $a->event_date,
                 'posted_by'  => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
                 'created_at' => $a->created_at?->format('M d, Y'),
             ]);
@@ -31,12 +34,17 @@ class AnnouncementController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'title'   => 'required|string|max:200',
-            'content' => 'required|string',
-            'tag'     => 'sometimes|in:notice,urgent,event',
+            'title'      => 'required|string|max:200',
+            'content'    => 'required|string',
+            'tag'        => 'sometimes|in:notice,urgent,event',
+            'target'     => 'sometimes|string|max:50',
+            'priority'   => 'sometimes|in:Normal,High',
+            'event_date' => 'nullable|date',
         ]);
 
-        $data['tag'] = $data['tag'] ?? 'notice';
+        $data['tag']      = $data['tag'] ?? 'notice';
+        $data['target']   = $data['target'] ?? 'All Residents';
+        $data['priority'] = $data['priority'] ?? 'Normal';
 
         // Determine poster: admin or officer
         if (session('admin_id')) {
@@ -58,6 +66,9 @@ class AnnouncementController extends Controller
             'title'      => $announcement->title,
             'content'    => $announcement->content,
             'tag'        => $announcement->tag,
+            'target'     => $announcement->target,
+            'priority'   => $announcement->priority,
+            'event_date' => $announcement->event_date,
             'posted_by'  => $posterName,
             'created_at' => $announcement->created_at->format('M d, Y'),
         ]]);

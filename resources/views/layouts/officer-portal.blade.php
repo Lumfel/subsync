@@ -794,10 +794,13 @@ function renderOverviewAnn(){
     <div class="ann-item">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
+        ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
         <span class="ann-date">${a.created_at}</span>
       </div>
       <div class="ann-title">${a.title}</div>
       <div class="ann-body">${a.content}</div>
+      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
+      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
     </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
 }
 
@@ -812,23 +815,30 @@ function renderMyAnn(){
     <div class="ann-item">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
+        ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
         <span class="ann-date">${a.created_at}</span>
       </div>
       <div class="ann-title">${a.title}</div>
       <div class="ann-body">${a.content}</div>
+      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
+      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
       <div class="ann-actions">
         <button class="btn btn-sm btn-danger" onclick="deleteMyAnn(${a.id})">Delete</button>
       </div>
     </div>`).join('');
 }
 async function deleteMyAnn(id){
-  await apiDelete('/api/announcements/'+id);
-  adminAnnouncements=adminAnnouncements.filter(a=>a.id!==id);
-  myAnnouncements=myAnnouncements.filter(a=>a.id!==id);
-  renderMyAnn();
-  renderOverviewAnn();
-  showToast('🗑️ Announcement deleted.');
-  if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnouncements.length;
+  const res=await apiDelete('/api/announcements/'+id);
+  if(res.success){
+    adminAnnouncements=adminAnnouncements.filter(a=>a.id!==id);
+    myAnnouncements=myAnnouncements.filter(a=>a.id!==id);
+    renderMyAnn();
+    renderOverviewAnn();
+    showToast('🗑️ Announcement deleted.');
+    if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnouncements.length;
+  } else {
+    showToast('⚠ Failed to delete announcement.');
+  }
 }
 async function postAnnouncement(){
   const tag=document.getElementById('annType').value;
@@ -897,10 +907,11 @@ async function submitOfficerResponse(){
   if(!issue) return;
   const newStatus=document.getElementById('officerRespondStatus').value;
   const content=document.getElementById('officerRespondText').value.trim();
-  await Promise.all([
+  const [statusRes]=await Promise.all([
     apiPut('/api/issues/'+officerRespondingId+'/status',{status:newStatus}),
-    content ? apiPost('/api/issues/'+officerRespondingId+'/respond',{content}) : Promise.resolve(),
+    content ? apiPost('/api/issues/'+officerRespondingId+'/respond',{content}) : Promise.resolve({success:true}),
   ]);
+  if(!statusRes.success){showToast('⚠ Failed to update status.');return;}
   issue.status=newStatus;
   if(content) issue.responses=[{content}];
   closeModal('officerRespond');

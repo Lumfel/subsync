@@ -687,7 +687,7 @@ async function loadHouseholdMembers(){
   try{
     const data=await fetch('/api/household-members?house_id='+HOUSE_ID,{headers:{'Accept':'application/json'}}).then(r=>r.json());
     if(Array.isArray(data)){
-      members=data.map(m=>({id:m.id,name:m.name,role:m.role_in_household||m.role||'Member'}));
+      members=data.map(m=>({id:m.id,name:m.name,role:m.relationship||'Member'}));
       renderMembers();
     }
   }catch(e){}
@@ -707,7 +707,7 @@ async function addMember(){
   const n=document.getElementById('memberName'),r=document.getElementById('memberRole');
   if(!n.value.trim()){n.focus();return;}
   const name=n.value.trim(),role=r.value.trim()||'Member';
-  const res=await fetch('/api/household-members',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify({house_id:HOUSE_ID,name,role})}).then(x=>x.json());
+  const res=await fetch('/api/household-members',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify({house_id:HOUSE_ID,name,relationship:role})}).then(x=>x.json());
   if(res.success){
     members.push({id:res.member?.id,name,role});
     n.value=''; r.value=''; renderMembers();
@@ -736,15 +736,21 @@ async function loadAnnouncements(){
 }
 function renderAnnouncements(){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
-  document.getElementById('announcementList').innerHTML=announcements.length?announcements.map(a=>`
+  document.getElementById('announcementList').innerHTML=announcements.length?announcements.map(a=>{
+    const meta=[];
+    if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
+    if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
+    if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
+    return `
     <div class="ann-item">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         <span class="ann-date">${a.created_at}</span>
       </div>
+      ${meta.length?'<div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0;">'+meta.join('')+'</div>':''}
       <div class="ann-title">${a.title}</div>
       <div class="ann-body">${a.content}</div>
-    </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
+    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
 }
 
 /* ══ MESSAGES ══ */
@@ -908,6 +914,8 @@ async function submitIssue(){
     closeIssuePicker();
     await loadIssues();
     showToast('✅ Report submitted. The admin will review it shortly.');
+  } else {
+    showToast('⚠ '+(data.message||'Failed to submit report. Please try again.'));
   }
 }
 
@@ -932,6 +940,7 @@ function renderRecs(){
           <div class="rec-title">${r.title}</div>
           <span class="pill pill-idea">${statusLabel[r.status]||r.status}</span>
         </div>
+        ${r.category?`<div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${r.category}</div>`:''}
         <div class="rec-body">${r.description}</div>
         <div class="rec-meta">
           <span>${r.created_at ? new Date(r.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'}</span>
@@ -954,6 +963,8 @@ async function submitRec(){
     document.getElementById('recBody').value='';
     await loadRecs();
     showToast('✅ Suggestion submitted!');
+  } else {
+    showToast('⚠ '+(data.message||'Failed to submit suggestion. Please try again.'));
   }
 }
 

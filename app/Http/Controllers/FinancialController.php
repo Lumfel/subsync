@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FinancialRecord;
 use App\Models\FinancialReport;
 use App\Models\Resident;
+use App\Models\Delinquent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -74,7 +75,7 @@ class FinancialController extends Controller
         $totalDues     = FinancialRecord::whereIn('record_type', ['Due', 'Penalty'])->sum('amount');
         $totalPayments = FinancialRecord::where('record_type', 'Payment')->sum('amount');
         $totalBalance  = Resident::sum('current_balance');
-        $delinquentCount = Resident::where('current_balance', '>', 0)->count();
+        $delinquentCount = Delinquent::count();
 
         return response()->json([
             'total_collected' => $totalPayments,
