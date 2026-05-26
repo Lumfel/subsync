@@ -150,7 +150,7 @@ body {
 .tab-panel.active { display: block; }
 .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; }
 .modal-overlay.active { display:flex; }
-.modal-box { background:var(--card); border:1px solid var(--glass-border); border-radius:14px; padding:28px; min-width:360px; max-width:500px; width:90%; }
+.modal-box { background:rgba(14,16,32,0.98); border:1px solid var(--glass-border); border-radius:14px; padding:28px; min-width:360px; max-width:500px; width:90%; }
 .modal-title { font-size:16px; font-weight:600; margin-bottom:16px; }
 .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
 .modal-close-btn { background:transparent; border:1px solid var(--glass-border); color:var(--text-mid); padding:8px 16px; border-radius:8px; cursor:pointer; }
@@ -336,6 +336,20 @@ select option { background: #0a0e1a; color: var(--text); }
 /* ── EMPTY ── */
 .empty-state { text-align:center; padding:36px 20px; color:var(--text-dim); font-size:13px; line-height:1.7; }
 .empty-icon { font-size:30px; margin-bottom:8px; opacity:0.5; }
+@keyframes pulse-critical {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,64,64,0); }
+  50%      { box-shadow: 0 0 12px 5px rgba(255,64,64,0.35); }
+}
+.issue-critical-row { border-left:3px solid #ff4040!important; animation:pulse-critical 2s ease-in-out infinite; }
+/* ── EMERGENCY ALERT BANNER ── */
+#emergencyAlert {
+  display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
+  background:linear-gradient(90deg,#7a0000,#cc1400,#7a0000);
+  background-size:200% 100%; animation:emergencyScroll 3s linear infinite;
+  color:#fff; padding:12px 16px; text-align:center; font-size:14px; font-weight:700;
+  box-shadow:0 2px 16px rgba(200,20,20,0.6);
+}
+@keyframes emergencyScroll { 0%{background-position:0 0} 100%{background-position:200% 0} }
 
 /* ── TOAST ── */
 #toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(18,16,26,0.96); border:1px solid var(--glass-border); backdrop-filter:blur(12px); color:var(--text); font-size:13px; padding:10px 22px; border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s, transform 0.25s; z-index:999; white-space:nowrap; }
@@ -359,6 +373,13 @@ select option { background: #0a0e1a; color: var(--text); }
   <input type="file" id="bannerInput" accept="image/*" onchange="changeImg('bannerPreview',this)">
 </div>
 
+<!-- Emergency alert banner -->
+<div id="emergencyAlert">
+  🚨 <span id="emergencyAlertText">CRITICAL ISSUE REPORTED</span>
+  &nbsp;&nbsp;<button onclick="switchTab('reports');dismissEmergency()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:3px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;">View Issue</button>
+  &nbsp;<button onclick="dismissEmergency()" style="background:transparent;border:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;line-height:1;">✕</button>
+</div>
+
 <div class="page">
   <!-- PROFILE -->
   <div class="profile-header">
@@ -368,10 +389,14 @@ select option { background: #0a0e1a; color: var(--text); }
       <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)">
     </div>
     <div class="profile-meta">
-      <h2 id="officerName" contenteditable="true" spellcheck="false">{{ $officerName }}</h2>
-      <span class="location">📍 <span id="blockText" contenteditable="true" spellcheck="false">Block 1, Lot 5</span></span>
-      <span class="role-badge">🛡️ <span id="roleText" contenteditable="true" spellcheck="false">{{ $officerRole }}</span></span>
+      <h2 id="officerName" contenteditable="true" spellcheck="false" title="Click to edit your name">{{ $officerName }}</h2>
+      <span class="location">📍 <span id="blockText">{{ $officerRole }}</span></span>
+      <span class="role-badge">🛡️ <span id="roleText" contenteditable="true" spellcheck="false" title="Click to edit your role">{{ $officerRole }}</span></span>
     </div>
+    <form id="logoutForm" action="/logout" method="POST" style="display:none;">
+      @csrf
+    </form>
+    <button onclick="confirmLogout()" style="margin-left:auto;align-self:flex-start;background:rgba(240,128,128,0.12);border:1px solid rgba(240,128,128,0.3);color:#f08080;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='rgba(240,128,128,0.22)'" onmouseout="this.style.background='rgba(240,128,128,0.12)'">⏻ Log Out</button>
   </div>
 
   <!-- TABS -->
@@ -490,7 +515,7 @@ select option { background: #0a0e1a; color: var(--text); }
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;flex-wrap:wrap;gap:10px;">
       <div class="card-title" style="margin:0;">Issue Reports</div>
       <div style="display:flex;gap:8px;">
-        <select id="officerIssueFilter" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text-main);padding:6px 10px;border-radius:6px;font-size:12px;">
+        <select id="officerIssueFilter" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
           <option value="">All Statuses</option>
           <option value="Pending">Pending</option>
           <option value="In Progress">In Progress</option>
@@ -507,7 +532,7 @@ select option { background: #0a0e1a; color: var(--text); }
         <div id="officerRespondTitle" style="font-size:14px;color:var(--text-mid);margin-bottom:12px;"></div>
         <div class="f-field" style="margin-bottom:12px;">
           <span class="f-label">Update Status</span>
-          <select id="officerRespondStatus" style="background:var(--input-bg);border:1px solid var(--glass-border);color:var(--text-main);padding:8px;border-radius:6px;width:100%;">
+          <select id="officerRespondStatus" style="background:rgba(255,255,255,0.07);border:1px solid var(--glass-border);color:var(--text);padding:8px;border-radius:6px;width:100%;">
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
             <option value="Resolved">Resolved</option>
@@ -524,20 +549,6 @@ select option { background: #0a0e1a; color: var(--text); }
       </div>
     </div>
 
-    <!-- New Conversation Modal -->
-    <div class="modal-overlay" id="modal-officerNewConv">
-      <div class="modal-box">
-        <div class="modal-title">Start New Conversation</div>
-        <div class="f-field" style="margin-bottom:16px;">
-          <span class="f-label">Subject</span>
-          <input type="text" id="officerConvTitle" placeholder="e.g. Block 2 maintenance request…">
-        </div>
-        <div class="modal-actions">
-          <button class="modal-close-btn" onclick="closeModal('officerNewConv')">Cancel</button>
-          <button class="btn btn-sm" onclick="startOfficerConversation()">Start</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ══ FILES ══ -->
@@ -628,6 +639,27 @@ select option { background: #0a0e1a; color: var(--text); }
 
 </div><!-- end .page -->
 
+<!-- New Conversation Modal (root-level so position:fixed works from any tab) -->
+<div class="modal-overlay" id="modal-officerNewConv">
+  <div class="modal-box">
+    <div class="modal-title">New Message</div>
+    <div class="f-field" style="margin-bottom:12px;">
+      <span class="f-label">To</span>
+      <select id="officerConvRecipient" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:inherit;font-size:13px;box-sizing:border-box;">
+        <option value="admin|0">🏢 HOA Admin</option>
+      </select>
+    </div>
+    <div class="f-field" style="margin-bottom:16px;">
+      <span class="f-label">Subject</span>
+      <input type="text" id="officerConvTitle" placeholder="e.g. Block 2 maintenance request…">
+    </div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" onclick="closeModal('officerNewConv')">Cancel</button>
+      <button class="btn btn-sm" onclick="startOfficerConversation()">Send</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 <div id="annNotif">
   <span style="font-size:18px;">📢</span>
@@ -641,6 +673,10 @@ select option { background: #0a0e1a; color: var(--text); }
 
 <script>
 /* ══ UTILS ══ */
+function confirmLogout(){
+  if(confirm('Are you sure you want to log out?'))
+    document.getElementById('logoutForm').submit();
+}
 function changeImg(id,inp){
   const f=inp.files[0]; if(!f) return;
   const r=new FileReader();
@@ -681,14 +717,22 @@ async function apiGet(url){const r=await fetch(url,{headers:{'Accept':'applicati
 async function apiPost(url,data){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify(data)});return r.json();}
 async function apiPut(url,data){const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify(data)});return r.json();}
 async function apiDelete(url){const r=await fetch(url,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()}});return r.json();}
+async function safeGetArray(url){
+  try{
+    const data=await apiGet(url);
+    return Array.isArray(data)?data:[];
+  }catch(e){
+    return [];
+  }
+}
 function openModal(id){const el=document.getElementById('modal-'+id);if(el)el.classList.add('active');}
 function closeModal(id){const el=document.getElementById('modal-'+id);if(el)el.classList.remove('active');}
 
 async function loadOfficerData(){
   const [ann, iss, res]=await Promise.all([
-    fetch('/api/announcements').then(r=>r.json()),
-    fetch('/api/issues').then(r=>r.json()),
-    fetch('/api/residents').then(r=>r.json()).catch(()=>[]),
+    safeGetArray('/api/announcements'),
+    safeGetArray('/api/issues'),
+    safeGetArray('/api/residents'),
   ]);
   adminAnnouncements=ann;
   if(ann.length) lastAnnouncementId=ann[0].id;
@@ -699,10 +743,13 @@ async function loadOfficerData(){
   renderOfficerIssues();
   // Update overview stat cards
   const now=new Date();
-  const thisMonth=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const myAnnThisMonth=myAnnouncements.filter(a=>(a.created_at||'').startsWith(thisMonth)).length;
+  const myAnnThisMonth=myAnnouncements.filter(a=>{
+    if(!a.created_at) return false;
+    const d=new Date(a.created_at);
+    return !isNaN(d)&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  }).length;
   const openIssues=iss.filter(i=>i.status!=='Resolved').length;
-  if(document.getElementById('annCount'))         document.getElementById('annCount').textContent=myAnnouncements.length;
+  if(document.getElementById('annCount'))         document.getElementById('annCount').textContent=myAnnThisMonth;
   if(document.getElementById('openReportsCount')) document.getElementById('openReportsCount').textContent=openIssues;
   if(document.getElementById('blockResidentsCount')) document.getElementById('blockResidentsCount').textContent=Array.isArray(res)?res.length:'—';
 }
@@ -747,6 +794,7 @@ async function selectOfficerThread(id,el){
 }
 function selectThread(id,el){ /* legacy */ }
 
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
 function renderMessages(){
   const body=document.getElementById('msgBody');
   const t=threads[currentThread];
@@ -757,10 +805,10 @@ function renderMessages(){
       const isMe=m.sender_type==='officer';
       const avatar=isMe?'Me':(m.sender_name||'SA').substring(0,2).toUpperCase();
       return `<div class="msg-bubble-wrap ${isMe?'mine':''}">
-        <div class="bubble-avatar ${isMe?'ba-mine':'ba-admin'}">${avatar}</div>
+        <div class="bubble-avatar ${isMe?'ba-mine':'ba-admin'}">${escHtml(avatar)}</div>
         <div>
-          <div class="bubble ${isMe?'from-mine':'from-admin'}">${m.content}</div>
-          <span class="bubble-time">${m.created_at||''}</span>
+          <div class="bubble ${isMe?'from-mine':'from-admin'}">${escHtml(m.content)}</div>
+          <span class="bubble-time">${escHtml(m.created_at||'')}</span>
         </div>
       </div>`;
     }).join('');
@@ -784,14 +832,28 @@ async function sendMessage(){
 }
 
 /* New officer conversation */
-function openOfficerNewConv(){
+async function openOfficerNewConv(){
   const el=document.getElementById('modal-officerNewConv');
-  if(el){document.getElementById('officerConvTitle').value='';el.classList.add('active');}
+  if(!el) return;
+  document.getElementById('officerConvTitle').value='';
+  // Populate recipient dropdown with Admin + residents
+  const sel=document.getElementById('officerConvRecipient');
+  if(sel){
+    const residents=await apiGet('/api/residents').catch(()=>[]);
+    sel.innerHTML='<option value="admin|0">🏢 HOA Admin</option>'+
+      (residents||[]).map(r=>`<option value="resident|${r.id}">👤 ${r.name} (Resident)</option>`).join('');
+  }
+  el.classList.add('active');
 }
 async function startOfficerConversation(){
-  const title=document.getElementById('officerConvTitle').value.trim();
-  if(!title){showToast('⚠ Please enter a subject.');return;}
-  const res=await apiPost('/api/messages/start',{title});
+  const sel=document.getElementById('officerConvRecipient');
+  const [recipientType,recipientId]=sel?(sel.value||'admin|0').split('|'):['admin','0'];
+  const recipientLabel=sel?sel.options[sel.selectedIndex].text:'HOA Admin';
+  let title=document.getElementById('officerConvTitle').value.trim();
+  if(!title) title=recipientLabel.replace(/^[^ ]+ /,'');
+  const payload={title};
+  if(recipientType==='resident'){ payload.recipient_type='resident'; payload.recipient_id=recipientId; }
+  const res=await apiPost('/api/messages/start',payload);
   if(res.success){
     closeModal('officerNewConv');
     const t=res.conversation;
@@ -846,6 +908,7 @@ function renderMyAnn(){
     </div>`).join('');
 }
 async function deleteMyAnn(id){
+  if(!confirm('Delete this announcement? This cannot be undone.')) return;
   const res=await apiDelete('/api/announcements/'+id);
   if(res.success){
     adminAnnouncements=adminAnnouncements.filter(a=>a.id!==id);
@@ -887,29 +950,36 @@ function renderOfficerIssues(){
   const sf=(document.getElementById('officerIssueFilter')||{}).value||'';
   const filtered=officerIssues.filter(i=>!sf||i.status===sf);
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
+  const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
   const el=document.getElementById('officerIssueList');
-  el.innerHTML=filtered.length?filtered.map(i=>`
-    <div class="issue-item" style="margin-bottom:12px;">
-      <div class="issue-top">
+  el.innerHTML=filtered.length?filtered.map(i=>{
+    const isCritical=i.priority==='Critical';
+    return `
+    <div class="report-item ${isCritical?'issue-critical-row':''}" style="margin-bottom:12px;">
+      <div class="report-top">
         <div>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${i.resident} · ${i.block_lot}</div>
-          <div class="issue-title">${i.title}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${escHtml(i.resident)} · ${escHtml(i.block_lot)}</div>
+          <div class="report-title">${isCritical?'🚨 ':''}${escHtml(i.title)}</div>
         </div>
-        ${statusPill[i.status]||''}
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          ${statusPill[i.status]||''}
+          ${i.priority?`<span style="font-size:10px;font-weight:700;color:${priColor[i.priority]||'var(--text-dim)'}">${escHtml(i.priority)}</span>`:''}
+        </div>
       </div>
-      <div class="issue-body">${i.description}</div>
-      <div class="issue-meta">
-        <span class="pill pill-notice">${i.category}</span>
-        <span class="meta-txt">· #${i.id} · ${i.created_at}</span>
+      <div class="report-meta" style="font-size:13px;color:var(--text-mid);margin-bottom:10px;line-height:1.55;">${escHtml(i.description)}</div>
+      <div class="report-meta">
+        <span class="pill pill-notice">${escHtml(i.category)}</span>
+        <span style="font-size:11px;color:var(--text-dim);">· #${i.id} · ${escHtml(i.created_at)}</span>
       </div>
       ${(i.responses&&i.responses.length)?`<div style="margin-top:12px;padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;">
         <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Response</div>
-        <div style="font-size:13px;color:var(--text-mid);">${i.responses[0].content}</div>
+        <div style="font-size:13px;color:var(--text-mid);">${escHtml(i.responses[0].content)}</div>
       </div>`:''}
-      <div class="issue-actions">
+      <div class="report-actions">
         ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="openOfficerRespond(${i.id})">Respond</button>`:''}
       </div>
-    </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues found.</div>';
+    </div>`;
+}).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues found.</div>';
 }
 async function openOfficerRespond(id){
   officerRespondingId=id;
@@ -982,7 +1052,8 @@ async function sendFile(){
   fd.append('period',   period || todayStr());
   fd.append('notes',    notes);
 
-  showToast('📤 Uploading…');
+  const sendBtn = document.querySelector('[onclick="sendFile()"]');
+  if(sendBtn){ sendBtn.disabled=true; sendBtn.textContent='📤 Uploading…'; }
   try {
     const r   = await fetch('/api/officer-files', {
       method: 'POST',
@@ -1006,6 +1077,8 @@ async function sendFile(){
     }
   } catch(e) {
     showToast('⚠ Upload error: ' + e.message);
+  } finally {
+    if(sendBtn){ sendBtn.disabled=false; sendBtn.textContent='📤 Send to Admin'; }
   }
 }
 
@@ -1029,6 +1102,7 @@ function renderSentFiles(){
 }
 
 async function deleteSentFile(id){
+  if(!confirm('Delete this sent file? This cannot be undone.')) return;
   const res=await apiDelete('/api/officer-files/'+id).catch(()=>({}));
   if(res.success){
     const idx=sentFiles.findIndex(f=>f.id===id);
@@ -1039,7 +1113,50 @@ async function deleteSentFile(id){
 }
 
 /* ══ INIT ══ */
+const OFFICER_ID = {{ $officerId ?? 'null' }};
 loadOfficerData();
+
+/* ── Save officer name on blur ── */
+const _oNameEl = document.getElementById('officerName');
+if(_oNameEl && OFFICER_ID){
+  let _oNameSaved = _oNameEl.textContent.trim();
+  _oNameEl.addEventListener('blur', async()=>{
+    const n = _oNameEl.textContent.trim();
+    if(!n || n === _oNameSaved){ _oNameEl.textContent=_oNameSaved||n; return; }
+    try{
+      const r = await fetch('/api/officers/'+OFFICER_ID,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},
+        body: JSON.stringify({name: n}),
+      });
+      const res = await r.json();
+      if(res.success){ _oNameSaved=n; showToast('✅ Name updated.'); }
+      else { _oNameEl.textContent=_oNameSaved; showToast('⚠ Could not save name.'); }
+    } catch(e){ _oNameEl.textContent=_oNameSaved; showToast('⚠ Network error.'); }
+  });
+  _oNameEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); _oNameEl.blur(); } });
+}
+
+/* ── Save officer role on blur ── */
+const _oRoleEl = document.getElementById('roleText');
+if(_oRoleEl && OFFICER_ID){
+  let _oRoleSaved = _oRoleEl.textContent.trim();
+  _oRoleEl.addEventListener('blur', async()=>{
+    const v = _oRoleEl.textContent.trim();
+    if(!v || v === _oRoleSaved){ _oRoleEl.textContent=_oRoleSaved||v; return; }
+    try{
+      const r = await fetch('/api/officers/'+OFFICER_ID,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},
+        body: JSON.stringify({role_description: v}),
+      });
+      const res = await r.json();
+      if(res.success){ _oRoleSaved=v; showToast('✅ Role updated.'); }
+      else { _oRoleEl.textContent=_oRoleSaved; showToast('⚠ Could not save role.'); }
+    } catch(e){ _oRoleEl.textContent=_oRoleSaved; showToast('⚠ Network error.'); }
+  });
+  _oRoleEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); _oRoleEl.blur(); } });
+}
 
 function showAnnBanner(ann){
   document.getElementById('annNotifTitle').textContent=ann.title;
@@ -1054,10 +1171,30 @@ document.getElementById('annNotifViewBtn').onclick=()=>{
   switchTab('announcements');
 };
 
+// Fast poll: check for critical/high unresolved issues every 5s
+let _lastUrgentId = null;
+function dismissEmergency(){ document.getElementById('emergencyAlert').style.display='none'; }
 setInterval(async()=>{
   if(document.hidden) return;
   try{
-    const data=await fetch('/api/announcements').then(r=>r.json());
+    const u=await fetch('/api/issues/urgent-check',{headers:{'Accept':'application/json'}}).then(r=>r.json());
+    if(u.count>0&&u.latest_id!==_lastUrgentId){
+      _lastUrgentId=u.latest_id;
+      const el=document.getElementById('emergencyAlert');
+      const txt=document.getElementById('emergencyAlertText');
+      if(txt&&u.latest) txt.textContent=`🚨 CRITICAL ISSUE — "${u.latest.title}" by ${u.latest.resident}`;
+      if(el) el.style.display='block';
+      // immediately refresh issues list
+      const data=await safeGetArray('/api/issues');
+      if(Array.isArray(data)){ officerIssues=data; renderOfficerIssues(); }
+    }
+  }catch(e){}
+},5000);
+
+setInterval(async()=>{
+  if(document.hidden) return;
+  try{
+    const data=await safeGetArray('/api/announcements');
     if(!Array.isArray(data)||!data.length) return;
     if(data[0].id>lastAnnouncementId){
       const newOnes=data.filter(a=>a.id>lastAnnouncementId);
@@ -1070,6 +1207,35 @@ setInterval(async()=>{
     }
   }catch(e){}
 },15000);
+
+// Poll active message thread every 10s when messages tab is open
+setInterval(async()=>{
+  if(document.hidden||!currentThread) return;
+  if(document.getElementById('panel-messages')?.classList.contains('active')){
+    try{
+      const msgs=await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json());
+      if(msgs.length!==(threads[currentThread]?.msgs||[]).length){
+        threads[currentThread].msgs=msgs;
+        renderMessages();
+      }
+    }catch(e){}
+  }
+},10000);
+
+// Poll issues every 30s when issues tab is visible (catches new resident submissions)
+setInterval(async()=>{
+  if(document.hidden) return;
+  if(document.getElementById('panel-reports')?.classList.contains('active')){
+    try{
+      const data=await safeGetArray('/api/issues');
+      if(Array.isArray(data)){
+        officerIssues=data;
+        renderOfficerIssues();
+      }
+    }catch(e){}
+  }
+},30000);
+
 // Load previously sent files from server
 (async()=>{
   try{
@@ -1084,9 +1250,9 @@ setInterval(async()=>{
         size:f.size_bytes?Math.round(f.size_bytes/1024)+'KB':'—',
         status:'sent',
       }));
-      renderSentFiles();
     }
   }catch(e){}
+  renderSentFiles();
 })();
 </script>
 </body>

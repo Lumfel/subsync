@@ -399,6 +399,11 @@ select option { background: #1a120d; color: var(--text); }
 .empty-state { text-align: center; padding: 36px 20px; color: var(--text-dim); font-size: 13px; line-height: 1.7; }
 .empty-icon { font-size: 30px; margin-bottom: 8px; opacity: 0.5; }
 
+@keyframes pulse-critical {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,64,64,0); }
+  50%      { box-shadow: 0 0 10px 4px rgba(255,64,64,0.28); }
+}
+
 /* ───── Toast ───── */
 #toast {
   position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -446,9 +451,13 @@ select option { background: #1a120d; color: var(--text); }
       <input type="file" id="profileInput" accept="image/*" onchange="changeImage('profilePreview',this)">
     </div>
     <div class="profile-meta">
-      <h2 id="householdName" contenteditable="true" spellcheck="false">{{ $residentName }}</h2>
-      <span class="location">📍 <span id="locationText" contenteditable="true" spellcheck="false">{{ $blockLot }}</span></span>
+      <h2 id="householdName" contenteditable="true" spellcheck="false" title="Click to edit your name">{{ $residentName }}</h2>
+      <span class="location">📍 <span id="locationText">{{ $blockLot }}</span></span>
     </div>
+    <form id="logoutForm" action="/logout" method="POST" style="display:none;">
+      @csrf
+    </form>
+    <button onclick="confirmLogout()" style="margin-left:auto;align-self:flex-start;background:rgba(240,128,128,0.12);border:1px solid rgba(240,128,128,0.3);color:#f08080;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='rgba(240,128,128,0.22)'" onmouseout="this.style.background='rgba(240,128,128,0.12)'">⏻ Log Out</button>
   </div>
 
   <!-- Tab navigation -->
@@ -562,9 +571,10 @@ select option { background: #1a120d; color: var(--text); }
           <span class="f-label">Priority Level</span>
           <select id="issuePriority">
             <option value="">Select priority…</option>
-            <option value="high">🔴 High — Immediate attention</option>
-            <option value="medium">🟡 Medium — Within a few days</option>
-            <option value="low">🟢 Low — General concern</option>
+            <option value="Critical">🚨 Critical / Emergency — Immediate danger</option>
+            <option value="High">🔴 High — Urgent, same-day attention</option>
+            <option value="Medium">🟡 Medium — Within a few days</option>
+            <option value="Low">🟢 Low — General concern</option>
           </select>
         </div>
       </div>
@@ -656,6 +666,12 @@ select option { background: #1a120d; color: var(--text); }
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#4287f5;display:inline-block;"></span>My Household</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;display:inline-block;"></span>Issue (Pending)</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;"></span>Issue (In Progress)</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#888;display:inline-block;"></span>Issue (Resolved, ≤7d)</span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
+          <input type="checkbox" id="res-layer-heatmap" checked style="accent-color:var(--accent);">
+          <span style="background:linear-gradient(to right,#1a003e,#5c0099,#0044bb,#cc4400,#ff2200);border-radius:4px;width:36px;height:11px;display:inline-block;"></span>
+          Heatmap
+        </label>
       </div>
     </div>
   </div>
@@ -675,6 +691,10 @@ select option { background: #1a120d; color: var(--text); }
 
 <script>
 /* ══ UTILS ══ */
+function confirmLogout(){
+  if(confirm('Are you sure you want to log out?'))
+    document.getElementById('logoutForm').submit();
+}
 function changeImage(id,inp){
   const f=inp.files[0]; if(!f) return;
   const r=new FileReader();
@@ -742,6 +762,7 @@ async function addMember(){
 async function removeMember(i){
   const m=members[i];
   if(!m) return;
+  if(!confirm(`Remove "${m.name}" from your household?`)) return;
   if(m.id){
     const res=await fetch('/api/household-members/'+m.id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()}}).then(x=>x.json());
     if(!res.success){showToast('⚠ '+(res.message||'Failed to remove.'));return;}
@@ -790,6 +811,44 @@ document.addEventListener('DOMContentLoaded', ()=>{
       }
     } catch(e){}
   }, 15000);
+
+  // Poll active message thread every 10s when messages tab is open
+  setInterval(async ()=>{
+    if(document.hidden || !currentThread) return;
+    if(document.getElementById('panel-messages')?.classList.contains('active')){
+      try{
+        const msgs = await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json());
+        if(msgs.length !== (threads[currentThread]?.messages||[]).length){
+          threads[currentThread].messages = msgs;
+          renderMessages();
+        }
+      }catch(e){}
+    }
+  }, 10000);
+
+  // Poll issues every 30s when issues tab is visible (catches admin status updates)
+  setInterval(async ()=>{
+    if(document.hidden) return;
+    if(document.getElementById('panel-issues')?.classList.contains('active')){
+      try{ issues = await fetch('/api/issues/my').then(r=>r.json()); renderIssues(); }catch(e){}
+    }
+  }, 30000);
+
+  // Poll recommendations every 30s when recs tab is visible
+  setInterval(async ()=>{
+    if(document.hidden) return;
+    if(document.getElementById('panel-recs')?.classList.contains('active')){
+      try{ recs = await fetch('/api/recommendations/my').then(r=>r.json()); renderRecs(); }catch(e){}
+    }
+  }, 30000);
+
+  // Poll financial records every 30s when finance tab is visible
+  setInterval(async ()=>{
+    if(document.hidden) return;
+    if(document.getElementById('panel-finance')?.classList.contains('active')){
+      try{ await loadResidentFinancials(); }catch(e){}
+    }
+  }, 30000);
 });
 function renderAnnouncements(){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
@@ -852,6 +911,7 @@ async function selectResThread(id, el){
 
 function selectThread(id, el){ /* legacy – kept for old static threads */ }
 
+function escHtml(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
 function renderMessages(){
   const body=document.getElementById('msgBody');
   const t=threads[currentThread];
@@ -861,10 +921,10 @@ function renderMessages(){
       const isMe=m.sender_type==='resident';
       const avatar=isMe?'Me':(m.sender_name||'SA').substring(0,2).toUpperCase();
       return `<div class="msg-bubble-wrap ${isMe?'mine':''}">
-        <div class="bubble-avatar ${isMe?'ba-mine':'ba-admin'}">${avatar}</div>
+        <div class="bubble-avatar ${isMe?'ba-mine':'ba-admin'}">${escHtml(avatar)}</div>
         <div>
-          <div class="bubble ${isMe?'from-mine':'from-admin'}">${m.content}</div>
-          <span class="bubble-time">${m.created_at||''}</span>
+          <div class="bubble ${isMe?'from-mine':'from-admin'}">${escHtml(m.content)}</div>
+          <span class="bubble-time">${escHtml(m.created_at||'')}</span>
         </div>
       </div>`;
     }).join('');
@@ -890,9 +950,16 @@ async function sendMessage(){
   }
 }
 
-function openNewConvModal(){
+async function openNewConvModal(){
   const inp=document.getElementById('newConvTitle');
   if(inp) inp.value='';
+  // Populate recipient dropdown with Admin + officers
+  const sel=document.getElementById('newConvRecipient');
+  if(sel){
+    const officers=await fetch('/api/officers').then(r=>r.json()).catch(()=>[]);
+    sel.innerHTML='<option value="admin|0">🏢 HOA Admin</option>'+
+      officers.map(o=>`<option value="officer|${o.id}">🛡️ ${o.name} (Officer)</option>`).join('');
+  }
   const el=document.getElementById('modal-newConv');
   if(el) el.style.display='flex';
 }
@@ -901,12 +968,17 @@ function closeNewConvModal(){
   if(el) el.style.display='none';
 }
 async function startNewConversation(){
-  const title=document.getElementById('newConvTitle').value.trim();
-  if(!title){showToast('⚠ Please enter a subject.');return;}
+  const sel=document.getElementById('newConvRecipient');
+  const [recipientType,recipientId]=sel?(sel.value||'admin|0').split('|'):['admin','0'];
+  const recipientLabel=sel?sel.options[sel.selectedIndex].text:'HOA Admin';
+  let title=document.getElementById('newConvTitle').value.trim();
+  if(!title) title=recipientLabel.replace(/^[^ ]+ /,''); // default to recipient name
+  const payload={title};
+  if(recipientType==='officer') { payload.recipient_type='officer'; payload.recipient_id=recipientId; }
   const res=await fetch('/api/messages/start',{
     method:'POST',
     headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},
-    body:JSON.stringify({title}),
+    body:JSON.stringify(payload),
   }).then(r=>r.json()).catch(()=>null);
   if(res?.success){
     closeNewConvModal();
@@ -914,7 +986,7 @@ async function startNewConversation(){
     threads[t.id]={...t,messages:[]};
     await loadResidentThreads();
     currentThread=t.id;
-    showToast('✅ Conversation started. Admin will reply soon.');
+    showToast('✅ Conversation started.');
   } else {
     showToast('⚠ Could not start conversation.');
   }
@@ -936,11 +1008,16 @@ function renderIssues(){
     return;
   }
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
-  el.innerHTML=issues.map(i=>`
-    <div class="issue-item">
+  const priStyle={Critical:'background:rgba(220,30,30,0.18);color:#ff5555;border:1px solid rgba(220,30,30,0.4);',High:'background:rgba(240,128,128,0.13);color:#f08080;border:1px solid rgba(240,128,128,0.3);',Medium:'background:rgba(245,166,35,0.13);color:var(--yellow);border:1px solid rgba(245,166,35,0.3);',Low:'background:rgba(76,175,80,0.13);color:var(--green);border:1px solid rgba(76,175,80,0.3);'};
+  el.innerHTML=issues.map(i=>{
+    const priLabel={Critical:'🚨 Critical',High:'🔴 High',Medium:'🟡 Medium',Low:'🟢 Low'}[i.priority]||'';
+    const priSpan=i.priority?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;${priStyle[i.priority]||''}">${priLabel}</span>`:'';
+    const isCritical=i.priority==='Critical';
+    return `
+    <div class="issue-item" style="${isCritical?'border-left:3px solid #ff4040;animation:pulse-critical 2s ease-in-out infinite;':''}">
       <div class="issue-top">
         <div class="issue-title">${i.title}</div>
-        ${statusPill[i.status]||''}
+        <div style="display:flex;gap:6px;align-items:center;">${priSpan}${statusPill[i.status]||''}</div>
       </div>
       <div class="issue-body">${i.description}</div>
       <div class="issue-meta">
@@ -952,25 +1029,31 @@ function renderIssues(){
           <div class="issue-response-label">Admin Response</div>
           <div class="issue-response-text">${i.response}</div>
         </div>`:''}
-    </div>`).join('');
+    </div>`}).join('');
 }
 
 async function submitIssue(){
   const category=document.getElementById('issueCategory').value;
+  const priority=document.getElementById('issuePriority').value;
   const title=document.getElementById('issueTitle').value.trim();
   const description=document.getElementById('issueBody').value.trim();
   const latitude=document.getElementById('issue-lat').value||null;
   const longitude=document.getElementById('issue-lng').value||null;
   if(!category||!title||!description){showToast('⚠ Please fill in all fields.');return;}
-  const res=await fetch('/api/issues',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify({category,title,description,latitude,longitude})});
+  if(priority==='Critical'&&!confirm('🚨 You are about to submit a CRITICAL / EMERGENCY issue.\n\nThis will immediately alert the admin and officers.\n\nContinue?')) return;
+  const res=await fetch('/api/issues',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify({category,title,description,latitude,longitude,priority:priority||null})});
   const data=await res.json();
   if(data.success){
-    ['issueCategory','issueTitle','issueBody','issue-lat','issue-lng'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    ['issueCategory','issuePriority','issueTitle','issueBody','issue-lat','issue-lng'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
     const disp=document.getElementById('issue-loc-display');
     if(disp) disp.textContent='No location set';
     closeIssuePicker();
     await loadIssues();
-    showToast('✅ Report submitted. The admin will review it shortly.');
+    if(priority==='Critical'){
+      showToast('🚨 CRITICAL issue submitted. Admin has been notified.');
+    } else {
+      showToast('✅ Report submitted. The admin will review it shortly.');
+    }
   } else {
     showToast('⚠ '+(data.message||'Failed to submit report. Please try again.'));
   }
@@ -1057,13 +1140,48 @@ loadResidentFinancials();
 renderMessages();
 loadIssues();
 loadRecs();
+
+/* ── Save resident name on blur ── */
+const _nameEl = document.getElementById('householdName');
+if(_nameEl && RESIDENT_ID){
+  let _nameSaved = _nameEl.textContent.trim();
+  _nameEl.addEventListener('blur', async()=>{
+    const n = _nameEl.textContent.trim();
+    if(!n || n === _nameSaved){ _nameEl.textContent=_nameSaved||n; return; }
+    try{
+      const r = await fetch('/api/residents/'+RESIDENT_ID,{
+        method:'PUT',
+        headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},
+        body: JSON.stringify({name: n}),
+      });
+      const res = await r.json();
+      if(res.success){ _nameSaved=n; showToast('✅ Name updated.'); }
+      else { _nameEl.textContent=_nameSaved; showToast('⚠ Could not save name.'); }
+    } catch(e){ _nameEl.textContent=_nameSaved; showToast('⚠ Network error.'); }
+  });
+  _nameEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); _nameEl.blur(); } });
+}
+
+/* ── Live balance refresh ── */
+async function loadResidentBalance(){
+  if(!RESIDENT_ID) return;
+  try{
+    const r = await fetch('/api/residents/me',{headers:{'Accept':'application/json'}});
+    const d = await r.json();
+    const el = document.getElementById('resBalanceDisplay');
+    if(el && d.balance!=null)
+      el.textContent = '₱' + Number(d.balance).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
+  } catch(e){}
+}
+loadResidentBalance();
 </script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script>
 /* ══ RESIDENT MAP ══ */
 const RES_CENTER = [10.62269, 122.96134];
-let resMapInst = null;
+let resMapInst = null, resLayerHeatmap = null;
 
 function makeResCircle(color) {
   return L.divIcon({
@@ -1089,6 +1207,23 @@ function initResidentMap() {
     });
   });
 
+  resLayerHeatmap = L.heatLayer([], {
+    radius: 42, blur: 32, maxZoom: 17, max: 4, minOpacity: 0.0,
+    gradient: {
+      0.15: '#1a003e',
+      0.35: '#5c0099',
+      0.5:  '#0044bb',
+      0.65: '#cc4400',
+      0.82: '#cc1400',
+      1.0:  '#ff2200'
+    }
+  }).addTo(resMapInst);
+  setTimeout(() => { if (resLayerHeatmap._canvas) resLayerHeatmap._canvas.style.opacity = '0.70'; }, 150);
+
+  document.getElementById('res-layer-heatmap').addEventListener('change', function() {
+    this.checked ? resMapInst.addLayer(resLayerHeatmap) : resMapInst.removeLayer(resLayerHeatmap);
+  });
+
   fetch('/api/map/issues').then(r=>r.json()).then(data=>{
     data.forEach(i=>{
       const color=i.status==='Resolved'?'#888':(i.status==='In Progress'?'#f5a623':'#e05555');
@@ -1096,6 +1231,7 @@ function initResidentMap() {
         .bindPopup(`<strong>${i.title}</strong><br><small>${i.status}</small>`)
         .addTo(resMapInst);
     });
+    resLayerHeatmap.setLatLngs(data.map(i => [parseFloat(i.latitude), parseFloat(i.longitude), 1.0]));
   });
 
   // Place own household pin
@@ -1152,13 +1288,18 @@ function closeIssuePicker() {
 <!-- New Conversation Modal -->
 <div id="modal-newConv" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.6);align-items:center;justify-content:center;">
   <div style="background:var(--surface,#1e2530);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;width:min(420px,90vw);">
-    <div style="font-size:15px;font-weight:600;margin-bottom:16px;">Start New Conversation</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:16px;">New Message</div>
+    <label style="font-size:11px;color:var(--text-dim,#888);display:block;margin-bottom:4px;">To</label>
+    <select id="newConvRecipient"
+      style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:inherit;font-size:13px;box-sizing:border-box;margin-bottom:12px;">
+      <option value="admin|0">🏢 HOA Admin</option>
+    </select>
     <label style="font-size:11px;color:var(--text-dim,#888);display:block;margin-bottom:4px;">Subject</label>
     <input type="text" id="newConvTitle" placeholder="e.g. Billing question, Gate pass request…"
       style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:inherit;font-size:13px;box-sizing:border-box;margin-bottom:16px;">
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button onclick="closeNewConvModal()" style="padding:7px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:inherit;font-size:13px;cursor:pointer;">Cancel</button>
-      <button onclick="startNewConversation()" style="padding:7px 14px;background:var(--accent,#4e8ef7);border:none;border-radius:6px;color:#fff;font-size:13px;cursor:pointer;font-weight:500;">Send to Admin</button>
+      <button onclick="startNewConversation()" style="padding:7px 14px;background:var(--accent,#4e8ef7);border:none;border-radius:6px;color:#fff;font-size:13px;cursor:pointer;font-weight:500;">Send</button>
     </div>
   </div>
 </div>

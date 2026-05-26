@@ -324,6 +324,20 @@ select option { background: #1a120d; color: var(--text); }
 /* ── EMPTY STATE ── */
 .empty-state { text-align:center; padding:36px 20px; color:var(--text-dim); font-size:13px; line-height:1.7; }
 .empty-icon { font-size:30px; margin-bottom:8px; opacity:0.5; }
+@keyframes pulse-critical {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,64,64,0); }
+  50%      { box-shadow: 0 0 12px 5px rgba(255,64,64,0.35); }
+}
+.issue-critical-row { border-left:3px solid #ff4040!important; animation:pulse-critical 2s ease-in-out infinite; }
+/* ── EMERGENCY ALERT BANNER ── */
+#emergencyAlert {
+  display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
+  background:linear-gradient(90deg,#7a0000,#cc1400,#7a0000);
+  background-size:200% 100%; animation:emergencyScroll 3s linear infinite;
+  color:#fff; padding:12px 16px; text-align:center; font-size:14px; font-weight:700;
+  box-shadow:0 2px 16px rgba(200,20,20,0.6);
+}
+@keyframes emergencyScroll { 0%{background-position:0 0} 100%{background-position:200% 0} }
 
 /* ── MODAL ── */
 .modal-overlay {
@@ -774,7 +788,7 @@ select option { background: #1a120d; color: var(--text); }
     <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
 
     <div class="nav-section-label">Residents</div>
-    <div class="nav-item" onclick="nav('residents',this)"><span class="nav-icon">👥</span> Residents</div>
+    <div class="nav-item" onclick="nav('residents',this)"><span class="nav-icon">👥</span> Residents <span class="nav-badge" id="pendingBadge" style="display:none;background:#f59e0b;">0</span></div>
     <div class="nav-item" onclick="nav('members',this)"><span class="nav-icon">👤</span> Members</div>
     <div class="nav-item" onclick="nav('delinquents',this)"><span class="nav-icon">⚠️</span> Delinquents <span class="nav-badge" id="delinBadge">0</span></div>
 
@@ -808,7 +822,12 @@ select option { background: #1a120d; color: var(--text); }
 
 <!-- ═══ MAIN ═══ -->
 <main class="main">
-  <div class="topbar">
+  <!-- Emergency alert banner (shown on critical issues) -->
+  <div id="emergencyAlert">
+    🚨 <span id="emergencyAlertText">CRITICAL ISSUE REPORTED</span>
+    &nbsp;&nbsp;<button onclick="nav('issues');dismissEmergency()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:3px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;">View Issue</button>
+    &nbsp;<button onclick="dismissEmergency()" style="background:transparent;border:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;line-height:1;">✕</button>
+  </div>
     <div style="display:flex;align-items:center;gap:12px;">
    <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
       <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
@@ -816,6 +835,8 @@ select option { background: #1a120d; color: var(--text); }
     <div class="topbar-actions">
       <button class="topbar-btn" onclick="showToast('🔔 No new system alerts.')">🔔 Alerts</button>
       <button class="topbar-btn primary" onclick="openModal('ann')">+ New Announcement</button>
+      <form id="logoutForm" action="/logout" method="POST" style="display:none;">@csrf</form>
+      <button class="topbar-btn" onclick="confirmLogout()" style="color:#f08080;border-color:rgba(240,128,128,0.3);">⏻ Log Out</button>
     </div>
   </div>
 
@@ -855,6 +876,21 @@ select option { background: #1a120d; color: var(--text); }
           <div class="stat-value stat-blue" id="statBalance">—</div>
           <div class="stat-sub">Total unpaid dues</div>
         </div>
+        <div class="stat-card" onclick="nav('residents',null)" title="Review pending registrations" id="pendingStatCard" style="border-left:3px solid #f59e0b;">
+          <div class="stat-label">Pending Approvals</div>
+          <div class="stat-value" style="color:#f59e0b;" id="statPending">0</div>
+          <div class="stat-sub">Awaiting your review</div>
+        </div>
+      </div>
+
+      <!-- Pending registration notice (shown only when count > 0) -->
+      <div id="pendingNotice" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:none;align-items:center;gap:14px;flex-wrap:wrap;">
+        <span style="font-size:20px;">⏳</span>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-weight:600;font-size:14px;color:#f59e0b;">Pending Account Registrations</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:2px;"><span id="pendingNoticeCount">0</span> resident(s) have submitted registration requests and are waiting for your approval.</div>
+        </div>
+        <button class="btn btn-sm" style="background:#f59e0b;border-color:#f59e0b;" onclick="nav('residents',null)">Review Now →</button>
       </div>
 
       <div class="grid-2">
@@ -895,6 +931,17 @@ select option { background: #1a120d; color: var(--text); }
 
     <!-- ══════════ RESIDENTS ══════════ -->
     <div class="panel" id="panel-residents">
+      <!-- Pending Registrations -->
+      <div id="pendingSection" style="display:none;margin-bottom:18px;">
+        <div class="card" style="border-left:3px solid #f59e0b;">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <span style="font-size:16px;">⏳</span>
+            <div class="card-title" style="margin:0;">Pending Registrations</div>
+            <span class="nav-badge" id="pendingCount" style="background:#f59e0b;">0</span>
+          </div>
+          <div id="pendingGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;"></div>
+        </div>
+      </div>
       <div class="card" style="margin-bottom:16px;">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
           <input type="text" id="residentSearch" placeholder="Search household or block…" style="flex:1;min-width:180px;" oninput="filterResidents()">
@@ -910,17 +957,23 @@ select option { background: #1a120d; color: var(--text); }
     </div>
 
     <!-- ══════════ MEMBERS ══════════ -->
+    <!-- ══════════ MEMBERS ══════════ -->
     <div class="panel" id="panel-members">
-      <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);max-width:400px;">
-        <div class="stat-card">
-          <div class="stat-label">Total Members</div>
-          <div class="stat-value stat-blue" id="statTotalMembers">—</div>
+      <div class="card" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div class="card-title">Household Members</div>
+          <div style="font-size:13px;color:var(--text-dim);">Non-resident household members. Click a card to view or edit.</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Houses</div>
-          <div class="stat-value stat-accent" id="statTotalHouses">—</div>
-        </div>
+        <button class="btn btn-sm" onclick="openModal('addMember')">+ Add Member</button>
       </div>
+      <div style="margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;">
+        <input id="memberSearch" type="text" placeholder="Search by name or block/lot…" oninput="renderMembers()" style="flex:1;min-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text);font-size:13px;">
+        <select id="memberRelFilter" onchange="renderMembers()" style="padding:8px 12px;border-radius:8px;border:1px solid var(--glass-border);background:var(--glass);color:var(--text);font-size:13px;">
+          <option value="">All Relationships</option>
+          <option>Owner</option><option>Spouse</option><option>Child</option><option>Parent</option><option>Tenant</option><option>Other</option>
+        </select>
+      </div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Total: <span id="statTotalMembers">—</span> &nbsp;|&nbsp; Houses with members: <span id="statTotalHouses">—</span></div>
       <div class="members-grid" id="membersGrid"></div>
     </div>
 
@@ -928,7 +981,7 @@ select option { background: #1a120d; color: var(--text); }
     <div class="panel" id="panel-delinquents">
       <div class="card" style="margin-bottom:16px;">
         <div class="card-title">Flagged Households</div>
-        <div style="font-size:13px;color:var(--text-dim);">Households with outstanding issues, unpaid bills, or violations.</div>
+        <div style="font-size:13px;color:var(--text-dim);">Households with outstanding issues, unpaid bills, or violations. Click a card for details.</div>
       </div>
       <div class="res-content" id="delinquentGrid"></div>
     </div>
@@ -1399,6 +1452,9 @@ select option { background: #1a120d; color: var(--text); }
       <div class="f-field" style="flex:1"><span class="f-label">Resident (optional)</span>
         <select id="newThreadResident"><option value="">— General / No specific resident —</option></select>
       </div>
+      <div class="f-field" style="flex:1"><span class="f-label">Officer (optional)</span>
+        <select id="newThreadOfficer"><option value="">— No specific officer —</option></select>
+      </div>
     </div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('newThread')">Cancel</button>
@@ -1741,12 +1797,29 @@ function nowTime(){ return new Date().toLocaleTimeString('en-PH',{hour:'2-digit'
 function todayStr(){ return new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
 function fmt(n){ return '₱'+Number(n||0).toLocaleString(); }
 
+function confirmLogout(){
+  if(confirm('Are you sure you want to log out?'))
+    document.getElementById('logoutForm').submit();
+}
+
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
 }
-function openModal(id){ document.getElementById('modal-'+id).classList.add('open'); }
+function openModal(id){
+  if(id==='addMember'){
+    // populate household dropdown
+    const sel=document.getElementById('addMemHouse');
+    sel.innerHTML='<option value="">— Select household —</option>';
+    households.forEach(h=>{ const opt=document.createElement('option'); opt.value=h.id; opt.textContent=h.block_lot_number||h.block_lot||'House #'+h.id; sel.appendChild(opt); });
+    document.getElementById('addMemName').value='';
+    document.getElementById('addMemRel').value='';
+    document.getElementById('addMemPhone').value='';
+    document.getElementById('addMemMsg').textContent='';
+  }
+  document.getElementById('modal-'+id).classList.add('open');
+}
 function closeModal(id){ document.getElementById('modal-'+id).classList.remove('open'); }
 document.querySelectorAll('.modal-overlay').forEach(o=>{
   o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); });
@@ -1779,6 +1852,7 @@ function nav(name, el){
   if(name==='analytics') setTimeout(renderAnalytics, 80);
   if(name==='reports') renderReports();
   if(name==='mapping') setTimeout(initMap, 80);
+  if(name==='manageusers') loadManageData();
 }
 
 /* ══════════════ DATA ══════════════ */
@@ -1833,6 +1907,11 @@ async function loadAllData(){
   if(document.getElementById('statActive'))    document.getElementById('statActive').textContent    = residents.filter(r=>r.status==='Active').length;
   if(document.getElementById('statDelinq'))    document.getElementById('statDelinq').textContent    = delinquents.length;
   if(document.getElementById('delinBadge'))     document.getElementById('delinBadge').textContent    = delinquents.length;
+  const pendingCount = residents.filter(r=>r.status==='Pending').length;
+  if(document.getElementById('statPending'))      document.getElementById('statPending').textContent = pendingCount;
+  if(document.getElementById('pendingNoticeCount')) document.getElementById('pendingNoticeCount').textContent = pendingCount;
+  const notice = document.getElementById('pendingNotice');
+  if(notice) notice.style.display = pendingCount > 0 ? 'flex' : 'none';
   if(document.getElementById('statBalance'))   document.getElementById('statBalance').textContent   = '₱'+Number(fin.total_balance||0).toLocaleString();
   if(document.getElementById('finCollected'))   document.getElementById('finCollected').textContent  = '₱'+Number(fin.total_collected||0).toLocaleString();
   if(document.getElementById('finDues'))        document.getElementById('finDues').textContent       = '₱'+Number(fin.total_dues||0).toLocaleString();
@@ -1860,8 +1939,7 @@ async function loadAllData(){
   if(document.getElementById('payBarUnpaid'))  document.getElementById('payBarUnpaid').style.width=Math.round(unpaidC/totalPay*100)+'%';
 
   // Members panel stats
-  if(document.getElementById('statTotalMembers')) document.getElementById('statTotalMembers').textContent=hhMembers.length;
-  if(document.getElementById('statTotalHouses'))  document.getElementById('statTotalHouses').textContent=households.length;
+  // (handled by renderMembers())
 
   renderDashboard();
   renderResidents();
@@ -1908,7 +1986,34 @@ function renderDashboard(){
 function renderResidents(){
   const q=(document.getElementById('residentSearch')||{}).value||'';
   const b=(document.getElementById('residentBlock')||{}).value||'';
-  const filtered=residents.filter(r=>{
+  // Separate pending from active residents
+  const pending=residents.filter(r=>r.status==='Pending');
+  const active=residents.filter(r=>r.status!=='Pending');
+  // Update pending badge and section
+  const pBadge=document.getElementById('pendingBadge');
+  const pSection=document.getElementById('pendingSection');
+  const pCount=document.getElementById('pendingCount');
+  if(pBadge){pBadge.textContent=pending.length;pBadge.style.display=pending.length?'inline-flex':'none';}
+  if(pCount) pCount.textContent=pending.length;
+  if(pSection) pSection.style.display=pending.length?'block':'none';
+  if(document.getElementById('pendingGrid')){
+    document.getElementById('pendingGrid').innerHTML=pending.map(r=>`
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:14px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div class="r-avatar ${r.color}" style="width:34px;height:34px;font-size:13px;">${r.initials}</div>
+          <div>
+            <div style="font-weight:600;font-size:13px;">${r.name}</div>
+            <div style="font-size:11px;color:var(--text-dim);">${r.email||'—'}</div>
+          </div>
+        </div>
+        ${r.contact_number?`<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">📞 ${r.contact_number}</div>`:''}
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm" style="background:#22c55e;border-color:#22c55e;flex:1;" onclick="approveRegistration(${r.id})">✓ Approve</button>
+          <button class="btn btn-sm btn-danger" style="flex:1;" onclick="rejectRegistration(${r.id})">✕ Reject</button>
+        </div>
+      </div>`).join('');
+  }
+  const filtered=active.filter(r=>{
     const matchQ=!q||r.name.toLowerCase().includes(q.toLowerCase())||(r.block_lot||'').toLowerCase().includes(q.toLowerCase());
     const matchB=!b||(r.block_lot||'').toLowerCase().includes(b.toLowerCase().replace('block ','blk '));
     return matchQ&&matchB;
@@ -1916,7 +2021,7 @@ function renderResidents(){
   const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
   const payPill=bal=>bal<=0?'pill-resolved':(bal<1000?'pill-pending':'pill-urgent');
   document.getElementById('residentGrid').innerHTML=filtered.length?filtered.map(r=>`
-    <div class="resident-card">
+    <div class="resident-card" onclick="openResidentDetail(${r.id})" style="cursor:pointer;" title="Click for details">
       <div class="resident-card-top">
         <div class="r-avatar ${r.color}">${r.initials}</div>
         <div>
@@ -1936,33 +2041,116 @@ function filterResidents(){ renderResidents(); }
 function renderMembers(){
   const colorFor2=(n)=>{const colors=['bg-teal','bg-blue','bg-purple','bg-orange','bg-green','bg-red'];let h=0;for(let c of(n||''))h=(h*31+c.charCodeAt(0))%colors.length;return colors[h];};
   const ini=n=>{const p=(n||'').trim().split(/\s+/);return(p[0]?.[0]||'')+(p[1]?.[0]||'');};
-  const relColor={Owner:'var(--blue)',Spouse:'var(--purple)',Child:'var(--green)',Tenant:'var(--yellow)',Parent:'var(--accent)'};
-  if(!hhMembers.length){
-    document.getElementById('membersGrid').innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>No household members yet.</div>';
+  const relColor={Owner:'var(--blue)',Spouse:'var(--purple)',Child:'var(--green)',Tenant:'var(--yellow)',Parent:'var(--accent)',Other:'var(--text-dim)'};
+  const search=(document.getElementById('memberSearch')||{}).value?.toLowerCase()||'';
+  const relF=(document.getElementById('memberRelFilter')||{}).value||'';
+  const filtered=hhMembers.filter(m=>{
+    const matchSearch=!search||(m.name||'').toLowerCase().includes(search)||(m.block_lot||'').toLowerCase().includes(search);
+    const matchRel=!relF||m.relationship===relF;
+    return matchSearch&&matchRel;
+  });
+  if(document.getElementById('statTotalMembers')) document.getElementById('statTotalMembers').textContent=hhMembers.length;
+  if(document.getElementById('statTotalHouses')) document.getElementById('statTotalHouses').textContent=new Set(hhMembers.map(m=>m.house_id)).size;
+  if(!filtered.length){
+    document.getElementById('membersGrid').innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>'+(hhMembers.length?'No members match the filter.':'No household members yet.')+'</div>';
     return;
   }
-  document.getElementById('membersGrid').innerHTML=hhMembers.map(m=>{
+  document.getElementById('membersGrid').innerHTML=filtered.map(m=>{
     const initStr=ini(m.name);
     const col=colorFor2(m.name);
     const rel=m.relationship||'Member';
     const relStyle=`color:${relColor[rel]||'var(--text-dim)'};`;
-    return `<div class="member-card">
+    const encoded=encodeURIComponent(JSON.stringify(m));
+    return `<div class="member-card" style="cursor:pointer;" onclick="openMemberDetail('${encoded}')" title="Click to view details">
       <div class="member-avatar ${col}">${initStr}</div>
       <div class="member-info">
         <h4>${m.name||'—'}</h4>
         <p>${m.block_lot||'—'}</p>
         <div class="m-type" style="${relStyle}">${rel}</div>
+        ${m.contact_number?`<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">📞 ${m.contact_number}</div>`:''}
       </div>
     </div>`;
   }).join('');
+}
+
+function openMemberDetail(encoded){
+  const m=JSON.parse(decodeURIComponent(encoded));
+  document.getElementById('memDetailName').value=m.name||'';
+  document.getElementById('memDetailRel').value=m.relationship||'';
+  document.getElementById('memDetailPhone').value=m.contact_number||'';
+  document.getElementById('memDetailBlock').textContent=m.block_lot||'—';
+  document.getElementById('memDetailInitials').textContent=((m.name||'').trim().split(/\s+/).map(p=>p[0]||'').join('').substring(0,2)).toUpperCase()||'?';
+  document.getElementById('modal-memberDetail').dataset.id=m.id;
+  document.getElementById('memDetailMsg').textContent='';
+  document.getElementById('modal-memberDetail').classList.add('open');
+}
+
+async function saveMemberDetail(){
+  const id=document.getElementById('modal-memberDetail').dataset.id;
+  const payload={
+    name:document.getElementById('memDetailName').value.trim(),
+    relationship:document.getElementById('memDetailRel').value.trim(),
+    contact_number:document.getElementById('memDetailPhone').value.trim(),
+  };
+  if(!payload.name){showToast('Name is required.');return;}
+  const msg=document.getElementById('memDetailMsg');
+  msg.textContent='Saving…';
+  try{
+    const res=await fetch(`/api/household-members/${id}`,{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify(payload)});
+    const d=await res.json();
+    if(d.success){
+      const idx=hhMembers.findIndex(m=>m.id==id);
+      if(idx!==-1){hhMembers[idx]={...hhMembers[idx],...payload};}
+      renderMembers();
+      document.getElementById('modal-memberDetail').classList.remove('open');
+      showToast('Member updated.');
+    } else { msg.textContent='Update failed.'; }
+  }catch(e){msg.textContent='Error saving.';}
+}
+
+async function deleteMember(){
+  const id=document.getElementById('modal-memberDetail').dataset.id;
+  if(!confirm('Delete this member? This cannot be undone.')) return;
+  try{
+    const res=await fetch(`/api/household-members/${id}`,{method:'DELETE',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}});
+    const d=await res.json();
+    if(d.success){
+      hhMembers=hhMembers.filter(m=>m.id!=id);
+      renderMembers();
+      document.getElementById('modal-memberDetail').classList.remove('open');
+      showToast('Member removed.');
+    }
+  }catch(e){showToast('Delete failed.');}
+}
+
+async function addMemberSubmit(){
+  const houseId=document.getElementById('addMemHouse').value;
+  const name=document.getElementById('addMemName').value.trim();
+  const rel=document.getElementById('addMemRel').value.trim();
+  const phone=document.getElementById('addMemPhone').value.trim();
+  if(!houseId||!name){showToast('House and name are required.');return;}
+  const msg=document.getElementById('addMemMsg');
+  msg.textContent='Adding…';
+  try{
+    const res=await fetch('/api/household-members',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},body:JSON.stringify({house_id:parseInt(houseId),name,relationship:rel||null,contact_number:phone||null})});
+    const d=await res.json();
+    if(d.success){
+      const hh=households.find(h=>h.id==houseId);
+      hhMembers.push({id:d.member.id,house_id:d.member.house_id,name:d.member.name,relationship:d.member.relationship,contact_number:d.member.contact_number,block_lot:hh?.block_lot_number||hh?.block_lot||'—'});
+      renderMembers();
+      closeModal('addMember');
+      showToast('Member added.');
+    } else { msg.textContent='Failed to add.'; }
+  }catch(e){msg.textContent='Error adding member.';}
 }
 
 function renderDelinquents(){
   document.getElementById('delinquentGrid').innerHTML=delinquents.length?delinquents.map(d=>{
     const residentNames=(d.residents||[]).map(r=>r.name).join(', ')||'—';
     const totalBal=(d.residents||[]).reduce((s,r)=>s+(r.current_balance||0),0);
+    const encoded=encodeURIComponent(JSON.stringify(d));
     return `
-    <div class="res-card">
+    <div class="res-card" onclick="openDelinquentDetail('${encoded}')" title="Click for details">
       <div class="res-thumb">
         <div style="width:100%;height:100%;background:rgba(240,100,100,0.1);display:flex;align-items:center;justify-content:center;font-size:36px;">🏠</div>
       </div>
@@ -1975,6 +2163,32 @@ function renderDelinquents(){
     </div>`;
   }).join(''):'<div class="empty-state"><div class="empty-icon">✅</div>No delinquent households.</div>';
 }
+
+function openDelinquentDetail(encoded){
+  const d=JSON.parse(decodeURIComponent(encoded));
+  const totalBal=(d.residents||[]).reduce((s,r)=>s+(r.current_balance||0),0);
+  const residentsHtml=(d.residents||[]).length
+    ?(d.residents||[]).map(r=>`
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">${r.name}</div>
+          ${r.contact_number?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📞 ${r.contact_number}</div>`:''}
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:${r.current_balance>0?'#f08080':'var(--green)'}; font-weight:700;">
+            ${r.current_balance>0?'₱'+Number(r.current_balance).toLocaleString()+' due':'Settled'}
+          </div>
+        </div>
+      </div>`).join('')
+    :'<div style="color:var(--text-dim);font-size:13px;">No resident records.</div>';
+  document.getElementById('delin-modal-block').textContent=d.block_lot||'—';
+  document.getElementById('delin-modal-reason').textContent=d.reason||'No reason provided';
+  document.getElementById('delin-modal-flagged').textContent=d.date_flagged||'—';
+  document.getElementById('delin-modal-total').textContent='₱'+Number(totalBal).toLocaleString();
+  document.getElementById('delin-modal-residents').innerHTML=residentsHtml;
+  document.getElementById('modal-delinquent').classList.add('open');
+}
+function closeDelinquent(){ document.getElementById('modal-delinquent').classList.remove('open'); }
 
 function renderPayments(){
   const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
@@ -2050,7 +2264,7 @@ function renderAnnouncements(){
     if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
     if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
     return `
-    <div class="ann-item">
+    <div class="ann-item" onclick="openAnnView(${a.id})" style="cursor:pointer;" title="Click to view">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         <span class="ann-date">${a.created_at}</span>
@@ -2060,7 +2274,7 @@ function renderAnnouncements(){
       <div class="ann-body">${a.content}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">By: ${a.posted_by}</div>
       <div class="ann-actions">
-        <button class="btn btn-sm btn-danger" onclick="deleteAnn(${a.id})">Delete</button>
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteAnn(${a.id})">Delete</button>
       </div>
     </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
 }
@@ -2114,19 +2328,20 @@ function renderIssues(){
     return true;
   });
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
-  const priColor={High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
+  const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
   document.getElementById('issueList').innerHTML=filtered.length?filtered.map(i=>{
-    const pri=issuePriority(i);
+    const pri=i.priority||issuePriority(i);
+    const isCritical=pri==='Critical';
     return `
-    <div class="issue-item">
+    <div class="issue-item ${isCritical?'issue-critical-row':''}" onclick="openIssueDetail(${i.id})" style="cursor:pointer;" title="Click for full details">
       <div class="issue-top">
         <div>
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${i.resident} · ${i.block_lot}</div>
-          <div class="issue-title">${i.title}</div>
+          <div class="issue-title">${isCritical?'🚨 ':''}${i.title}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           ${statusPill[i.status]||''}
-          <span style="font-size:10px;font-weight:700;color:${priColor[pri]}">${pri}</span>
+          <span style="font-size:10px;font-weight:700;color:${priColor[pri]||'var(--text-dim)'}">${pri||''}</span>
         </div>
       </div>
       <div class="issue-body">${i.description}</div>
@@ -2139,7 +2354,7 @@ function renderIssues(){
         <div style="font-size:13px;color:var(--text-mid);">${i.responses[0].content}</div>
       </div>`:''}
       <div class="issue-actions">
-        ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="openRespondModal(${i.id})">Respond</button>`:''}
+        ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="event.stopPropagation();openRespondModal(${i.id})">Respond</button>`:''}
       </div>
     </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues match the filter.</div>';
 }
@@ -2193,14 +2408,23 @@ function openNewThreadModal(){
     sel.innerHTML='<option value="">— Select Resident —</option>'+
       residents.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
   }
+  const osel=document.getElementById('newThreadOfficer');
+  if(osel){
+    osel.innerHTML='<option value="">— No specific officer —</option>'+
+      (officers||[]).map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+  }
   document.getElementById('newThreadTitle').value='';
   openModal('newThread');
 }
 async function adminStartThread(){
   const title=document.getElementById('newThreadTitle').value.trim();
   const resident_id=document.getElementById('newThreadResident').value;
+  const officer_id=document.getElementById('newThreadOfficer')?.value||'';
   if(!title){showToast('⚠ Please enter a subject.');return;}
-  const res=await apiPost('/api/messages/start',{title,resident_id:resident_id||undefined});
+  const payload={title};
+  if(resident_id) payload.resident_id=resident_id;
+  if(officer_id) payload.officer_id=officer_id;
+  const res=await apiPost('/api/messages/start',payload);
   if(res.success){
     closeModal('newThread');
     const t=res.conversation;
@@ -2260,14 +2484,18 @@ async function openEditHousehold(id){
   document.getElementById('editHIdx').value=id;
   document.getElementById('editHLoc').value=h.block_lot_number||'';
   document.getElementById('editHStatus').value=h.status||'Active';
+  document.getElementById('editHFamily').value=h.family?.family_name||'';
+  document.getElementById('editHMembers').value=h.family?.members||'';
   openModal('muEditHousehold');
 }
 async function saveEditHousehold(){
   const id=document.getElementById('editHIdx').value;
   const loc=document.getElementById('editHLoc').value.trim();
   const status=document.getElementById('editHStatus').value;
+  const family_name=document.getElementById('editHFamily').value.trim();
+  const members=document.getElementById('editHMembers').value.trim();
   if(!loc){showToast('⚠ Block & Lot is required.');return;}
-  const res=await apiPut('/api/households/'+id,{block_lot_number:loc,status});
+  const res=await apiPut('/api/households/'+id,{block_lot_number:loc,status,family_name,members});
   if(res.success){closeModal('muEditHousehold');await loadManageData();showToast('✅ Household updated.');}
 }
 async function openEditUser(id){
@@ -2355,7 +2583,7 @@ function renderRecommendations(){
   }
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>',Reviewed:'<span class="pill pill-notice">Reviewed</span>',Approved:'<span class="pill pill-event">Approved</span>',Rejected:'<span class="pill pill-urgent">Rejected</span>'};
   el.innerHTML=recommendations.map(r=>`
-    <div class="issue-item" style="margin-bottom:12px;">
+    <div class="issue-item" style="margin-bottom:12px;cursor:pointer;" onclick="openRecDetail(${r.id})" title="Click for details">
       <div class="issue-top">
         <div>
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${r.resident} · ${r.created_at}${r.category?' · '+r.category:''}</div>
@@ -2365,7 +2593,7 @@ function renderRecommendations(){
       </div>
       <div class="issue-body">${r.description}</div>
       <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-        <select onchange="updateRecStatus(${r.id},this.value)" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-main);">
+        <select onchange="event.stopPropagation();updateRecStatus(${r.id},this.value)" onclick="event.stopPropagation()" style="font-size:12px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface);color:var(--text-main);">
           <option value="Pending" ${r.status==='Pending'?'selected':''}>Pending</option>
           <option value="Reviewed" ${r.status==='Reviewed'?'selected':''}>Reviewed</option>
           <option value="Approved" ${r.status==='Approved'?'selected':''}>Approved</option>
@@ -2380,6 +2608,93 @@ async function updateRecStatus(id,status){
   if(rec) rec.status=status;
   renderRecommendations();
   showToast('✅ Status updated.');
+}
+
+// ── DETAIL POPUP FUNCTIONS ──────────────────────────────────────────────────
+function openResidentDetail(id){
+  const r=residents.find(x=>x.id===id);
+  if(!r) return;
+  const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
+  const payColor=bal=>bal<=0?'var(--green)':(bal<1000?'var(--yellow)':'#f08080');
+  document.getElementById('resD-avatar').className='r-avatar '+r.color;
+  document.getElementById('resD-avatar').textContent=r.initials;
+  document.getElementById('resD-name').textContent=r.name;
+  document.getElementById('resD-block').textContent=r.block_lot||'—';
+  document.getElementById('resD-status').textContent=r.status;
+  document.getElementById('resD-status').className='pill '+(r.status==='Active'?'pill-active':'pill-inactive');
+  document.getElementById('resD-balance').textContent='₱'+Number(r.current_balance||0).toLocaleString();
+  document.getElementById('resD-balance').style.color=payColor(r.current_balance||0);
+  document.getElementById('resD-payStatus').textContent=payLabel(r.current_balance||0);
+  document.getElementById('resD-email').textContent=r.email||'—';
+  document.getElementById('resD-phone').textContent=r.contact_number||'—';
+  document.getElementById('resD-viewPayBtn').onclick=()=>{
+    document.getElementById('modal-residentDetail').classList.remove('open');
+    nav('payments',null);
+    setTimeout(()=>{ const s=document.getElementById('paymentSearch'); if(s){s.value=r.name;filterPayments&&filterPayments();} },200);
+  };
+  document.getElementById('modal-residentDetail').classList.add('open');
+}
+
+function openIssueDetail(id){
+  const i=issues.find(x=>x.id===id);
+  if(!i) return;
+  const pri=i.priority||issuePriority(i);
+  const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
+  const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
+  document.getElementById('issD-title').textContent=(pri==='Critical'?'🚨 ':'')+i.title;
+  document.getElementById('issD-status').innerHTML=(statusPill[i.status]||'')+(pri?` <span style="font-size:11px;font-weight:700;color:${priColor[pri]||'var(--text-dim)'};">${pri}</span>`:'');
+  document.getElementById('issD-who').textContent=i.resident+' · '+i.block_lot;
+  document.getElementById('issD-cat').textContent=(i.category||'')+(i.category?' · ':'')+'#'+i.id+' · '+i.created_at;
+  document.getElementById('issD-desc').textContent=i.description;
+  const hasLoc=i.latitude&&i.longitude;
+  document.getElementById('issD-location').innerHTML=hasLoc?`<a href="https://maps.google.com/?q=${i.latitude},${i.longitude}" target="_blank" style="color:var(--blue);font-size:12px;">📍 View on map</a>`:'';
+  const responses=i.responses||[];
+  const rcEl=document.getElementById('issD-responseCount'); if(rcEl) rcEl.textContent=responses.length;
+  document.getElementById('issD-responses').innerHTML=responses.length?responses.map(r=>`
+    <div style="padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">${r.type||'Response'}</div>
+      <div style="font-size:13px;color:var(--text-mid);">${r.content}</div>
+    </div>`).join(''):'<div style="color:var(--text-dim);font-size:13px;padding:4px 0;">No responses yet.</div>';
+  const btn=document.getElementById('issD-respondBtn');
+  if(btn){
+    if(i.status!=='Resolved'){ btn.style.display='inline-block'; btn.onclick=()=>{ document.getElementById('modal-issueDetail').classList.remove('open'); openRespondModal(i.id); }; }
+    else { btn.style.display='none'; }
+  }
+  document.getElementById('modal-issueDetail').classList.add('open');
+}
+
+function openRecDetail(id){
+  const r=recommendations.find(x=>x.id===id);
+  if(!r) return;
+  document.getElementById('recD-who').textContent=r.resident+' · '+(r.block_lot||'—');
+  document.getElementById('recD-cat').textContent=(r.category||'—')+' · '+r.created_at;
+  document.getElementById('recD-title').textContent=r.title;
+  document.getElementById('recD-desc').textContent=r.description;
+  document.getElementById('recD-statusSel').value=r.status||'Pending';
+  document.getElementById('recD-updateBtn').onclick=async()=>{
+    const s=document.getElementById('recD-statusSel').value;
+    await updateRecStatus(r.id,s);
+    document.getElementById('modal-recDetail').classList.remove('open');
+  };
+  document.getElementById('modal-recDetail').classList.add('open');
+}
+
+function openAnnView(id){
+  const a=announcements.find(x=>x.id===id);
+  if(!a) return;
+  const tagLabel={notice:'Notice',urgent:'🚨 Urgent',event:'📅 Event'};
+  document.getElementById('annV-tag').textContent=tagLabel[a.tag]||'Notice';
+  document.getElementById('annV-tag').className='pill pill-'+(a.tag||'notice');
+  document.getElementById('annV-priority').style.display=a.priority==='High'?'inline':'none';
+  document.getElementById('annV-title').textContent=a.title;
+  document.getElementById('annV-content').textContent=a.content;
+  document.getElementById('annV-by').textContent='Posted by '+a.posted_by+' on '+a.created_at;
+  const meta=[];
+  if(a.target&&a.target!=='All Residents') meta.push('👥 '+a.target);
+  if(a.event_date) meta.push('📅 Event date: '+a.event_date);
+  document.getElementById('annV-meta').textContent=meta.join(' · ')||'All Residents';
+  document.getElementById('annV-delBtn').onclick=()=>{ deleteAnn(a.id); document.getElementById('modal-annView').classList.remove('open'); };
+  document.getElementById('modal-annView').classList.add('open');
 }
 
 function renderFinancialRecords(records){
@@ -2574,7 +2889,7 @@ function renderManageTables(){
   if(document.getElementById('householdTbody'))
     document.getElementById('householdTbody').innerHTML=muHouseholds.map((h,i)=>{const mc=muMembers.filter(m=>m.house_id===h.id).length;return `
       <tr>
-        <td>${h.id}</td><td>${h.block_lot_number}</td><td>—</td><td>${mc||'—'}</td>
+        <td>${h.id}</td><td>${h.block_lot_number}</td><td>${h.family?.family_name||'—'}</td><td>${mc||h.family?.members||'—'}</td>
         <td><span class="pill ${h.status==='Active'?'pill-active':'pill-inactive'}">${h.status}</span></td>
         <td>
           <div style="display:flex;gap:6px;">
@@ -2625,6 +2940,18 @@ function renderManageTables(){
 
 async function deleteHousehold(id){ await apiPut('/api/households/'+id,{status:'Inactive'}); await loadManageData(); showToast('✅ Household deactivated.'); }
 async function deactivateResident(id){ await apiDelete('/api/residents/'+id); await loadManageData(); loadAllData(); showToast('✅ Resident deactivated.'); }
+
+async function approveRegistration(id){
+  const res=await apiPost('/api/residents/'+id+'/approve',{});
+  if(res?.success){ showToast('✅ Registration approved. Resident can now log in.'); loadAllData(); }
+  else showToast('⚠ Could not approve registration.');
+}
+async function rejectRegistration(id){
+  if(!confirm('Reject and permanently delete this pending registration?')) return;
+  const res=await apiDelete('/api/residents/'+id+'/reject');
+  if(res?.success){ showToast('✅ Registration rejected and removed.'); loadAllData(); }
+  else showToast('⚠ Could not reject registration.');
+}
 async function deleteMember(id){ await apiDelete('/api/household-members/'+id); await loadManageData(); showToast('🗑️ Member removed.'); }
 async function deleteFamily(id){ await apiDelete('/api/families/'+id); await loadManageData(); showToast('🗑️ Family removed.'); }
 
@@ -2644,11 +2971,14 @@ function filterManageTable(){
 async function saveAddHousehold(){
   const loc=document.getElementById('muHLoc').value.trim();
   const status=document.getElementById('muHStatus').value||'Active';
+  const family_name=document.getElementById('muHFamily').value.trim();
+  const members=document.getElementById('muHMembers').value.trim();
+  const family_head=document.getElementById('muHHead').value.trim();
   if(!loc){showToast('⚠ Please fill in required fields.');return;}
-  const res=await apiPost('/api/households',{block_lot_number:loc,status});
+  const res=await apiPost('/api/households',{block_lot_number:loc,status,family_name,members,family_head});
   if(res.success){
     closeModal('muAddHousehold');
-    document.getElementById('muHLoc').value='';
+    ['muHLoc','muHFamily','muHMembers','muHHead','muHContact'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     await loadManageData();
     showToast('✅ Household added successfully.');
   }
@@ -3338,6 +3668,64 @@ window.nav = function(name, el){
 
 setInterval(pollOfficerFiles, 30000);
 
+// Fast poll: check for critical/high unresolved issues every 5s
+let _lastUrgentId = null;
+function dismissEmergency(){ document.getElementById('emergencyAlert').style.display='none'; }
+setInterval(async ()=>{
+  if(document.hidden) return;
+  try{
+    const u = await apiGet('/api/issues/urgent-check');
+    if(u.count > 0 && u.latest_id !== _lastUrgentId){
+      _lastUrgentId = u.latest_id;
+      const el = document.getElementById('emergencyAlert');
+      const txt = document.getElementById('emergencyAlertText');
+      if(txt && u.latest) txt.textContent = `🚨 CRITICAL ISSUE — "${u.latest.title}" by ${u.latest.resident}`;
+      if(el) el.style.display = 'block';
+      // also immediately refresh issues list
+      const d = await apiGet('/api/dashboard-data');
+      issues = d.issues||[];
+      renderIssues();
+      renderDashboard();
+      const openCount = issues.filter(i=>i.status!=='Resolved').length;
+      if(document.getElementById('statIssues')) document.getElementById('statIssues').textContent = openCount;
+      if(document.getElementById('issueBadge')) document.getElementById('issueBadge').textContent = openCount;
+    }
+  }catch(e){}
+}, 5000);
+setInterval(async ()=>{
+  if(document.hidden || !currentThread) return;
+  if(!document.getElementById('panel-messages')?.classList.contains('active')) return;
+  try{
+    const msgs = await apiGet('/api/messages/'+currentThread);
+    if(msgs.length !== (threads[currentThread]?.msgs||[]).length){
+      threads[currentThread].msgs = msgs;
+      openThread(currentThread);
+    }
+  }catch(e){}
+}, 10000);
+
+// Poll for new issues + recommendations every 30s (resident submissions)
+setInterval(async ()=>{
+  if(document.hidden) return;
+  try{
+    const d = await apiGet('/api/dashboard-data');
+    const newIssues = d.issues||[];
+    const newRecs   = d.recommendations||[];
+    const issueCountChanged = newIssues.length !== issues.length;
+    const recCountChanged   = newRecs.length   !== recommendations.length;
+    if(issueCountChanged || recCountChanged){
+      issues          = newIssues;
+      recommendations = newRecs;
+      renderIssues();
+      renderRecommendations();
+      renderDashboard();
+      const openCount = issues.filter(i=>i.status!=='Resolved').length;
+      if(document.getElementById('statIssues'))  document.getElementById('statIssues').textContent  = openCount;
+      if(document.getElementById('issueBadge'))  document.getElementById('issueBadge').textContent  = openCount;
+    }
+  }catch(e){}
+}, 30000);
+
 loadAllData();
 loadReceipts();
 renderReceipts();
@@ -3589,5 +3977,214 @@ function deleteFacilityById(id) {
   .then(d => { if (d.success) { loadMapData(); showToast('Facility removed.'); } });
 }
 </script>
+
+<!-- Resident Detail Modal -->
+<div class="modal-overlay" id="modal-residentDetail" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-title" style="display:flex;align-items:center;gap:14px;">
+      <div id="resD-avatar" class="r-avatar" style="width:50px;height:50px;font-size:18px;flex-shrink:0;"></div>
+      <div>
+        <div id="resD-name" style="font-size:16px;font-weight:600;">—</div>
+        <div id="resD-block" style="font-size:12px;color:var(--text-dim);margin-top:2px;">—</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Status</div>
+        <span id="resD-status" class="pill">—</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Payment</div>
+        <div id="resD-payStatus" style="font-size:13px;font-weight:600;">—</div>
+      </div>
+    </div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Outstanding Balance</div>
+      <div id="resD-balance" style="font-size:22px;font-weight:700;">₱0</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <div style="display:flex;gap:10px;align-items:center;font-size:13px;">
+        <span style="color:var(--text-dim);min-width:60px;">📧 Email</span>
+        <span id="resD-email">—</span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;font-size:13px;">
+        <span style="color:var(--text-dim);min-width:60px;">📞 Phone</span>
+        <span id="resD-phone">—</span>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" onclick="document.getElementById('modal-residentDetail').classList.remove('open')">Close</button>
+      <button class="btn btn-sm" id="resD-viewPayBtn">View Payments →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Issue Detail Modal -->
+<div class="modal-overlay" id="modal-issueDetail" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box wide" style="max-width:560px;">
+    <div class="modal-title">
+      <div id="issD-title" style="font-size:15px;font-weight:600;margin-bottom:6px;">—</div>
+      <div id="issD-status" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:2px;" id="issD-who">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px;" id="issD-cat">—</div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px;">Description</div>
+      <div id="issD-desc" style="font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
+    </div>
+    <div id="issD-location" style="margin-bottom:12px;"></div>
+    <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:8px;">Responses (<span id="issD-responseCount"></span>)</div>
+    <div id="issD-responses" style="max-height:220px;overflow-y:auto;"></div>
+    <div class="modal-actions" style="margin-top:16px;">
+      <button class="modal-close-btn" onclick="document.getElementById('modal-issueDetail').classList.remove('open')">Close</button>
+      <button class="btn btn-sm" id="issD-respondBtn">Respond</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recommendation Detail Modal -->
+<div class="modal-overlay" id="modal-recDetail" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">Recommendation Details</div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:2px;" id="recD-who">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px;" id="recD-cat">—</div>
+    <div style="font-size:15px;font-weight:600;margin-bottom:10px;" id="recD-title">—</div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px;">Description</div>
+      <div id="recD-desc" style="font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
+    </div>
+    <div class="f-row"><div class="f-field"><span class="f-label">Update Status</span>
+      <select id="recD-statusSel">
+        <option value="Pending">Pending</option>
+        <option value="Reviewed">Reviewed</option>
+        <option value="Approved">Approved</option>
+        <option value="Rejected">Rejected</option>
+      </select>
+    </div></div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" onclick="document.getElementById('modal-recDetail').classList.remove('open')">Close</button>
+      <button class="btn btn-sm" id="recD-updateBtn">Update Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- Announcement View Modal -->
+<div class="modal-overlay" id="modal-annView" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:500px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span id="annV-tag" class="pill">Notice</span>
+      <span id="annV-priority" style="display:none;font-size:11px;font-weight:700;color:#f08080;">⚡ High Priority</span>
+    </div>
+    <div id="annV-title" style="font-size:17px;font-weight:700;margin-bottom:10px;line-height:1.4;">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;" id="annV-by">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px;" id="annV-meta">—</div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div id="annV-content" style="font-size:14px;line-height:1.7;white-space:pre-wrap;color:var(--text-mid);"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" id="annV-delBtn" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
+      <button class="btn btn-sm" onclick="document.getElementById('modal-annView').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member Detail / Edit Modal -->
+<div class="modal-overlay" id="modal-memberDetail" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-title" style="display:flex;align-items:center;gap:12px;">
+      <div id="memDetailInitials" style="width:42px;height:42px;border-radius:50%;background:var(--glass-hover);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;">?</div>
+      <div>
+        Member Details
+        <div id="memDetailBlock" style="font-size:12px;color:var(--text-dim);font-weight:400;margin-top:2px;">—</div>
+      </div>
+    </div>
+    <div class="f-row"><div class="f-field"><span class="f-label">Full Name</span>
+      <input type="text" id="memDetailName" placeholder="Full name">
+    </div></div>
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Relationship</span>
+        <select id="memDetailRel">
+          <option value="">— Select —</option>
+          <option>Owner</option><option>Spouse</option><option>Child</option><option>Parent</option><option>Tenant</option><option>Other</option>
+        </select>
+      </div>
+      <div class="f-field"><span class="f-label">Contact Number</span>
+        <input type="text" id="memDetailPhone" placeholder="e.g. 09xx-xxx-xxxx">
+      </div>
+    </div>
+    <div style="font-size:12px;color:#f08080;margin-top:-4px;margin-bottom:8px;" id="memDetailMsg"></div>
+    <div class="modal-actions" style="justify-content:space-between;">
+      <button class="modal-close-btn" onclick="deleteMember()" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
+      <div style="display:flex;gap:8px;">
+        <button class="modal-close-btn" onclick="document.getElementById('modal-memberDetail').classList.remove('open')">Cancel</button>
+        <button class="btn btn-sm" onclick="saveMemberDetail()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Member Modal -->
+<div class="modal-overlay" id="modal-addMember" onclick="if(event.target===this)closeModal('addMember')">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-title">Add Household Member</div>
+    <div class="f-row"><div class="f-field"><span class="f-label">Household (Block/Lot)</span>
+      <select id="addMemHouse">
+        <option value="">— Select household —</option>
+      </select>
+    </div></div>
+    <div class="f-row"><div class="f-field"><span class="f-label">Full Name</span>
+      <input type="text" id="addMemName" placeholder="Member's full name">
+    </div></div>
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Relationship to Owner</span>
+        <select id="addMemRel">
+          <option value="">— Select —</option>
+          <option>Owner</option><option>Spouse</option><option>Child</option><option>Parent</option><option>Tenant</option><option>Other</option>
+        </select>
+      </div>
+      <div class="f-field"><span class="f-label">Contact Number</span>
+        <input type="text" id="addMemPhone" placeholder="Optional">
+      </div>
+    </div>
+    <div style="font-size:12px;color:#f08080;margin-top:-4px;margin-bottom:8px;" id="addMemMsg"></div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" onclick="closeModal('addMember')">Cancel</button>
+      <button class="btn btn-sm" onclick="addMemberSubmit()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delinquent Detail Modal -->
+<div class="modal-overlay" id="modal-delinquent">
+  <div class="modal-box wide" style="max-width:520px;">
+    <div class="modal-title" style="display:flex;align-items:center;gap:10px;">
+      <span style="font-size:22px;">⚠️</span>
+      <span>Delinquent Household — <span id="delin-modal-block" style="color:#f08080;">—</span></span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Reason Flagged</div>
+        <div id="delin-modal-reason" style="font-size:13px;color:#f08080;font-weight:600;">—</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Date Flagged</div>
+        <div id="delin-modal-flagged" style="font-size:13px;font-weight:600;">—</div>
+      </div>
+    </div>
+
+    <div style="background:rgba(240,128,128,0.08);border:1px solid rgba(240,128,128,0.25);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
+      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Total Outstanding Balance</div>
+      <div id="delin-modal-total" style="font-size:22px;font-weight:700;color:#f08080;">₱0</div>
+    </div>
+
+    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:10px;">Residents in Household</div>
+    <div id="delin-modal-residents" style="max-height:260px;overflow-y:auto;"></div>
+
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-sm" onclick="closeDelinquent()">Close</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

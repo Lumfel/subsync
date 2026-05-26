@@ -22,28 +22,28 @@ class FamilyController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'family_name' => 'required|string|max:255'
+        $data = $request->validate([
+            'family_name' => 'required|string|max:255',
+            'family_head' => 'nullable|string|max:255',
+            'members'     => 'nullable|string|max:50',
         ]);
 
-        Family::create([
-            'family_name' => $request->family_name
-        ]);
-
-        return redirect('/manage_users');
+        $family = Family::create($data);
+        return response()->json(['success' => true, 'family' => $family]);
     }
 
     public function update(Request $request, $id)
     {
         $family = Family::findOrFail($id);
 
-        $family->update([
-            'family_name' => $request->family_name,
-            'family_head' => $request->family_head,
-            'members' => $request->members
+        $data = $request->validate([
+            'family_name' => 'sometimes|required|string|max:255',
+            'family_head' => 'nullable|string|max:255',
+            'members'     => 'nullable|string|max:50',
         ]);
 
-        return redirect('/manage_users');
+        $family->update($data);
+        return response()->json(['success' => true, 'family' => $family->fresh()]);
     }
 
     public function destroy($id)

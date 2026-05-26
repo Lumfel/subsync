@@ -71,6 +71,7 @@ class DashboardController extends Controller
               'residents'    => $d->household?->residents->map(fn($r) => [
                   'id'              => $r->id,
                   'name'            => $r->name,
+                  'contact_number'  => $r->contact_number,
                   'current_balance' => $r->current_balance,
               ]) ?? [],
           ]);
@@ -128,6 +129,7 @@ class DashboardController extends Controller
                 'title'       => $i->title,
                 'description' => $i->description,
                 'status'      => $i->status,
+                'priority'    => $i->priority,
                 'latitude'    => $i->latitude,
                 'longitude'   => $i->longitude,
                 'created_at'  => $i->created_at?->format('M d, Y'),

@@ -25,6 +25,7 @@ class IssueController extends Controller
             'title'      => $i->title,
             'description'=> $i->description,
             'status'     => $i->status,
+            'priority'   => $i->priority,
             'latitude'   => $i->latitude,
             'longitude'  => $i->longitude,
             'created_at' => $i->created_at?->format('M d, Y'),
@@ -55,6 +56,7 @@ class IssueController extends Controller
                 'title'       => $i->title,
                 'description' => $i->description,
                 'status'      => $i->status,
+                'priority'    => $i->priority,
                 'created_at'  => $i->created_at?->format('M d, Y'),
                 'response'    => $i->responses->first()?->response_content,
             ]);
@@ -71,6 +73,7 @@ class IssueController extends Controller
             'description' => 'required|string',
             'latitude'    => 'nullable|numeric|between:-90,90',
             'longitude'   => 'nullable|numeric|between:-180,180',
+            'priority'    => 'nullable|in:Low,Medium,High,Critical',
         ]);
 
         $data['resident_id'] = Auth::guard('resident')->id();
@@ -84,6 +87,7 @@ class IssueController extends Controller
             'title'       => $issue->title,
             'description' => $issue->description,
             'status'      => $issue->status,
+            'priority'    => $issue->priority,
             'created_at'  => $issue->created_at->format('M d, Y'),
             'response'    => null,
         ]]);
@@ -97,6 +101,27 @@ class IssueController extends Controller
         $issue->update($data);
 
         return response()->json(['success' => true]);
+    }
+
+    /** GET /api/issues/urgent-check — lightweight poll for critical/high unresolved issues */
+    public function urgentCheck()
+    {
+        $urgent = IssueReport::whereIn('priority', ['Critical', 'High'])
+            ->where('status', '!=', 'Resolved')
+            ->orderByDesc('created_at')
+            ->first();
+
+        return response()->json([
+            'count'     => IssueReport::whereIn('priority', ['Critical', 'High'])->where('status', '!=', 'Resolved')->count(),
+            'latest_id' => $urgent?->id,
+            'latest'    => $urgent ? [
+                'id'       => $urgent->id,
+                'title'    => $urgent->title,
+                'category' => $urgent->category,
+                'priority' => $urgent->priority,
+                'resident' => $urgent->resident?->name ?? '—',
+            ] : null,
+        ]);
     }
 
     /** POST /api/issues/{id}/respond — officer or admin responds */

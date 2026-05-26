@@ -40,7 +40,7 @@ use Illuminate\Database\Eloquent\Model;
 class IssueReport extends Model
 {
     protected $fillable = [
-        'resident_id', 'category', 'title', 'description', 'latitude', 'longitude', 'status',
+        'resident_id', 'category', 'title', 'description', 'latitude', 'longitude', 'status', 'priority',
     ];
 
     public function resident()

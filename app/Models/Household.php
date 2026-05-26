@@ -33,8 +33,13 @@ use Illuminate\Database\Eloquent\Model;
 class Household extends Model
 {
     protected $fillable = [
-        'block_lot_number', 'status', 'latitude', 'longitude',
+        'block_lot_number', 'family_id', 'status', 'latitude', 'longitude',
     ];
+
+    public function family()
+    {
+        return $this->belongsTo(\App\Models\Family::class);
+    }
 
     public function residents()
     {

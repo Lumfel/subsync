@@ -11,6 +11,19 @@ use Illuminate\Support\Facades\Hash;
 
 class ResidentController extends Controller
 {
+    /** GET /api/residents/me — current resident's own balance & name */
+    public function me()
+    {
+        $resident = \Illuminate\Support\Facades\Auth::guard('resident')->user();
+        if (!$resident) return response()->json(['error' => 'Unauthenticated'], 401);
+        return response()->json([
+            'id'      => $resident->id,
+            'name'    => $resident->name,
+            'balance' => $resident->current_balance,
+            'status'  => $resident->status,
+        ]);
+    }
+
     /** GET /api/residents — all residents with household info */
     public function index()
     {
@@ -86,10 +99,32 @@ class ResidentController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /** POST /api/residents/{id}/approve — approve pending registration */
+    public function approve(int $id)
+    {
+        $resident = Resident::findOrFail($id);
+        $resident->update(['status' => 'Active']);
+
+        return response()->json(['success' => true]);
+    }
+
+    /** DELETE /api/residents/{id}/reject — delete a pending registration */
+    public function reject(int $id)
+    {
+        $resident = Resident::findOrFail($id);
+        if ($resident->status !== 'Pending') {
+            return response()->json(['success' => false, 'message' => 'Only pending registrations can be rejected.'], 422);
+        }
+        $resident->delete();
+
+        return response()->json(['success' => true]);
+    }
+
     /** GET /api/households — all households */
     public function households()
     {
-        $households = Household::select('id', 'block_lot_number', 'status', 'latitude', 'longitude')
+        $households = Household::with('family:id,family_name,members')
+            ->select('id', 'block_lot_number', 'family_id', 'status', 'latitude', 'longitude')
             ->orderBy('block_lot_number')
             ->get();
 
@@ -102,12 +137,25 @@ class ResidentController extends Controller
         $data = $request->validate([
             'block_lot_number' => 'required|string|max:50|unique:households,block_lot_number',
             'status'           => 'sometimes|in:Active,Inactive,Delinquent',
+            'family_name'      => 'nullable|string|max:255',
+            'members'          => 'nullable|string|max:50',
+            'family_head'      => 'nullable|string|max:255',
         ]);
 
         $data['status'] = $data['status'] ?? 'Active';
-        $household = Household::create($data);
+        $householdData = \Illuminate\Support\Arr::only($data, ['block_lot_number', 'status']);
+        $household = Household::create($householdData);
 
-        return response()->json(['success' => true, 'household' => $household]);
+        if (!empty($data['family_name'])) {
+            $family = \App\Models\Family::create([
+                'family_name' => $data['family_name'],
+                'family_head' => $data['family_head'] ?? null,
+                'members'     => $data['members'] ?? null,
+            ]);
+            $household->update(['family_id' => $family->id]);
+        }
+
+        return response()->json(['success' => true, 'household' => $household->load('family:id,family_name,members')]);
     }
 
     /** PUT /api/households/{id} — update household */
@@ -119,9 +167,30 @@ class ResidentController extends Controller
             'block_lot_number' => 'sometimes|required|string|max:50|unique:households,block_lot_number,' . $id,
             'status'           => 'sometimes|in:Active,Inactive,Delinquent',
             'reason'           => 'nullable|string|max:255',
+            'family_name'      => 'nullable|string|max:255',
+            'members'          => 'nullable|string|max:50',
         ]);
 
-        $household->update(\Illuminate\Support\Arr::except($data, ['reason']));
+        $household->update(\Illuminate\Support\Arr::except($data, ['reason', 'family_name', 'members']));
+
+        // Handle family creation or update
+        if (isset($data['family_name']) && $data['family_name'] !== '') {
+            if ($household->family_id) {
+                \App\Models\Family::where('id', $household->family_id)->update([
+                    'family_name' => $data['family_name'],
+                    'members'     => $data['members'] ?? null,
+                ]);
+            } else {
+                $family = \App\Models\Family::create([
+                    'family_name' => $data['family_name'],
+                    'members'     => $data['members'] ?? null,
+                ]);
+                $household->update(['family_id' => $family->id]);
+            }
+        } elseif ($household->family_id && isset($data['members'])) {
+            // Update members count even if family_name not provided
+            \App\Models\Family::where('id', $household->family_id)->update(['members' => $data['members']]);
+        }
 
         if (($data['status'] ?? null) === 'Delinquent') {
             Delinquent::updateOrCreate(
@@ -135,7 +204,7 @@ class ResidentController extends Controller
             Delinquent::where('house_id', $id)->delete();
         }
 
-        return response()->json(['success' => true, 'household' => $household->fresh()]);
+        return response()->json(['success' => true, 'household' => $household->fresh()->load('family:id,family_name,members')]);
     }
 
     /** DELETE /api/households/{id} */

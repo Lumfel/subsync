@@ -448,30 +448,30 @@
         <div id="resident-fields">
             <div class="input-group">
                 <span class="input-icon">🏡</span>
-                <input type="text" placeholder="Household / Family Name" required>
+                <input type="text" id="reg-family-name" placeholder="Full Name" required>
             </div>
             <div class="input-row">
                 <div class="input-group" style="flex:1;margin-bottom:0;">
                     <span class="input-icon">📍</span>
-                    <input type="text" placeholder="Block" style="padding-left:42px !important;">
+                    <input type="text" id="reg-block" placeholder="Block" style="padding-left:42px !important;">
                 </div>
                 <div class="input-group" style="flex:1;margin-bottom:0;">
                     <span class="input-icon">#</span>
-                    <input type="text" placeholder="Lot">
+                    <input type="text" id="reg-lot" placeholder="Lot">
                 </div>
             </div>
             <div style="margin-bottom:11px;"></div>
             <div class="input-group">
                 <span class="input-icon">✉️</span>
-                <input type="email" placeholder="Gmail Address" required>
+                <input type="email" id="reg-email" placeholder="Gmail Address" required>
             </div>
             <div class="input-group">
                 <span class="input-icon">📱</span>
-                <input type="tel" placeholder="Contact Number" required>
+                <input type="tel" id="reg-contact" placeholder="Contact Number" required>
             </div>
             <div class="input-group">
                 <span class="input-icon">👤</span>
-                <select required>
+                <select id="reg-member-type" required>
                     <option value="" disabled selected>Member Type</option>
                     <option value="head">Head of Household</option>
                     <option value="family">Family Member</option>
@@ -487,7 +487,7 @@
             <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
             <div class="input-group">
                 <span class="input-icon">🔑</span>
-                <input type="password" placeholder="Confirm Password" autocomplete="new-password">
+                <input type="password" id="reg-confirm" placeholder="Confirm Password" autocomplete="new-password">
             </div>
         </div>
 
@@ -495,11 +495,11 @@
         <div id="officer-fields" style="display:none;">
             <div class="input-group">
                 <span class="input-icon">👤</span>
-                <input type="text" placeholder="Full Name" required>
+                <input type="text" id="off-name" placeholder="Full Name" required>
             </div>
             <div class="input-group">
                 <span class="input-icon">🛡️</span>
-                <select required>
+                <select id="off-role" required>
                     <option value="" disabled selected>Officer Role</option>
                     <option>HOA President</option>
                     <option>HOA Vice President</option>
@@ -511,7 +511,7 @@
             </div>
             <div class="input-group">
                 <span class="input-icon">📍</span>
-                <select required>
+                <select id="off-block" required>
                     <option value="" disabled selected>Assigned Block</option>
                     <option>Block 1</option><option>Block 2</option>
                     <option>Block 3</option><option>Block 4</option><option>Block 5</option>
@@ -519,7 +519,7 @@
             </div>
             <div class="input-group">
                 <span class="input-icon">✉️</span>
-                <input type="email" placeholder="Gmail Address" required>
+                <input type="email" id="off-email" placeholder="Gmail Address" required>
             </div>
             <div class="input-group">
                 <span class="input-icon">🔒</span>
@@ -527,6 +527,10 @@
                 <button class="eye-btn" onclick="togglePwd('off-password',this)" type="button">👁</button>
             </div>
             <div class="strength-bar"><div class="strength-fill" id="strengthFill2"></div></div>
+            <div class="input-group">
+                <span class="input-icon">🔑</span>
+                <input type="password" id="off-confirm" placeholder="Confirm Password" autocomplete="new-password">
+            </div>
             <p style="font-size:11px;opacity:0.45;margin:-6px 0 12px;text-align:center;">Registration requires admin approval before access is granted.</p>
         </div>
 
@@ -624,7 +628,68 @@
     }
 
     function handleRegister() {
-        showMsg('✅ Account created! Awaiting admin verification.', 'success');
+        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const btn  = document.getElementById('registerBtn');
+
+        if (currentRole === 'officer') {
+            const name     = document.getElementById('off-name')?.value.trim();
+            const role     = document.getElementById('off-role')?.value;
+            const email    = document.getElementById('off-email')?.value.trim();
+            const password = document.getElementById('off-password')?.value;
+            const confirm  = document.getElementById('off-confirm')?.value;
+            if (!name || !email || !password) { showMsg('Please fill in all required fields.', 'error'); return; }
+            if (password !== confirm) { showMsg('Passwords do not match.', 'error'); return; }
+            if (password.length < 8)  { showMsg('Password must be at least 8 characters.', 'error'); return; }
+
+            btn.disabled = true;
+            showMsg('Submitting…', 'success');
+            fetch('{{ route("register.post") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify({ role: 'officer', name, email, password, role_description: role }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    showMsg('✅ Application submitted! An admin will review and approve your account.', 'success');
+                    setTimeout(() => switchForm('login'), 3000);
+                } else {
+                    const errs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Registration failed.');
+                    showMsg(errs, 'error');
+                }
+            })
+            .catch(() => { btn.disabled = false; showMsg('Connection error. Please try again.', 'error'); });
+        } else {
+            const name     = document.getElementById('reg-family-name')?.value.trim();
+            const email    = document.getElementById('reg-email')?.value.trim();
+            const contact  = document.getElementById('reg-contact')?.value.trim();
+            const password = document.getElementById('reg-password')?.value;
+            const confirm  = document.getElementById('reg-confirm')?.value;
+            if (!name || !email || !password) { showMsg('Please fill in all required fields.', 'error'); return; }
+            if (password !== confirm) { showMsg('Passwords do not match.', 'error'); return; }
+            if (password.length < 8)  { showMsg('Password must be at least 8 characters.', 'error'); return; }
+
+            btn.disabled = true;
+            showMsg('Submitting…', 'success');
+            fetch('{{ route("register.post") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
+                body: JSON.stringify({ role: 'resident', name, email, password, contact_number: contact || null }),
+            })
+            .then(r => r.json())
+            .then(data => {
+                btn.disabled = false;
+                if (data.success) {
+                    showMsg('✅ Account created! Awaiting admin approval — you will be able to log in once approved.', 'success');
+                    setTimeout(() => switchForm('login'), 4000);
+                } else {
+                    const errs = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Registration failed.');
+                    showMsg(errs, 'error');
+                }
+            })
+            .catch(() => { btn.disabled = false; showMsg('Connection error. Please try again.', 'error'); });
+        }
     }
 
     /* ── PASSWORD TOGGLE ── */

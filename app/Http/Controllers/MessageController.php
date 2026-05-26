@@ -13,23 +13,19 @@ class MessageController extends Controller
     /** GET /api/messages/threads — list all conversations for current user */
     public function threads()
     {
-        $isAdmin   = session('admin_id');
-        $isOfficer = Auth::guard('officer')->check();
-        $isResident= Auth::guard('resident')->check();
+        $isResident = Auth::guard('resident')->check();
+        $isOfficer  = Auth::guard('officer')->check();
+        $isAdmin    = !$isResident && !$isOfficer && session('admin_id');
 
-        if ($isAdmin) {
-            // Admin sees all conversations
-            $convs = Conversation::with(['participants.resident:id,name', 'messages' => fn($q) => $q->latest()->limit(1)])
-                ->get();
-        } elseif ($isOfficer) {
-            $officerId = Auth::guard('officer')->id();
-            $convs = Conversation::whereHas('participants', fn($q) => $q->where('officer_id', $officerId))
-                ->with(['participants.resident:id,name', 'messages' => fn($q) => $q->latest()->limit(1)])
-                ->get();
-        } else {
+        if ($isResident) {
             $residentId = Auth::guard('resident')->id();
             $convs = Conversation::whereHas('participants', fn($q) => $q->where('resident_id', $residentId))
                 ->with(['messages' => fn($q) => $q->latest()->limit(1)])
+                ->get();
+        } else {
+            // Admin and officers see all conversations
+            $convs = Conversation::with(['messages' => fn($q) => $q->latest()->limit(1)])
+                ->latest('id')
                 ->get();
         }
 
@@ -68,21 +64,21 @@ class MessageController extends Controller
 
         $msg = ['conversation_id' => $convId, 'content' => $data['content']];
 
-        if (session('admin_id')) {
-            $msg['sender_type'] = 'admin';
+        if (Auth::guard('resident')->check()) {
+            $msg['resident_id'] = Auth::guard('resident')->id();
+            $msg['sender_type'] = 'resident';
         } elseif (Auth::guard('officer')->check()) {
             $msg['officer_id']  = Auth::guard('officer')->id();
             $msg['sender_type'] = 'officer';
         } else {
-            $msg['resident_id'] = Auth::guard('resident')->id();
-            $msg['sender_type'] = 'resident';
+            $msg['sender_type'] = 'admin';
         }
 
         $msg['created_at'] = now();
 
         $message = Message::create($msg);
 
-        $senderName = session('admin_name', null) ?? (Auth::guard('officer')->user()?->name) ?? (Auth::guard('resident')->user()?->name) ?? 'Admin';
+        $senderName = (Auth::guard('resident')->user()?->name) ?? (Auth::guard('officer')->user()?->name) ?? session('admin_name', 'Admin');
 
         return response()->json(['success' => true, 'message' => [
             'id'          => $message->id,
@@ -100,8 +96,23 @@ class MessageController extends Controller
 
         $conv = Conversation::create(['title' => $request->title]);
 
-        if (session('admin_id')) {
-            // Admin starts a conversation — optionally pre-add a resident participant
+        // Prioritise authenticated guards before checking the admin session key,
+        // so that a resident/officer logged in on the same browser as an admin
+        // is still correctly registered as the conversation participant.
+        if (Auth::guard('resident')->check()) {
+            ConvParticipant::create([
+                'conversation_id'  => $conv->id,
+                'resident_id'      => Auth::guard('resident')->id(),
+                'participant_type' => 'resident',
+            ]);
+        } elseif (Auth::guard('officer')->check()) {
+            ConvParticipant::create([
+                'conversation_id'  => $conv->id,
+                'officer_id'       => Auth::guard('officer')->id(),
+                'participant_type' => 'officer',
+            ]);
+        } elseif (session('admin_id')) {
+            // Admin starts a conversation — optionally pre-add a resident or officer participant
             if ($request->filled('resident_id')) {
                 ConvParticipant::create([
                     'conversation_id'  => $conv->id,
@@ -109,18 +120,30 @@ class MessageController extends Controller
                     'participant_type' => 'resident',
                 ]);
             }
-        } elseif (Auth::guard('officer')->check()) {
-            ConvParticipant::create([
-                'conversation_id'  => $conv->id,
-                'officer_id'       => Auth::guard('officer')->id(),
-                'participant_type' => 'officer',
-            ]);
-        } elseif (Auth::guard('resident')->check()) {
-            ConvParticipant::create([
-                'conversation_id'  => $conv->id,
-                'resident_id'      => Auth::guard('resident')->id(),
-                'participant_type' => 'resident',
-            ]);
+            if ($request->filled('officer_id')) {
+                ConvParticipant::create([
+                    'conversation_id'  => $conv->id,
+                    'officer_id'       => $request->officer_id,
+                    'participant_type' => 'officer',
+                ]);
+            }
+        }
+
+        // Also add the selected recipient (for resident→officer or officer→resident conversations)
+        if ($request->filled('recipient_type') && $request->filled('recipient_id')) {
+            if ($request->recipient_type === 'officer' && !Auth::guard('officer')->check()) {
+                ConvParticipant::create([
+                    'conversation_id'  => $conv->id,
+                    'officer_id'       => $request->recipient_id,
+                    'participant_type' => 'officer',
+                ]);
+            } elseif ($request->recipient_type === 'resident' && !Auth::guard('resident')->check()) {
+                ConvParticipant::create([
+                    'conversation_id'  => $conv->id,
+                    'resident_id'      => $request->recipient_id,
+                    'participant_type' => 'resident',
+                ]);
+            }
         }
 
         return response()->json(['success' => true, 'conversation' => [

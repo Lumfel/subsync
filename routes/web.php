@@ -25,6 +25,7 @@ Route::get('/login', function () {
 })->name('login');
 
 Route::post('/login', [AuthController::class, 'residentLogin'])->name('login.post');
+Route::post('/register', [AuthController::class, 'register'])->name('register.post');
 
 // Admin login
 Route::get('/admin/login', function () {
@@ -90,9 +91,12 @@ Route::prefix('api')->group(function () {
 
     // Residents
     Route::get('/residents', [ResidentController::class, 'index']);
+    Route::get('/residents/me', [ResidentController::class, 'me']);
     Route::post('/residents', [ResidentController::class, 'store']);
     Route::put('/residents/{id}', [ResidentController::class, 'update']);
     Route::delete('/residents/{id}', [ResidentController::class, 'destroy']);
+    Route::post('/residents/{id}/approve', [ResidentController::class, 'approve']);
+    Route::delete('/residents/{id}/reject', [ResidentController::class, 'reject']);
 
     // Households
     Route::get('/households', [ResidentController::class, 'households']);
@@ -116,6 +120,7 @@ Route::prefix('api')->group(function () {
     Route::post('/announcements/{id}/view', [AnnouncementController::class, 'markViewed']);
 
     // Issues
+    Route::get('/issues/urgent-check', [IssueController::class, 'urgentCheck']);
     Route::get('/issues', [IssueController::class, 'index']);
     Route::get('/issues/my', [IssueController::class, 'myIssues']);
     Route::post('/issues', [IssueController::class, 'store']);
@@ -137,6 +142,8 @@ Route::prefix('api')->group(function () {
 
     // Families
     Route::get('/families', [FamilyController::class, 'index']);
+    Route::post('/families', [FamilyController::class, 'store']);
+    Route::put('/families/{id}', [FamilyController::class, 'update']);
     Route::delete('/families/{id}', [FamilyController::class, 'destroy']);
 
     // Recommendations
