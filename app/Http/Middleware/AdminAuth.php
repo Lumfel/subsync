@@ -14,6 +14,8 @@ class AdminAuth
             return redirect()->route('admin.login');
         }
 
+        $request->session()->put('active_role', 'admin');
+
         return $next($request);
     }
 }

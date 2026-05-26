@@ -490,6 +490,9 @@ select option { background: #1a120d; color: var(--text); }
 .thread-item { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:var(--radius-xs); cursor:pointer; border:1px solid transparent; margin-bottom:3px; transition:background .15s; }
 .thread-item:hover { background:var(--glass-hover); }
 .thread-item.active { background:var(--accent-dim); border-color:var(--accent-border); }
+.thread-del-btn { display:none; background:none; border:none; cursor:pointer; font-size:13px; padding:2px 5px; color:var(--text-dim); border-radius:4px; flex-shrink:0; line-height:1; }
+.thread-del-btn:hover { color:#f08080; }
+.thread-item:hover .thread-del-btn { display:block; }
 .thread-avatar { width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
 .thread-info { flex:1; min-width:0; }
 .thread-name { font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -2220,6 +2223,7 @@ function renderThreads(){
         <div class="thread-name">${t.title}</div>
         <div class="thread-preview">${t.last_message||'No messages yet'}</div>
       </div>
+      <button class="thread-del-btn" onclick="event.stopPropagation();deleteConversation(${id})" title="Delete conversation">🗑</button>
     </div>`;
   }).join('');
 }
@@ -2254,6 +2258,23 @@ async function loadThreads(){
   if(!currentThread&&data.length) currentThread=data[0].id;
   renderThreads();
   if(currentThread) openThread(currentThread);
+}
+async function deleteConversation(id){
+  if(!confirm('Delete this conversation and all its messages?')) return;
+  const res=await apiDelete('/api/messages/'+id);
+  if(res.success){
+    delete threads[id];
+    if(currentThread==id){
+      currentThread=null;
+      const remaining=Object.keys(threads);
+      if(remaining.length){currentThread=remaining[0];openThread(remaining[0]);}
+      else{document.getElementById('msgBody').innerHTML='<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px;">No conversations.</div>';document.getElementById('chatName').textContent='';}
+    }
+    renderThreads();
+    showToast('🗑️ Conversation deleted.');
+  } else {
+    showToast('⚠ Failed to delete conversation.');
+  }
 }
 
 function renderAnnouncements(){

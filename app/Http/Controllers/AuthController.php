@@ -24,8 +24,11 @@ class AuthController extends Controller
         $admin = Admin::firstWhere('email', $credentials['email']);
 
         if ($admin && Hash::check($credentials['password'], $admin->password)) {
+            Auth::guard('resident')->logout();
+            Auth::guard('officer')->logout();
             $request->session()->put('admin_id', $admin->id);
             $request->session()->put('admin_name', $admin->name);
+            $request->session()->put('active_role', 'admin');
             $request->session()->regenerate();
 
             return response()->json([
@@ -62,7 +65,10 @@ class AuthController extends Controller
                         'message' => 'Your account is awaiting admin approval.',
                     ]);
                 }
+                Auth::guard('resident')->logout();
+                $request->session()->forget(['admin_id', 'admin_name']);
                 Auth::guard('officer')->login($officer);
+                $request->session()->put('active_role', 'officer');
                 $request->session()->regenerate();
 
                 return response()->json([
@@ -82,6 +88,9 @@ class AuthController extends Controller
                 'email'    => $credentials['email'],
                 'password' => $credentials['password'],
             ])) {
+                Auth::guard('officer')->logout();
+                $request->session()->forget(['admin_id', 'admin_name']);
+                $request->session()->put('active_role', 'resident');
                 $request->session()->regenerate();
 
                 return response()->json([
@@ -144,7 +153,7 @@ class AuthController extends Controller
     {
         Auth::guard('resident')->logout();
         Auth::guard('officer')->logout();
-        $request->session()->forget(['admin_id', 'admin_name']);
+        $request->session()->forget(['admin_id', 'admin_name', 'active_role']);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

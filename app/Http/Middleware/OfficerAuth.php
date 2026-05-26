@@ -15,6 +15,9 @@ class OfficerAuth
             return redirect()->route('login');
         }
 
+        $request->session()->forget(['admin_id', 'admin_name']);
+        $request->session()->put('active_role', 'officer');
+
         return $next($request);
     }
 }

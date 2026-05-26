@@ -265,6 +265,9 @@ select option { background: #1a120d; color: var(--text); }
 }
 .msg-thread-item:hover { background: var(--glass-hover); }
 .msg-thread-item.active { background: var(--accent-dim); border-color: var(--accent-border); }
+.msg-thread-del { display:none; background:none; border:none; cursor:pointer; font-size:13px; padding:2px 5px; color:var(--text-dim); border-radius:4px; flex-shrink:0; line-height:1; }
+.msg-thread-del:hover { color:#f08080; }
+.msg-thread-item:hover .msg-thread-del { display:block; }
 .msg-thread-avatar {
   width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700;
@@ -888,6 +891,7 @@ async function loadResidentThreads(){
         <div class="msg-thread-name">${t.title}</div>
         <div class="msg-thread-preview">${t.last_message||'No messages yet'}</div>
       </div>
+      <button class="msg-thread-del" onclick="event.stopPropagation();deleteResidentConversation(${t.id})" title="Delete">🗑</button>
     </div>`).join('');
   }
   // Load first thread
@@ -910,6 +914,30 @@ async function selectResThread(id, el){
 }
 
 function selectThread(id, el){ /* legacy – kept for old static threads */ }
+
+async function deleteResidentConversation(id){
+  if(!confirm('Delete this conversation and all its messages?')) return;
+  const csrfToken=document.querySelector('meta[name=csrf-token]')?.content||'';
+  const res=await fetch('/api/messages/'+id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken}}).then(r=>r.json()).catch(()=>({success:false}));
+  if(res.success){
+    delete threads[id];
+    if(currentThread==id){
+      currentThread=null;
+      const remaining=Object.keys(threads);
+      if(remaining.length){
+        currentThread=remaining[0];
+        await loadThreads();
+      } else {
+        document.getElementById('msgBody').innerHTML='<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px;">No conversations.</div>';
+        document.getElementById('chat-name').textContent='';
+      }
+    } else {
+      await loadThreads();
+    }
+  } else {
+    alert('Failed to delete conversation.');
+  }
+}
 
 function escHtml(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
 function renderMessages(){

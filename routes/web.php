@@ -53,6 +53,8 @@ Route::get('/officer-portal', function () {
 
 Route::get('/residents', function () {
     $resident = \Illuminate\Support\Facades\Auth::guard('resident')->user();
+    request()->session()->forget(['admin_id', 'admin_name']);
+    request()->session()->put('active_role', 'resident');
     $household = $resident?->house_id
         ? \App\Models\Household::query()->find($resident->house_id)
         : null;
@@ -163,6 +165,7 @@ Route::prefix('api')->group(function () {
     Route::post('/messages/start', [MessageController::class, 'start']);
     Route::get('/messages/{convId}', [MessageController::class, 'show']);
     Route::post('/messages/{convId}', [MessageController::class, 'send']);
+    Route::delete('/messages/{convId}', [MessageController::class, 'destroy']);
 
     // Officer Files
     Route::get('/officer-files', [OfficerFileController::class, 'index']);

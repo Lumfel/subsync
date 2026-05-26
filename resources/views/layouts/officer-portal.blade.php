@@ -303,6 +303,9 @@ select option { background: #0a0e1a; color: var(--text); }
 }
 .msg-thread-item:hover { background:var(--glass-hover); }
 .msg-thread-item.active { background:var(--blue-dim); border-color:rgba(122,180,240,0.3); }
+.msg-thread-del { display:none; background:none; border:none; cursor:pointer; font-size:13px; padding:2px 5px; color:var(--text-dim); border-radius:4px; flex-shrink:0; line-height:1; }
+.msg-thread-del:hover { color:#f08080; }
+.msg-thread-item:hover .msg-thread-del { display:block; }
 .msg-thread-avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
 .ta-admin { background:rgba(122,180,240,0.22); color:var(--blue); }
 .ta-hoa   { background:rgba(185,154,245,0.22); color:var(--purple); }
@@ -773,6 +776,7 @@ async function loadOfficerThreads(){
         <div class="msg-thread-name">${t.title}</div>
         <div class="msg-thread-preview">${t.last_message||'No messages yet'}</div>
       </div>
+      <button class="msg-thread-del" onclick="event.stopPropagation();deleteOfficerConversation(${t.id})" title="Delete">🗑</button>
     </div>`).join('');
   }
   currentThread=data[0].id;
@@ -793,6 +797,24 @@ async function selectOfficerThread(id,el){
   renderMessages();
 }
 function selectThread(id,el){ /* legacy */ }
+async function deleteOfficerConversation(id){
+  if(!confirm('Delete this conversation and all its messages?')) return;
+  const csrfToken=document.querySelector('meta[name=csrf-token]')?.content||'';
+  const res=await fetch('/api/messages/'+id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken}}).then(r=>r.json()).catch(()=>({success:false}));
+  if(res.success){
+    delete threads[id];
+    if(currentThread==id){
+      currentThread=null;
+      const remaining=Object.keys(threads);
+      if(remaining.length){currentThread=remaining[0];selectOfficerThread(remaining[0],null);}
+      else{document.getElementById('msgBody').innerHTML='<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px;">No conversations.</div>';document.getElementById('chat-name').textContent='';}
+    }
+    // Re-load threads list
+    loadOfficerThreads();
+  } else {
+    alert('Failed to delete conversation.');
+  }
+}
 
 function escHtml(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
 function renderMessages(){
