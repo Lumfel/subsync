@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Auth;
 
 class AnnouncementController extends Controller
 {
+    private function residentId(Request $request): ?int
+    {
+        return Auth::guard('resident')->id() ?? $request->session()->get('resident_id');
+    }
+
     /** GET /api/announcements — all announcements (newest first) */
     public function index()
     {
@@ -82,11 +87,13 @@ class AnnouncementController extends Controller
     }
 
     /** POST /api/announcements/{id}/view — mark as viewed by resident */
-    public function markViewed(int $id)
+    public function markViewed(Request $request, int $id)
     {
-        if (Auth::guard('resident')->check()) {
+        $residentId = $this->residentId($request);
+
+        if ($residentId) {
             AnnouncementView::firstOrCreate([
-                'resident_id'     => Auth::guard('resident')->id(),
+                'resident_id'     => $residentId,
                 'announcement_id' => $id,
             ]);
         }

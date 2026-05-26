@@ -26,6 +26,7 @@ class AuthController extends Controller
         if ($admin && Hash::check($credentials['password'], $admin->password)) {
             Auth::guard('resident')->logout();
             Auth::guard('officer')->logout();
+            $request->session()->forget(['resident_id', 'officer_id']);
             $request->session()->put('admin_id', $admin->id);
             $request->session()->put('admin_name', $admin->name);
             $request->session()->put('active_role', 'admin');
@@ -66,9 +67,10 @@ class AuthController extends Controller
                     ]);
                 }
                 Auth::guard('resident')->logout();
-                $request->session()->forget(['admin_id', 'admin_name']);
+                $request->session()->forget(['admin_id', 'admin_name', 'resident_id']);
                 Auth::guard('officer')->login($officer);
                 $request->session()->put('active_role', 'officer');
+                $request->session()->put('officer_id', $officer->id);
                 $request->session()->regenerate();
 
                 return response()->json([
@@ -89,8 +91,9 @@ class AuthController extends Controller
                 'password' => $credentials['password'],
             ])) {
                 Auth::guard('officer')->logout();
-                $request->session()->forget(['admin_id', 'admin_name']);
+                $request->session()->forget(['admin_id', 'admin_name', 'officer_id']);
                 $request->session()->put('active_role', 'resident');
+                $request->session()->put('resident_id', Auth::guard('resident')->id());
                 $request->session()->regenerate();
 
                 return response()->json([
@@ -153,7 +156,7 @@ class AuthController extends Controller
     {
         Auth::guard('resident')->logout();
         Auth::guard('officer')->logout();
-        $request->session()->forget(['admin_id', 'admin_name', 'active_role']);
+        $request->session()->forget(['admin_id', 'admin_name', 'active_role', 'resident_id', 'officer_id']);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 

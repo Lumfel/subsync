@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Conversation;
 use App\Models\ConvParticipant;
 use App\Models\Message;
+use App\Models\Officer;
+use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -28,6 +30,11 @@ class MessageController extends Controller
             return ['type' => 'resident', 'id' => $resident->id, 'name' => $resident->name];
         }
 
+        if ($activeRole === 'resident' && session('resident_id')) {
+            $resident = Resident::find(session('resident_id'));
+            return ['type' => 'resident', 'id' => session('resident_id'), 'name' => $resident?->name];
+        }
+
         if (Auth::guard('resident')->check()) {
             $resident = Auth::guard('resident')->user();
             return ['type' => 'resident', 'id' => $resident->id, 'name' => $resident->name];
@@ -36,6 +43,11 @@ class MessageController extends Controller
         if (Auth::guard('officer')->check()) {
             $officer = Auth::guard('officer')->user();
             return ['type' => 'officer', 'id' => $officer->id, 'name' => $officer->name];
+        }
+
+        if ($activeRole === 'officer' && session('officer_id')) {
+            $officer = Officer::find(session('officer_id'));
+            return ['type' => 'officer', 'id' => session('officer_id'), 'name' => $officer?->name];
         }
 
         return ['type' => null, 'id' => null, 'name' => null];
@@ -144,6 +156,10 @@ class MessageController extends Controller
         $data = $request->validate(['content' => 'required|string']);
         $actor = $this->currentActor();
 
+        if (!$actor['type']) {
+            return response()->json(['success' => false, 'message' => 'Session expired. Please log in again.'], 401);
+        }
+
         abort_unless($this->canAccessConversation($actor, $convId), 403);
 
         $msg = ['conversation_id' => $convId, 'content' => $data['content']];
@@ -186,6 +202,10 @@ class MessageController extends Controller
     {
         $request->validate(['title' => 'required|string|max:200']);
         $actor = $this->currentActor();
+
+        if (!$actor['type']) {
+            return response()->json(['success' => false, 'message' => 'Session expired. Please log in again.'], 401);
+        }
 
         $conv = Conversation::create(['title' => $request->title]);
 

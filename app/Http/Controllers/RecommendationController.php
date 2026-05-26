@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Auth;
 
 class RecommendationController extends Controller
 {
+    private function residentId(Request $request): ?int
+    {
+        return Auth::guard('resident')->id() ?? $request->session()->get('resident_id');
+    }
+
     /** GET /api/recommendations — all (admin) */
     public function index()
     {
@@ -28,9 +33,15 @@ class RecommendationController extends Controller
     }
 
     /** GET /api/recommendations/my — resident's own */
-    public function myRecs()
+    public function myRecs(Request $request)
     {
-        $recs = Recommendation::where('resident_id', Auth::guard('resident')->id())
+        $residentId = $this->residentId($request);
+
+        if (!$residentId) {
+            return response()->json(['success' => false, 'message' => 'Resident session expired. Please log in again.'], 401);
+        }
+
+        $recs = Recommendation::where('resident_id', $residentId)
             ->orderByDesc('created_at')
             ->get(['id', 'category', 'title', 'description', 'status', 'created_at']);
 
@@ -46,7 +57,13 @@ class RecommendationController extends Controller
             'category'    => 'nullable|string|max:100',
         ]);
 
-        $data['resident_id'] = Auth::guard('resident')->id();
+        $residentId = $this->residentId($request);
+
+        if (!$residentId) {
+            return response()->json(['success' => false, 'message' => 'Resident session expired. Please log in again.'], 401);
+        }
+
+        $data['resident_id'] = $residentId;
         $data['status']      = 'Pending';
         $data['created_at']  = now();
 

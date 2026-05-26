@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Auth;
 
 class FinancialController extends Controller
 {
+    private function residentId(Request $request): ?int
+    {
+        return Auth::guard('resident')->id() ?? $request->session()->get('resident_id');
+    }
+
     /** GET /api/financial — all records (admin) */
     public function index()
     {
@@ -32,9 +37,13 @@ class FinancialController extends Controller
     }
 
     /** GET /api/financial/my — resident's own records */
-    public function myRecords()
+    public function myRecords(Request $request)
     {
-        $residentId = Auth::guard('resident')->id();
+        $residentId = $this->residentId($request);
+
+        if (!$residentId) {
+            return response()->json(['success' => false, 'message' => 'Resident session expired. Please log in again.'], 401);
+        }
 
         $records = FinancialRecord::where('resident_id', $residentId)
             ->orderByDesc('record_date')

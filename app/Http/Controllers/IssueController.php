@@ -9,6 +9,11 @@ use Illuminate\Support\Facades\Auth;
 
 class IssueController extends Controller
 {
+    private function residentId(Request $request): ?int
+    {
+        return Auth::guard('resident')->id() ?? $request->session()->get('resident_id');
+    }
+
     /** GET /api/issues — all issues (admin/officer) */
     public function index(Request $request)
     {
@@ -42,9 +47,13 @@ class IssueController extends Controller
     }
 
     /** GET /api/issues/my — resident's own issues */
-    public function myIssues()
+    public function myIssues(Request $request)
     {
-        $residentId = Auth::guard('resident')->id();
+        $residentId = $this->residentId($request);
+
+        if (!$residentId) {
+            return response()->json(['success' => false, 'message' => 'Resident session expired. Please log in again.'], 401);
+        }
 
         $issues = IssueReport::where('resident_id', $residentId)
             ->with('responses')
@@ -76,7 +85,13 @@ class IssueController extends Controller
             'priority'    => 'nullable|in:Low,Medium,High,Critical',
         ]);
 
-        $data['resident_id'] = Auth::guard('resident')->id();
+        $residentId = $this->residentId($request);
+
+        if (!$residentId) {
+            return response()->json(['success' => false, 'message' => 'Resident session expired. Please log in again.'], 401);
+        }
+
+        $data['resident_id'] = $residentId;
         $data['status']      = 'Pending';
 
         $issue = IssueReport::create($data);

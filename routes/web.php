@@ -55,6 +55,7 @@ Route::get('/residents', function () {
     $resident = \Illuminate\Support\Facades\Auth::guard('resident')->user();
     request()->session()->forget(['admin_id', 'admin_name']);
     request()->session()->put('active_role', 'resident');
+    request()->session()->put('resident_id', $resident?->id);
     $household = $resident?->house_id
         ? \App\Models\Household::query()->find($resident->house_id)
         : null;
