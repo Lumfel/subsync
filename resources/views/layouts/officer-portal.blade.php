@@ -9,38 +9,34 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root {
-  --glass: rgba(255,255,255,0.06);
-  --glass-hover: rgba(255,255,255,0.11);
-  --glass-border: rgba(255,255,255,0.12);
-  --accent: #e8a87c;
-  --accent-dim: rgba(232,168,124,0.16);
-  --accent-border: rgba(232,168,124,0.28);
-  --text: #f0ece4;
-  --text-dim: rgba(240,236,228,0.5);
-  --text-mid: rgba(240,236,228,0.75);
-  --danger: rgba(220,80,80,0.85);
-  --blue: #7ab4f0;
-  --blue-dim: rgba(122,180,240,0.14);
-  --green: #82c98a;
-  --green-dim: rgba(130,201,138,0.14);
-  --yellow: #f0c060;
-  --yellow-dim: rgba(240,192,96,0.14);
-  --purple: #b99af5;
-  --purple-dim: rgba(185,154,245,0.14);
-  --radius: 14px;
-  --radius-sm: 9px;
+  --glass: #FFFFFF;
+  --glass-hover: #FAF7F2;
+  --glass-border: rgba(230,223,213,0.65);
+  --accent: #A07D53;
+  --accent-dim: #FAF4E7;
+  --accent-border: #E6DFD5;
+  --text: #2B2927;
+  --text-dim: #7D7975;
+  --text-mid: #4A4744;
+  --danger: #BD5B5B;
+  --blue: #4A7FA5;
+  --blue-dim: #EEF3F6;
+  --green: #5A7A5E;
+  --green-dim: #EAF2EC;
+  --yellow: #A07830;
+  --yellow-dim: #FAF4E7;
+  --purple: #7A6A90;
+  --purple-dim: #F2EFF4;
+  --radius: 16px;
+  --radius-sm: 10px;
   --radius-xs: 6px;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 body {
   font-family: 'DM Sans', sans-serif;
-  background:
-    radial-gradient(ellipse 80% 60% at 70% 10%, rgba(30,50,80,0.42), transparent),
-    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(30,30,60,0.48), transparent),
-    linear-gradient(160deg, #0b0b14 0%, #0d1220 40%, #0a0e1a 100%);
+  background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
-  padding-bottom: 60px;
 }
 
 /* ── BANNER ── */
@@ -70,7 +66,7 @@ body {
 #bannerInput, #avatarInput { display: none; }
 
 /* ── LAYOUT ── */
-.page { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+.page { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 @media(max-width:480px){ .page { padding: 0 12px; } }
 /* ── PROFILE ── */
 .profile-header {
@@ -123,7 +119,7 @@ body {
 /* ── TABS ── */
 .tab-nav {
   display: flex; gap: 4px;
-  background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border);
+  background: #FFFFFF; border: 1px solid var(--glass-border);
   border-radius: var(--radius); padding: 5px;
   margin-top: 6px; overflow-x: auto; scrollbar-width: none;
 }
@@ -132,26 +128,26 @@ body {
     flex: 0 0 auto; min-width: max-content;
   padding: 9px 16px; border-radius: var(--radius-sm);
   border: 1px solid transparent; background: transparent;
-  color: var(--text-mid); font-family: 'DM Sans', sans-serif;
+  color: var(--text-dim); font-family: 'DM Sans', sans-serif;
   font-size: 13px; font-weight: 500; cursor: pointer;
   transition: background 0.2s, color 0.2s;
   display: flex; align-items: center; justify-content: center;
   gap: 7px; white-space: nowrap;
 }
 .tab-btn:hover { background: var(--glass-hover); color: var(--text); }
-.tab-btn.active { background: var(--blue-dim); color: var(--blue); border-color: rgba(122,180,240,0.3); }
+.tab-btn.active { background: #2B2927; color: #FFFFFF; border-color: #2B2927; box-shadow: 0 4px 12px rgba(28,26,23,0.1); }
 .tab-badge {
-  background: rgba(122,180,240,0.3); color: var(--blue);
+  background: var(--accent-dim); color: var(--accent);
   font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px;
 }
 
 /* ── PANELS ── */
 .tab-panel { display: none; animation: fadeUp 0.3s ease both; }
 .tab-panel.active { display: block; }
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; }
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(43,41,39,0.4); z-index:1000; align-items:center; justify-content:center; }
 .modal-overlay.active { display:flex; }
-.modal-box { background:rgba(14,16,32,0.98); border:1px solid var(--glass-border); border-radius:14px; padding:28px; min-width:360px; max-width:500px; width:90%; }
-.modal-title { font-size:16px; font-weight:600; margin-bottom:16px; }
+.modal-box { background:#FFFFFF; border:1px solid var(--glass-border); border-radius:var(--radius); padding:28px; min-width:360px; max-width:500px; width:90%; box-shadow: 0 16px 48px rgba(43,41,39,0.08); }
+.modal-title { font-size:16px; font-weight:600; margin-bottom:16px; color: var(--text); }
 .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
 .modal-close-btn { background:transparent; border:1px solid var(--glass-border); color:var(--text-mid); padding:8px 16px; border-radius:8px; cursor:pointer; }
 @keyframes fadeUp {
@@ -162,49 +158,57 @@ body {
 /* ── CARDS ── */
 .card {
   background: var(--glass); border: 1px solid var(--glass-border);
-  border-radius: var(--radius); backdrop-filter: blur(16px);
-  padding: 22px; margin-top: 16px;
+  border-radius: var(--radius);
+  padding: 28px 30px; margin-top: 16px;
+  box-shadow: 0 4px 20px rgba(43,41,39,0.02);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(43, 41, 39, 0.04);
 }
 .card-title {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.11em;
-  text-transform: uppercase; color: var(--text-dim);
-  margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text); margin-bottom: 4px;
 }
-.card-title::after { content:''; flex:1; height:1px; background:var(--glass-border); }
+.card-subtitle {
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 20px; line-height: 1.5;
+}
 
 /* ── FORMS ── */
 .f-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
 .f-field { display:flex; flex-direction:column; gap:5px; flex:1; min-width:140px; }
 .f-label { font-size:11px; color:var(--text-dim); letter-spacing:0.04em; }
 input[type=text],input[type=date],textarea,select {
-  background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border);
+  background: #FFFFFF; border: 1px solid var(--glass-border);
   color: var(--text); padding: 9px 13px; border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif; font-size: 13px;
   outline: none; transition: border-color 0.2s, background 0.2s; width: 100%;
 }
 input:focus, textarea:focus, select:focus {
-  background: rgba(255,255,255,0.1); border-color: rgba(122,180,240,0.4);
+  background: #FFFFFF; border-color: rgba(160,125,83,0.4);
 }
 input::placeholder, textarea::placeholder { color: var(--text-dim); }
 textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
 select { cursor: pointer; }
-select option { background: #0a0e1a; color: var(--text); }
+select option { background: #FFFFFF; color: var(--text); }
 
 /* ── BUTTONS ── */
 .btn {
-  padding: 9px 18px; background: var(--blue-dim);
-  border: 1px solid rgba(122,180,240,0.28);
-  color: var(--blue); border-radius: var(--radius-sm);
+  padding: 9px 18px; background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  color: var(--accent); border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
   cursor: pointer; transition: background 0.2s, transform 0.15s; white-space: nowrap;
 }
-.btn:hover { background: rgba(122,180,240,0.26); transform: translateY(-1px); }
+.btn:hover { background: rgba(160,125,83,0.2); transform: translateY(-1px); }
 .btn:active { transform: scale(0.98); }
 .btn-full { width: 100%; justify-content: center; margin-top: 12px; }
 .btn-accent { background:var(--accent-dim); border-color:var(--accent-border); color:var(--accent); }
-.btn-green { background:var(--green-dim); border-color:rgba(130,201,138,0.25); color:var(--green); }
-.btn-purple { background:var(--purple-dim); border-color:rgba(185,154,245,0.25); color:var(--purple); }
-.btn-danger { background:rgba(220,80,80,0.13); border-color:rgba(220,80,80,0.25); color:#f08080; }
+.btn-green { background:var(--green-dim); border-color:rgba(90,122,94,0.25); color:var(--green); }
+.btn-purple { background:var(--purple-dim); border-color:rgba(122,106,144,0.25); color:var(--purple); }
+.btn-danger { background:rgba(189,91,91,0.1); border-color:rgba(189,91,91,0.25); color:var(--danger); }
 .btn-sm { padding: 6px 13px; font-size: 12px; }
 
 /* ── PILLS ── */
@@ -224,10 +228,14 @@ select option { background: #0a0e1a; color: var(--text); }
 /* ── ANNOUNCEMENTS ── */
 .ann-item {
   padding:15px; border-radius:var(--radius-sm);
-  background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
-  margin-bottom:9px; transition: background 0.2s;
+  background:#FFFFFF; border:1px solid var(--glass-border);
+  margin-bottom:9px; transition: all 0.25s;
+  border-left: 3px solid var(--glass-border);
 }
-.ann-item:hover { background:rgba(255,255,255,0.07); }
+.ann-item:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(43,41,39,0.03); }
+.ann-item.ann-item-notice { border-left-color: var(--blue); }
+.ann-item.ann-item-urgent { border-left-color: var(--danger); }
+.ann-item.ann-item-event  { border-left-color: var(--green); }
 .ann-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
 .ann-date { font-size:11px; color:var(--text-dim); }
 .ann-title { font-size:14px; font-weight:500; margin-bottom:4px; }
@@ -236,11 +244,11 @@ select option { background: #0a0e1a; color: var(--text); }
 
 /* ── REPORTS ── */
 .report-item {
-  background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
+  background:#FFFFFF; border:1px solid var(--glass-border);
   border-radius:var(--radius-sm); padding:16px; margin-bottom:10px;
-  transition: background 0.2s;
+  transition: all 0.25s;
 }
-.report-item:hover { background:rgba(255,255,255,0.07); }
+.report-item:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(43,41,39,0.03); }
 .report-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
 .report-title { font-size:14px; font-weight:500; }
 .report-meta { font-size:11px; color:var(--text-dim); margin-bottom:10px; }
@@ -355,7 +363,7 @@ select option { background: #0a0e1a; color: var(--text); }
 @keyframes emergencyScroll { 0%{background-position:0 0} 100%{background-position:200% 0} }
 
 /* ── TOAST ── */
-#toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:rgba(18,16,26,0.96); border:1px solid var(--glass-border); backdrop-filter:blur(12px); color:var(--text); font-size:13px; padding:10px 22px; border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s, transform 0.25s; z-index:999; white-space:nowrap; }
+#toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:#2B2927; border:1px solid rgba(43,41,39,0.1); color:#FAF6F0; font-size:13px; padding:10px 22px; border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s, transform 0.25s; z-index:999; white-space:nowrap; }
 #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 /* ── Live Announcement Banner ── */
 #annNotif { position:fixed; top:-90px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,rgba(30,22,50,0.98),rgba(18,16,26,0.98)); border:1px solid rgba(122,180,240,0.35); backdrop-filter:blur(14px); color:var(--text); font-size:13px; padding:10px 14px 10px 16px; border-radius:14px; z-index:9999; display:flex; align-items:center; gap:10px; max-width:420px; box-shadow:0 4px 24px rgba(0,0,0,0.45); transition:top 0.38s cubic-bezier(.22,.68,0,1.2); }
@@ -364,99 +372,219 @@ select option { background: #0a0e1a; color: var(--text); }
 #annNotif .ann-meta { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
 #annNotif .btn-view { background:var(--accent); color:#fff; border:none; padding:5px 11px; border-radius:8px; font-size:11px; cursor:pointer; }
 #annNotif .btn-close { background:rgba(255,255,255,0.08); color:var(--text-dim); border:none; padding:5px 9px; border-radius:8px; font-size:11px; cursor:pointer; }
+@media(max-width:768px) {
+  .page-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* SIDEBAR (PREMIUM VERTICAL STYLE) */
+.sidebar {
+    width: 250px;
+    padding: 30px 24px;
+    background: #FFFFFF;
+    border-right: 1px solid #E6DFD5;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+}
+.sidebar li a, .panel .cards ul li a, .cards-main a {
+   text-decoration: none;
+   color: inherit;
+}
+.sidebar ul, .panel .cards ul {
+    list-style: none;
+}
+.sidebar li, .panel .cards li {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #7D7975;
+    font-size: 14px;
+    font-weight: 500;
+    list-style: none;
+}
+.sidebar li:hover {
+    background: #FAF4E7;
+    color: #1C1A17;
+}
+.sidebar .active, .sidebar li.active {
+    background: #1C1A17;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(28,26,23,0.1);
+}
+
+/* MAIN CONTENT AREA */
+.main {
+    flex: 1;
+    margin-left: 250px;
+    padding: 40px;
+    min-height: 100vh;
+}
+
+/* BENTO GRID SYSTEM */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+    margin-top: 24px;
+}
+.bento-col-12 { grid-column: span 12; }
+.bento-col-8  { grid-column: span 8; }
+.bento-col-6  { grid-column: span 6; }
+.bento-col-4  { grid-column: span 4; }
+.bento-col-3  { grid-column: span 3; }
+
+/* Mobile Header & Overlay Styles */
+.mobile-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: #FFFFFF;
+    border-bottom: 1px solid #E6DFD5;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+}
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(43,41,39,0.3);
+    z-index: 98;
+    backdrop-filter: blur(2px);
+}
+.sidebar-overlay.show {
+    display: block;
+}
+
+@media(max-width: 991px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .bento-col-12, .bento-col-8, .bento-col-6, .bento-col-4, .bento-col-3 {
+        grid-column: span 12;
+    }
+    .mobile-header {
+        display: flex;
+    }
+    .sidebar {
+        left: -250px;
+        transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sidebar.open {
+        left: 0;
+    }
+    .main {
+        margin-left: 0;
+        padding: 24px 20px;
+    }
+}
 </style>
 </head>
 <body>
 
-<!-- BANNER -->
-<div class="banner-wrap" onclick="document.getElementById('bannerInput').click()">
-  <img id="bannerPreview" src="https://images.unsplash.com/photo-1486325212027-8081e485255e?w=1200&q=80" alt="Officer Banner">
-  <div class="banner-overlay"></div>
-  <div class="banner-edit-hint">✎ Change banner</div>
-  <input type="file" id="bannerInput" accept="image/*" onchange="changeImg('bannerPreview',this)">
+<!-- Mobile Responsive Header -->
+<div class="mobile-header" style="position: sticky; top: 0; z-index: 999;">
+  <div style="font-family:'DM Serif Display',serif; font-size:20px; color:#1C1A17; display:flex; align-items:center; gap:8px;">
+    <span style="font-size:24px;">🏡</span> SubSync
+  </div>
+  <button class="btn" style="padding: 6px 12px; font-size: 13px;" onclick="toggleMobileSidebar()">☰ Menu</button>
 </div>
 
-<!-- Emergency alert banner -->
-<div id="emergencyAlert">
-  🚨 <span id="emergencyAlertText">CRITICAL ISSUE REPORTED</span>
-  &nbsp;&nbsp;<button onclick="switchTab('reports');dismissEmergency()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:3px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;">View Issue</button>
-  &nbsp;<button onclick="dismissEmergency()" style="background:transparent;border:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;line-height:1;">✕</button>
-</div>
+<div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-<div class="page">
-  <!-- PROFILE -->
-  <div class="profile-header">
-    <div class="avatar-wrap" onclick="document.getElementById('avatarInput').click()">
-      <img id="avatarPreview" src="https://ui-avatars.com/api/?name={{ urlencode($officerName) }}&background=2a6acc&color=fff&size=220&font-size=0.4" alt="Officer">
-      <div class="avatar-edit">✎ Edit</div>
-      <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)">
+
+
+<!-- Left Sidebar Navigation -->
+<aside class="sidebar">
+  <div class="logo">
+    <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#1C1A17; display:flex; align-items:center; gap:8px;">
+      <span style="font-size:28px;">👮</span> Officer
     </div>
-    <div class="profile-meta">
-      <h2 id="officerName" contenteditable="true" spellcheck="false" title="Click to edit your name">{{ $officerName }}</h2>
-      <span class="location">📍 <span id="blockText">{{ $officerRole }}</span></span>
-      <span class="role-badge">🛡️ <span id="roleText" contenteditable="true" spellcheck="false" title="Click to edit your role">{{ $officerRole }}</span></span>
+  </div>
+  <ul style="margin-top:20px;">
+    <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">🏠 Overview</li>
+    <li class="tab-btn" onclick="switchTab('announcements')" id="tab-announcements">📢 Announcements</li>
+    <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports">📋 Reports</li>
+    <li class="tab-btn" onclick="switchTab('files')" id="tab-files">📊 Send Files</li>
+    <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages">💬 Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
+  </ul>
+
+  <!-- Sidebar Profile Card -->
+  <div style="position:absolute; bottom:30px; left:24px; right:24px; text-align:center;">
+    <div class="avatar-wrap" onclick="document.getElementById('avatarInput').click()" style="margin: 0 auto 12px; width:64px;">
+      <img id="avatarPreview" src="https://ui-avatars.com/api/?name={{ urlencode($officerName) }}&amp;background=2a6acc&amp;color=fff&amp;size=120" alt="Officer" style="width:64px; height:64px; border-radius:50%; border: 2px solid var(--glass-border);">
+      <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)" style="display:none;">
     </div>
-    <form id="logoutForm" action="/logout" method="POST" style="display:none;">
-      @csrf
-    </form>
-    <button onclick="confirmLogout()" style="margin-left:auto;align-self:flex-start;background:rgba(240,128,128,0.12);border:1px solid rgba(240,128,128,0.3);color:#f08080;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='rgba(240,128,128,0.22)'" onmouseout="this.style.background='rgba(240,128,128,0.12)'">⏻ Log Out</button>
+    <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="officerName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $officerName }}</div>
+    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Role: <span id="roleText" contenteditable="true" spellcheck="false" title="Click to edit role">{{ $officerRole }}</span></div>
+    
+    <form id="logoutForm" action="/logout" method="POST" style="display:none;">@csrf</form>
+    <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:14px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
+</aside>
 
-  <!-- TABS -->
-  <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">🏠 Overview</button>
-    <button class="tab-btn" onclick="switchTab('announcements')" id="tab-announcements">📢 Announcements</button>
-    <button class="tab-btn" onclick="switchTab('reports')" id="tab-reports">📋 Reports</button>
-    <button class="tab-btn" onclick="switchTab('files')" id="tab-files">📊 Send Files</button>
-    <button class="tab-btn" onclick="switchTab('messages')" id="tab-messages">
-      💬 Messages <span class="tab-badge" id="msg-badge">1</span>
-    </button>
-  </div>
-
-  <!-- ══ OVERVIEW ══ -->
+<!-- Right Main Workspace -->
+<main class="main">
+  <!-- ═══════════ OVERVIEW ═══════════ -->
   <div class="tab-panel active" id="panel-overview">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:16px;">
-      <div class="card" style="margin-top:0;padding:18px;">
-        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">My Announcements</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--blue);" id="annCount">—</div>
-        <div style="font-size:11px;color:var(--text-dim);">Posted this month</div>
+    <div class="bento-grid">
+      <!-- Greeting card (Span 8) -->
+      <div class="card bento-col-8" style="display:flex; flex-direction:column; justify-content:center;">
+        <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:8px;">Hello, Officer {{ explode(' ', $officerName)[0] }} 👋</h1>
+        <p style="font-size:13px; color:var(--text-dim); line-height:1.6;">Post alerts, communicate with the board, and coordinate with block managers.</p>
       </div>
-      <div class="card" style="margin-top:0;padding:18px;">
-        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Open Reports</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--yellow);" id="openReportsCount">—</div>
-        <div style="font-size:11px;color:var(--text-dim);">Unresolved issues</div>
-      </div>
-      <div class="card" style="margin-top:0;padding:18px;">
-        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Files Sent</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--green);" id="filesSentCount">—</div>
-        <div style="font-size:11px;color:var(--text-dim);">To admin this month</div>
-      </div>
-      <div class="card" style="margin-top:0;padding:18px;">
-        <div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">Block Residents</div>
-        <div id="blockResidentsCount" style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--accent);">—</div>
-        <div style="font-size:11px;color:var(--text-dim);">Block 1 households</div>
-      </div>
-    </div>
 
-    <div class="card">
-      <div class="card-title">Recent Announcements from Admin</div>
-      <div id="overviewAnnList"></div>
-    </div>
+      <!-- Quick stats (Span 4) -->
+      <div class="bento-col-4" style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+        <div class="card" style="padding:16px 12px; text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Notices</div>
+          <div style="font-size:22px;font-weight:700;color:var(--blue);" id="annCount">—</div>
+        </div>
+        <div class="card" style="padding:16px 12px; text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Concerns</div>
+          <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="openReportsCount">—</div>
+        </div>
+        <div class="card" style="padding:16px 12px; text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Excel Sent</div>
+          <div style="font-size:22px;font-weight:700;color:var(--green);" id="filesSentCount">—</div>
+        </div>
+        <div class="card" style="padding:16px 12px; text-align:center;">
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Verified</div>
+          <div style="font-size:22px;font-weight:700;color:var(--accent);" id="blockResidentsCount">—</div>
+        </div>
+      </div>
 
-    <div class="card">
-      <div class="card-title">My Quick Actions</div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button class="btn" onclick="switchTab('announcements')">📢 Post Announcement</button>
-        <button class="btn btn-accent" onclick="switchTab('reports')">📋 New Report</button>
-        <button class="btn btn-green" onclick="switchTab('files')">📊 Send Excel</button>
-        <button class="btn btn-purple" onclick="switchTab('messages')">💬 Message Admin</button>
+      <!-- Recent Announcements from Admin (Span 8) -->
+      <div class="card bento-col-8">
+        <div class="card-title">Recent Announcements from Admin</div>
+        <div class="card-subtitle">The latest notices posted by the subdivision administration.</div>
+        <div id="overviewAnnList"></div>
+      </div>
+
+      <!-- Quick Actions (Span 4) -->
+      <div class="card bento-col-4">
+        <div class="card-title">Quick Actions</div>
+        <div class="card-subtitle">Jump to the task you need to work on.</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('announcements')">📢 Post Announcement</button>
+          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('reports')">📋 Resolve Concerns</button>
+          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('files')">📊 Send Report File</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ══ ANNOUNCEMENTS ══ -->
+  <!-- ═══════════ ANNOUNCEMENTS ═══════════ -->
   <div class="tab-panel" id="panel-announcements">
-    <div class="card">
+    <div class="card" style="margin-top:0;">
       <div class="card-title">Create Announcement</div>
       <div class="f-row">
         <div class="f-field">
@@ -513,9 +641,9 @@ select option { background: #0a0e1a; color: var(--text); }
     </div>
   </div>
 
-  <!-- ══ REPORTS ══ -->
+  <!-- ═══════════ REPORTS ═══════════ -->
   <div class="tab-panel" id="panel-reports">
-    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;flex-wrap:wrap;gap:10px;">
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;flex-wrap:wrap;gap:10px; margin-top:0;">
       <div class="card-title" style="margin:0;">Issue Reports</div>
       <div style="display:flex;gap:8px;">
         <select id="officerIssueFilter" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
@@ -551,12 +679,11 @@ select option { background: #0a0e1a; color: var(--text); }
         </div>
       </div>
     </div>
-
   </div>
 
-  <!-- ══ FILES ══ -->
+  <!-- ═══════════ FILES ═══════════ -->
   <div class="tab-panel" id="panel-files">
-    <div class="card">
+    <div class="card" style="margin-top:0;">
       <div class="card-title">Send Excel File to Admin</div>
       <div class="upload-zone" id="uploadZone"
         onclick="document.getElementById('fileUploadInput').click()"
@@ -564,7 +691,7 @@ select option { background: #0a0e1a; color: var(--text); }
         ondragleave="handleDragLeave(event)"
         ondrop="handleDrop(event)">
         <div class="upload-icon">📊</div>
-        <div class="upload-label">Click to upload or drag & drop</div>
+        <div class="upload-label">Click to upload or drag &amp; drop</div>
         <div class="upload-sub">Supports .xlsx, .xls, .csv · Max 10 MB</div>
         <input type="file" id="fileUploadInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this)">
       </div>
@@ -610,10 +737,10 @@ select option { background: #0a0e1a; color: var(--text); }
     </div>
   </div>
 
-  <!-- ══ MESSAGES ══ -->
+  <!-- ═══════════ MESSAGES ═══════════ -->
   <div class="tab-panel" id="panel-messages">
-    <div class="card" style="padding:16px;">
-      <div class="card-title">Messages</div>
+    <div class="card" style="padding:24px; margin-top:0;">
+      <div class="card-title">Direct Messages</div>
       <div class="msg-layout">
         <div class="msg-sidebar">
           <div class="msg-sidebar-title" style="display:flex;justify-content:space-between;align-items:center;">Conversations
@@ -639,8 +766,7 @@ select option { background: #0a0e1a; color: var(--text); }
       </div>
     </div>
   </div>
-
-</div><!-- end .page -->
+</main>
 
 <!-- New Conversation Modal (root-level so position:fixed works from any tab) -->
 <div class="modal-overlay" id="modal-officerNewConv">
@@ -676,6 +802,12 @@ select option { background: #0a0e1a; color: var(--text); }
 
 <script>
 /* ══ UTILS ══ */
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  if (sidebar) sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('show');
+}
 function confirmLogout(){
   if(confirm('Are you sure you want to log out?'))
     document.getElementById('logoutForm').submit();
@@ -706,6 +838,12 @@ function switchTab(name){
     if(b) b.style.display='none';
     loadOfficerThreads();
   }
+  
+  // Auto-close sidebar on mobile
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
 }
 
 /* ══ DATA ══ */

@@ -10,111 +10,46 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root {
-  --glass: rgba(255,255,255,0.06);
-  --glass-hover: rgba(255,255,255,0.11);
-  --glass-border: rgba(255,255,255,0.12);
-  --accent: #e8a87c;
-  --accent-dim: rgba(232,168,124,0.16);
-  --accent-border: rgba(232,168,124,0.28);
-  --text: #f0ece4;
-  --text-dim: rgba(240,236,228,0.5);
-  --text-mid: rgba(240,236,228,0.75);
-  --danger: rgba(220,80,80,0.85);
-  --blue: #7ab4f0;
-  --blue-dim: rgba(122,180,240,0.14);
-  --green: #82c98a;
-  --green-dim: rgba(130,201,138,0.14);
-  --yellow: #f0c060;
-  --yellow-dim: rgba(240,192,96,0.14);
-  --purple: #b99af5;
-  --purple-dim: rgba(185,154,245,0.14);
-  --radius: 14px;
-  --radius-sm: 9px;
+  --glass: #FFFFFF;
+  --glass-hover: #FAF7F2;
+  --glass-border: #E6DFD5;
+  --accent: #A07D53;
+  --accent-dim: #FAF6F0;
+  --accent-border: #E6DFD5;
+  --text: #2B2927;
+  --text-dim: #7D7975;
+  --text-mid: #4A4744;
+  --danger: #BD5B5B;
+  --blue: #5A7F9E;
+  --blue-dim: #EEF3F6;
+  --green: #6B8E70;
+  --green-dim: #EAF2EC;
+  --yellow: #C49646;
+  --yellow-dim: #FAF4E7;
+  --purple: #8C829E;
+  --purple-dim: #F2EFF4;
+  --radius: 16px;
+  --radius-sm: 10px;
   --radius-xs: 6px;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'DM Sans', sans-serif;
-  background:
-    radial-gradient(ellipse 80% 60% at 70% 10%, rgba(80,50,30,0.42), transparent),
-    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(30,30,60,0.48), transparent),
-    linear-gradient(160deg, #0b0b14 0%, #12101a 40%, #1a120d 100%);
+  background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
-  padding-bottom: 60px;
 }
-
-/* ───── Banner ───── */
-.banner-wrap {
-  position: relative; height: 220px; overflow: hidden; cursor: pointer;
-}
-@media(max-width:480px){ .banner-wrap { height: 150px; } }
-.banner-wrap img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform 0.4s ease, filter 0.3s;
-  filter: brightness(0.72) saturate(1.1);
-}
-.banner-wrap:hover img { transform: scale(1.03); filter: brightness(0.58) saturate(1.2); }
-.banner-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 35%, rgba(10,10,18,0.94) 100%);
-  pointer-events: none;
-}
-.banner-edit-hint {
-  position: absolute; top: 14px; right: 16px;
-  background: rgba(0,0,0,0.45); border: 1px solid var(--glass-border);
-  backdrop-filter: blur(10px); color: var(--text); font-size: 12px;
-  padding: 5px 12px; border-radius: 20px;
-  opacity: 0; transition: opacity 0.2s; pointer-events: none;
-}
-.banner-wrap:hover .banner-edit-hint { opacity: 1; }
-#bannerInput, #profileInput { display: none; }
 
 /* ───── Page ───── */
-.page { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+.page { max-width: 1400px; width: 95%; margin: 0 auto; padding: 0 24px; }
 @media(max-width:480px){ .page { padding: 0 12px; } }
-/* ───── Profile header ───── */
-.profile-header {
-  display: flex; align-items: flex-end; gap: 22px;
-  margin-top: -54px; padding-bottom: 20px;
-  position: relative; z-index: 2;
-  flex-wrap: wrap;
-}
-@media(max-width:480px){
-  .profile-header { margin-top: -40px; gap:14px; }
-  .avatar-wrap img { width:80px; height:80px; }
-  .profile-meta h2 { font-size:18px; }
-}
-.avatar-wrap { position: relative; flex-shrink: 0; cursor: pointer; }
-.avatar-wrap img {
-  width: 110px; height: 110px; border-radius: var(--radius);
-  border: 3px solid rgba(255,255,255,0.15);
-  object-fit: cover; display: block; transition: filter 0.25s;
-}
-.avatar-wrap:hover img { filter: brightness(0.55); }
-.avatar-edit {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  border-radius: var(--radius); opacity: 0; transition: opacity 0.2s;
-  font-size: 11px; color: #fff; background: rgba(0,0,0,0.32); letter-spacing: 0.04em;
-}
-.avatar-wrap:hover .avatar-edit { opacity: 1; }
-.profile-meta { padding-bottom: 6px; }
-.profile-meta h2 {
-  font-family: 'DM Serif Display', serif;
-  font-size: 24px; font-weight: 400; letter-spacing: 0.01em; margin-bottom: 6px;
-}
-.location {
-  display: inline-flex; align-items: center; gap: 5px; font-size: 13px;
-  color: var(--accent); background: var(--accent-dim);
-  border: 1px solid var(--accent-border); padding: 3px 10px; border-radius: 20px;
-}
 [contenteditable]:focus { outline: none; }
 
 /* ───── Tab nav ───── */
 .tab-nav {
   display: flex; gap: 4px;
-  background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border);
+  background: #FFFFFF; border: 1px solid var(--glass-border);
   border-radius: var(--radius); padding: 5px; margin-top: 6px;
   overflow-x: auto; scrollbar-width: none;
 }
@@ -129,50 +64,59 @@ body {
   display: flex; align-items: center; justify-content: center; gap: 7px; white-space: nowrap;
 }
 .tab-btn:hover { background: var(--glass-hover); color: var(--text); }
-.tab-btn.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent-border); }
+.tab-btn.active { background: #2B2927; color: #FFFFFF; border-color: #2B2927; box-shadow: 0 4px 12px rgba(43,41,39,0.12); }
 .tab-badge {
-  background: rgba(232,168,124,0.3); color: var(--accent);
+  background: #FAF6F0; color: #A07D53; border: 1px solid #E6DFD5;
   font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px;
 }
 
 /* ───── Tab panels ───── */
-.tab-panel { display: none; animation: fadeUp 0.3s ease both; }
+.tab-panel { display: none; animation: fadeUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .tab-panel.active { display: block; }
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ───── Card ───── */
 .card {
-  background: var(--glass); border: 1px solid var(--glass-border);
-  border-radius: var(--radius); backdrop-filter: blur(16px);
-  padding: 22px; margin-top: 16px;
+  background: #FFFFFF; border: 1px solid rgba(230,223,213,0.65);
+  border-radius: var(--radius);
+  padding: 28px 30px; margin-top: 20px;
+  box-shadow: 0 4px 20px rgba(43,41,39,0.02);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(43,41,39,0.04);
 }
 .card-title {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.11em; text-transform: uppercase;
-  color: var(--text-dim); margin-bottom: 18px;
-  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text); margin-bottom: 4px;
 }
-.card-title::after { content: ''; flex: 1; height: 1px; background: var(--glass-border); }
+.card-subtitle {
+  font-size: 12px; color: var(--text-dim);
+  margin-bottom: 20px; line-height: 1.5;
+}
+.card-divider { height: 1px; background: rgba(230,223,213,0.65); margin: 16px 0; }
 
 /* ───── Form helpers ───── */
 .f-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .f-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
 .f-label { font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
 input[type=text], textarea, select {
-  background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border);
+  background: #FFFFFF; border: 1px solid var(--glass-border);
   color: var(--text); padding: 9px 13px; border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
   transition: border-color 0.2s, background 0.2s; width: 100%;
 }
 input[type=text]:focus, textarea:focus, select:focus {
-  background: rgba(255,255,255,0.1); border-color: rgba(232,168,124,0.4);
+  background: #FFFFFF; border-color: rgba(160,125,83,0.4);
 }
 input::placeholder, textarea::placeholder { color: var(--text-dim); }
 textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
 select { cursor: pointer; }
-select option { background: #1a120d; color: var(--text); }
+select option { background: #FFFFFF; color: var(--text); }
 
 .btn {
   padding: 9px 18px; background: var(--accent-dim); border: 1px solid var(--accent-border);
@@ -200,27 +144,28 @@ select option { background: #1a120d; color: var(--text); }
 
 /* ───── OVERVIEW: Members ───── */
 .member-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(162px, 1fr));
-  gap: 10px; margin-bottom: 18px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 18px; margin-bottom: 24px;
 }
 .member-card {
-  background: var(--glass-hover); border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sm); padding: 14px 14px 12px;
+  background: #FAF6F0; border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm); padding: 14px;
   display: flex; flex-direction: column; gap: 8px;
-  position: relative; transition: background 0.2s, transform 0.2s;
+  position: relative; transition: all 0.22s;
 }
-.member-card:hover { background: rgba(255,255,255,0.14); transform: translateY(-2px); }
+.member-card:hover { background: #FFFFFF; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(43,41,39,0.03); }
 .member-avatar {
   width: 38px; height: 38px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), #c87941);
+  background: #FFFFFF; border: 1px solid var(--glass-border);
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 600; color: #1a100a;
+  font-size: 14px; font-weight: 600; color: var(--accent);
 }
-.member-name { font-size: 13px; font-weight: 500; }
+.member-name { font-size: 13px; font-weight: 600; color: var(--text); }
 .member-role {
-  font-size: 11px; color: var(--accent); background: var(--accent-dim);
-  border: 1px solid rgba(232,168,124,0.18); padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; color: var(--accent); background: #FFFFFF;
+  border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 20px;
   display: inline-block; width: fit-content;
+  text-transform: uppercase; letter-spacing: 0.02em;
 }
 .member-remove {
   position: absolute; top: 8px; right: 8px; width: 21px; height: 21px;
@@ -235,21 +180,59 @@ select option { background: #1a120d; color: var(--text); }
 
 /* ── Announcements ── */
 .ann-item {
-  padding: 15px; border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
-  margin-bottom: 9px; transition: background 0.2s;
+  padding: 16px; border-radius: var(--radius-sm);
+  background: #FFFFFF; border: 1px solid var(--glass-border);
+  margin-bottom: 12px; transition: all 0.2s;
+  border-left: 3px solid var(--glass-border);
 }
-.ann-item:hover { background: rgba(255,255,255,0.07); }
+.ann-item.ann-item-notice { border-left-color: var(--blue); }
+.ann-item.ann-item-urgent { border-left-color: var(--danger); }
+.ann-item.ann-item-event  { border-left-color: var(--green); }
+.ann-item:hover { transform: translateY(-1.5px); box-shadow: 0 6px 16px rgba(43,41,39,0.03); }
 .ann-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
 .ann-date { font-size: 11px; color: var(--text-dim); }
 .ann-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
 .ann-body { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
 
+/* ── Dues Card ── */
+.res-balance-card {
+  background: #2B2927;
+  color: #FFFFFF !important;
+  border-radius: var(--radius);
+  padding: 22px;
+  border: 1px solid #2B2927;
+  box-shadow: 0 10px 30px rgba(43,41,39,0.06);
+  position: relative;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.res-balance-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 80% 20%, rgba(160,125,83,0.18), transparent 60%);
+  pointer-events: none;
+}
+.res-balance-card .balance-label {
+  font-size: 10px;
+  color: #FAF6F0;
+  opacity: 0.65;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.res-balance-card .balance-val {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
 /* ───── MESSAGES ───── */
 .msg-layout { display:flex; gap:14px; }
 .msg-sidebar {
   width: 196px; flex-shrink:0;
-  background: rgba(0,0,0,0.2); border:1px solid var(--glass-border);
+  background: #FAF7F2; border:1px solid var(--glass-border);
   border-radius:var(--radius-sm); padding:12px; height:fit-content;
 }
 @media(max-width:600px){
@@ -286,7 +269,7 @@ select option { background: #1a120d; color: var(--text); }
 
 .msg-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
 .msg-header {
-  background: rgba(0,0,0,0.22); border: 1px solid var(--glass-border);
+  background: #FFFFFF; border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   padding: 12px 16px; display: flex; align-items: center; gap: 10px;
 }
@@ -300,10 +283,10 @@ select option { background: #1a120d; color: var(--text); }
 
 .msg-body {
   flex: 1; min-height: 300px; max-height: 360px; overflow-y: auto;
-  background: rgba(0,0,0,0.14);
+  background: #FAF6F0;
   border-left: 1px solid var(--glass-border); border-right: 1px solid var(--glass-border);
   padding: 18px 16px; display: flex; flex-direction: column; gap: 12px;
-  scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.1) transparent;
+  scrollbar-width: thin; scrollbar-color: rgba(0,0,0,0.15) transparent;
 }
 .msg-body::-webkit-scrollbar { width: 4px; }
 .msg-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
@@ -321,13 +304,13 @@ select option { background: #1a120d; color: var(--text); }
 .bubble { max-width:68%; max-width:min(68%, 340px); padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.55; word-break:break-word; overflow-wrap:anywhere; }
 
 
-.bubble.from-admin { background: rgba(255,255,255,0.09); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+.bubble.from-admin { background: #FFFFFF; border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
 .bubble.from-mine  { background: var(--accent-dim); border: 1px solid var(--accent-border); border-bottom-right-radius: 4px; }
 .bubble-time { font-size: 10px; color: var(--text-dim); margin-top: 3px; display: block; }
 .bubble.from-mine .bubble-time { text-align: right; }
 
 .msg-compose {
-  background: rgba(0,0,0,0.22); border: 1px solid var(--glass-border); border-top: none;
+  background: #FFFFFF; border: 1px solid var(--glass-border); border-top: none;
   border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   padding: 12px 14px; display: flex; gap: 10px; align-items: flex-end;
 }
@@ -410,8 +393,8 @@ select option { background: #1a120d; color: var(--text); }
 /* ───── Toast ───── */
 #toast {
   position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
-  background: rgba(18,16,26,0.96); border: 1px solid var(--glass-border);
-  backdrop-filter: blur(12px); color: var(--text); font-size: 13px;
+  background: #2B2927; border: 1px solid rgba(43,41,39,0.1);
+  color: #FAF6F0; font-size: 13px;
   padding: 10px 22px; border-radius: 20px;
   opacity: 0; pointer-events: none; transition: opacity 0.25s, transform 0.25s;
   z-index: 999; white-space: nowrap;
@@ -432,93 +415,236 @@ select option { background: #1a120d; color: var(--text); }
 #annNotif .ann-meta { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
 #annNotif .btn-view { background:var(--accent); color:#fff; border:none; padding:5px 11px; border-radius:8px; font-size:11px; cursor:pointer; }
 #annNotif .btn-close { background:rgba(255,255,255,0.08); color:var(--text-dim); border:none; padding:5px 9px; border-radius:8px; font-size:11px; cursor:pointer; }
+@media(max-width:768px) {
+  .page-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* SIDEBAR (PREMIUM VERTICAL STYLE) */
+.sidebar {
+    width: 250px;
+    padding: 30px 24px;
+    background: #FFFFFF;
+    border-right: 1px solid #E6DFD5;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+}
+.sidebar li a, .panel .cards ul li a, .cards-main a {
+   text-decoration: none;
+   color: inherit;
+}
+.sidebar ul, .panel .cards ul {
+    list-style: none;
+}
+.sidebar li, .panel .cards li {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #7D7975;
+    font-size: 14px;
+    font-weight: 500;
+    list-style: none;
+}
+.sidebar li:hover {
+    background: #FAF4E7;
+    color: #1C1A17;
+}
+.sidebar .active, .sidebar li.active {
+    background: #1C1A17;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(28,26,23,0.1);
+}
+
+/* MAIN CONTENT AREA */
+.main {
+    flex: 1;
+    margin-left: 250px;
+    padding: 40px;
+    min-height: 100vh;
+}
+
+/* BENTO GRID SYSTEM */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+    margin-top: 24px;
+}
+.bento-col-12 { grid-column: span 12; }
+.bento-col-8  { grid-column: span 8; }
+.bento-col-6  { grid-column: span 6; }
+.bento-col-4  { grid-column: span 4; }
+.bento-col-3  { grid-column: span 3; }
+
+/* Mobile Header & Overlay Styles */
+.mobile-header {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: #FFFFFF;
+    border-bottom: 1px solid #E6DFD5;
+    position: sticky;
+    top: 0;
+    z-index: 99;
+}
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(43,41,39,0.3);
+    z-index: 98;
+    backdrop-filter: blur(2px);
+}
+.sidebar-overlay.show {
+    display: block;
+}
+
+@media(max-width: 991px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .bento-col-12, .bento-col-8, .bento-col-6, .bento-col-4, .bento-col-3 {
+        grid-column: span 12;
+    }
+    .mobile-header {
+        display: flex;
+    }
+    .sidebar {
+        left: -250px;
+        transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .sidebar.open {
+        left: 0;
+    }
+    .main {
+        margin-left: 0;
+        padding: 24px 20px;
+    }
+}
 </style>
 </head>
 <body>
 
-<!-- Banner -->
-<div class="banner-wrap" onclick="document.getElementById('bannerInput').click()">
-  <img id="bannerPreview" src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1200&q=80" alt="Community Banner">
-  <div class="banner-overlay"></div>
-  <div class="banner-edit-hint">✎ Change banner</div>
-  <input type="file" id="bannerInput" accept="image/*" onchange="changeImage('bannerPreview',this)">
+<!-- Mobile Responsive Header -->
+<div class="mobile-header">
+  <div style="font-family:'DM Serif Display',serif; font-size:20px; color:#1C1A17; display:flex; align-items:center; gap:8px;">
+    <span style="font-size:24px;">🏡</span> SubSync
+  </div>
+  <button class="btn" style="padding: 6px 12px; font-size: 13px;" onclick="toggleMobileSidebar()">☰ Menu</button>
 </div>
 
-<div class="page">
+<div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-  <!-- Profile header -->
-  <div class="profile-header">
-    <div class="avatar-wrap" onclick="document.getElementById('profileInput').click()">
-      <img id="profilePreview" src="https://ui-avatars.com/api/?name={{ urlencode($residentName) }}&background=c87941&color=fff&size=220&font-size=0.4" alt="Profile">
-      <div class="avatar-edit">✎ Edit</div>
-      <input type="file" id="profileInput" accept="image/*" onchange="changeImage('profilePreview',this)">
+<!-- Left Sidebar Navigation -->
+<aside class="sidebar">
+  <div class="logo">
+    <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#1C1A17; display:flex; align-items:center; gap:8px;">
+      <span style="font-size:28px;">🏡</span> SubSync
     </div>
-    <div class="profile-meta">
-      <h2 id="householdName" contenteditable="true" spellcheck="false" title="Click to edit your name">{{ $residentName }}</h2>
-      <span class="location">📍 <span id="locationText">{{ $blockLot }}</span></span>
+  </div>
+  <ul style="margin-top:20px;">
+    <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">🏠 Overview</li>
+    <li class="tab-btn" onclick="switchTab('issues')" id="tab-issues">📢 Concerns</li>
+    <li class="tab-btn" onclick="switchTab('recs')" id="tab-recs">💡 Suggestions</li>
+    <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages">💬 Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
+    <li class="tab-btn" onclick="switchTab('map')" id="tab-map">🗺️ Map</li>
+  </ul>
+
+  <!-- Sidebar Profile Card -->
+  <div style="position:absolute; bottom:30px; left:24px; right:24px; text-align:center;">
+    <div class="avatar-wrap" onclick="document.getElementById('profileInput').click()" style="margin: 0 auto 12px; width:64px;">
+      <img id="profilePreview" src="https://ui-avatars.com/api/?name={{ urlencode($residentName) }}&amp;background=c87941&amp;color=fff&amp;size=120&amp;font-size=0.4" alt="Profile" style="width:64px; height:64px; border-radius:50%; border: 2px solid var(--glass-border);">
+      <input type="file" id="profileInput" accept="image/*" onchange="changeImage('profilePreview',this)" style="display:none;">
     </div>
-    <form id="logoutForm" action="/logout" method="POST" style="display:none;">
-      @csrf
-    </form>
-    <button onclick="confirmLogout()" style="margin-left:auto;align-self:flex-start;background:rgba(240,128,128,0.12);border:1px solid rgba(240,128,128,0.3);color:#f08080;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;transition:background .2s;" onmouseover="this.style.background='rgba(240,128,128,0.22)'" onmouseout="this.style.background='rgba(240,128,128,0.12)'">⏻ Log Out</button>
+    <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="householdName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $residentName }}</div>
+    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Block/Lot: <span id="locationText">{{ $blockLot }}</span></div>
+    
+    <form id="logoutForm" action="/logout" method="POST" style="display:none;">@csrf</form>
+    <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:14px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
+</aside>
 
-  <!-- Tab navigation -->
-  <div class="tab-nav">
-    <button class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">🏠 Overview</button>
-    <button class="tab-btn" onclick="switchTab('messages')" id="tab-messages">
-      💬 Messages <span class="tab-badge" id="msg-badge">2</span>
-    </button>
-    <button class="tab-btn" onclick="switchTab('issues')" id="tab-issues">🔧 Issue Reports</button>
-    <button class="tab-btn" onclick="switchTab('recs')" id="tab-recs">💡 Recommendations</button>
-    <button class="tab-btn" onclick="switchTab('map')" id="tab-map">🗺️ Subdivision Map</button>
-  </div>
-
+<!-- Right Main Workspace -->
+<main class="main">
   <!-- ═══════════ OVERVIEW ═══════════ -->
   <div class="tab-panel active" id="panel-overview">
-
-    <div class="card">
-      <div class="card-title">Household Members</div>
-      <div class="member-grid" id="memberGrid"></div>
-      <div class="add-row">
-        <input type="text" id="memberName" placeholder="Full name">
-        <input type="text" id="memberRole" placeholder="Role (Head, Spouse…)">
-        <button class="btn" onclick="addMember()">+ Add</button>
+    <div class="bento-grid">
+      <!-- Greeting card (Span 8) -->
+      <div class="card bento-col-8" style="display:flex; flex-direction:column; justify-content:center;">
+        <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:8px;" id="greetingText">Welcome back, {{ explode(' ', $residentName)[0] }} 👋</h1>
+        <p style="font-size:13px; color:var(--text-dim); line-height:1.6;">Manage household members, submit concerns, and check account balances from here.</p>
+        <script>
+          (function(){
+            const hrs = new Date().getHours();
+            let greet = "Welcome back";
+            if (hrs < 12) greet = "Good morning";
+            else if (hrs < 18) greet = "Good afternoon";
+            else greet = "Good evening";
+            document.addEventListener("DOMContentLoaded", () => {
+              const gEl = document.getElementById("greetingText");
+              if(gEl) gEl.innerHTML = `${greet}, {{ explode(' ', $residentName)[0] }} 👋`;
+            });
+          })();
+        </script>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-title">Homeowners Announcements & Events</div>
-      <div id="announcementList"></div>
-    </div>
+      <!-- Financial Dues Stat Card (Span 4) -->
+      <div class="res-balance-card bento-col-4" style="display:flex; flex-direction:column; justify-content:center;">
+        <div class="balance-label">Outstanding Balance</div>
+        <div class="balance-val" id="resBalanceDisplay">₱{{ number_format($residentBalance ?? 0, 2) }}</div>
+      </div>
 
-    <div class="card">
-      <div class="card-title">My Account — Financial Records</div>
-      <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:140px;background:rgba(122,180,240,0.08);border:1px solid rgba(122,180,240,0.18);border-radius:8px;padding:12px 16px;">
-          <div style="font-size:11px;color:var(--text-dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Outstanding Balance</div>
-          <div style="font-size:22px;font-weight:600;color:#f08080;" id="resBalanceDisplay">₱{{ number_format($residentBalance ?? 0, 2) }}</div>
+      <!-- Household Members (Span 8) -->
+      <div class="card bento-col-8">
+        <div class="card-title">Household Members</div>
+        <div class="card-subtitle">Add or update the list of residents living in your home.</div>
+        <div class="member-grid" id="memberGrid"></div>
+        <div class="add-row">
+          <input type="text" id="memberName" placeholder="Full name">
+          <input type="text" id="memberRole" placeholder="Role (Head, Spouse…)">
+          <button class="btn" onclick="addMember()">+ Add</button>
         </div>
       </div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead><tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
-          <th style="text-align:left;padding:6px 8px;color:var(--text-dim);font-weight:500;">Type</th>
-          <th style="text-align:left;padding:6px 8px;color:var(--text-dim);font-weight:500;">Description</th>
-          <th style="text-align:right;padding:6px 8px;color:var(--text-dim);font-weight:500;">Amount</th>
-          <th style="text-align:right;padding:6px 8px;color:var(--text-dim);font-weight:500;">Date</th>
-        </tr></thead>
-        <tbody id="myFinancialRecords"><tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px;">Loading…</td></tr></tbody>
-      </table>
-    </div>
 
+      <!-- Announcements Box (Span 4) -->
+      <div class="card bento-col-4">
+        <div class="card-title">Announcements</div>
+        <div class="card-subtitle">Neighborhood notices and community calendar events.</div>
+        <div id="announcementList"></div>
+      </div>
+
+      <!-- Financial Records & Dues History (Span 12) -->
+      <div class="card bento-col-12">
+        <div class="card-title">Financial Records &amp; Dues History</div>
+        <div class="card-subtitle">Review your monthly association dues and payment history.</div>
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
+          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:500px;">
+            <thead><tr style="border-bottom:1px solid var(--glass-border);">
+              <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Type</th>
+              <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Description</th>
+              <th style="text-align:right;padding:12px 14px;color:var(--text-dim);font-weight:500;">Amount</th>
+              <th style="text-align:right;padding:12px 14px;color:var(--text-dim);font-weight:500;">Date</th>
+            </tr></thead>
+            <tbody id="myFinancialRecords"><tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px;">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════ MESSAGES ═══════════ -->
   <div class="tab-panel" id="panel-messages">
-    <div class="card" style="padding:16px;">
+    <div class="card" style="padding:24px; margin-top:0;">
       <div class="card-title">Direct Messages</div>
       <div class="msg-layout">
-
         <!-- Sidebar threads -->
         <div class="msg-sidebar">
           <div class="msg-sidebar-title" style="display:flex;justify-content:space-between;align-items:center;">Conversations
@@ -538,17 +664,150 @@ select option { background: #1a120d; color: var(--text); }
               <div class="msg-header-sub" id="chat-sub">Online</div>
             </div>
           </div>
-          <div class="msg-body" id="msgBody"></div>
+          <div class="msg-body" id="msgBody">
+            <div style="color:var(--text-dim);text-align:center;padding:40px;">Select a conversation to start messaging.</div>
+          </div>
           <div class="msg-compose">
-            <textarea id="msgInput" placeholder="Type a message…" rows="1"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
-            <button class="send-btn" onclick="sendMessage()" title="Send">➤</button>
+            <textarea id="msgInput" placeholder="Type a message…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); sendMsg();}"></textarea>
+            <button class="send-btn" onclick="sendMsg()">➔</button>
           </div>
         </div>
-
       </div>
     </div>
   </div>
+
+  <!-- ═══════════ ISSUES ═══════════ -->
+  <div class="tab-panel" id="panel-issues">
+    <div class="card" style="margin-top:0;">
+      <div class="card-title">Report a Concern or Complaint</div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">Category</span>
+          <select id="issueCategory">
+            <option value="">Select category…</option>
+            <option>Road / Pavement</option>
+            <option>Drainage / Flooding</option>
+            <option>Street Lighting</option>
+            <option>Garbage / Sanitation</option>
+            <option>Noise Complaint</option>
+            <option>Security Concern</option>
+            <option>Utilities</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="f-field">
+          <span class="f-label">Priority Level</span>
+          <select id="issuePriority">
+            <option value="">Select priority…</option>
+            <option value="Critical">🚨 Critical / Emergency — Immediate danger</option>
+            <option value="High">🔴 High — Urgent, same-day attention</option>
+            <option value="Medium">🟡 Medium — Within a few days</option>
+            <option value="Low">🟢 Low — General concern</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">Issue Title</span>
+          <input type="text" id="issueTitle" placeholder="Brief description of the issue">
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">Details</span>
+          <textarea id="issueBody" placeholder="Describe the issue in detail — location, when it started, how it affects residents…"></textarea>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">📍 Location (optional)</span>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
+            <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="useMyLocation()">Use My GPS</button>
+            <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="openIssuePicker()">Pin on Map</button>
+            <span id="issue-loc-display" style="font-size:12px;color:var(--text-dim);">No location set</span>
+          </div>
+          <div id="issue-picker-map" style="display:none;height:240px;border-radius:8px;border:1px solid var(--glass-border);margin-bottom:8px;z-index:1;"></div>
+          <input type="hidden" id="issue-lat">
+          <input type="hidden" id="issue-lng">
+        </div>
+      </div>
+      <button class="btn btn-full" onclick="submitIssue()">Submit Report</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">My Submitted Reports</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <thead><tr style="border-bottom:1px solid var(--glass-border);">
+          <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Title</th>
+          <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Status</th>
+          <th style="text-align:right;padding:12px 14px;color:var(--text-dim);font-weight:500;">Submitted</th>
+        </tr></thead>
+        <tbody id="myIssues"><tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px;">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════ RECOMMENDATIONS ═══════════ -->
+  <div class="tab-panel" id="panel-recs">
+    <div class="card" style="margin-top:0;">
+      <div class="card-title">Share a Suggestion or Initiative</div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">Category</span>
+          <select id="recCategory">
+            <option value="">Select category…</option>
+            <option>Infrastructure</option>
+            <option>Environment / Greenery</option>
+            <option>Security</option>
+            <option>Community Events</option>
+            <option>Waste Management</option>
+            <option>Facilities &amp; Amenities</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">Suggestion Title</span>
+          <input type="text" id="recTitle" placeholder="One-line summary of your idea">
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">Details</span>
+          <textarea id="recBody" placeholder="Explain your suggestion — why it benefits the community, estimated impact, how it could be implemented…"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-full" style="color:var(--purple);background:var(--purple-dim);border-color:rgba(185,154,245,0.3);" onclick="submitRec()">Submit Suggestion</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Community Suggestions — Most Supported</div>
+      <div id="recList"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAP ═══════════ -->
+  <div class="tab-panel" id="panel-map">
+    <div class="card" style="padding:0;overflow:hidden;margin-top:0;">
+      <div id="resident-map" style="width:100%;height:480px;"></div>
+    </div>
+    <div class="card" style="margin-top:12px;">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-mid);align-items:center;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#4CAF50;display:inline-block;"></span>Facility</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#4287f5;display:inline-block;"></span>My Household</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;display:inline-block;"></span>Issue (Pending)</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;"></span>Issue (In Progress)</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#888;display:inline-block;"></span>Issue (Resolved, ≤7d)</span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
+          <input type="checkbox" id="res-layer-heatmap" checked style="accent-color:var(--accent);">
+          <span style="background:linear-gradient(to right,#1a003e,#5c0099,#0044bb,#cc4400,#ff2200);border-radius:4px;width:36px;height:11px;display:inline-block;"></span>
+          Heatmap
+        </label>
+      </div>
+    </div>
+  </div>
+</main>
 
   <!-- ═══════════ ISSUES ═══════════ -->
   <div class="tab-panel" id="panel-issues">
@@ -616,70 +875,7 @@ select option { background: #1a120d; color: var(--text); }
 
   </div>
 
-  <!-- ═══════════ RECOMMENDATIONS ═══════════ -->
-  <div class="tab-panel" id="panel-recs">
 
-    <div class="card">
-      <div class="card-title">Share a Suggestion or Initiative</div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">Category</span>
-          <select id="recCategory">
-            <option value="">Select category…</option>
-            <option>Infrastructure</option>
-            <option>Environment / Greenery</option>
-            <option>Security</option>
-            <option>Community Events</option>
-            <option>Waste Management</option>
-            <option>Facilities &amp; Amenities</option>
-            <option>Other</option>
-          </select>
-        </div>
-      </div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">Suggestion Title</span>
-          <input type="text" id="recTitle" placeholder="One-line summary of your idea">
-        </div>
-      </div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">Details</span>
-          <textarea id="recBody" placeholder="Explain your suggestion — why it benefits the community, estimated impact, how it could be implemented…"></textarea>
-        </div>
-      </div>
-      <button class="btn btn-full" style="color:var(--purple);background:var(--purple-dim);border-color:rgba(185,154,245,0.3);" onclick="submitRec()">Submit Suggestion</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Community Suggestions — Most Supported</div>
-      <div id="recList"></div>
-    </div>
-
-  </div>
-
-  <!-- ═══════════ MAP ═══════════ -->
-  <div class="tab-panel" id="panel-map">
-    <div class="card" style="padding:0;overflow:hidden;">
-      <div id="resident-map" style="width:100%;height:480px;"></div>
-    </div>
-    <div class="card" style="margin-top:12px;">
-      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-mid);align-items:center;">
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#4CAF50;display:inline-block;"></span>Facility</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#4287f5;display:inline-block;"></span>My Household</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;display:inline-block;"></span>Issue (Pending)</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;"></span>Issue (In Progress)</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#888;display:inline-block;"></span>Issue (Resolved, ≤7d)</span>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin-left:auto;">
-          <input type="checkbox" id="res-layer-heatmap" checked style="accent-color:var(--accent);">
-          <span style="background:linear-gradient(to right,#1a003e,#5c0099,#0044bb,#cc4400,#ff2200);border-radius:4px;width:36px;height:11px;display:inline-block;"></span>
-          Heatmap
-        </label>
-      </div>
-    </div>
-  </div>
-
-</div><!-- end .page -->
 
 <div id="toast"></div>
 <div id="annNotif">
@@ -694,6 +890,12 @@ select option { background: #1a120d; color: var(--text); }
 
 <script>
 /* ══ UTILS ══ */
+function toggleMobileSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  if (sidebar) sidebar.classList.toggle('open');
+  if (overlay) overlay.classList.toggle('show');
+}
 function confirmLogout(){
   if(confirm('Are you sure you want to log out?'))
     document.getElementById('logoutForm').submit();
@@ -725,6 +927,12 @@ function switchTab(name){
     loadResidentThreads();
   }
   if(name==='map') setTimeout(initResidentMap,80);
+  
+  // Auto-close sidebar on mobile
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.querySelector('.sidebar-overlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
 }
 
 /* ══ MEMBERS ══ */
@@ -861,7 +1069,7 @@ function renderAnnouncements(){
     if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
     if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
     return `
-    <div class="ann-item">
+    <div class="ann-item ann-item-${a.tag||'notice'}">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         <span class="ann-date">${a.created_at}</span>
@@ -1150,11 +1358,11 @@ async function loadResidentFinancials(){
       tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:16px;">No financial records yet.</td></tr>';
       return;
     }
-    tbody.innerHTML=records.map(r=>`<tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-      <td style="padding:7px 8px;"><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:${r.record_type==='Payment'?'rgba(130,201,138,0.15)':'rgba(240,128,128,0.15)'};color:${r.record_type==='Payment'?'#82c98a':'#f08080'};">${r.record_type}</span></td>
-      <td style="padding:7px 8px;color:var(--text-mid);">${r.description||'—'}</td>
-      <td style="padding:7px 8px;text-align:right;color:${r.record_type==='Payment'?'#82c98a':'#f08080'};">${r.record_type==='Payment'?'+':'-'}₱${Number(r.amount).toLocaleString()}</td>
-      <td style="padding:7px 8px;text-align:right;color:var(--text-dim);font-size:12px;">${r.record_date?new Date(r.record_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
+    tbody.innerHTML=records.map(r=>`<tr style="border-bottom:1px solid var(--glass-border);">
+      <td style="padding:12px 14px;"><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:${r.record_type==='Payment'?'rgba(130,201,138,0.15)':'rgba(240,128,128,0.15)'};color:${r.record_type==='Payment'?'#82c98a':'#f08080'};">${r.record_type}</span></td>
+      <td style="padding:12px 14px;color:var(--text-mid);">${r.description||'—'}</td>
+      <td style="padding:12px 14px;text-align:right;color:${r.record_type==='Payment'?'#82c98a':'#f08080'};">${r.record_type==='Payment'?'+':'-'}₱${Number(r.amount).toLocaleString()}</td>
+      <td style="padding:12px 14px;text-align:right;color:var(--text-dim);font-size:12px;">${r.record_date?new Date(r.record_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
     </tr>`).join('');
   } catch(e){
     tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:16px;">Could not load records.</td></tr>';

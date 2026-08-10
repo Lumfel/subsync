@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SubSync UI Layout Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FAF6F0;
+      --card-bg: #FFFFFF;
+      --border: rgba(230, 223, 213, 0.7);
+      --text: #3C3936;
+      --text-dim: #7D7975;
+      --accent: #A07D53;
+      --accent-dim: #FAF4E7;
+      --radius: 16px;
+      --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* Left Sidebar */
+    .sidebar {
+      width: 260px;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border);
+      padding: 32px 24px;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 24px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 32px;
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .nav-item {
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: var(--transition);
+    }
+
+    .nav-item:hover {
+      background: var(--accent-dim);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: var(--text);
+      color: var(--card-bg);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      padding-top: 20px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-dim);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 16px;
+      margin: 0 auto 10px;
+      border: 1px solid var(--border);
+    }
+
+    .user-name {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .user-role {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* Main Workspace */
+    .main {
+      margin-left: 260px;
+      flex: 1;
+      padding: 40px;
+      max-width: 1200px;
+    }
+
+    /* Page Header */
+    .welcome-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(43, 41, 39, 0.01);
+    }
+
+    .welcome-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
+
+    .welcome-sub {
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    /* Bento Grid */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 24px;
+    }
+
+    .bento-col-8 { grid-column: span 8; }
+    .bento-col-4 { grid-column: span 4; }
+    .bento-col-12 { grid-column: span 12; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      box-shadow: 0 4px 20px rgba(43, 41, 39, 0.01);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(43, 41, 39, 0.03);
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-bottom: 20px;
+    }
+
+    /* Dues balance content */
+    .balance-box {
+      font-size: 32px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      padding: 12px 20px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      color: var(--card-bg);
+      border-color: var(--accent);
+    }
+
+    /* List items styling */
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .list-item:last-child {
+      border-bottom: none;
+    }
+
+    .item-title {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .item-desc {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .main {
+        margin-left: 0;
+        padding: 24px;
+      }
+      .bento-col-8, .bento-col-4, .bento-col-12 {
+        grid-column: span 12;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <span>🏡</span> SubSync
+    </div>
+    <ul class="nav-list">
+      <li class="nav-item active">🏠 Overview</li>
+      <li class="nav-item">📢 Concerns</li>
+      <li class="nav-item">💡 Suggestions</li>
+      <li class="nav-item">💬 Messages</li>
+      <li class="nav-item">🗺️ Map</li>
+    </ul>
+    <div class="sidebar-footer">
+      <div class="avatar">JU</div>
+      <div class="user-name">Jurriel</div>
+      <div class="user-role">Block 2 · Lot 15</div>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <main class="main">
+    <!-- Welcome Header -->
+    <div class="welcome-card">
+      <h1 class="welcome-title">Good afternoon, Jurriel 👋</h1>
+      <p class="welcome-sub">Welcome to your homeowner dashboard. Review statements or update details below.</p>
+    </div>
+
+    <!-- Bento Grid Content -->
+    <div class="bento-grid">
+      <!-- Dues Balance (Span 4) -->
+      <div class="card bento-col-4">
+        <h3 class="card-title">Monthly Association Dues</h3>
+        <p class="card-sub">Review monthly dues and payment statements.</p>
+        <div class="balance-box">₱500.00</div>
+        <button class="btn">Pay Dues</button>
+      </div>
+
+      <!-- Household Directory (Span 8) -->
+      <div class="card bento-col-8">
+        <h3 class="card-title">Household Directory</h3>
+        <p class="card-sub">Add or update the list of residents living in your home.</p>
+        <div class="list-item">
+          <div>
+            <div class="item-title">Jurriel</div>
+            <div class="item-desc">Household Head</div>
+          </div>
+          <span class="badge">Primary</span>
+        </div>
+        <div class="list-item">
+          <div>
+            <div class="item-title">Maria</div>
+            <div class="item-desc">Spouse</div>
+          </div>
+          <span class="badge">Resident</span>
+        </div>
+      </div>
+
+      <!-- Neighborhood Bulletins (Span 12) -->
+      <div class="card bento-col-12">
+        <h3 class="card-title">Neighborhood Bulletins</h3>
+        <p class="card-sub">Neighborhood notices and community calendar events.</p>
+        <div class="list-item">
+          <div>
+            <div class="item-title">Monthly Subdivision General Assembly Meeting</div>
+            <div class="item-desc">Saturday, August 15 at 3:00 PM at the Community Clubhouse.</div>
+          </div>
+          <span class="badge">Assembly</span>
+        </div>
+        <div class="list-item">
+          <div>
+            <div class="item-title">Scheduled Water Supply Maintenance</div>
+            <div class="item-desc">Tuesday, August 11 from 9:00 AM to 1:00 PM affecting Blocks 1 to 3.</div>
+          </div>
+          <span class="badge">Maintenance</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Interactivity preview
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        navItems.forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

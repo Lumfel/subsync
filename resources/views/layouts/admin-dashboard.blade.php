@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -10,36 +10,33 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root {
-  --glass: rgba(255,255,255,0.06);
-  --glass-hover: rgba(255,255,255,0.11);
-  --glass-border: rgba(255,255,255,0.12);
-  --accent: #e8a87c;
-  --accent-dim: rgba(232,168,124,0.16);
-  --accent-border: rgba(232,168,124,0.28);
-  --text: #f0ece4;
-  --text-dim: rgba(240,236,228,0.5);
-  --text-mid: rgba(240,236,228,0.75);
-  --danger: rgba(220,80,80,0.85);
-  --blue: #7ab4f0;
-  --blue-dim: rgba(122,180,240,0.14);
-  --green: #82c98a;
-  --green-dim: rgba(130,201,138,0.14);
-  --yellow: #f0c060;
-  --yellow-dim: rgba(240,192,96,0.14);
-  --purple: #b99af5;
-  --purple-dim: rgba(185,154,245,0.14);
-  --radius: 14px;
-  --radius-sm: 9px;
+  --glass: #FFFFFF;
+  --glass-hover: #FAF7F2;
+  --glass-border: #E6DFD5;
+  --accent: #A07D53;
+  --accent-dim: #FAF6F0;
+  --accent-border: #E6DFD5;
+  --text: #2B2927;
+  --text-dim: #7D7975;
+  --text-mid: #4A4744;
+  --danger: #BD5B5B;
+  --blue: #5A7F9E;
+  --blue-dim: #EEF3F6;
+  --green: #6B8E70;
+  --green-dim: #EAF2EC;
+  --yellow: #C49646;
+  --yellow-dim: #FAF4E7;
+  --purple: #8C829E;
+  --purple-dim: #F2EFF4;
+  --radius: 12px;
+  --radius-sm: 8px;
   --radius-xs: 6px;
   --sidebar-w: 230px;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 body {
   font-family: 'DM Sans', sans-serif;
-  background:
-    radial-gradient(ellipse 80% 60% at 70% 10%, rgba(80,50,30,0.42), transparent),
-    radial-gradient(ellipse 60% 50% at 20% 80%, rgba(30,30,60,0.48), transparent),
-    linear-gradient(160deg, #0b0b14 0%, #12101a 40%, #1a120d 100%);
+  background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
   display: flex;
@@ -53,9 +50,7 @@ body {
 .sidebar {
   width: var(--sidebar-w);
   flex-shrink: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #FFFFFF;
   border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
@@ -77,7 +72,7 @@ body {
   width: 130px;
   height: auto;
   display: block;
-  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+  filter: none;
 }
 .brand-sub {
   font-size: 9px;
@@ -155,8 +150,7 @@ body {
   justify-content: space-between;
   padding: 16px 28px;
   border-bottom: 1px solid var(--glass-border);
-  background: rgba(0,0,0,0.22);
-  backdrop-filter: blur(8px);
+  background: #FFFFFF;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -206,6 +200,11 @@ body {
   backdrop-filter: blur(16px);
   padding: 22px;
   margin-bottom: 16px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
+}
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(43, 41, 39, 0.04);
 }
 .card-title {
   font-size: 11px; font-weight: 600;
@@ -479,7 +478,7 @@ select option { background: #1a120d; color: var(--text); }
 .msg-layout { display:flex; height:520px; border:1px solid var(--glass-border); border-radius:var(--radius); overflow:hidden; }
 .msg-sidebar {
   width:220px; flex-shrink:0;
-  background:rgba(0,0,0,0.28);
+  background: #FAF7F2;
   border-right:1px solid var(--glass-border);
   display:flex; flex-direction:column;
 }
@@ -499,23 +498,23 @@ select option { background: #1a120d; color: var(--text); }
 .thread-preview { font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .thread-unread { min-width:18px; height:18px; border-radius:9px; background:var(--accent); color:#1a100a; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; flex-shrink:0; }
 .msg-main { flex:1; display:flex; flex-direction:column; min-width:0; }
-.msg-header { padding:12px 16px; display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.22); border-bottom:1px solid var(--glass-border); }
+.msg-header { padding:12px 16px; display:flex; align-items:center; gap:10px; background: #FFFFFF; border-bottom:1px solid var(--glass-border); }
 .msg-header-avatar { width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
 .msg-header-name { font-size:14px; font-weight:500; }
 .msg-header-sub { font-size:11px; color:var(--green); display:flex; align-items:center; gap:4px; }
 .msg-header-sub::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--green); display:inline-block; }
-.msg-body { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.1) transparent; }
+.msg-body { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:10px; scrollbar-width:thin; scrollbar-color:rgba(0,0,0,.15) transparent; background: #FAF6F0; }
 .msg-bubble-wrap { display:flex; align-items:flex-end; gap:8px; }
 .msg-bubble-wrap.mine { flex-direction:row-reverse; }
 .bubble-avatar { width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
 .bubble { max-width:68%; padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.55; }
-.from-admin { background:rgba(255,255,255,0.09); border:1px solid var(--glass-border); border-bottom-left-radius:4px; }
+.from-admin { background: #FFFFFF; border:1px solid var(--glass-border); border-bottom-left-radius:4px; }
 .from-mine { background:var(--accent-dim); border:1px solid var(--accent-border); border-bottom-right-radius:4px; }
 .bubble-time { font-size:10px; color:var(--text-dim); margin-top:3px; display:block; }
 .msg-bubble-wrap.mine .bubble-time { text-align:right; }
 .date-divider { display:flex; align-items:center; gap:10px; font-size:10px; color:var(--text-dim); letter-spacing:.06em; text-transform:uppercase; }
 .date-divider::before,.date-divider::after { content:''; flex:1; height:1px; background:var(--glass-border); }
-.msg-compose { padding:12px; display:flex; gap:10px; align-items:flex-end; border-top:1px solid var(--glass-border); background:rgba(0,0,0,0.18); }
+.msg-compose { padding:12px; display:flex; gap:10px; align-items:flex-end; border-top:1px solid var(--glass-border); background: #FFFFFF; }
 .msg-compose textarea { flex:1; min-height:40px; max-height:100px; resize:none; font-size:13px; }
 .send-btn { width:40px; height:40px; border-radius:var(--radius-sm); background:var(--accent-dim); border:1px solid var(--accent-border); color:var(--accent); font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:background .2s; }
 .send-btn:hover { background:rgba(232,168,124,0.28); }
@@ -735,7 +734,7 @@ select option { background: #1a120d; color: var(--text); }
 .member-info .m-type { font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:.06em; margin-top:3px; }
 
 /* ── RESPONSIVE ── */
-@media(max-width:768px){
+@media(max-width:991px){
   .sidebar {
     position: fixed;
     left: -100%;
@@ -772,6 +771,87 @@ select option { background: #1a120d; color: var(--text); }
   .msg-layout { flex-direction: column; height: auto; }
   .msg-sidebar { width: 100%; height: auto; max-height: 200px; }
   .msg-body { min-height: 260px; max-height: 320px; }
+  #panel-dashboard > div { grid-template-columns: 1fr !important; }
+}
+
+/* SIDEBAR (PREMIUM VERTICAL STYLE) */
+.sidebar {
+    width: 250px;
+    padding: 30px 24px;
+    background: #FFFFFF;
+    border-right: 1px solid #E6DFD5;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 100;
+}
+.sidebar li a, .panel .cards ul li a, .cards-main a {
+   text-decoration: none;
+   color: inherit;
+}
+.sidebar ul, .panel .cards ul {
+    list-style: none;
+}
+.sidebar li, .panel .cards li {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #7D7975;
+    font-size: 14px;
+    font-weight: 500;
+    list-style: none;
+}
+.sidebar li:hover {
+    background: #FAF4E7;
+    color: #1C1A17;
+}
+.sidebar .active, .sidebar li.active {
+    background: #1C1A17;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 12px rgba(28,26,23,0.1);
+}
+
+/* MAIN CONTENT AREA */
+.main {
+    flex: 1;
+    margin-left: 250px;
+    padding: 40px;
+    min-height: 100vh;
+}
+
+/* BENTO GRID SYSTEM */
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+    margin-top: 24px;
+}
+.bento-col-12 { grid-column: span 12; }
+.bento-col-8  { grid-column: span 8; }
+.bento-col-6  { grid-column: span 6; }
+.bento-col-4  { grid-column: span 4; }
+.bento-col-3  { grid-column: span 3; }
+.bento-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+@media(max-width: 991px) {
+    .bento-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    .bento-col-12, .bento-col-8, .bento-col-6, .bento-col-4, .bento-col-3 {
+        grid-column: span 12;
+    }
+    .bento-metrics-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
 }
 </style>
 </head>
@@ -782,35 +862,35 @@ select option { background: #1a120d; color: var(--text); }
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
     <div class="brand-logo">
-      <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNzYuMTYgNDk2Ljg2Ij4KICA8ZGVmcz4KICAgIDxzdHlsZT4KICAgICAgLmNscy0xLCAuY2xzLTIgewogICAgICAgIGZpbGw6ICNmZmY7CiAgICAgIH0KCiAgICAgIC5jbHMtMiB7CiAgICAgICAgZm9udC1mYW1pbHk6IFN1Z2FyQmFieS1SZWd1bGFyLCAnU3VnYXIgQmFieSc7CiAgICAgICAgZm9udC1zaXplOiAxMDguMTZweDsKICAgICAgfQoKICAgICAgLmNscy0zIHsKICAgICAgICBsZXR0ZXItc3BhY2luZzogLS4wNGVtOwogICAgICB9CiAgICA8L3N0eWxlPgogIDwvZGVmcz4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik03Ny4wOSwyNzkuODloMTk3LjY2YzMuODYsMCwzLjg3LTYsMC02SDc3LjA5Yy0zLjg2LDAtMy44Nyw2LDAsNmgwWiIvPgogIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTU4LjA3LDM0Mi41N3YtODcuMDNsLTMsM2M3NC4zMiwwLDE0OC42NCwwLDIyMi45NiwwLDUuNCwwLDEwLjgxLDAsMTYuMjEsMCwzLjg2LDAsMy44Ny02LDAtNi01NC4wNCwwLTEwOC4wOSwwLTE2Mi4xMywwLTI1LjY4LDAtNTEuMzYsMC03Ny4wNCwwLTEuNjIsMC0zLDEuMzctMywzdjg3LjAzYzAsMy44Niw2LDMuODcsNiwwaDBaIi8+CiAgPHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjcxLjc1LDI3Ni44OWMwLDIyLjc3LDAsNDUuNTUsMCw2OC4zMiwwLDMuODYsNiwzLjg3LDYsMCwwLTIyLjc3LDAtNDUuNTUsMC02OC4zMiwwLTMuODYtNi0zLjg3LTYsMGgwWiIvPgogIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE4MS43LDE0MS43MmMwLTE0LjksMC0yOS44LDAtNDQuN2wtMy44NCwxLjU5YzM2LjMyLDI4LjgzLDcyLjYzLDU3LjY3LDEwOC45NSw4Ni41bDI4LjAyLDIyLjI0YzIuMDYsMS42NCw0LjI3LDMuMTgsNi4yMyw0Ljk0LDIuNTEsMi4yNywyLjQ1LDMuNDgsMi40NSw2LjgzdjE2Ni42NmMwLDIuOSw0LjUsMi45LDQuNSwwVjIxNy4xNGMwLTEuOTcsLjM2LTMuODUtLjY2LTUuNTYtMS4wOC0xLjgyLTQuNTMtMy42LTYuMjMtNC45NGwtNi4yMy00Ljk0Yy00LjkzLTMuOTEtOS44Ni03LjgzLTE0Ljc5LTExLjc0bC01Ni4wMy00NC40OWMtMjEuMDEtMTYuNjgtNDIuMDItMzMuMzYtNjMuMDMtNTAuMDUtMS40Ni0xLjE2LTMuODQtLjUyLTMuODQsMS41OSwwLDE0LjksMCwyOS44LDAsNDQuNywwLDIuOSw0LjUsMi45LDQuNSwwaDBaIi8+CiAgPHRleHQgY2xhc3M9ImNscy0yIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwIDQzNS4zNSkiPjx0c3BhbiB4PSIwIiB5PSIwIj5TdWI8L3RzcGFuPjx0c3BhbiBjbGFzcz0iY2xzLTMiIHg9IjE3NC4wMiIgeT0iMCI+czwvdHNwYW4+PHRzcGFuIHg9IjIxNC44IiB5PSIwIj55bmM8L3RzcGFuPjwvdGV4dD4KICA8cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0xMzQuNCwxNTcuMjljMTUuNDMtNi42MywyNy4yNi0xOS41MiwyNy4yOS0zOC41NywwLTUwLjM3LTg3LjQyLTQ5LjAyLTg3LjQyLTg5LDAtMTUuMTMsMTIuODgtMjYuMiwzMi41My0yNi4yczMyLjc2LDExLjUyLDMyLjc2LDI3Ljc4YzAsNC45NywyLjk0LDguMTMsNy42OCw4LjEzLDUuODcsMCwxMC4zOS00LjUyLDEwLjM5LTExLjUyLTQuNDUtMzkuOTQtMTAyLjk2LTM4LjE2LTEwMi41NiwxMi42NSwwLDIwLjAyLDE1LjczLDMxLjM5LDMzLjg0LDQxLjA0LTE2LjQyLDUuOS0yOC42NSwxOC42LTI4LjY1LDM2LjksMCw0Ny4yMSw4MS40NSw0Ni4zMSw4MS40NSw4OC4zMiwwLDE3Ljg0LTE0LjA5LDMwLjI3LTMxLjE1LDMwLjI3LTI1LjY4LDAtNDIuNTEtMjcuNzgtMzEuNTYtNTUuNzksMS42OC00LjI5LS42My04LjgxLTYuNTMtOC44MS03Ljc5LDAtMTMuMjYsNy45MS0xMy4yNiwyMS4yMywwLDI2LjIsMjIuMzEsNDYuNzYsNTAuNTEsNDYuNzYsMjMuOTksMCw0OS44Ny0xNC42OCw0OS44Ny00My44MiwwLTE4LjY0LTExLjE0LTMwLjE5LTI1LjE5LTM5LjM4Wm0tNTYuMjYtNDkuNjJjMC0xMC42Myw1LjkyLTE5LjI1LDE1Ljc5LTIzLjQ0LDIzLjM0LDExLjkxLDQ4LjU2LDIyLjA5LDQ4LjU2LDQ0LjY2LDAsMTAuNzYtNS41LDE5LjU1LTEzLjg3LDI0LjgyLTIzLjAzLTEzLjU1LTUwLjQ4LTIyLjgzLTUwLjQ4LTQ2LjA0WiIvPgogIDxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTE3Ny40NSwxMTEuOTJjMCw0Ny45OSwwLDk1Ljk4LDAsMTQzLjk3LDAsMi45LDQuNSwyLjksNC41LDAsMC00Ny45OSwwLTk1Ljk4LDAtMTQzLjk3LDAtMi45LTQuNS0yLjktNC41LDBoMFoiLz4KPC9zdmc+" alt="SubSync">
+      <img src="{{ asset('emblem_1.svg') }}" alt="SubSync">
     </div>
     <div class="brand-sub">Terra Nova · Admin Portal</div>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Overview</div>
     <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
+    <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon">📈</span> Analytics</div>
 
-    <div class="nav-section-label">Residents</div>
+    <div class="nav-section-label">Directory</div>
     <div class="nav-item" onclick="nav('residents',this)"><span class="nav-icon">👥</span> Residents <span class="nav-badge" id="pendingBadge" style="display:none;background:#f59e0b;">0</span></div>
     <div class="nav-item" onclick="nav('members',this)"><span class="nav-icon">👤</span> Members</div>
+    <div class="nav-item" onclick="nav('officers',this)"><span class="nav-icon">🛡️</span> Officers</div>
+
+    <div class="nav-section-label">Operations</div>
+    <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon">🔧</span> Issue Reports <span class="nav-badge" id="issueBadge">0</span></div>
     <div class="nav-item" onclick="nav('delinquents',this)"><span class="nav-icon">⚠️</span> Delinquents <span class="nav-badge" id="delinBadge">0</span></div>
-
-    <div class="nav-section-label">Finance</div>
-    <div class="nav-item" onclick="nav('finance',this)"><span class="nav-icon">💳</span> Finance</div>
-    <div class="nav-item" onclick="nav('payments',this)"><span class="nav-icon">₱</span> Payments</div>
-
-    <div class="nav-section-label">Communication</div>
-    <div class="nav-item" onclick="nav('messages',this)"><span class="nav-icon">💬</span> Messages <span class="nav-badge" id="msgBadge">5</span></div>
+    <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon">🗺️</span> Subdivision Map</div>
     <div class="nav-item" onclick="nav('announcements',this)"><span class="nav-icon">📢</span> Announcements</div>
 
-    <div class="nav-section-label">Management</div>
-    <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon">🔧</span> Issue Reports <span class="nav-badge" id="issueBadge">0</span></div>
-    <div class="nav-item" onclick="nav('manageusers',this)"><span class="nav-icon">⚙️</span> Manage Users</div>
-    <div class="nav-item" onclick="nav('officers',this)"><span class="nav-icon">🛡️</span> Officers</div>
-    <div class="nav-item" onclick="nav('recommendations',this)"><span class="nav-icon">💡</span> Recommendations</div>
-    <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon">📈</span> Analytics</div>
-    <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon">🗺️</span> Maps</div>
+    <div class="nav-section-label">Finance</div>
+    <div class="nav-item" onclick="nav('finance',this)"><span class="nav-icon">💳</span> Accounts &amp; Dues</div>
+    <div class="nav-item" onclick="nav('payments',this)"><span class="nav-icon">₱</span> Payments</div>
     <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon">📁</span> Reports <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
+
+    <div class="nav-section-label">Communication &amp; System</div>
+    <div class="nav-item" onclick="nav('messages',this)"><span class="nav-icon">💬</span> Messages <span class="nav-badge" id="msgBadge">5</span></div>
+    <div class="nav-item" onclick="nav('recommendations',this)"><span class="nav-icon">💡</span> Recommendations</div>
+    <div class="nav-item" onclick="nav('manageusers',this)"><span class="nav-icon">⚙️</span> Manage Users</div>
   </nav>
   <div class="sidebar-footer">
     <div class="admin-profile">
@@ -847,45 +927,6 @@ select option { background: #1a120d; color: var(--text); }
 
     <!-- ══════════ DASHBOARD ══════════ -->
     <div class="panel active" id="panel-dashboard">
-      <div class="stat-grid">
-        <div class="stat-card" onclick="nav('residents',null)" title="View Residents">
-          <div class="stat-label">Total Residents</div>
-          <div class="stat-value stat-accent" id="statResidents">—</div>
-          <div class="stat-sub">Blk 1–5 registered</div>
-        </div>
-        <div class="stat-card" onclick="nav('residents',null)" title="View Residents">
-          <div class="stat-label">Active Residents</div>
-          <div class="stat-value stat-blue" id="statActive">—</div>
-          <div class="stat-sub">Currently active</div>
-        </div>
-        <div class="stat-card" onclick="nav('payments',null)" title="View Payments">
-          <div class="stat-label">Payment Collection</div>
-          <div class="stat-value stat-green" id="statPayPct">—</div>
-          <div class="stat-sub" id="statPaySub">May 2026 dues</div>
-          <div class="progress-wrap"><div class="progress-bar" id="statPayBar" style="width:0%;background:var(--green);"></div></div>
-        </div>
-        <div class="stat-card" onclick="nav('issues',null)" title="View Issues">
-          <div class="stat-label">Open Issues</div>
-          <div class="stat-value stat-yellow" id="statIssues">—</div>
-          <div class="stat-sub">Pending reports</div>
-        </div>
-        <div class="stat-card" onclick="nav('delinquents',null)" title="View Delinquents">
-          <div class="stat-label">Delinquents</div>
-          <div class="stat-value" style="color:#f08080;" id="statDelinq">—</div>
-          <div class="stat-sub">Flagged households</div>
-        </div>
-        <div class="stat-card" onclick="nav('finance',null)" title="View Finance">
-          <div class="stat-label">Outstanding Balance</div>
-          <div class="stat-value stat-blue" id="statBalance">—</div>
-          <div class="stat-sub">Total unpaid dues</div>
-        </div>
-        <div class="stat-card" onclick="nav('residents',null)" title="Review pending registrations" id="pendingStatCard" style="border-left:3px solid #f59e0b;">
-          <div class="stat-label">Pending Approvals</div>
-          <div class="stat-value" style="color:#f59e0b;" id="statPending">0</div>
-          <div class="stat-sub">Awaiting your review</div>
-        </div>
-      </div>
-
       <!-- Pending registration notice (shown only when count > 0) -->
       <div id="pendingNotice" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:none;align-items:center;gap:14px;flex-wrap:wrap;">
         <span style="font-size:20px;">⏳</span>
@@ -896,39 +937,100 @@ select option { background: #1a120d; color: var(--text); }
         <button class="btn btn-sm" style="background:#f59e0b;border-color:#f59e0b;" onclick="nav('residents',null)">Review Now →</button>
       </div>
 
-      <div class="grid-2">
-        <div class="card">
+      <!-- BENTO GRID -->
+      <div class="bento-grid">
+        <!-- Bento A: Greeting Banner (Span 12) -->
+        <div class="card bento-col-12" style="background: linear-gradient(135deg, #FAF4E7, #FAF6F0); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+          <div>
+            <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:6px;">Subdivision Control Tower</h1>
+            <p style="font-size:13px; color:#7D7975;">Manage directories, financials, issues, and communications from a unified command deck.</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn" onclick="openModal('ann')">📣 Post Notice</button>
+            <button class="btn" style="background:#2B2927; color:#fff; border-color:#2B2927;" onclick="nav('residents',null)">👥 Verify Residents</button>
+          </div>
+        </div>
+
+        <!-- Bento B: Metrics Sub-Grid (Span 8) -->
+        <div class="bento-col-8 bento-metrics-grid">
+          <div class="card" onclick="nav('residents',null)" style="cursor:pointer; text-align: center;">
+            <div class="card-title" style="justify-content:center;">Total Residents</div>
+            <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statResidents">—</div>
+            <div style="font-size:11px; color:#7D7975;"><span id="statActive">0</span> verified accounts</div>
+          </div>
+
+          <div class="card" onclick="nav('issues',null)" style="cursor:pointer; text-align: center;">
+            <div class="card-title" style="justify-content:center;">Open Concerns</div>
+            <div style="font-size:36px; font-weight:700; color:#f08080; margin: 10px 0 6px;" id="statIssues">—</div>
+            <div style="font-size:11px; color:#7D7975;">requires resolution</div>
+          </div>
+
+          <div class="card" onclick="nav('delinquents',null)" style="cursor:pointer; text-align: center;">
+            <div class="card-title" style="justify-content:center;">Delinquents</div>
+            <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statDelinq">—</div>
+            <div style="font-size:11px; color:#7D7975;">outstanding balance</div>
+          </div>
+        </div>
+
+        <!-- Bento C: Balance & Approvals (Span 4) -->
+        <div class="bento-col-4" style="display: flex; flex-direction: column; gap: 24px;">
+          <div class="card" onclick="nav('finance',null)" style="cursor:pointer; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px;">
+            <div>
+              <div class="card-title" style="margin-bottom:4px;">Unpaid Dues</div>
+              <div style="font-size:22px; font-weight:700; color:#2B2927;" id="statBalance">—</div>
+            </div>
+            <span style="font-size:24px;">💳</span>
+          </div>
+
+          <div class="card" onclick="nav('residents',null)" id="pendingStatCard" style="cursor:pointer; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-left: 3px solid #f59e0b;">
+            <div>
+              <div class="card-title" style="margin-bottom:4px; color:#f59e0b;">Pending Accounts</div>
+              <div style="font-size:22px; font-weight:700; color:#f59e0b;" id="statPending">0</div>
+            </div>
+            <span style="font-size:24px;">⏳</span>
+          </div>
+        </div>
+
+        <!-- Bento D: Live Feed (Span 8) -->
+        <div class="card bento-col-8">
+          <div class="card-title">Recent Activity Feed</div>
+          <div id="activityFeed"></div>
+        </div>
+
+        <!-- Bento E: Collection Rate Stats (Span 4) -->
+        <div class="card bento-col-4">
+          <div class="card-title">Collection Rate</div>
+          <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statPayPct">—</div>
+          <div style="font-size:11px; color:#7D7975; margin-bottom: 12px;" id="statPaySub">Dues summary</div>
+          <div class="progress-wrap"><div class="progress-bar" id="statPayBar" style="width:0%;background:var(--accent);"></div></div>
+          
+          <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;">
+              <span>Paid</span><span style="color:#2E6F40;font-weight:600;"><span id="payCountPaid">—</span> hh</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" id="payBarPaid" style="width:0%;background:rgba(46,111,64,0.75);"></div></div>
+            
+            <div style="display:flex;justify-content:space-between;font-size:11px;">
+              <span>Partial</span><span style="color:#A07D53;font-weight:600;"><span id="payCountPartial">—</span> hh</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" id="payBarPartial" style="width:0%;background:rgba(160,125,83,0.75);"></div></div>
+            
+            <div style="display:flex;justify-content:space-between;font-size:11px;">
+              <span>Unpaid</span><span style="color:var(--danger);font-weight:600;"><span id="payCountUnpaid">—</span> hh</span>
+            </div>
+            <div class="progress-wrap"><div class="progress-bar" id="payBarUnpaid" style="width:0%;background:var(--danger);"></div></div>
+          </div>
+          <button class="btn btn-sm btn-full" style="margin-top:20px;" onclick="nav('payments',null)">View Details</button>
+        </div>
+
+        <!-- Bento F: Issue Reports (Span 12) -->
+        <div class="card bento-col-12">
           <div class="card-title">Recent Issue Reports</div>
           <div id="dashIssueList"></div>
-          <button class="btn btn-sm" style="margin-top:10px;" onclick="nav('issues',null)">View All Issues</button>
-        </div>
-        <div class="card">
-          <div class="card-title">Payment Summary — May 2026</div>
-          <div style="margin-bottom:14px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
-              <span>Paid</span><span class="stat-green" style="font-weight:600;"><span id="payCountPaid">—</span> households</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar" id="payBarPaid" style="width:0%;background:var(--green);"></div></div>
-          </div>
-          <div style="margin-bottom:14px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
-              <span>Partial</span><span class="stat-yellow" style="font-weight:600;"><span id="payCountPartial">—</span> households</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar" id="payBarPartial" style="width:0%;background:var(--yellow);"></div></div>
-          </div>
-          <div>
-            <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;">
-              <span>Unpaid</span><span style="color:#f08080;font-weight:600;"><span id="payCountUnpaid">—</span> households</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar" id="payBarUnpaid" style="width:0%;background:#f08080;"></div></div>
-          </div>
-          <button class="btn btn-sm" style="margin-top:16px;" onclick="nav('payments',null)">View Payments</button>
+          <button class="btn btn-sm" style="margin-top:16px;" onclick="nav('issues',null)">View All Issues</button>
         </div>
       </div>
-
-      <div class="card">
-        <div class="card-title">Recent Activity</div>
-        <div id="activityFeed"></div>
+        </div>
       </div>
     </div>
 
@@ -1838,7 +1940,7 @@ const panelTitles={
 };
 
 function nav(name, el){
-  if(window.innerWidth <= 768) closeSidebar();
+  if(window.innerWidth <= 991) closeSidebar();
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const panel=document.getElementById('panel-'+name);

@@ -15,33 +15,22 @@
             min-height: 100vh;
             overflow-y: auto;
             padding: 20px 0;
+            background: #FAF6F0;
+            color: #2B2927;
         }
 
-        /* Animated BG particles */
+        /* Animated BG particles (hidden in minimalist style) */
         .bg-orb {
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.18;
-            pointer-events: none;
-            animation: orbFloat 8s ease-in-out infinite alternate;
-        }
-        .bg-orb-1 { width: 500px; height: 500px; background: #3b82f6; top: -10%; left: -10%; animation-delay: 0s; }
-        .bg-orb-2 { width: 400px; height: 400px; background: #8b5cf6; bottom: -5%; right: -5%; animation-delay: -3s; }
-        .bg-orb-3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 40%; animation-delay: -5s; }
-        @keyframes orbFloat {
-            from { transform: translate(0, 0) scale(1); }
-            to   { transform: translate(30px, -30px) scale(1.08); }
+            display: none;
         }
 
         /* ── PORTAL CARD ── */
         .portal-card {
             width: 440px;
             max-width: 95vw;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            background: #FFFFFF;
+            border: 1px solid #E6DFD5;
+            box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
             border-radius: 24px;
             padding: 44px 38px 36px;
             position: relative;
@@ -53,14 +42,8 @@
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
         .card-shimmer {
-            position: absolute;
-            top: 0; left: -100%;
-            width: 60%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-            animation: shimmer 4s ease-in-out infinite;
-            pointer-events: none;
+            display: none;
         }
-        @keyframes shimmer { 0%,100%{left:-100%} 50%{left:150%} }
 
         /* ── LOGO ── */
         .portal-logo {
@@ -69,22 +52,19 @@
         }
         .portal-logo img {
             width: 72px;
-            filter: drop-shadow(0 4px 16px rgba(59,130,246,0.4));
-            animation: logoPulse 3s ease-in-out infinite;
-        }
-        @keyframes logoPulse {
-            0%,100% { filter: drop-shadow(0 4px 16px rgba(59,130,246,0.3)); }
-            50%      { filter: drop-shadow(0 4px 28px rgba(59,130,246,0.65)); }
+            filter: none;
         }
         .portal-logo h1 {
             font-size: 22px;
             font-weight: 700;
             margin-top: 10px;
             letter-spacing: 0.04em;
+            color: #2B2927;
         }
         .portal-logo p {
             font-size: 12px;
-            opacity: 0.45;
+            opacity: 0.6;
+            color: #7D7975;
             letter-spacing: 0.05em;
             margin-top: 2px;
         }
@@ -93,8 +73,8 @@
         .role-tabs {
             display: flex;
             gap: 6px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: #FAF6F0;
+            border: 1px solid #E6DFD5;
             border-radius: 12px;
             padding: 5px;
             margin-bottom: 26px;
@@ -105,7 +85,7 @@
             border-radius: 9px;
             border: 1px solid transparent;
             background: transparent;
-            color: rgba(255,255,255,0.5);
+            color: #7D7975;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
@@ -116,25 +96,25 @@
             gap: 6px;
             margin-bottom: 0;
         }
-        .role-tab:hover { color: rgba(255,255,255,0.85); background: rgba(255,255,255,0.07); }
+        .role-tab:hover { color: #2B2927; background: rgba(0,0,0,0.02); }
         .role-tab.active {
-            background: rgba(59,130,246,0.22);
-            border-color: rgba(59,130,246,0.4);
-            color: #93c5fd;
+            background: #FFFFFF;
+            border-color: #E6DFD5;
+            color: #A07D53;
             font-weight: 600;
-            box-shadow: 0 2px 12px rgba(59,130,246,0.18);
+            box-shadow: 0 2px 8px rgba(43,41,39,0.04);
         }
         .role-tab.officer-active {
-            background: rgba(139,92,246,0.22);
-            border-color: rgba(139,92,246,0.4);
-            color: #c4b5fd;
+            background: #FFFFFF;
+            border-color: #E6DFD5;
+            color: #A07D53;
         }
 
         /* ── FORM SWITCH TABS (Login / Register) ── */
         .form-tabs {
             display: flex;
             gap: 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid #E6DFD5;
             margin-bottom: 22px;
         }
         .form-tab {
@@ -142,7 +122,7 @@
             padding: 9px;
             background: transparent;
             border: none;
-            color: rgba(255,255,255,0.4);
+            color: #7D7975;
             font-size: 13px;
             font-weight: 500;
             cursor: pointer;
@@ -151,8 +131,8 @@
             transition: all 0.2s;
             letter-spacing: 0.03em;
         }
-        .form-tab:hover { color: rgba(255,255,255,0.75); background: transparent; }
-        .form-tab.active { color: #fff; border-bottom-color: #3b82f6; font-weight: 600; background: transparent; }
+        .form-tab:hover { color: #2B2927; background: transparent; }
+        .form-tab.active { color: #A07D53; border-bottom-color: #A07D53; font-weight: 600; background: transparent; }
 
         /* ── FORM PANELS ── */
         .form-panel { display: none; animation: fadeSlide 0.28s ease both; }
@@ -169,9 +149,9 @@
         .portal-card input[type=tel],
         .portal-card select {
             width: 100%;
-            background: rgba(255,255,255,0.09);
-            border: 1px solid rgba(255,255,255,0.16);
-            color: white;
+            background: #FAF6F0;
+            border: 1px solid #E6DFD5;
+            color: #2B2927;
             padding: 12px 15px;
             border-radius: 11px;
             outline: none;
@@ -182,12 +162,12 @@
         }
         .portal-card input:focus,
         .portal-card select:focus {
-            background: rgba(0,0,0,0.45);
-            border-color: rgba(59,130,246,0.55);
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+            background: #FFFFFF;
+            border-color: #A07D53;
+            box-shadow: 0 0 0 3px rgba(160,125,83,0.08);
         }
-        .portal-card input::placeholder { color: rgba(255,255,255,0.3); }
-        .portal-card select option { background: #111827; }
+        .portal-card input::placeholder { color: #9C9790; }
+        .portal-card select option { background: #FFFFFF; color: #2B2927; }
 
         .input-row {
             display: flex;
@@ -238,30 +218,30 @@
         .portal-btn:active { transform: scale(0.98); }
 
         .btn-resident {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            box-shadow: 0 4px 20px rgba(59,130,246,0.35);
+            background: #2B2927;
+            color: #FFFFFF;
+            box-shadow: none;
         }
-        .btn-resident:hover { box-shadow: 0 6px 28px rgba(59,130,246,0.5); transform: translateY(-1px); }
+        .btn-resident:hover { background: #4A4744; transform: translateY(-1px); }
 
         .btn-officer {
-            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-            color: white;
-            box-shadow: 0 4px 20px rgba(139,92,246,0.35);
+            background: #A07D53;
+            color: #FFFFFF;
+            box-shadow: none;
         }
-        .btn-officer:hover { box-shadow: 0 6px 28px rgba(139,92,246,0.5); transform: translateY(-1px); }
+        .btn-officer:hover { background: #B6966E; transform: translateY(-1px); }
 
         /* ── DIVIDER ── */
         .divider {
             display: flex; align-items: center; gap: 12px;
-            font-size: 11px; opacity: 0.35;
+            font-size: 11px; opacity: 0.5; color: #7D7975;
             margin: 14px 0;
             letter-spacing: 0.06em;
             text-transform: uppercase;
         }
         .divider::before, .divider::after {
             content: ''; flex: 1;
-            height: 1px; background: rgba(255,255,255,0.15);
+            height: 1px; background: #E6DFD5;
         }
 
         /* ── ROLE BADGE ── */
@@ -275,28 +255,29 @@
             font-size: 13px;
         }
         .role-badge-resident {
-            background: rgba(59,130,246,0.12);
-            border: 1px solid rgba(59,130,246,0.25);
-            color: #93c5fd;
+            background: #FAF6F0;
+            border: 1px solid #E6DFD5;
+            color: #2B2927;
         }
         .role-badge-officer {
-            background: rgba(139,92,246,0.12);
-            border: 1px solid rgba(139,92,246,0.25);
-            color: #c4b5fd;
+            background: #FAF3E5;
+            border: 1px solid #E6DFD5;
+            color: #A07D53;
         }
         .role-badge-icon { font-size: 20px; }
         .role-badge-text { font-weight: 600; }
-        .role-badge-sub { font-size: 11px; opacity: 0.6; margin-top: 1px; }
+        .role-badge-sub { font-size: 11px; opacity: 0.7; margin-top: 1px; }
 
         /* ── FOOTER LINK ── */
         .portal-footer {
             text-align: center;
             margin-top: 18px;
             font-size: 12px;
-            opacity: 0.4;
+            opacity: 0.6;
+            color: #7D7975;
         }
         .portal-footer a {
-            color: #93c5fd;
+            color: #A07D53;
             text-decoration: none;
             opacity: 1;
             font-weight: 600;
@@ -313,15 +294,15 @@
             padding: 9px;
             border-radius: 10px;
             font-size: 12px;
-            color: rgba(255,255,255,0.4);
+            color: #7D7975;
             text-decoration: none;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid #E6DFD5;
             transition: all 0.2s;
         }
         .admin-link:hover {
-            color: rgba(255,255,255,0.75);
-            background: rgba(255,255,255,0.06);
-            border-color: rgba(255,255,255,0.18);
+            color: #2B2927;
+            background: #FAF6F0;
+            border-color: #D6CFC5;
         }
 
         /* ── ERROR / SUCCESS MSG ── */
@@ -333,8 +314,8 @@
             margin-bottom: 12px;
             animation: fadeSlide 0.2s ease both;
         }
-        .form-msg.error   { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
-        .form-msg.success { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #86efac; }
+        .form-msg.error   { background: #F9ECEC; border: 1px solid rgba(189,91,91,0.2); color: #BD5B5B; }
+        .form-msg.success { background: #EAF2EC; border: 1px solid rgba(107,142,112,0.2); color: #6B8E70; }
         .form-msg.show    { display: block; }
 
         /* ── PASSWORD EYE ── */
@@ -343,18 +324,18 @@
             right: 13px; top: 50%;
             transform: translateY(-50%);
             background: none; border: none;
-            color: rgba(255,255,255,0.35);
+            color: #7D7975;
             cursor: pointer; font-size: 15px;
             padding: 0; margin: 0;
             transition: color 0.2s;
             width: auto;
         }
-        .input-group .eye-btn:hover { color: rgba(255,255,255,0.7); background: none; box-shadow: none; }
+        .input-group .eye-btn:hover { color: #2B2927; background: none; box-shadow: none; }
 
         /* ── STRENGTH BAR ── */
         .strength-bar {
             height: 3px; border-radius: 3px;
-            background: rgba(255,255,255,0.1);
+            background: #FAF6F0;
             margin: -6px 0 12px;
             overflow: hidden;
         }
@@ -366,7 +347,8 @@
         /* ── OFFICER DEPT ── */
         .officer-note {
             font-size: 11px;
-            opacity: 0.45;
+            opacity: 0.6;
+            color: #7D7975;
             text-align: center;
             margin-top: 10px;
             line-height: 1.5;
@@ -385,7 +367,7 @@
 
     <!-- LOGO -->
     <div class="portal-logo">
-        <img src="{{ asset('emblem_white_1.svg') }}" alt="SubSync">
+        <img src="{{ asset('emblem_1.svg') }}" alt="SubSync">
         <h1>SubSync</h1>
         <p>TERRA NOVA SUBDIVISION PORTAL</p>
     </div>
