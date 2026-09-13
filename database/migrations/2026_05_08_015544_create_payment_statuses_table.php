@@ -6,25 +6,26 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('delinquents', function (Blueprint $table) {
+        Schema::create('payment_statuses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('house_id')->constrained('households')->onDelete('cascade');
-            $table->string('reason')->nullable();
+
+            $table->unsignedBigInteger('house_id');
+            $table->string('reason');
             $table->date('date_flagged')->nullable();
+
             $table->timestamps();
+
+            $table->foreign('house_id')
+                ->references('id')
+                ->on('households')
+                ->onDelete('cascade');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('delinquents');
+        Schema::dropIfExists('payment_statuses');
     }
 };

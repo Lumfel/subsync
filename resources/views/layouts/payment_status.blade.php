@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Deliquents</title>
+<title>Payment Statuses</title>
 <link rel="stylesheet" href="{{ asset('styles.css') }}">
 </head>
 
@@ -20,7 +20,7 @@
         <li><a href="/">Dashboard</a></li>
             <li><a href="/finance">Finance</a></li>
             <li><a href="/manage_users">Manage Users</a></li>
-            <li class="active"><a href="/deliquents">Deliquents</a></li>
+            <li class="active"><a href="/payment-statuses">Payment Statuses</a></li>
             <li><a href="/analytics">Analytics</a></li>
             <li><a href="/reports">Reports</a></li>
             <li><a href="/mapping"> Maps</a></li>
@@ -73,11 +73,11 @@
         </section>
         
        <div class="res_content">
-         @foreach($delinquents as $delinquent)
+         @foreach($paymentStatuses as $paymentStatus)
     <div class="res_card yt">
         <div class="thumb">
-            @if($delinquent->household && $delinquent->household->image)
-                <img src="{{ asset('storage/' . $delinquent->household->image) }}" alt="">
+            @if($paymentStatus->household && $paymentStatus->household->image)
+                <img src="{{ asset('storage/' . $paymentStatus->household->image) }}" alt="">
             @else
                 <img src="{{ asset('default-house.png') }}" alt="">
             @endif
@@ -85,19 +85,19 @@
 
         <div class="info">
             <h4>
-                Household #{{ $delinquent->house_id }}
+                Household #{{ $paymentStatus->house_id }}
             </h4>
 
             <p class="reason">
-                {{ $delinquent->reason }}
+                {{ $paymentStatus->reason }}
             </p>
 
             <p class="location">
-                {{ $delinquent->household->location ?? 'No location' }}
+                {{ $paymentStatus->household->location ?? 'No location' }}
             </p>
 
             <small>
-                Flagged: {{ \Carbon\Carbon::parse($delinquent->date_flagged)->format('M d, Y') }}
+                Flagged: {{ \Carbon\Carbon::parse($paymentStatus->date_flagged)->format('M d, Y') }}
             </small>
         </div>
     </div>

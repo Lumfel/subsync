@@ -50,4 +50,9 @@ class Household extends Model
     {
         return $this->hasMany(HouseholdMember::class, 'house_id');
     }
+
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'entity', 'entity_type', 'entity_id');
+    }
 }

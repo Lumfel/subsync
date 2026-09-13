@@ -107,8 +107,8 @@ Route::prefix('api')->group(function () {
     Route::put('/households/{id}', [ResidentController::class, 'updateHousehold']);
     Route::delete('/households/{id}', [ResidentController::class, 'destroyHousehold']);
 
-    // Delinquents
-    Route::get('/delinquents', [ResidentController::class, 'delinquents']);
+    // Payment Statuses
+    Route::get('/payment-statuses', [ResidentController::class, 'paymentStatuses']);
 
     // Household Members
     Route::get('/household-members', [ResidentController::class, 'members']);
@@ -120,6 +120,7 @@ Route::prefix('api')->group(function () {
     Route::get('/announcements', [AnnouncementController::class, 'index']);
     Route::post('/announcements', [AnnouncementController::class, 'store']);
     Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+    Route::patch('/announcements/{id}/archive', [AnnouncementController::class, 'archive']);
     Route::post('/announcements/{id}/view', [AnnouncementController::class, 'markViewed']);
 
     // Issues
@@ -128,6 +129,7 @@ Route::prefix('api')->group(function () {
     Route::get('/issues/my', [IssueController::class, 'myIssues']);
     Route::post('/issues', [IssueController::class, 'store']);
     Route::put('/issues/{id}/status', [IssueController::class, 'updateStatus']);
+    Route::put('/issues/{id}/priority', [IssueController::class, 'setPriority']);
     Route::post('/issues/{id}/respond', [IssueController::class, 'respond']);
 
     // Financial

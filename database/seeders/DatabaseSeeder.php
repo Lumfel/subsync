@@ -11,7 +11,7 @@ use App\Models\Announcement;
 use App\Models\IssueReport;
 use App\Models\Recommendation;
 use App\Models\FinancialRecord;
-use App\Models\Delinquent;
+use App\Models\PaymentStatus;
 use App\Models\Conversation;
 use App\Models\ConvParticipant;
 use App\Models\Message;
@@ -70,7 +70,7 @@ class DatabaseSeeder extends Seeder
         );
         $hh3 = Household::firstOrCreate(
             ['block_lot_number' => 'Blk 3 Lot 8'],
-            ['status' => 'Delinquent', 'latitude' => 10.6220, 'longitude' => 122.9605]
+            ['status' => 'Non-Compliant', 'latitude' => 10.6220, 'longitude' => 122.9605]
         );
         $hh4 = Household::firstOrCreate(
             ['block_lot_number' => 'Blk 4 Lot 2'],
@@ -111,7 +111,7 @@ class DatabaseSeeder extends Seeder
                 'name'            => 'Carlos Bautista',
                 'password'        => Hash::make('Resident@123'),
                 'contact_number'  => '09381234567',
-                'status'          => 'Delinquent',
+                'status'          => 'Non-Compliant',
                 'current_balance' => 2500.00,
             ]
         );
@@ -165,9 +165,9 @@ class DatabaseSeeder extends Seeder
             FinancialRecord::create(['resident_id' => $resident3->id, 'admin_id' => $admin->id, 'record_type' => 'Due', 'amount' => 2500.00, 'description' => 'Outstanding balance', 'record_date' => '2026-05-31']);
         }
 
-        // Delinquents
-        if (!Delinquent::count()) {
-            Delinquent::create(['house_id' => $hh3->id, 'reason' => 'Unpaid dues for 5 months', 'date_flagged' => '2026-05-01']);
+        // Payment Statuses
+        if (!PaymentStatus::count()) {
+            PaymentStatus::create(['house_id' => $hh3->id, 'reason' => 'Unpaid dues for 5 months', 'date_flagged' => '2026-05-01']);
         }
 
         // Conversations

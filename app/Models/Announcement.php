@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property int|null $admin_id
  * @property int|null $officer_id
+ * @property int|null $template_id
  * @property string $title
  * @property string $content
  * @property string $tag
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property-read \App\Models\Officer|null $officer
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AnnouncementView> $views
  * @property-read int|null $views_count
+ * @property-read \App\Models\AnnouncementTemplate|null $template
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement query()
@@ -30,13 +32,14 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereTag($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereTemplateId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
  * @method static int count(string $columns = '*')
  * @mixin \Eloquent
  */
 class Announcement extends Model
 {
-    protected $fillable = ['admin_id', 'officer_id', 'title', 'content', 'tag', 'target', 'priority', 'event_date'];
+    protected $fillable = ['admin_id', 'officer_id', 'template_id', 'title', 'content', 'tag', 'target', 'priority', 'event_date', 'status'];
 
     public function admin()
     {
@@ -46,6 +49,11 @@ class Announcement extends Model
     public function officer()
     {
         return $this->belongsTo(Officer::class);
+    }
+
+    public function template()
+    {
+        return $this->belongsTo(AnnouncementTemplate::class);
     }
 
     public function views()

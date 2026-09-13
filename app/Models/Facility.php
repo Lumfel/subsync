@@ -39,4 +39,9 @@ class Facility extends Model
     {
         return $this->belongsTo(Admin::class);
     }
+
+    public function media()
+    {
+        return $this->morphMany(Media::class, 'entity', 'entity_type', 'entity_id');
+    }
 }

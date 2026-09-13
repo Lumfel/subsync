@@ -6,7 +6,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Resident Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root {
@@ -34,12 +34,16 @@
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Times New Roman', serif;
   background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
+  font-size: 18px;
+  line-height: 1.75;
 }
+
 
 /* ───── Page ───── */
 .page { max-width: 1400px; width: 95%; margin: 0 auto; padding: 0 24px; }
@@ -95,33 +99,33 @@ body {
   color: var(--text); margin-bottom: 4px;
 }
 .card-subtitle {
-  font-size: 12px; color: var(--text-dim);
-  margin-bottom: 20px; line-height: 1.5;
+  font-size: 13px; color: var(--text-dim);
+  margin-bottom: 20px; line-height: 1.65;
 }
 .card-divider { height: 1px; background: rgba(230,223,213,0.65); margin: 16px 0; }
 
 /* ───── Form helpers ───── */
 .f-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .f-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
-.f-label { font-size: 11px; color: var(--text-dim); letter-spacing: 0.04em; }
+.f-label { font-size: 12px; color: var(--text-dim); letter-spacing: 0.03em; }
 input[type=text], textarea, select {
   background: #FFFFFF; border: 1px solid var(--glass-border);
-  color: var(--text); padding: 9px 13px; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 13px; outline: none;
+  color: var(--text); padding: 10px 14px; border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
   transition: border-color 0.2s, background 0.2s; width: 100%;
 }
 input[type=text]:focus, textarea:focus, select:focus {
   background: #FFFFFF; border-color: rgba(160,125,83,0.4);
 }
 input::placeholder, textarea::placeholder { color: var(--text-dim); }
-textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
+textarea { resize: vertical; min-height: 88px; line-height: 1.65; }
 select { cursor: pointer; }
 select option { background: #FFFFFF; color: var(--text); }
 
 .btn {
-  padding: 9px 18px; background: var(--accent-dim); border: 1px solid var(--accent-border);
+  padding: 10px 20px; background: var(--accent-dim); border: 1px solid var(--accent-border);
   color: var(--accent); border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
   cursor: pointer; transition: background 0.2s, transform 0.15s; white-space: nowrap;
 }
 .btn:hover { background: rgba(232,168,124,0.26); transform: translateY(-1px); }
@@ -191,8 +195,8 @@ select option { background: #FFFFFF; color: var(--text); }
 .ann-item:hover { transform: translateY(-1.5px); box-shadow: 0 6px 16px rgba(43,41,39,0.03); }
 .ann-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
 .ann-date { font-size: 11px; color: var(--text-dim); }
-.ann-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
-.ann-body { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+.ann-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; text-align: center; }
+.ann-body { font-size: 13px; color: var(--text-mid); line-height: 1.6; text-align: center; }
 
 /* ── Dues Card ── */
 .res-balance-card {
@@ -643,7 +647,7 @@ select option { background: #FFFFFF; color: var(--text); }
   <!-- ═══════════ MESSAGES ═══════════ -->
   <div class="tab-panel" id="panel-messages">
     <div class="card" style="padding:24px; margin-top:0;">
-      <div class="card-title">Direct Messages</div>
+      <div class="card-title">Community Group Chat</div>
       <div class="msg-layout">
         <!-- Sidebar threads -->
         <div class="msg-sidebar">
@@ -695,16 +699,7 @@ select option { background: #FFFFFF; color: var(--text); }
             <option>Other</option>
           </select>
         </div>
-        <div class="f-field">
-          <span class="f-label">Priority Level</span>
-          <select id="issuePriority">
-            <option value="">Select priority…</option>
-            <option value="Critical">🚨 Critical / Emergency — Immediate danger</option>
-            <option value="High">🔴 High — Urgent, same-day attention</option>
-            <option value="Medium">🟡 Medium — Within a few days</option>
-            <option value="Low">🟢 Low — General concern</option>
-          </select>
-        </div>
+
       </div>
       <div class="f-row">
         <div class="f-field">
@@ -715,7 +710,14 @@ select option { background: #FFFFFF; color: var(--text); }
       <div class="f-row">
         <div class="f-field">
           <span class="f-label">Details</span>
-          <textarea id="issueBody" placeholder="Describe the issue in detail — location, when it started, how it affects residents…"></textarea>
+          <textarea id="issueBody" placeholder="Describe the issue in detail — location, when it started, how it affects residents…" style="min-height:88px;resize:vertical;"></textarea>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">📸 Photos (optional, up to 5)</span>
+          <input type="file" id="issueImages" accept="image/*" multiple style="font-size:13px;padding:6px 0;">
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Attach photos to help our team understand the issue.</div>
         </div>
       </div>
       <div class="f-row">
@@ -829,16 +831,7 @@ select option { background: #FFFFFF; color: var(--text); }
             <option>Other</option>
           </select>
         </div>
-        <div class="f-field">
-          <span class="f-label">Priority Level</span>
-          <select id="issuePriority">
-            <option value="">Select priority…</option>
-            <option value="Critical">🚨 Critical / Emergency — Immediate danger</option>
-            <option value="High">🔴 High — Urgent, same-day attention</option>
-            <option value="Medium">🟡 Medium — Within a few days</option>
-            <option value="Low">🟢 Low — General concern</option>
-          </select>
-        </div>
+
       </div>
       <div class="f-row">
         <div class="f-field">
@@ -849,7 +842,14 @@ select option { background: #FFFFFF; color: var(--text); }
       <div class="f-row">
         <div class="f-field">
           <span class="f-label">Details</span>
-          <textarea id="issueBody" placeholder="Describe the issue in detail — location, when it started, how it affects residents…"></textarea>
+          <textarea id="issueBody" placeholder="Describe the issue in detail — location, when it started, how it affects residents…" style="min-height:88px;resize:vertical;"></textarea>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field">
+          <span class="f-label">📸 Photos (optional, up to 5)</span>
+          <input type="file" id="issueImages" accept="image/*" multiple style="font-size:13px;padding:6px 0;">
+          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Attach photos to help our team understand the issue.</div>
         </div>
       </div>
       <div class="f-row">
@@ -1061,6 +1061,20 @@ document.addEventListener('DOMContentLoaded', ()=>{
     }
   }, 30000);
 });
+function viewAnnouncement(id) {
+  const ann = announcements.find(a => a.id === id);
+  if (ann) {
+    document.getElementById('annV-tag').className = `pill pill-${ann.tag||'notice'}`;
+    document.getElementById('annV-tag').textContent = ann.tag.charAt(0).toUpperCase() + ann.tag.slice(1);
+    document.getElementById('annV-priority').style.display = ann.priority === 'High' ? '' : 'none';
+    document.getElementById('annV-title').textContent = ann.title;
+    document.getElementById('annV-by').textContent = ann.posted_by;
+    document.getElementById('annV-meta').innerHTML = `<span>${ann.created_at}</span>${ann.target && ann.target !== 'All Residents' ? `<span> • ${ann.target}</span>` : ''}${ann.event_date ? `<span> • ${ann.event_date}</span>` : ''}`;
+    document.getElementById('annV-content').textContent = ann.content;
+    document.getElementById('modal-annView').classList.add('open');
+  }
+}
+
 function renderAnnouncements(){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   document.getElementById('announcementList').innerHTML=announcements.length?announcements.map(a=>{
@@ -1068,8 +1082,11 @@ function renderAnnouncements(){
     if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
     if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
     if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
+    // Add status pill (only show Active announcements to residents anyway, but good to have)
+    const statusClass = a.status === 'Archived' ? 'pill-inactive' : 'pill-active';
+    meta.push('<span class="pill '+statusClass+'" style="font-size:11px;">'+a.status+'</span>');
     return `
-    <div class="ann-item ann-item-${a.tag||'notice'}">
+    <div class="ann-item ann-item-${a.tag||'notice'}" onclick="viewAnnouncement(${a.id})">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         <span class="ann-date">${a.created_at}</span>
@@ -1093,7 +1110,16 @@ async function loadResidentThreads(){
   }
   data.forEach((t,i)=>{threads[t.id]={...t,messages:[]};});
   if(sidebar){
-    sidebar.innerHTML=data.map((t,i)=>`<div class="msg-thread-item${i===0?' active':''}" onclick="selectResThread(${t.id},this)">
+    // Sort threads to put group chat first (Community Chat)
+    const sortedData = [...data].sort((a, b) => {
+      const isGroupA = a.title === 'Community Chat';
+      const isGroupB = b.title === 'Community Chat';
+      if (isGroupA && !isGroupB) return -1;
+      if (!isGroupA && isGroupB) return 1;
+      return 0;
+    });
+
+    sidebar.innerHTML=sortedData.map((t,i)=>`<div class="msg-thread-item${i===0?' active':''}" onclick="selectResThread(${t.id},this)">
       <div class="msg-thread-avatar ta-admin">${(t.title||'?').substring(0,2).toUpperCase()}</div>
       <div class="msg-thread-info">
         <div class="msg-thread-name">${t.title}</div>
@@ -1102,10 +1128,10 @@ async function loadResidentThreads(){
       <button class="msg-thread-del" onclick="event.stopPropagation();deleteResidentConversation(${t.id})" title="Delete">🗑</button>
     </div>`).join('');
   }
-  // Load first thread
-  currentThread=data[0].id;
-  document.getElementById('chat-name').textContent=data[0].title||'Admin';
-  document.getElementById('chat-avatar').textContent=(data[0].title||'SA').substring(0,2).toUpperCase();
+  // Load first thread (will be group chat if it exists)
+  currentThread=sortedData[0].id;
+  document.getElementById('chat-name').textContent=sortedData[0].title||'Admin';
+  document.getElementById('chat-avatar').textContent=(sortedData[0].title||'SA').substring(0,2).toUpperCase();
   const msgs=await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json()).catch(()=>[]);
   threads[currentThread].messages=msgs;
   renderMessages();
@@ -1247,15 +1273,19 @@ function renderIssues(){
   const priStyle={Critical:'background:rgba(220,30,30,0.18);color:#ff5555;border:1px solid rgba(220,30,30,0.4);',High:'background:rgba(240,128,128,0.13);color:#f08080;border:1px solid rgba(240,128,128,0.3);',Medium:'background:rgba(245,166,35,0.13);color:var(--yellow);border:1px solid rgba(245,166,35,0.3);',Low:'background:rgba(76,175,80,0.13);color:var(--green);border:1px solid rgba(76,175,80,0.3);'};
   el.innerHTML=issues.map(i=>{
     const priLabel={Critical:'🚨 Critical',High:'🔴 High',Medium:'🟡 Medium',Low:'🟢 Low'}[i.priority]||'';
-    const priSpan=i.priority?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;${priStyle[i.priority]||''}">${priLabel}</span>`:'';
+    const priSpan=i.priority?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;${priStyle[i.priority]||''}">${priLabel}</span><span style="font-size:10px;color:var(--text-dim);margin-left:2px;">assigned</span>`:'';
     const isCritical=i.priority==='Critical';
+    // Photo gallery
+    const photos=(i.media||[]);
+    const gallery=photos.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">${photos.map(m=>`<a href="${m.url}" target="_blank"><img src="${m.url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);" loading="lazy"></a>`).join('')}</div>`:'';
     return `
-    <div class="issue-item" style="${isCritical?'border-left:3px solid #ff4040;animation:pulse-critical 2s ease-in-out infinite;':''}">
+    <div class="issue-item" style="${isCritical?'border-left:3px solid #ff4040;':''}">
       <div class="issue-top">
         <div class="issue-title">${i.title}</div>
         <div style="display:flex;gap:6px;align-items:center;">${priSpan}${statusPill[i.status]||''}</div>
       </div>
       <div class="issue-body">${i.description}</div>
+      ${gallery}
       <div class="issue-meta">
         <span class="pill pill-notice">${i.category}</span>
         <span class="meta-txt">· #${i.id} · Filed ${i.created_at}</span>
@@ -1267,29 +1297,33 @@ function renderIssues(){
         </div>`:''}
     </div>`}).join('');
 }
-
 async function submitIssue(){
   const category=document.getElementById('issueCategory').value;
-  const priority=document.getElementById('issuePriority').value;
   const title=document.getElementById('issueTitle').value.trim();
   const description=document.getElementById('issueBody').value.trim();
   const latitude=document.getElementById('issue-lat').value||null;
   const longitude=document.getElementById('issue-lng').value||null;
   if(!category||!title||!description){showToast('⚠ Please fill in all fields.');return;}
-  if(priority==='Critical'&&!confirm('🚨 You are about to submit a CRITICAL / EMERGENCY issue.\n\nThis will immediately alert the admin and officers.\n\nContinue?')) return;
-  const res=await fetch('/api/issues',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify({category,title,description,latitude,longitude,priority:priority||null})});
+  const fd=new FormData();
+  fd.append('category',category);
+  fd.append('title',title);
+  fd.append('description',description);
+  if(latitude) fd.append('latitude',latitude);
+  if(longitude) fd.append('longitude',longitude);
+  const imgInput=document.getElementById('issueImages');
+  if(imgInput&&imgInput.files.length){
+    Array.from(imgInput.files).slice(0,5).forEach(f=>fd.append('images[]',f));
+  }
+  const res=await fetch('/api/issues',{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:fd});
   const data=await res.json();
   if(data.success){
-    ['issueCategory','issuePriority','issueTitle','issueBody','issue-lat','issue-lng'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
+    ['issueCategory','issueTitle','issueBody','issue-lat','issue-lng'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    if(imgInput) imgInput.value='';
     const disp=document.getElementById('issue-loc-display');
     if(disp) disp.textContent='No location set';
     closeIssuePicker();
     await loadIssues();
-    if(priority==='Critical'){
-      showToast('🚨 CRITICAL issue submitted. Admin has been notified.');
-    } else {
-      showToast('✅ Report submitted. The admin will review it shortly.');
-    }
+    showToast('✅ Report submitted. The admin will review it shortly.');
   } else {
     showToast('⚠ '+(data.message||'Failed to submit report. Please try again.'));
   }
@@ -1437,8 +1471,23 @@ function initResidentMap() {
 
   fetch('/api/map/facilities').then(r=>r.json()).then(data=>{
     data.forEach(f=>{
+      let popupContent = `<strong>${f.name}</strong>`;
+      if (f.description) popupContent += `<br><small>${f.description}</small>`;
+
+      // Add photo thumbnails if available
+      if (f.media && f.media.length > 0) {
+        popupContent += '<br><div style="margin-top:8px;">';
+        f.media.slice(0, 3).forEach(m => {
+          popupContent += `<img src="${m.file_path}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin:2px;border:1px solid rgba(255,255,255,0.2);" loading="lazy" />`;
+        });
+        if (f.media.length > 3) {
+          popupContent += `<span style="font-size:10px;color:var(--text-dim);">+${f.media.length - 3} more</span>`;
+        }
+        popupContent += '</div>';
+      }
+
       L.marker([parseFloat(f.latitude),parseFloat(f.longitude)],{icon:makeResCircle('#4CAF50')})
-        .bindPopup(`<strong>${f.name}</strong>${f.description?'<br><small>'+f.description+'</small>':''}`)
+        .bindPopup(popupContent)
         .addTo(resMapInst);
     });
   });
@@ -1463,8 +1512,24 @@ function initResidentMap() {
   fetch('/api/map/issues').then(r=>r.json()).then(data=>{
     data.forEach(i=>{
       const color=i.status==='Resolved'?'#888':(i.status==='In Progress'?'#f5a623':'#e05555');
+      let popupContent = `<strong>${i.title}</strong>`;
+
+      // Add photo thumbnails if available
+      if (i.media && i.media.length > 0) {
+        popupContent += '<br><div style="margin-top:8px;">';
+        i.media.slice(0, 3).forEach(m => {
+          popupContent += `<img src="${m.file_path}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin:2px;border:1px solid rgba(255,255,255,0.2);" loading="lazy" />`;
+        });
+        if (i.media.length > 3) {
+          popupContent += `<span style="font-size:10px;color:var(--text-dim);">+${i.media.length - 3} more</span>`;
+        }
+        popupContent += '</div>';
+      }
+
+      popupContent += `<br><small>${i.status}</small>`;
+
       L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon:makeResCircle(color)})
-        .bindPopup(`<strong>${i.title}</strong><br><small>${i.status}</small>`)
+        .bindPopup(popupContent)
         .addTo(resMapInst);
     });
     resLayerHeatmap.setLatLngs(data.map(i => [parseFloat(i.latitude), parseFloat(i.longitude), 1.0]));
@@ -1536,6 +1601,27 @@ function closeIssuePicker() {
     <div style="display:flex;gap:8px;justify-content:flex-end;">
       <button onclick="closeNewConvModal()" style="padding:7px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:inherit;font-size:13px;cursor:pointer;">Cancel</button>
       <button onclick="startNewConversation()" style="padding:7px 14px;background:var(--accent,#4e8ef7);border:none;border-radius:6px;color:#fff;font-size:13px;cursor:pointer;font-weight:500;">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- Announcement View Modal -->
+<div class="modal-overlay" id="modal-annView" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:500px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span id="annV-tag" class="pill">Notice</span>
+      <span id="annV-priority" style="display:none;font-size:11px;font-weight:700;color:#f08080;">⚡ High Priority</span>
+    </div>
+    <div id="annV-title" style="font-size:17px;font-weight:700;margin-bottom:10px;line-height:1.4;">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;" id="annV-by">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px;" id="annV-meta">—</div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div id="annV-content" style="font-size:14px;line-height:1.7;white-space:pre-wrap;color:var(--text-mid);"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" id="annV-delBtn" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
+      <button class="btn btn-sm" id="annV-archBtn" style="background:var(--yellow-dim);border-color:rgba(196,150,70,0.3);color:var(--yellow);" onclick="toggleAnnArchive()">📦 Archive</button>
+      <button class="btn btn-sm" onclick="document.getElementById('modal-annView').classList.remove('open')">Close</button>
     </div>
   </div>
 </div>

@@ -88,13 +88,59 @@ class MessageController extends Controller
             ?? '';
     }
 
+    /**
+     * Ensure group conversation exists for residents
+     */
+    private function ensureGroupConversationExists(): int
+    {
+        // Check if group conversation already exists
+        $groupConv = Conversation::where('title', 'Community Chat')->first();
+
+        if (!$groupConv) {
+            // Create group conversation
+            $groupConv = Conversation::create([
+                'title' => 'Community Chat'
+            ]);
+
+            // Add all active residents to the group conversation
+            $residents = Resident::where('status', 'Active')->get();
+            foreach ($residents as $resident) {
+                ConvParticipant::create([
+                    'conversation_id' => $groupConv->id,
+                    'resident_id' => $resident->id,
+                    'participant_type' => 'resident',
+                ]);
+            }
+        } else {
+            // Ensure all active residents are participants (in case new residents were added)
+            $activeResidentIds = Resident::where('status', 'Active')->pluck('id')->toArray();
+            $participantIds = $groupConv->participants->where('participant_type', 'resident')->pluck('resident_id')->toArray();
+            $toAdd = array_diff($activeResidentIds, $participantIds);
+            foreach ($toAdd as $residentId) {
+                ConvParticipant::create([
+                    'conversation_id' => $groupConv->id,
+                    'resident_id' => $residentId,
+                    'participant_type' => 'resident',
+                ]);
+            }
+        }
+
+        return $groupConv->id;
+    }
+
     /** GET /api/messages/threads — list all conversations for current user */
     public function threads()
     {
         $actor = $this->currentActor();
 
         if ($actor['type'] === 'resident') {
+            // For residents, ensure group conversation exists and include it
+            $groupConvId = $this->ensureGroupConversationExists();
+
             $convs = Conversation::whereHas('participants', fn($q) => $q->where('resident_id', $actor['id']))
+                ->orWhere(function($query) use ($groupConvId) {
+                    $query->where('id', $groupConvId);
+                })
                 ->with([
                     'messages' => fn($q) => $q->latest()->limit(1),
                     'participants.resident:id,name',
@@ -116,8 +162,8 @@ class MessageController extends Controller
                 'participants.resident:id,name',
                 'participants.officer:id,name',
             ])
-                ->latest('id')
-                ->get();
+            ->latest('id')
+            ->get();
         }
 
         $result = $convs->map(fn($c) => [

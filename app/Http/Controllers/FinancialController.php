@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FinancialRecord;
 use App\Models\FinancialReport;
 use App\Models\Resident;
-use App\Models\Delinquent;
+use App\Models\PaymentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -17,21 +17,29 @@ class FinancialController extends Controller
     }
 
     /** GET /api/financial — all records (admin) */
-    public function index()
+    public function index(Request $request)
     {
-        $records = FinancialRecord::with('resident:id,name,house_id', 'resident.household:id,block_lot_number')
-            ->orderByDesc('record_date')
-            ->get()
-            ->map(fn($r) => [
-                'id'          => $r->id,
-                'resident_id' => $r->resident_id,
-                'resident'    => $r->resident?->name ?? '—',
-                'block_lot'   => $r->resident?->household?->block_lot_number ?? '—',
-                'record_type' => $r->record_type,
-                'description' => $r->description,
-                'amount'      => $r->amount,
-                'record_date' => $r->record_date,
-            ]);
+        $query = FinancialRecord::with('resident:id,name,house_id', 'resident.household:id,block_lot_number')
+            ->orderByDesc('record_date');
+
+        if ($request->query('date_from')) {
+            $query->whereDate('record_date', '>=', $request->query('date_from'));
+        }
+
+        if ($request->query('date_to')) {
+            $query->whereDate('record_date', '<=', $request->query('date_to'));
+        }
+
+        $records = $query->get()->map(fn($r) => [
+            'id'          => $r->id,
+            'resident_id' => $r->resident_id,
+            'resident'    => $r->resident?->name ?? '—',
+            'block_lot'   => $r->resident?->household?->block_lot_number ?? '—',
+            'record_type' => $r->record_type,
+            'description' => $r->description,
+            'amount'      => $r->amount,
+            'record_date' => $r->record_date,
+        ]);
 
         return response()->json($records);
     }
@@ -59,9 +67,25 @@ class FinancialController extends Controller
             'resident_id'  => 'required|exists:residents,id',
             'record_type'  => 'required|in:Due,Payment,Penalty,Adjustment',
             'description'  => 'nullable|string|max:255',
-            'amount'       => 'required|numeric',
+            'amount'       => 'required|numeric|min:0.01',
             'record_date'  => 'required|date',
         ]);
+
+        // Prevent exact duplicate cash payments (same resident, same amount, same date)
+        if ($data['record_type'] === 'Payment') {
+            $duplicate = FinancialRecord::where('resident_id', $data['resident_id'])
+                ->where('record_type', 'Payment')
+                ->where('amount', $data['amount'])
+                ->whereDate('record_date', $data['record_date'])
+                ->exists();
+
+            if ($duplicate) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A cash payment of the same amount already exists for this resident on this date.',
+                ], 422);
+            }
+        }
 
         $data['admin_id'] = session('admin_id');
 
@@ -84,13 +108,13 @@ class FinancialController extends Controller
         $totalDues     = FinancialRecord::whereIn('record_type', ['Due', 'Penalty'])->sum('amount');
         $totalPayments = FinancialRecord::where('record_type', 'Payment')->sum('amount');
         $totalBalance  = Resident::sum('current_balance');
-        $delinquentCount = Delinquent::count();
+        $paymentStatusCount = PaymentStatus::count();
 
         return response()->json([
             'total_collected' => $totalPayments,
             'total_dues'      => $totalDues,
             'total_balance'   => $totalBalance,
-            'delinquent_count'=> $delinquentCount,
+            'payment_status_count'=> $paymentStatusCount,
         ]);
     }
 

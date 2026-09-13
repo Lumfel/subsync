@@ -6,7 +6,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Officer Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
 :root {
   --glass: #FFFFFF;
@@ -33,10 +33,12 @@
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Times New Roman', serif;
   background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
+  font-size: 18px;
+  line-height: 1.75;
 }
 
 /* ── BANNER ── */
@@ -172,34 +174,34 @@ body {
   color: var(--text); margin-bottom: 4px;
 }
 .card-subtitle {
-  font-size: 12px; color: var(--text-dim);
-  margin-bottom: 20px; line-height: 1.5;
+  font-size: 13px; color: var(--text-dim);
+  margin-bottom: 20px; line-height: 1.65;
 }
 
 /* ── FORMS ── */
 .f-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
 .f-field { display:flex; flex-direction:column; gap:5px; flex:1; min-width:140px; }
-.f-label { font-size:11px; color:var(--text-dim); letter-spacing:0.04em; }
+.f-label { font-size:12px; color:var(--text-dim); letter-spacing:0.03em; }
 input[type=text],input[type=date],textarea,select {
   background: #FFFFFF; border: 1px solid var(--glass-border);
-  color: var(--text); padding: 9px 13px; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 13px;
+  color: var(--text); padding: 10px 14px; border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif; font-size: 14px;
   outline: none; transition: border-color 0.2s, background 0.2s; width: 100%;
 }
 input:focus, textarea:focus, select:focus {
   background: #FFFFFF; border-color: rgba(160,125,83,0.4);
 }
 input::placeholder, textarea::placeholder { color: var(--text-dim); }
-textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
+textarea { resize: vertical; min-height: 88px; line-height: 1.65; }
 select { cursor: pointer; }
 select option { background: #FFFFFF; color: var(--text); }
 
 /* ── BUTTONS ── */
 .btn {
-  padding: 9px 18px; background: var(--accent-dim);
+  padding: 10px 20px; background: var(--accent-dim);
   border: 1px solid var(--accent-border);
   color: var(--accent); border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
   cursor: pointer; transition: background 0.2s, transform 0.15s; white-space: nowrap;
 }
 .btn:hover { background: rgba(160,125,83,0.2); transform: translateY(-1px); }
@@ -209,7 +211,7 @@ select option { background: #FFFFFF; color: var(--text); }
 .btn-green { background:var(--green-dim); border-color:rgba(90,122,94,0.25); color:var(--green); }
 .btn-purple { background:var(--purple-dim); border-color:rgba(122,106,144,0.25); color:var(--purple); }
 .btn-danger { background:rgba(189,91,91,0.1); border-color:rgba(189,91,91,0.25); color:var(--danger); }
-.btn-sm { padding: 6px 13px; font-size: 12px; }
+.btn-sm { padding: 7px 14px; font-size: 13px; }
 
 /* ── PILLS ── */
 .pill {
@@ -238,8 +240,8 @@ select option { background: #FFFFFF; color: var(--text); }
 .ann-item.ann-item-event  { border-left-color: var(--green); }
 .ann-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
 .ann-date { font-size:11px; color:var(--text-dim); }
-.ann-title { font-size:14px; font-weight:500; margin-bottom:4px; }
-.ann-body { font-size:13px; color:var(--text-mid); line-height:1.6; }
+.ann-title { font-size:14px; font-weight:500; margin-bottom:4px; text-align:center; }
+.ann-body { font-size:13px; color:var(--text-mid); line-height:1.6; text-align:center; }
 .ann-actions { display:flex; gap:8px; margin-top:10px; }
 
 /* ── REPORTS ── */
@@ -878,6 +880,11 @@ async function loadOfficerData(){
   adminAnnouncements=ann;
   if(ann.length) lastAnnouncementId=ann[0].id;
   myAnnouncements=ann.filter(a=>a.posted_by&&a.posted_by==='{{ $officerName }}');
+  // Create a map for quick lookup by id
+  announcementMap = {};
+  adminAnnouncements.forEach(a => {
+    announcementMap[a.id] = a;
+  });
   officerIssues=iss;
   renderOverviewAnn();
   renderMyAnn();
@@ -893,6 +900,21 @@ async function loadOfficerData(){
   if(document.getElementById('annCount'))         document.getElementById('annCount').textContent=myAnnThisMonth;
   if(document.getElementById('openReportsCount')) document.getElementById('openReportsCount').textContent=openIssues;
   if(document.getElementById('blockResidentsCount')) document.getElementById('blockResidentsCount').textContent=Array.isArray(res)?res.length:'—';
+}
+
+// View announcement details
+function viewAnnouncement(id) {
+  const ann = announcementMap[id];
+  if (ann) {
+    document.getElementById('annV-tag').className = `pill pill-${ann.tag||'notice'}`;
+    document.getElementById('annV-tag').textContent = ann.tag.charAt(0).toUpperCase() + ann.tag.slice(1);
+    document.getElementById('annV-priority').style.display = ann.priority === 'High' ? '' : 'none';
+    document.getElementById('annV-title').textContent = ann.title;
+    document.getElementById('annV-by').textContent = ann.posted_by;
+    document.getElementById('annV-meta').innerHTML = `<span>${ann.created_at}</span>${ann.target && ann.target !== 'All Residents' ? `<span> • ${ann.target}</span>` : ''}${ann.event_date ? `<span> • ${ann.event_date}</span>` : ''}`;
+    document.getElementById('annV-content').textContent = ann.content;
+    document.getElementById('modal-annView').classList.add('open');
+  }
 }
 
 /* ══ MESSAGES ══ */
@@ -1031,7 +1053,7 @@ function renderOverviewAnn(){
   const el=document.getElementById('overviewAnnList');
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   el.innerHTML=adminAnnouncements.length?adminAnnouncements.slice(0,5).map(a=>`
-    <div class="ann-item">
+    <div class="ann-item" onclick="viewAnnouncement(${a.id})">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
@@ -1041,6 +1063,9 @@ function renderOverviewAnn(){
       <div class="ann-body">${a.content}</div>
       ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
       ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
+        <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
+      </div>
     </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
 }
 
@@ -1052,7 +1077,7 @@ function renderMyAnn(){
     return;
   }
   el.innerHTML=myAnnouncements.map(a=>`
-    <div class="ann-item">
+    <div class="ann-item" onclick="viewAnnouncement(${a.id})">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
@@ -1062,8 +1087,11 @@ function renderMyAnn(){
       <div class="ann-body">${a.content}</div>
       ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
       ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
+        <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
+      </div>
       <div class="ann-actions">
-        <button class="btn btn-sm btn-danger" onclick="deleteMyAnn(${a.id})">Delete</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteMyAnn(${a.id});event.stopPropagation();">Delete</button>
       </div>
     </div>`).join('');
 }
@@ -1415,5 +1443,26 @@ setInterval(async()=>{
   renderSentFiles();
 })();
 </script>
+
+<!-- Announcement View Modal -->
+<div class="modal-overlay" id="modal-annView" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal-box" style="max-width:500px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+      <span id="annV-tag" class="pill">Notice</span>
+      <span id="annV-priority" style="display:none;font-size:11px;font-weight:700;color:#f08080;">⚡ High Priority</span>
+    </div>
+    <div id="annV-title" style="font-size:17px;font-weight:700;margin-bottom:10px;line-height:1.4;">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;" id="annV-by">—</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:16px;" id="annV-meta">—</div>
+    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:16px;margin-bottom:16px;">
+      <div id="annV-content" style="font-size:14px;line-height:1.7;white-space:pre-wrap;color:var(--text-mid);"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-close-btn" id="annV-delBtn" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
+      <button class="btn btn-sm" id="annV-archBtn" style="background:var(--yellow-dim);border-color:rgba(196,150,70,0.3);color:var(--yellow);" onclick="toggleAnnArchive()">📦 Archive</button>
+      <button class="btn btn-sm" onclick="document.getElementById('modal-annView').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

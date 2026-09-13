@@ -14,6 +14,10 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
+        $response->assertRedirect(route('login'));
+
+        // Follow the redirect and check that login page loads
+        $response = $this->get(route('login'));
         $response->assertStatus(200);
     }
 }

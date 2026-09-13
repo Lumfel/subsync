@@ -15,6 +15,7 @@ class MapController extends Controller
             Household::select('id', 'block_lot_number', 'status', 'latitude', 'longitude')
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
+                ->with('media')
                 ->get()
         );
     }
@@ -25,6 +26,7 @@ class MapController extends Controller
             Facility::select('id', 'name', 'description', 'status', 'latitude', 'longitude')
                 ->whereNotNull('latitude')
                 ->whereNotNull('longitude')
+                ->with('media')
                 ->get()
         );
     }

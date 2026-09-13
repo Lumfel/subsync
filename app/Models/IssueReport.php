@@ -43,6 +43,17 @@ class IssueReport extends Model
         'resident_id', 'category', 'title', 'description', 'latitude', 'longitude', 'status', 'priority',
     ];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($issue) {
+            if (!$issue->priority) {
+                $issue->priority = $issue->autoSetPriority();
+            }
+        });
+    }
+
     public function resident()
     {
         return $this->belongsTo(Resident::class);
@@ -56,5 +67,29 @@ class IssueReport extends Model
     public function media()
     {
         return $this->morphMany(Media::class, 'entity', 'entity_type', 'entity_id');
+    }
+
+    /**
+     * Automatically set priority based on issue category
+     */
+    public function autoSetPriority()
+    {
+        $categoryPriorityMap = [
+            'Safety' => 'Critical',
+            'Security' => 'Critical',
+            'Infrastructure' => 'High',
+            'Utilities' => 'High',
+            'Sanitation' => 'Medium',
+            'Maintenance' => 'Medium',
+            'Landscaping' => 'Low',
+            'Noise' => 'Medium',
+            'Pet Issues' => 'Low',
+            'Parking' => 'Medium',
+            'Administrative' => 'Low',
+            // Default fallback
+            'default' => 'Low'
+        ];
+
+        return $categoryPriorityMap[$this->category] ?? $categoryPriorityMap['default'];
     }
 }

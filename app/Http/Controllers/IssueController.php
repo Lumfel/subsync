@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\IssueReport;
 use App\Models\IssueResponse;
+use App\Models\Media;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class IssueController extends Controller
 {
@@ -17,11 +19,19 @@ class IssueController extends Controller
     /** GET /api/issues — all issues (admin/officer) */
     public function index(Request $request)
     {
-        $query = IssueReport::with('resident:id,name,house_id', 'resident.household:id,block_lot_number')
+        $query = IssueReport::with('resident:id,name,house_id', 'resident.household:id,block_lot_number', 'media')
             ->orderByDesc('created_at');
 
         if ($request->query('status')) {
             $query->where('status', $request->query('status'));
+        }
+
+        if ($request->query('date_from')) {
+            $query->whereDate('created_at', '>=', $request->query('date_from'));
+        }
+
+        if ($request->query('date_to')) {
+            $query->whereDate('created_at', '<=', $request->query('date_to'));
         }
 
         $issues = $query->get()->map(fn($i) => [
@@ -36,6 +46,10 @@ class IssueController extends Controller
             'created_at' => $i->created_at?->format('M d, Y'),
             'resident'   => $i->resident?->name ?? '—',
             'block_lot'  => $i->resident?->household?->block_lot_number ?? '—',
+            'media'      => $i->media->map(fn($m) => [
+                'id'  => $m->id,
+                'url' => Storage::url($m->file_path),
+            ]),
             'responses'  => $i->responses->map(fn($r) => [
                 'id'       => $r->id,
                 'content'  => $r->response_content,
@@ -56,7 +70,7 @@ class IssueController extends Controller
         }
 
         $issues = IssueReport::where('resident_id', $residentId)
-            ->with('responses')
+            ->with('responses', 'media')
             ->orderByDesc('created_at')
             ->get()
             ->map(fn($i) => [
@@ -68,6 +82,10 @@ class IssueController extends Controller
                 'priority'    => $i->priority,
                 'created_at'  => $i->created_at?->format('M d, Y'),
                 'response'    => $i->responses->first()?->response_content,
+                'media'       => $i->media->map(fn($m) => [
+                    'id'  => $m->id,
+                    'url' => Storage::url($m->file_path),
+                ]),
             ]);
 
         return response()->json($issues);
@@ -82,7 +100,8 @@ class IssueController extends Controller
             'description' => 'required|string',
             'latitude'    => 'nullable|numeric|between:-90,90',
             'longitude'   => 'nullable|numeric|between:-180,180',
-            'priority'    => 'nullable|in:Low,Medium,High,Critical',
+            'images'      => 'nullable|array',
+            'images.*'    => 'image|max:4096',
         ]);
 
         $residentId = $this->residentId($request);
@@ -93,8 +112,26 @@ class IssueController extends Controller
 
         $data['resident_id'] = $residentId;
         $data['status']      = 'Pending';
+        unset($data['images']);
 
         $issue = IssueReport::create($data);
+
+        // Handle uploaded images
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $file) {
+                $path = $file->store('issues', 'public');
+                Media::create([
+                    'uploader_id'   => $residentId,
+                    'uploader_type' => 'Resident',
+                    'entity_type'   => 'IssueReport',
+                    'entity_id'     => $issue->id,
+                    'file_name'     => $file->getClientOriginalName(),
+                    'file_path'     => $path,
+                ]);
+            }
+        }
+
+        $issue->load('media');
 
         return response()->json(['success' => true, 'issue' => [
             'id'          => $issue->id,
@@ -102,9 +139,13 @@ class IssueController extends Controller
             'title'       => $issue->title,
             'description' => $issue->description,
             'status'      => $issue->status,
-            'priority'    => $issue->priority,
+            'priority'    => null,
             'created_at'  => $issue->created_at->format('M d, Y'),
             'response'    => null,
+            'media'       => $issue->media->map(fn($m) => [
+                'id'  => $m->id,
+                'url' => Storage::url($m->file_path),
+            ]),
         ]]);
     }
 
@@ -116,6 +157,16 @@ class IssueController extends Controller
         $issue->update($data);
 
         return response()->json(['success' => true]);
+    }
+
+    /** PUT /api/issues/{id}/priority — admin/officer sets priority */
+    public function setPriority(Request $request, int $id)
+    {
+        $issue = IssueReport::findOrFail($id);
+        $data  = $request->validate(['priority' => 'required|in:Low,Medium,High,Critical']);
+        $issue->update($data);
+
+        return response()->json(['success' => true, 'priority' => $issue->priority]);
     }
 
     /** GET /api/issues/urgent-check — lightweight poll for critical/high unresolved issues */

@@ -15,6 +15,10 @@ return new class extends Migration {
             $table->string('description', 255)->nullable();
             $table->decimal('amount', 10, 2);
             $table->date('record_date');
+            // Gcash Payment Integration Tracking
+            $table->string('gcash_transaction_id', 100)->nullable()->unique();
+            $table->string('gcash_reference', 100)->nullable();
+            $table->string('payment_gateway', 50)->nullable()->default('manual'); // manual, gcash, bank_transfer, etc.
             $table->timestamp('created_at')->useCurrent();
         });
     }

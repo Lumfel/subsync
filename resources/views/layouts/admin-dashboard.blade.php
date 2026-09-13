@@ -6,7 +6,7 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Admin Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 :root {
@@ -28,18 +28,20 @@
   --yellow-dim: #FAF4E7;
   --purple: #8C829E;
   --purple-dim: #F2EFF4;
-  --radius: 12px;
-  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-sm: 10px;
   --radius-xs: 6px;
   --sidebar-w: 230px;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Times New Roman', serif;
   background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
   display: flex;
+  font-size: 18px;
+  line-height: 1.75;
 }
 
 /* ── SCROLLBAR ── */
@@ -96,7 +98,7 @@ body {
   padding: 9px 12px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-mid);
   border: 1px solid transparent;
   margin-bottom: 2px;
@@ -109,12 +111,12 @@ body {
   color: var(--accent);
   border-color: var(--accent-border);
 }
-.nav-icon { font-size: 15px; flex-shrink: 0; }
+.nav-icon { font-size: 16px; flex-shrink: 0; }
 .nav-badge {
   margin-left: auto;
   background: var(--accent);
   color: #1a100a;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   padding: 1px 7px;
   border-radius: 10px;
@@ -137,10 +139,10 @@ body {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent), #c87941);
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 600; color: #1a100a; flex-shrink: 0;
+  font-size: 14px; font-weight: 600; color: #1a100a; flex-shrink: 0;
 }
-.admin-name { font-size: 13px; font-weight: 500; }
-.admin-role { font-size: 10px; color: var(--text-dim); }
+.admin-name { font-size: 14px; font-weight: 500; }
+.admin-role { font-size: 12px; color: var(--text-dim); }
 
 /* ── MAIN ── */
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -155,15 +157,15 @@ body {
   top: 0;
   z-index: 10;
 }
-.topbar-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--text); }
+.topbar-title { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); }
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 .topbar-btn {
-  padding: 7px 14px;
+  padding: 8px 16px;
   background: var(--glass);
   border: 1px solid var(--glass-border);
   color: var(--text-mid);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
   transition: background 0.2s, color 0.2s;
@@ -207,12 +209,13 @@ body {
   box-shadow: 0 8px 24px rgba(43, 41, 39, 0.04);
 }
 .card-title {
-  font-size: 11px; font-weight: 600;
-  letter-spacing: 0.11em; text-transform: uppercase;
-  color: var(--text-dim); margin-bottom: 18px;
-  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text); margin-bottom: 4px;
 }
-.card-title::after { content:''; flex:1; height:1px; background:var(--glass-border); }
+.card-subtitle {
+  font-size: 13px; color: var(--text-dim);
+  margin-bottom: 18px; line-height: 1.65;
+}
 
 /* ── STAT GRID ── */
 .stat-grid {
@@ -232,9 +235,9 @@ body {
 }
 .stat-card:hover { background: var(--glass-hover); }
 .stat-card:active { opacity: 0.85; }
-.stat-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+.stat-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
 .stat-value { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); line-height: 1; margin-bottom: 4px; }
-.stat-sub { font-size: 11px; color: var(--text-dim); }
+.stat-sub { font-size: 12px; color: var(--text-dim); }
 .stat-green { color: var(--green); }
 .stat-yellow { color: var(--yellow); }
 .stat-blue { color: var(--blue); }
@@ -243,12 +246,12 @@ body {
 /* ── TABLE ── */
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th {
-  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--text-dim); font-weight: 600; text-align: left;
-  padding: 8px 12px; border-bottom: 1px solid var(--glass-border);
+  padding: 9px 12px; border-bottom: 1px solid var(--glass-border);
 }
 .data-table td {
-  padding: 12px; font-size: 13px; color: var(--text-mid);
+  padding: 12px; font-size: 14px; color: var(--text-mid);
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 .data-table tr:hover td { background: var(--glass-hover); }
@@ -256,9 +259,9 @@ body {
 
 /* ── PILLS ── */
 .pill {
-  display: inline-block; font-size: 10px; font-weight: 700;
-  letter-spacing: 0.07em; text-transform: uppercase;
-  padding: 2px 9px; border-radius: 20px;
+  display: inline-block; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px;
 }
 .pill-notice  { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(122,180,240,0.25); }
 .pill-urgent  { background:rgba(220,80,80,0.13); color:#f08080; border:1px solid rgba(220,80,80,0.25); }
@@ -271,20 +274,20 @@ body {
 
 /* ── BUTTONS ── */
 .btn {
-  padding: 9px 18px;
+  padding: 10px 20px;
   background: var(--accent-dim);
   border: 1px solid var(--accent-border);
   color: var(--accent);
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: 13px; font-weight: 500;
+  font-size: 14px; font-weight: 500;
   cursor: pointer;
   transition: background 0.2s, transform 0.15s;
   white-space: nowrap;
 }
 .btn:hover { background: rgba(232,168,124,0.26); transform: translateY(-1px); }
 .btn:active { transform: scale(0.98); }
-.btn-sm { padding: 6px 13px; font-size: 12px; }
+.btn-sm { padding: 7px 14px; font-size: 13px; }
 .btn-danger { background:rgba(220,80,80,0.13); border-color:rgba(220,80,80,0.25); color:#f08080; }
 .btn-blue { background:var(--blue-dim); border-color:rgba(122,180,240,0.25); color:var(--blue); }
 .btn-green { background:var(--green-dim); border-color:rgba(130,201,138,0.25); color:var(--green); }
@@ -293,24 +296,24 @@ body {
 /* ── FORMS ── */
 .f-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
 .f-field { display:flex; flex-direction:column; gap:5px; flex:1; min-width:140px; }
-.f-label { font-size:11px; color:var(--text-dim); letter-spacing:0.04em; }
+.f-label { font-size:12px; color:var(--text-dim); letter-spacing:0.03em; }
 input[type=text],input[type=date],input[type=month],input[type=email],input[type=password],textarea,select {
-  background: rgba(255,255,255,0.07);
+  background: #FFFFFF;
   border: 1px solid var(--glass-border);
-  color: var(--text); padding: 9px 13px;
+  color: var(--text); padding: 10px 14px;
   border-radius: var(--radius-sm);
   font-family: 'DM Sans', sans-serif;
-  font-size: 13px; outline: none; width: 100%;
+  font-size: 14px; outline: none; width: 100%;
   transition: border-color 0.2s, background 0.2s;
 }
 input:focus, textarea:focus, select:focus {
-  background: rgba(255,255,255,0.1);
-  border-color: rgba(232,168,124,0.4);
+  background: #FFFFFF;
+  border-color: rgba(160,125,83,0.4);
 }
 input::placeholder, textarea::placeholder { color: var(--text-dim); }
-textarea { resize: vertical; min-height: 88px; line-height: 1.55; }
+textarea { resize: vertical; min-height: 88px; line-height: 1.65; }
 select { cursor: pointer; }
-select option { background: #1a120d; color: var(--text); }
+select option { background: #FFFFFF; color: var(--text); }
 
 /* ── GRID HELPERS ── */
 .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
@@ -402,7 +405,7 @@ select option { background: #1a120d; color: var(--text); }
 .ta-r4 { background: rgba(185,154,245,0.22); color:var(--purple); }
 .ta-r5 { background: rgba(240,192,96,0.22); color:var(--yellow); }
 
-/* ── DELINQUENTS (YT cards) ── */
+/* ── PAYMENT STATUS (YT cards) ── */
 .res-content {
   display: flex;
   flex-wrap: wrap;
@@ -455,8 +458,8 @@ select option { background: #1a120d; color: var(--text); }
 .ann-item:hover { background:rgba(255,255,255,0.07); }
 .ann-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
 .ann-date { font-size:11px; color:var(--text-dim); }
-.ann-title { font-size:14px; font-weight:500; margin-bottom:4px; }
-.ann-body { font-size:13px; color:var(--text-mid); line-height:1.6; }
+.ann-title { font-size:14px; font-weight:500; margin-bottom:4px; text-align:center; }
+.ann-body { font-size:13px; color:var(--text-mid); line-height:1.6; text-align:center; }
 .ann-actions { display:flex; gap:8px; margin-top:10px; }
 
 /* ── PAYMENT ── */
@@ -878,13 +881,13 @@ select option { background: #1a120d; color: var(--text); }
 
     <div class="nav-section-label">Operations</div>
     <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon">🔧</span> Issue Reports <span class="nav-badge" id="issueBadge">0</span></div>
-    <div class="nav-item" onclick="nav('delinquents',this)"><span class="nav-icon">⚠️</span> Delinquents <span class="nav-badge" id="delinBadge">0</span></div>
+    <div class="nav-item" onclick="nav('payment-statuses',this)"><span class="nav-icon">⚠️</span> Payment Statuses <span class="nav-badge" id="paymentStatusBadge">0</span></div>
     <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon">🗺️</span> Subdivision Map</div>
     <div class="nav-item" onclick="nav('announcements',this)"><span class="nav-icon">📢</span> Announcements</div>
 
     <div class="nav-section-label">Finance</div>
     <div class="nav-item" onclick="nav('finance',this)"><span class="nav-icon">💳</span> Accounts &amp; Dues</div>
-    <div class="nav-item" onclick="nav('payments',this)"><span class="nav-icon">₱</span> Payments</div>
+    <div class="nav-item" onclick="nav('payment-statuses',this)"><span class="nav-icon">⚠️</span> Payment Status</div>
     <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon">📁</span> Reports <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
 
     <div class="nav-section-label">Communication &amp; System</div>
@@ -965,10 +968,10 @@ select option { background: #1a120d; color: var(--text); }
             <div style="font-size:11px; color:#7D7975;">requires resolution</div>
           </div>
 
-          <div class="card" onclick="nav('delinquents',null)" style="cursor:pointer; text-align: center;">
-            <div class="card-title" style="justify-content:center;">Delinquents</div>
-            <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statDelinq">—</div>
-            <div style="font-size:11px; color:#7D7975;">outstanding balance</div>
+          <div class="card" onclick="nav('payment-statuses',null)" style="cursor:pointer; text-align: center;">
+            <div class="card-title" style="justify-content:center;">Payment Statuses</div>
+            <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statPaymentStatus">—</div>
+            <div style="font-size:11px; color:#7D7975;">households needing attention</div>
           </div>
         </div>
 
@@ -1082,13 +1085,13 @@ select option { background: #1a120d; color: var(--text); }
       <div class="members-grid" id="membersGrid"></div>
     </div>
 
-    <!-- ══════════ DELINQUENTS ══════════ -->
-    <div class="panel" id="panel-delinquents">
+    <!-- ══════════ PAYMENT STATUSES ══════════ -->
+    <div class="panel" id="panel-payment-statuses">
       <div class="card" style="margin-bottom:16px;">
-        <div class="card-title">Flagged Households</div>
-        <div style="font-size:13px;color:var(--text-dim);">Households with outstanding issues, unpaid bills, or violations. Click a card for details.</div>
+        <div class="card-title">Households Needing Attention</div>
+        <div style="font-size:13px;color:var(--text-dim);">Households with payment issues, outstanding balances, or violations. Click a card for details.</div>
       </div>
-      <div class="res-content" id="delinquentGrid"></div>
+      <div class="res-content" id="paymentStatusGrid"></div>
     </div>
 
     <!-- ══════════ FINANCE ══════════ -->
@@ -1150,8 +1153,12 @@ select option { background: #1a120d; color: var(--text); }
             <input type="text" id="finSearch" placeholder="Search resident…" style="width:150px;" oninput="filterFinRecords()">
             <select id="finTypeFilter" onchange="filterFinRecords()">
               <option value="">All Types</option>
-              <option>Due</option><option>Payment</option><option>Penalty</option><option>Adjustment</option>
+              <option>Due</option><option>Cash Payment</option><option>Penalty</option><option>Adjustment</option>
             </select>
+            <label style="font-size:12px;color:var(--text-dim);">From</label>
+            <input type="date" id="finDateFrom" onchange="filterFinRecords()" style="width:140px;">
+            <label style="font-size:12px;color:var(--text-dim);">To</label>
+            <input type="date" id="finDateTo" onchange="filterFinRecords()" style="width:140px;">
             <button class="btn btn-sm btn-green" onclick="exportFinRecordsCSV()">⬇ Export CSV</button>
           </div>
         </div>
@@ -1186,11 +1193,11 @@ select option { background: #1a120d; color: var(--text); }
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Payment Records</div>
+        <div class="card-title">Payment Status Records</div>
         <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
           <input type="text" id="paySearch" placeholder="Search household…" style="flex:1;min-width:160px;" oninput="filterPayments()">
           <select id="payStatusFilter" style="width:auto;" onchange="filterPayments()">
-            <option value="">All Status</option><option>Paid</option><option>Partial</option><option>Unpaid</option>
+            <option value="">All Status</option><option>Paid</option><option>Partial</option><option value="Unpaid">Non-Compliant</option>
           </select>
           <button class="btn btn-sm btn-green" onclick="exportPaymentsCSV()">&#8595; Export Excel</button>
         </div>
@@ -1230,7 +1237,14 @@ select option { background: #1a120d; color: var(--text); }
 
     <!-- ══════════ ANNOUNCEMENTS ══════════ -->
     <div class="panel" id="panel-announcements">
-      <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="annStatusFilter" onchange="renderAnnouncements()" style="width:auto;">
+            <option value="all">All</option>
+            <option value="Active" selected>Active</option>
+            <option value="Archived">Archived</option>
+          </select>
+        </div>
         <button class="btn" onclick="openModal('ann')">+ New Announcement</button>
       </div>
       <div id="annList"></div>
@@ -1247,10 +1261,15 @@ select option { background: #1a120d; color: var(--text); }
         </select>
         <select id="issuePriFilter" onchange="renderIssues()" style="width:auto;">
           <option value="">All Priority</option>
+          <option value="Critical">Critical</option>
           <option value="High">High</option>
           <option value="Medium">Medium</option>
           <option value="Low">Low</option>
         </select>
+        <label style="font-size:12px;color:var(--text-dim);margin-left:4px;">From</label>
+        <input type="date" id="issueDateFrom" onchange="renderIssues()" style="width:140px;">
+        <label style="font-size:12px;color:var(--text-dim);">To</label>
+        <input type="date" id="issueDateTo" onchange="renderIssues()" style="width:140px;">
         <button class="btn btn-sm btn-green" style="margin-left:auto;" onclick="exportIssuesCSV()">&#8595; Export</button>
       </div>
       <div id="issueList"></div>
@@ -1357,7 +1376,7 @@ select option { background: #1a120d; color: var(--text); }
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-label">Members</div><div class="stat-value stat-blue" id="analyticMembers">—</div></div>
         <div class="stat-card"><div class="stat-label">Houses</div><div class="stat-value stat-accent" id="analyticHouses">—</div></div>
-        <div class="stat-card"><div class="stat-label">Delinquents</div><div class="stat-value" style="color:#f08080;" id="analyticDelinq">—</div></div>
+        <div class="stat-card"><div class="stat-label">Payment Statuses</div><div class="stat-value" style="color:#f08080;" id="analyticPaymentStatus">—</div></div>
       </div>
       <div class="graph-grid">
         <div class="card">
@@ -1366,7 +1385,7 @@ select option { background: #1a120d; color: var(--text); }
         </div>
         <div class="card">
           <div class="card-title">Resident Status</div>
-          <div id="chart-delinquents" style="width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;"></div>
+          <div id="chart-payment-statuses" style="width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;"></div>
         </div>
         <div class="card">
           <div class="card-title">Issues by Category</div>
@@ -1408,7 +1427,7 @@ select option { background: #1a120d; color: var(--text); }
         <div class="map-legend">
           <span><span class="map-dot" style="background:#4CAF50;"></span>Facility</span>
           <span><span class="map-dot" style="background:#4287f5;"></span>Household (Active)</span>
-          <span><span class="map-dot" style="background:#f08080;"></span>Household (Delinquent)</span>
+          <span><span class="map-dot" style="background:#f08080;"></span>Household (Non-Compliant)</span>
           <span><span class="map-dot" style="background:#e05555;"></span>Issue (Pending)</span>
           <span><span class="map-dot" style="background:#f5a623;"></span>Issue (In Progress)</span>
           <span><span class="map-dot" style="background:#888;"></span>Issue (Resolved, ≤7d)</span>
@@ -1455,6 +1474,13 @@ select option { background: #1a120d; color: var(--text); }
 <div class="modal-overlay" id="modal-ann">
   <div class="modal-box">
     <div class="modal-title">Post Announcement</div>
+    <!-- Template quick-fill -->
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <span style="font-size:11px;color:var(--text-dim);align-self:center;white-space:nowrap;">Template:</span>
+      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('notice')">📋 Notice</button>
+      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('announcement')">📢 Announcement</button>
+      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('event')">📅 Event</button>
+    </div>
     <div class="f-row">
       <div class="f-field"><span class="f-label">Type</span>
         <select id="annType"><option value="notice">Notice</option><option value="urgent">Urgent</option><option value="event">Event</option></select>
@@ -1472,7 +1498,7 @@ select option { background: #1a120d; color: var(--text); }
       </div>
     </div>
     <div class="f-row"><div class="f-field"><span class="f-label">Title</span><input type="text" id="annTitle" placeholder="Announcement title"></div></div>
-    <div class="f-row"><div class="f-field"><span class="f-label">Message</span><textarea id="annBody" placeholder="Write your announcement…"></textarea></div></div>
+    <div class="f-row"><div class="f-field"><span class="f-label">Message</span><textarea id="annBody" placeholder="Write your announcement…" style="min-height:100px;resize:vertical;"></textarea></div></div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('ann')">Cancel</button>
       <button class="btn btn-sm" onclick="postAnnouncement()">Post Announcement</button>
@@ -1721,7 +1747,7 @@ select option { background: #1a120d; color: var(--text); }
     </div>
     <div class="f-row">
       <div class="f-field"><span class="f-label">New Status</span>
-        <select id="statusHNew"><option>Active</option><option>Inactive</option><option>Delinquent</option></select>
+        <select id="statusHNew"><option>Active</option><option>Inactive</option><option>Non-Compliant</option></select>
       </div>
     </div>
     <div class="f-row">
@@ -1933,7 +1959,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
 /* ══════════════ NAVIGATION ══════════════ */
 const panelTitles={
   dashboard:'Dashboard Overview',residents:'Resident Management',members:'Members',
-  delinquents:'Delinquents',finance:'Finance',payments:'Payment Records',
+  paymentStatuses:'Payment Statuses',finance:'Finance',payments:'Non-Compliant Records',
   messages:'Resident Messaging',announcements:'Announcements',issues:'Issue Reports',
   manageusers:'Manage Users',officers:'Officers',recommendations:'Recommendations',analytics:'Analytics',
   mapping:'Maps · Terra Nova',reports:'Reports & Files'
@@ -1958,6 +1984,7 @@ function nav(name, el){
   if(name==='reports') renderReports();
   if(name==='mapping') setTimeout(initMap, 80);
   if(name==='manageusers') loadManageData();
+  if(name==='payment-statuses') renderPaymentStatuses();
 }
 
 /* ══════════════ DATA ══════════════ */
@@ -1970,7 +1997,7 @@ let officers = [];
 let recommendations = [];
 let payments = [];
 let membersData = [];
-let delinquents = [];
+let paymentStatuses = [];
 let threads = {};
 let currentThread = null;
 
@@ -1983,6 +2010,7 @@ async function apiGet(url){ const r=await fetch(url,{headers:{'Accept':'applicat
 async function apiPost(url,data){ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},body:JSON.stringify(data)}); return r.json(); }
 async function apiPut(url,data){ const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},body:JSON.stringify(data)}); return r.json(); }
 async function apiDelete(url){ const r=await fetch(url,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content}}); return r.json(); }
+async function apiPatch(url,data={}){ const r=await fetch(url,{method:'PATCH',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name=csrf-token]').content},body:JSON.stringify(data)}); return r.json(); }
 
 /* ══════════════ LOAD ALL DATA ══════════════ */
 async function loadAllData(){
@@ -1996,7 +2024,7 @@ async function loadAllData(){
   issues        = d.issues||[];
   officers      = (d.officers||[]).map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
   recommendations = d.recommendations||[];
-  delinquents   = Array.isArray(d.delinquents) ? d.delinquents : [];
+  paymentStatuses   = Array.isArray(d.paymentStatuses) ? d.paymentStatuses : [];
   payments      = residents; // same data, pay_status computed in renderPayments()
 
   // Reuse for Manage panel — no extra API calls needed
@@ -2010,8 +2038,8 @@ async function loadAllData(){
   // update stat cards
   if(document.getElementById('statResidents')) document.getElementById('statResidents').textContent = residents.length;
   if(document.getElementById('statActive'))    document.getElementById('statActive').textContent    = residents.filter(r=>r.status==='Active').length;
-  if(document.getElementById('statDelinq'))    document.getElementById('statDelinq').textContent    = delinquents.length;
-  if(document.getElementById('delinBadge'))     document.getElementById('delinBadge').textContent    = delinquents.length;
+  if(document.getElementById('statPaymentStatus'))    document.getElementById('statPaymentStatus').textContent    = paymentStatuses.length;
+  if(document.getElementById('paymentStatusBadge'))     document.getElementById('paymentStatusBadge').textContent    = paymentStatuses.length;
   const pendingCount = residents.filter(r=>r.status==='Pending').length;
   if(document.getElementById('statPending'))      document.getElementById('statPending').textContent = pendingCount;
   if(document.getElementById('pendingNoticeCount')) document.getElementById('pendingNoticeCount').textContent = pendingCount;
@@ -2049,7 +2077,7 @@ async function loadAllData(){
   renderDashboard();
   renderResidents();
   renderMembers();
-  renderDelinquents();
+  renderPaymentStatuses();
   renderPayments();
   renderAnnouncements();
   renderIssues();
@@ -2249,13 +2277,13 @@ async function addMemberSubmit(){
   }catch(e){msg.textContent='Error adding member.';}
 }
 
-function renderDelinquents(){
-  document.getElementById('delinquentGrid').innerHTML=delinquents.length?delinquents.map(d=>{
+function renderPaymentStatuses(){
+  document.getElementById('paymentStatusGrid').innerHTML=paymentStatuses.length?paymentStatuses.map(d=>{
     const residentNames=(d.residents||[]).map(r=>r.name).join(', ')||'—';
     const totalBal=(d.residents||[]).reduce((s,r)=>s+(r.current_balance||0),0);
     const encoded=encodeURIComponent(JSON.stringify(d));
     return `
-    <div class="res-card" onclick="openDelinquentDetail('${encoded}')" title="Click for details">
+    <div class="res-card" onclick="openPaymentStatusDetail('${encoded}')" title="Click for details">
       <div class="res-thumb">
         <div style="width:100%;height:100%;background:rgba(240,100,100,0.1);display:flex;align-items:center;justify-content:center;font-size:36px;">🏠</div>
       </div>
@@ -2266,10 +2294,10 @@ function renderDelinquents(){
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Outstanding: ₱${Number(totalBal).toLocaleString()} · Flagged: ${d.date_flagged||'—'}</div>
       </div>
     </div>`;
-  }).join(''):'<div class="empty-state"><div class="empty-icon">✅</div>No delinquent households.</div>';
+  }).join(''):'<div class="empty-state"><div class="empty-icon">✅</div>All households are in good standing.</div>';
 }
 
-function openDelinquentDetail(encoded){
+function openPaymentStatusDetail(encoded){
   const d=JSON.parse(decodeURIComponent(encoded));
   const totalBal=(d.residents||[]).reduce((s,r)=>s+(r.current_balance||0),0);
   const residentsHtml=(d.residents||[]).length
@@ -2286,14 +2314,14 @@ function openDelinquentDetail(encoded){
         </div>
       </div>`).join('')
     :'<div style="color:var(--text-dim);font-size:13px;">No resident records.</div>';
-  document.getElementById('delin-modal-block').textContent=d.block_lot||'—';
-  document.getElementById('delin-modal-reason').textContent=d.reason||'No reason provided';
-  document.getElementById('delin-modal-flagged').textContent=d.date_flagged||'—';
-  document.getElementById('delin-modal-total').textContent='₱'+Number(totalBal).toLocaleString();
-  document.getElementById('delin-modal-residents').innerHTML=residentsHtml;
-  document.getElementById('modal-delinquent').classList.add('open');
+  document.getElementById('paymentStatus-modal-block').textContent=d.block_lot||'—';
+  document.getElementById('paymentStatus-modal-reason').textContent=d.reason||'No reason provided';
+  document.getElementById('paymentStatus-modal-flagged').textContent=d.date_flagged||'—';
+  document.getElementById('paymentStatus-modal-total').textContent='₱'+Number(totalBal).toLocaleString();
+  document.getElementById('paymentStatus-modal-residents').innerHTML=residentsHtml;
+  document.getElementById('modal-payment-status').classList.add('open');
 }
-function closeDelinquent(){ document.getElementById('modal-delinquent').classList.remove('open'); }
+function closePaymentStatus(){ document.getElementById('modal-payment-status').classList.remove('open'); }
 
 function renderPayments(){
   const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
@@ -2381,11 +2409,15 @@ async function deleteConversation(id){
 
 function renderAnnouncements(){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
-  document.getElementById('annList').innerHTML=announcements.length?announcements.map(a=>{
+  const statusFilter=(document.getElementById('annStatusFilter')||{}).value||'Active';
+  const filtered=statusFilter==='all'?announcements:announcements.filter(a=>(a.status||'Active')===statusFilter);
+  document.getElementById('annList').innerHTML=filtered.length?filtered.map(a=>{
     const meta=[];
     if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
     if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
     if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
+    const statusClass=(a.status||'Active')==='Archived'?'pill-inactive':'pill-active';
+    meta.push('<span class="pill '+statusClass+'" style="font-size:11px;">'+(a.status||'Active')+'</span>');
     return `
     <div class="ann-item" onclick="openAnnView(${a.id})" style="cursor:pointer;" title="Click to view">
       <div class="ann-meta">
@@ -2397,9 +2429,49 @@ function renderAnnouncements(){
       <div class="ann-body">${a.content}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">By: ${a.posted_by}</div>
       <div class="ann-actions">
+        <button class="btn btn-sm" onclick="event.stopPropagation();archiveAnn(${a.id})">${(a.status||'Active')==='Archived'?'♻ Unarchive':'📦 Archive'}</button>
         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteAnn(${a.id})">Delete</button>
       </div>
-    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
+    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements.</div>';
+}
+async function archiveAnn(id){
+  const res=await apiPatch('/api/announcements/'+id+'/archive');
+  if(res&&res.success){
+    const a=announcements.find(x=>x.id===id);
+    if(a) a.status=res.announcement.status;
+    renderAnnouncements();
+    showToast(res.announcement.status==='Archived'?'📦 Announcement archived.':'♻ Announcement restored.');
+  } else {
+    showToast('⚠ Failed to update status.');
+  }
+}
+let viewingAnnId=null;
+function openAnnView(id){
+  const a=announcements.find(x=>x.id===id);
+  if(!a) return;
+  viewingAnnId=id;
+  const tagLabel={notice:'Notice',urgent:'🚨 Urgent',event:'📅 Event'};
+  document.getElementById('annV-tag').textContent=tagLabel[a.tag]||'Notice';
+  document.getElementById('annV-tag').className='pill pill-'+(a.tag||'notice');
+  document.getElementById('annV-priority').style.display=a.priority==='High'?'inline':'none';
+  document.getElementById('annV-title').textContent=a.title;
+  document.getElementById('annV-content').textContent=a.content;
+  document.getElementById('annV-by').textContent='Posted by '+a.posted_by+' on '+a.created_at;
+  const meta=[];
+  if(a.target&&a.target!=='All Residents') meta.push('👥 '+a.target);
+  if(a.event_date) meta.push('📅 Event date: '+a.event_date);
+  document.getElementById('annV-meta').textContent=meta.join(' · ')||'All Residents';
+  document.getElementById('annV-delBtn').onclick=()=>{ deleteAnn(a.id); document.getElementById('modal-annView').classList.remove('open'); };
+  const archBtn=document.getElementById('annV-archBtn');
+  if(archBtn){
+    archBtn.textContent=(a.status||'Active')==='Archived'?'♻ Unarchive':'📦 Archive';
+  }
+  document.getElementById('modal-annView').classList.add('open');
+}
+async function toggleAnnArchive(){
+  if(!viewingAnnId) return;
+  await archiveAnn(viewingAnnId);
+  document.getElementById('modal-annView').classList.remove('open');
 }
 async function deleteAnn(id){
   const res=await apiDelete('/api/announcements/'+id);
@@ -2432,6 +2504,20 @@ async function postAnnouncement(){
     showToast('⚠ '+(res.message||'Failed to post announcement.'));
   }
 }
+// Announcement template quick-fill
+function applyAnnTemplate(type){
+  const templates={
+    notice:{tag:'notice',title:'Community Notice',body:'Dear residents,\n\nPlease be informed that [details here].\n\nThank you for your cooperation.\n\nSUBSYNC Administration'},
+    announcement:{tag:'notice',title:'General Announcement',body:'Attention all residents,\n\n[Announcement details here].\n\nFor questions, please contact the HOA office.\n\nSUBSYNC Administration'},
+    event:{tag:'event',title:'Upcoming Event',body:'We are pleased to invite all residents to [Event Name].\n\n📅 Date: [Date]\n📍 Venue: [Location]\n🕐 Time: [Time]\n\nWe look forward to seeing you there!\n\nSUBSYNC Administration'},
+  };
+  const t=templates[type];
+  if(!t) return;
+  document.getElementById('annType').value=t.tag;
+  document.getElementById('annTitle').value=t.title;
+  document.getElementById('annBody').value=t.body;
+  if(type==='event') document.getElementById('annDate').value='';
+}
 
 let respondingId=null;
 // Derive priority client-side from category (no DB column needed)
@@ -2445,9 +2531,19 @@ function issuePriority(i){
 function renderIssues(){
   const sf=(document.getElementById('issueFilter')||{}).value||'';
   const pf=(document.getElementById('issuePriFilter')||{}).value||'';
+  const df=(document.getElementById('issueDateFrom')||{}).value||'';
+  const dt=(document.getElementById('issueDateTo')||{}).value||'';
   const filtered=issues.filter(i=>{
     if(sf&&i.status!==sf) return false;
-    if(pf&&issuePriority(i)!==pf) return false;
+    const pri=i.priority||issuePriority(i);
+    if(pf&&pri!==pf) return false;
+    if(df||dt){
+      const d=i.created_at?new Date(i.created_at):null;
+      if(d){
+        if(df&&d<new Date(df)) return false;
+        if(dt&&d>new Date(dt+'T23:59:59')) return false;
+      }
+    }
     return true;
   });
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
@@ -2758,9 +2854,11 @@ function openResidentDetail(id){
   document.getElementById('modal-residentDetail').classList.add('open');
 }
 
+let detailIssueId=null;
 function openIssueDetail(id){
   const i=issues.find(x=>x.id===id);
   if(!i) return;
+  detailIssueId=id;
   const pri=i.priority||issuePriority(i);
   const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
@@ -2769,6 +2867,15 @@ function openIssueDetail(id){
   document.getElementById('issD-who').textContent=i.resident+' · '+i.block_lot;
   document.getElementById('issD-cat').textContent=(i.category||'')+(i.category?' · ':'')+'#'+i.id+' · '+i.created_at;
   document.getElementById('issD-desc').textContent=i.description;
+  // Set priority dropdown to current value
+  const priSel=document.getElementById('issD-prioritySel');
+  if(priSel) priSel.value=i.priority||'';
+  // Photo gallery
+  const mediaEl=document.getElementById('issD-media');
+  if(mediaEl){
+    const photos=i.media||[];
+    mediaEl.innerHTML=photos.length?photos.map(m=>`<a href="${m.url}" target="_blank"><img src="${m.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--glass-border);cursor:pointer;" title="Click to open full size"></a>`).join(''):'';
+  }
   const hasLoc=i.latitude&&i.longitude;
   document.getElementById('issD-location').innerHTML=hasLoc?`<a href="https://maps.google.com/?q=${i.latitude},${i.longitude}" target="_blank" style="color:var(--blue);font-size:12px;">📍 View on map</a>`:'';
   const responses=i.responses||[];
@@ -2784,6 +2891,24 @@ function openIssueDetail(id){
     else { btn.style.display='none'; }
   }
   document.getElementById('modal-issueDetail').classList.add('open');
+}
+async function saveIssuePriority(){
+  if(!detailIssueId) return;
+  const priority=document.getElementById('issD-prioritySel').value;
+  if(!priority){showToast('⚠ Please select a priority.');return;}
+  const res=await apiPut('/api/issues/'+detailIssueId+'/priority',{priority});
+  if(res&&res.success){
+    const i=issues.find(x=>x.id===detailIssueId);
+    if(i) i.priority=priority;
+    renderIssues();
+    showToast('✅ Priority set to '+priority+'.');
+    // Update status display in modal
+    const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
+    const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
+    if(i) document.getElementById('issD-status').innerHTML=(statusPill[i.status]||'')+` <span style="font-size:11px;font-weight:700;color:${priColor[priority]||'var(--text-dim)'};">${priority}</span>`;
+  } else {
+    showToast('⚠ '+(res&&res.message||'Failed to set priority.'));
+  }
 }
 
 function openRecDetail(id){
@@ -2802,23 +2927,6 @@ function openRecDetail(id){
   document.getElementById('modal-recDetail').classList.add('open');
 }
 
-function openAnnView(id){
-  const a=announcements.find(x=>x.id===id);
-  if(!a) return;
-  const tagLabel={notice:'Notice',urgent:'🚨 Urgent',event:'📅 Event'};
-  document.getElementById('annV-tag').textContent=tagLabel[a.tag]||'Notice';
-  document.getElementById('annV-tag').className='pill pill-'+(a.tag||'notice');
-  document.getElementById('annV-priority').style.display=a.priority==='High'?'inline':'none';
-  document.getElementById('annV-title').textContent=a.title;
-  document.getElementById('annV-content').textContent=a.content;
-  document.getElementById('annV-by').textContent='Posted by '+a.posted_by+' on '+a.created_at;
-  const meta=[];
-  if(a.target&&a.target!=='All Residents') meta.push('👥 '+a.target);
-  if(a.event_date) meta.push('📅 Event date: '+a.event_date);
-  document.getElementById('annV-meta').textContent=meta.join(' · ')||'All Residents';
-  document.getElementById('annV-delBtn').onclick=()=>{ deleteAnn(a.id); document.getElementById('modal-annView').classList.remove('open'); };
-  document.getElementById('modal-annView').classList.add('open');
-}
 
 function renderFinancialRecords(records){
   if(!records||!Array.isArray(records)) return;
@@ -2830,12 +2938,12 @@ function renderFinancialRecords(records){
     tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;">No financial records yet.</td></tr>';
     return;
   }
-  tbody.innerHTML=records.map(r=>`<tr data-res="${(r.resident||'').toLowerCase()}" data-type="${r.record_type}">
+  tbody.innerHTML=records.map(r=>`<tr data-res="${(r.resident||'').toLowerCase()}" data-type="${r.record_type}" data-date="${r.record_date||''}">
     <td>
       <div style="font-size:13px;">${r.resident||'—'}</div>
       ${r.block_lot&&r.block_lot!=='—'?`<div style="font-size:10px;color:var(--text-dim);">${r.block_lot}</div>`:''}
     </td>
-    <td><span class="pill ${r.record_type==='Payment'?'pill-resolved':r.record_type==='Penalty'?'pill-urgent':'pill-pending'}">${r.record_type}</span></td>
+    <td><span class="pill ${r.record_type==='Payment'?'pill-resolved':r.record_type==='Penalty'?'pill-urgent':'pill-pending'}">${r.record_type==='Payment'?'Cash Payment':r.record_type}</span></td>
     <td style="font-size:12px;">${r.description||'—'}</td>
     <td style="text-align:right;font-weight:500;color:${r.record_type==='Payment'?'var(--green)':r.record_type==='Adjustment'&&r.amount<0?'var(--green)':'#f08080'}">
       ${r.record_type==='Payment'?'−':'+'}&#8369;${Number(Math.abs(r.amount)).toLocaleString()}
@@ -3182,10 +3290,10 @@ let hhMembers = [];
 function renderAnalytics(){
   if(document.getElementById('analyticMembers')) document.getElementById('analyticMembers').textContent = residents.length||'—';
   if(document.getElementById('analyticHouses'))  document.getElementById('analyticHouses').textContent  = households.length||'—';
-  if(document.getElementById('analyticDelinq'))  document.getElementById('analyticDelinq').textContent  = delinquents.length||'0';
+  if(document.getElementById('analyticPaymentStatus'))  document.getElementById('analyticPaymentStatus').textContent  = paymentStatuses.length||'0';
   if(typeof d3 === 'undefined') return;
   drawCollectionsChart();
-  drawDelinquentsChart();
+  drawPaymentStatusChart();
   drawComplaintsChart();
   setTimeout(renderAnalyticsHeatMap, 120);
 }
@@ -3223,14 +3331,14 @@ function drawCollectionsChart(){
     .call(ax=>{ax.select('.domain').remove();ax.selectAll('.tick line').attr('stroke','rgba(255,255,255,0.1)').attr('x2',w);ax.selectAll('text').attr('fill','rgba(240,236,228,0.6)').style('font-size','11px');});
 }
 
-function drawDelinquentsChart(){
-  const el=document.getElementById('chart-delinquents');
+function drawPaymentStatusChart(){
+  const el=document.getElementById('chart-payment-status');
   if(!el) return;
   el.innerHTML='';
   const activeCount=residents.filter(r=>r.status==='Active').length;
-  const delinqCount=delinquents.length;
-  const total=activeCount+delinqCount||1;
-  const data=[{label:'Active',value:activeCount,color:'#82c98a'},{label:'Delinquent',value:delinqCount,color:'#f08080'}];
+  const paymentStatusCount=paymentStatuses.length;
+  const total=activeCount+paymentStatusCount||1;
+  const data=[{label:'Active',value:activeCount,color:'#82c98a'},{label:'Payment Status',value:paymentStatusCount,color:'#f08080'}];
   const W=Math.min(el.clientWidth||200,240), H=180;
   const R=Math.min(W,H)/2-16;
   const svg=d3.select(el).append('svg').attr('width',W).attr('height',H);
@@ -3635,10 +3743,18 @@ async function deleteFinRecord(id){
 function filterFinRecords(){
   const q=(document.getElementById('finSearch')||{}).value?.toLowerCase()||'';
   const t=(document.getElementById('finTypeFilter')||{}).value||'';
+  const df=(document.getElementById('finDateFrom')||{}).value||'';
+  const dt=(document.getElementById('finDateTo')||{}).value||'';
   document.querySelectorAll('#excelTable tbody tr[data-res]').forEach(row=>{
     const matchQ=!q||row.dataset.res.includes(q);
     const matchT=!t||row.dataset.type===t;
-    row.style.display=(matchQ&&matchT)?'':'none';
+    let matchD=true;
+    if((df||dt)&&row.dataset.date){
+      const d=new Date(row.dataset.date);
+      if(df&&d<new Date(df)) matchD=false;
+      if(dt&&d>new Date(dt+'T23:59:59')) matchD=false;
+    }
+    row.style.display=(matchQ&&matchT&&matchD)?'':'none';
   });
 }
 function exportFinRecordsCSV(){
@@ -3988,10 +4104,24 @@ function loadMapData() {
   fetch('/api/map/households').then(r => r.json()).then(data => {
     layerHouseholds.clearLayers();
     data.forEach(h => {
-      const color = h.status === 'Delinquent' ? '#f08080' : '#4287f5';
-      L.marker([parseFloat(h.latitude), parseFloat(h.longitude)], {icon: makeCircleIcon(color)})
-        .bindPopup(`<strong>${h.block_lot_number}</strong><br>Status: ${h.status}`)
+      const color = h.status === 'Non-Compliant' ? '#f08080' : '#4287f5';
+      const marker = L.marker([parseFloat(h.latitude), parseFloat(h.longitude)], {
+        icon: makeCircleIcon(color),
+        draggable: true,
+        title: 'Drag to move ' + h.block_lot_number
+      })
+        .bindPopup(`<strong>${h.block_lot_number}</strong><br>Status: ${h.status}<br><small style="color:#888;">Drag to reposition</small>`)
         .addTo(layerHouseholds);
+      marker.on('dragend', async function(ev) {
+        const { lat, lng } = ev.target.getLatLng();
+        const res = await apiPut('/api/map/household/' + h.id + '/location', { latitude: lat, longitude: lng });
+        if (res && res.success) {
+          showToast('📍 ' + h.block_lot_number + ' location updated.');
+        } else {
+          showToast('⚠ Failed to save location.');
+          ev.target.setLatLng([parseFloat(h.latitude), parseFloat(h.longitude)]); // revert
+        }
+      });
     });
   });
 
@@ -4151,10 +4281,24 @@ function deleteFacilityById(id) {
     </div>
     <div style="font-size:12px;color:var(--text-dim);margin-bottom:2px;" id="issD-who">—</div>
     <div style="font-size:11px;color:var(--text-dim);margin-bottom:14px;" id="issD-cat">—</div>
+    <!-- Priority setter (admin/officer only) -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:10px;">
+      <span style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);flex-shrink:0;">Set Priority</span>
+      <select id="issD-prioritySel" style="flex:1;font-size:12px;">
+        <option value="">— Not set —</option>
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+        <option value="Critical">Critical</option>
+      </select>
+      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="saveIssuePriority()">Save</button>
+    </div>
     <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;margin-bottom:14px;">
       <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:6px;">Description</div>
       <div id="issD-desc" style="font-size:13px;line-height:1.6;white-space:pre-wrap;"></div>
     </div>
+    <!-- Photo gallery -->
+    <div id="issD-media" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;"></div>
     <div id="issD-location" style="margin-bottom:12px;"></div>
     <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:8px;">Responses (<span id="issD-responseCount"></span>)</div>
     <div id="issD-responses" style="max-height:220px;overflow-y:auto;"></div>
@@ -4206,6 +4350,7 @@ function deleteFacilityById(id) {
     </div>
     <div class="modal-actions">
       <button class="modal-close-btn" id="annV-delBtn" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
+      <button class="btn btn-sm" id="annV-archBtn" style="background:var(--yellow-dim);border-color:rgba(196,150,70,0.3);color:var(--yellow);" onclick="toggleAnnArchive()">📦 Archive</button>
       <button class="btn btn-sm" onclick="document.getElementById('modal-annView').classList.remove('open')">Close</button>
     </div>
   </div>
@@ -4277,35 +4422,35 @@ function deleteFacilityById(id) {
   </div>
 </div>
 
-<!-- Delinquent Detail Modal -->
-<div class="modal-overlay" id="modal-delinquent">
+<!-- Payment Status Detail Modal -->
+<div class="modal-overlay" id="modal-payment-status">
   <div class="modal-box wide" style="max-width:520px;">
     <div class="modal-title" style="display:flex;align-items:center;gap:10px;">
       <span style="font-size:22px;">⚠️</span>
-      <span>Delinquent Household — <span id="delin-modal-block" style="color:#f08080;">—</span></span>
+      <span>Payment Status Household — <span id="paymentStatus-modal-block" style="color:#f08080;">—</span></span>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
       <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Reason Flagged</div>
-        <div id="delin-modal-reason" style="font-size:13px;color:#f08080;font-weight:600;">—</div>
+        <div id="paymentStatus-modal-reason" style="font-size:13px;color:#f08080;font-weight:600;">—</div>
       </div>
       <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Date Flagged</div>
-        <div id="delin-modal-flagged" style="font-size:13px;font-weight:600;">—</div>
+        <div id="paymentStatus-modal-flagged" style="font-size:13px;font-weight:600;">—</div>
       </div>
     </div>
 
     <div style="background:rgba(240,128,128,0.08);border:1px solid rgba(240,128,128,0.25);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
       <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Total Outstanding Balance</div>
-      <div id="delin-modal-total" style="font-size:22px;font-weight:700;color:#f08080;">₱0</div>
+      <div id="paymentStatus-modal-total" style="font-size:22px;font-weight:700;color:#f08080;">₱0</div>
     </div>
 
     <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:10px;">Residents in Household</div>
-    <div id="delin-modal-residents" style="max-height:260px;overflow-y:auto;"></div>
+    <div id="paymentStatus-modal-residents" style="max-height:260px;overflow-y:auto;"></div>
 
     <div class="modal-actions" style="margin-top:20px;">
-      <button class="btn btn-sm" onclick="closeDelinquent()">Close</button>
+      <button class="btn btn-sm" onclick="closePaymentStatus()">Close</button>
     </div>
   </div>
 </div>

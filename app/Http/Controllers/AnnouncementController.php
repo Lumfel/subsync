@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Announcement;
 use App\Models\AnnouncementView;
+use App\Models\AnnouncementTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -15,22 +16,29 @@ class AnnouncementController extends Controller
     }
 
     /** GET /api/announcements — all announcements (newest first) */
-    public function index()
+    public function index(Request $request)
     {
-        $announcements = Announcement::with(['admin:id,name', 'officer:id,name'])
-            ->orderByDesc('created_at')
-            ->get()
-            ->map(fn($a) => [
-                'id'         => $a->id,
-                'title'      => $a->title,
-                'content'    => $a->content,
-                'tag'        => $a->tag ?? 'notice',
-                'target'     => $a->target ?? 'All Residents',
-                'priority'   => $a->priority ?? 'Normal',
-                'event_date' => $a->event_date,
-                'posted_by'  => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
-                'created_at' => $a->created_at?->format('M d, Y'),
-            ]);
+        $query = Announcement::with(['admin:id,name', 'officer:id,name'])
+            ->orderByDesc('created_at');
+
+        // Residents only see Active; admin/officer can pass ?status=all or ?status=Archived
+        $statusFilter = $request->query('status', 'Active');
+        if ($statusFilter !== 'all') {
+            $query->where('status', $statusFilter);
+        }
+
+        $announcements = $query->get()->map(fn($a) => [
+            'id'         => $a->id,
+            'title'      => $a->title,
+            'content'    => $a->content,
+            'tag'        => $a->tag ?? 'notice',
+            'target'     => $a->target ?? 'All Residents',
+            'priority'   => $a->priority ?? 'Normal',
+            'event_date' => $a->event_date,
+            'status'     => $a->status ?? 'Active',
+            'posted_by'  => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
+            'created_at' => $a->created_at?->format('M d, Y'),
+        ]);
 
         return response()->json($announcements);
     }
@@ -50,6 +58,7 @@ class AnnouncementController extends Controller
         $data['tag']      = $data['tag'] ?? 'notice';
         $data['target']   = $data['target'] ?? 'All Residents';
         $data['priority'] = $data['priority'] ?? 'Normal';
+        $data['status']   = 'Active';
 
         // Determine poster: admin or officer
         if (session('admin_id')) {
@@ -74,6 +83,7 @@ class AnnouncementController extends Controller
             'target'     => $announcement->target,
             'priority'   => $announcement->priority,
             'event_date' => $announcement->event_date,
+            'status'     => $announcement->status,
             'posted_by'  => $posterName,
             'created_at' => $announcement->created_at->format('M d, Y'),
         ]]);
@@ -84,6 +94,16 @@ class AnnouncementController extends Controller
     {
         Announcement::findOrFail($id)->delete();
         return response()->json(['success' => true]);
+    }
+
+    /** PATCH /api/announcements/{id}/archive — toggle Active ↔ Archived */
+    public function archive(int $id)
+    {
+        $announcement = Announcement::findOrFail($id);
+        $newStatus = $announcement->status === 'Active' ? 'Archived' : 'Active';
+        $announcement->update(['status' => $newStatus]);
+
+        return response()->json(['success' => true, 'status' => $newStatus]);
     }
 
     /** POST /api/announcements/{id}/view — mark as viewed by resident */

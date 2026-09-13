@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Household;
 use App\Models\HouseholdMember;
 use App\Models\Resident;
-use App\Models\Delinquent;
+use App\Models\PaymentStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -54,7 +54,7 @@ class ResidentController extends Controller
             'password'       => 'required|string|min:8',
             'contact_number' => 'nullable|string|max:20',
             'house_id'       => 'nullable|exists:households,id',
-            'status'         => 'sometimes|in:Active,Inactive,Delinquent',
+            'status'         => 'sometimes|in:Active,Inactive,Non-Compliant',
         ]);
 
         $data['password'] = Hash::make($data['password']);
@@ -75,7 +75,7 @@ class ResidentController extends Controller
             'email'          => 'sometimes|required|email|unique:residents,email,' . $id,
             'contact_number' => 'nullable|string|max:20',
             'house_id'       => 'nullable|exists:households,id',
-            'status'         => 'sometimes|in:Active,Inactive,Delinquent',
+            'status'         => 'sometimes|in:Active,Inactive,Non-Compliant',
             'password'       => 'sometimes|nullable|string|min:8',
         ]);
 
@@ -193,7 +193,7 @@ class ResidentController extends Controller
         }
 
         if (($data['status'] ?? null) === 'Delinquent') {
-            Delinquent::updateOrCreate(
+            PaymentStatus::updateOrCreate(
                 ['house_id' => $id],
                 [
                     'reason'       => $data['reason'] ?? 'Status marked delinquent',
@@ -201,7 +201,7 @@ class ResidentController extends Controller
                 ]
             );
         } elseif (isset($data['status']) && in_array($data['status'], ['Active', 'Inactive'])) {
-            Delinquent::where('house_id', $id)->delete();
+            PaymentStatus::where('house_id', $id)->delete();
         }
 
         return response()->json(['success' => true, 'household' => $household->fresh()->load('family:id,family_name,members')]);
@@ -268,10 +268,10 @@ class ResidentController extends Controller
         return response()->json(['success' => true]);
     }
 
-    /** GET /api/delinquents — delinquent households with reason/date */
-    public function delinquents()
+    /** GET /api/payment-statuses — payment status households with reason/date */
+    public function paymentStatuses()
     {
-        $records = Delinquent::with([
+        $records = PaymentStatus::with([
             'household:id,block_lot_number,status',
             'household.residents:id,house_id,name,contact_number,current_balance',
         ])->orderByDesc('date_flagged')->get()->map(fn($d) => [
@@ -297,7 +297,7 @@ class ResidentController extends Controller
             'total_households'  => Household::count(),
             'total_residents'   => Resident::count(),
             'active_residents'  => Resident::where('status', 'Active')->count(),
-            'delinquent_count'  => Delinquent::count(),
+            'payment_status_count'  => PaymentStatus::count(),
         ]);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
-use App\Models\Delinquent;
+use App\Models\PaymentStatus;
 use App\Models\Family;
 use App\Models\FinancialRecord;
 use App\Models\Household;
@@ -56,8 +56,8 @@ class DashboardController extends Controller
                 'block_lot'      => $m->household?->block_lot_number ?? '—',
             ]);
 
-        // Delinquents
-        $delinquents = Delinquent::with([
+        // Payment Statuses
+        $paymentStatuses = PaymentStatus::with([
             'household:id,block_lot_number,status',
             'household.residents:id,house_id,name,contact_number,current_balance',
         ])->orderByDesc('date_flagged')
@@ -100,7 +100,7 @@ class DashboardController extends Controller
             'total_collected' => $totalPayments,
             'total_dues'      => $totalDues,
             'total_balance'   => $totalBalance,
-            'delinquent_count'=> $delinquents->count(),
+            'payment_status_count'=> $paymentStatuses->count(),
         ];
 
         // Announcements
@@ -183,7 +183,7 @@ class DashboardController extends Controller
             'residents'       => $residents,
             'households'      => $households,
             'hhMembers'       => $hhMembers,
-            'delinquents'     => $delinquents,
+            'paymentStatuses'     => $paymentStatuses,
             'finRecs'         => $finRecs,
             'finSummary'      => $finSummary,
             'announcements'   => $announcements,
