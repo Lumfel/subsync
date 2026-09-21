@@ -19,7 +19,7 @@ class IssueController extends Controller
     /** GET /api/issues — all issues (admin/officer) */
     public function index(Request $request)
     {
-        $query = IssueReport::with('resident:id,name,house_id', 'resident.household:id,block_lot_number', 'media')
+        $query = IssueReport::with('resident:id,name,house_id', 'resident.household:id,block_lot_number', 'media', 'responses')
             ->orderByDesc('created_at');
 
         if ($request->query('status')) {
@@ -44,10 +44,12 @@ class IssueController extends Controller
             'latitude'   => $i->latitude,
             'longitude'  => $i->longitude,
             'created_at' => $i->created_at?->format('M d, Y'),
+            'resolved_at' => $i->resolved_at?->format('Y-m-d'),
             'resident'   => $i->resident?->name ?? '—',
             'block_lot'  => $i->resident?->household?->block_lot_number ?? '—',
             'media'      => $i->media->map(fn($m) => [
-                'id'  => $m->id,
+                'id' => $m->id,
+                'name' => $m->file_name,
                 'url' => Storage::url($m->file_path),
             ]),
             'responses'  => $i->responses->map(fn($r) => [
@@ -81,9 +83,11 @@ class IssueController extends Controller
                 'status'      => $i->status,
                 'priority'    => $i->priority,
                 'created_at'  => $i->created_at?->format('M d, Y'),
+                'resolved_at' => $i->resolved_at?->format('Y-m-d'),
                 'response'    => $i->responses->first()?->response_content,
                 'media'       => $i->media->map(fn($m) => [
-                    'id'  => $m->id,
+                    'id' => $m->id,
+                    'name' => $m->file_name,
                     'url' => Storage::url($m->file_path),
                 ]),
             ]);
@@ -100,8 +104,10 @@ class IssueController extends Controller
             'description' => 'required|string',
             'latitude'    => 'nullable|numeric|between:-90,90',
             'longitude'   => 'nullable|numeric|between:-180,180',
-            'images'      => 'nullable|array',
+            'images'      => 'nullable|array|max:5',
             'images.*'    => 'image|max:4096',
+            'documents'   => 'nullable|array|max:5',
+            'documents.*' => 'file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
         ]);
 
         $residentId = $this->residentId($request);
@@ -110,9 +116,13 @@ class IssueController extends Controller
             return response()->json(['success' => false, 'message' => 'Resident session expired. Please log in again.'], 401);
         }
 
+        if (isset($data['latitude'], $data['longitude']) && !self::withinArea($data['latitude'], $data['longitude'])) {
+            return response()->json(['success' => false, 'message' => 'The report location must be within Terra Nova Subdivision.'], 422);
+        }
+
         $data['resident_id'] = $residentId;
         $data['status']      = 'Pending';
-        unset($data['images']);
+        unset($data['images'], $data['documents']);
 
         $issue = IssueReport::create($data);
 
@@ -131,6 +141,20 @@ class IssueController extends Controller
             }
         }
 
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $file) {
+                $path = $file->store('issues/documents', 'public');
+                Media::create([
+                    'uploader_id' => $residentId,
+                    'uploader_type' => 'Resident',
+                    'entity_type' => 'IssueReport',
+                    'entity_id' => $issue->id,
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $path,
+                ]);
+            }
+        }
+
         $issue->load('media');
 
         return response()->json(['success' => true, 'issue' => [
@@ -143,7 +167,8 @@ class IssueController extends Controller
             'created_at'  => $issue->created_at->format('M d, Y'),
             'response'    => null,
             'media'       => $issue->media->map(fn($m) => [
-                'id'  => $m->id,
+                'id' => $m->id,
+                'name' => $m->file_name,
                 'url' => Storage::url($m->file_path),
             ]),
         ]]);
@@ -154,6 +179,10 @@ class IssueController extends Controller
     {
         $issue = IssueReport::findOrFail($id);
         $data  = $request->validate(['status' => 'required|in:Pending,In Progress,Resolved']);
+
+        // Start the 30-day auto-delete timer when an issue is resolved; clear it otherwise.
+        $data['resolved_at'] = $data['status'] === 'Resolved' ? now() : null;
+
         $issue->update($data);
 
         return response()->json(['success' => true]);
@@ -216,5 +245,14 @@ class IssueController extends Controller
             ->update(['status' => 'In Progress']);
 
         return response()->json(['success' => true, 'response' => $response]);
+    }
+
+    private static function withinArea(float|int $latitude, float|int $longitude): bool
+    {
+        $b = MapController::bounds();
+        return $latitude >= $b['min_lat']
+            && $latitude <= $b['max_lat']
+            && $longitude >= $b['min_lng']
+            && $longitude <= $b['max_lng'];
     }
 }

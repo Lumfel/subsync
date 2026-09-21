@@ -5,8 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Officer Portal</title>
+<script>
+window.APP_BASE = '{{ request()->getBaseUrl() }}';
+(function () {
+    var base = window.APP_BASE || '';
+    if (!base) return;
+    var prefix = function (url) {
+        if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
+        return url;
+    };
+    var origFetch = window.fetch;
+    window.fetch = function (url, opts) { return origFetch.call(this, prefix(url), opts); };
+    var OrigES = window.EventSource;
+    window.EventSource = function (url, cfg) { return new OrigES(prefix(url), cfg); };
+    window.EventSource.prototype = OrigES.prototype;
+    window.EventSource.CONNECTING = 0; window.EventSource.OPEN = 1; window.EventSource.CLOSED = 2;
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"></noscript>
 <style>
 :root {
   --glass: #FFFFFF;
@@ -27,23 +46,23 @@
   --yellow-dim: #FAF4E7;
   --purple: #7A6A90;
   --purple-dim: #F2EFF4;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --radius-xs: 6px;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-xs: 4px;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 body {
-  font-family: 'Times New Roman', serif;
+  font-family: 'DM Sans', sans-serif;
   background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
-  font-size: 18px;
-  line-height: 1.75;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 /* ── BANNER ── */
 .banner-wrap {
-  position: relative; height: 220px; overflow: hidden; cursor: pointer;
+  position: relative; height: 120px; overflow: hidden; cursor: default;
 }
 @media(max-width:480px){ .banner-wrap { height: 150px; } }
 .banner-wrap img {
@@ -166,8 +185,8 @@ body {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(43, 41, 39, 0.04);
+  transform: none;
+  box-shadow: 0 4px 18px rgba(43, 41, 39, 0.04);
 }
 .card-title {
   font-size: 13px; font-weight: 600;
@@ -233,24 +252,27 @@ select option { background: #FFFFFF; color: var(--text); }
   background:#FFFFFF; border:1px solid var(--glass-border);
   margin-bottom:9px; transition: all 0.25s;
   border-left: 3px solid var(--glass-border);
+  cursor: pointer;
 }
-.ann-item:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(43,41,39,0.03); }
+.ann-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(43,41,39,0.08); border-color: var(--accent-border); }
 .ann-item.ann-item-notice { border-left-color: var(--blue); }
 .ann-item.ann-item-urgent { border-left-color: var(--danger); }
 .ann-item.ann-item-event  { border-left-color: var(--green); }
 .ann-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
 .ann-date { font-size:11px; color:var(--text-dim); }
-.ann-title { font-size:14px; font-weight:500; margin-bottom:4px; text-align:center; }
-.ann-body { font-size:13px; color:var(--text-mid); line-height:1.6; text-align:center; }
+.ann-title { font-size:14px; font-weight:600; margin-bottom:4px; text-align:left; }
+.ann-body { font-size:13px; color:var(--text-mid); line-height:1.6; text-align:left; }
 .ann-actions { display:flex; gap:8px; margin-top:10px; }
+.ann-click-hint { font-size:10px; color:var(--text-dim); margin-top:6px; opacity:0; transition:opacity .2s; }
+.ann-item:hover .ann-click-hint { opacity:1; }
 
 /* ── REPORTS ── */
 .report-item {
   background:#FFFFFF; border:1px solid var(--glass-border);
   border-radius:var(--radius-sm); padding:16px; margin-bottom:10px;
-  transition: all 0.25s;
+  transition: all 0.25s; cursor: pointer;
 }
-.report-item:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(43,41,39,0.03); }
+.report-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(43,41,39,0.08); border-color: var(--accent-border); }
 .report-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
 .report-title { font-size:14px; font-weight:500; }
 .report-meta { font-size:11px; color:var(--text-dim); margin-bottom:10px; }
@@ -335,7 +357,7 @@ select option { background: #FFFFFF; color: var(--text); }
 .bubble-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
 .ba-admin { background:rgba(122,180,240,0.2); color:var(--blue); }
 .ba-mine  { background:linear-gradient(135deg,var(--blue),#5090d0); color:#0a0e1a; }
-.bubble { max-width:68%; max-width:min(68%, 340px); padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.55; word-break:break-word; overflow-wrap:anywhere; }
+.bubble { max-width:68%; max-width:min(68%, 340px); padding:10px 14px; border-radius:6px; font-size:13px; line-height:1.55; word-break:break-word; overflow-wrap:anywhere; }
 .from-admin { background:rgba(255,255,255,0.09); border:1px solid var(--glass-border); border-bottom-left-radius:4px; }
 .from-mine { background:var(--blue-dim); border:1px solid rgba(122,180,240,0.28); border-bottom-right-radius:4px; }
 .bubble-time { font-size:10px; color:var(--text-dim); margin-top:3px; display:block; }
@@ -489,6 +511,12 @@ select option { background: #FFFFFF; color: var(--text); }
     }
 }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
+<script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
 </head>
 <body>
 
@@ -528,7 +556,7 @@ select option { background: #FFFFFF; color: var(--text); }
     <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="officerName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $officerName }}</div>
     <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Role: <span id="roleText" contenteditable="true" spellcheck="false" title="Click to edit role">{{ $officerRole }}</span></div>
     
-    <form id="logoutForm" action="/logout" method="POST" style="display:none;">@csrf</form>
+    <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf</form>
     <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:14px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
 </aside>
@@ -742,7 +770,13 @@ select option { background: #FFFFFF; color: var(--text); }
   <!-- ═══════════ MESSAGES ═══════════ -->
   <div class="tab-panel" id="panel-messages">
     <div class="card" style="padding:24px; margin-top:0;">
-      <div class="card-title">Direct Messages</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">
+        <div>
+          <div class="card-title" style="font-size:18px;">Community Correspondence</div>
+          <div class="card-subtitle" style="margin-bottom:0;">Review documented communications with residents and the HOA Administration.</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-dim);padding-top:4px;">Official record</div>
+      </div>
       <div class="msg-layout">
         <div class="msg-sidebar">
           <div class="msg-sidebar-title" style="display:flex;justify-content:space-between;align-items:center;">Conversations
@@ -755,7 +789,7 @@ select option { background: #FFFFFF; color: var(--text); }
             <div class="msg-header-avatar ta-admin" id="chat-avatar">SA</div>
             <div>
               <div class="msg-header-name" id="chat-name">Subdivision Admin</div>
-              <div class="msg-header-sub" id="chat-sub">Online</div>
+              <div class="msg-header-sub" id="chat-sub">Official communication record</div>
             </div>
           </div>
           <div class="msg-body" id="msgBody"></div>
@@ -935,6 +969,7 @@ async function loadOfficerThreads(){
       <div class="msg-thread-info">
         <div class="msg-thread-name">${t.title}</div>
         <div class="msg-thread-preview">${t.last_message||'No messages yet'}</div>
+        ${t.last_time?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Updated ${t.last_time}</div>`:''}
       </div>
       <button class="msg-thread-del" onclick="event.stopPropagation();deleteOfficerConversation(${t.id})" title="Delete">🗑</button>
     </div>`).join('');
@@ -966,7 +1001,7 @@ async function deleteOfficerConversation(id){
     if(currentThread==id){
       currentThread=null;
       const remaining=Object.keys(threads);
-      if(remaining.length){currentThread=remaining[0];selectOfficerThread(remaining[0],null);}
+      if(remaining.length){currentThread=remaining[0];loadOfficerThreads();}
       else{document.getElementById('msgBody').innerHTML='<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px;">No conversations.</div>';document.getElementById('chat-name').textContent='';}
     }
     // Re-load threads list
@@ -1053,7 +1088,7 @@ function renderOverviewAnn(){
   const el=document.getElementById('overviewAnnList');
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   el.innerHTML=adminAnnouncements.length?adminAnnouncements.slice(0,5).map(a=>`
-    <div class="ann-item" onclick="viewAnnouncement(${a.id})">
+    <div class="ann-item ann-item-${a.tag||'notice'}" onclick="viewAnnouncement(${a.id})" title="Click to view full announcement">
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
@@ -1066,6 +1101,7 @@ function renderOverviewAnn(){
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
         <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
       </div>
+      <div class="ann-click-hint">🔍 Click to view full details</div>
     </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
 }
 
@@ -1143,7 +1179,7 @@ function renderOfficerIssues(){
   el.innerHTML=filtered.length?filtered.map(i=>{
     const isCritical=i.priority==='Critical';
     return `
-    <div class="report-item ${isCritical?'issue-critical-row':''}" style="margin-bottom:12px;">
+    <div class="report-item ${isCritical?'issue-critical-row':''}" style="margin-bottom:12px;" onclick="openOfficerRespond(${i.id})" title="Click to view / respond to this issue">
       <div class="report-top">
         <div>
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${escHtml(i.resident)} · ${escHtml(i.block_lot)}</div>
@@ -1163,8 +1199,9 @@ function renderOfficerIssues(){
         <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Response</div>
         <div style="font-size:13px;color:var(--text-mid);">${escHtml(i.responses[0].content)}</div>
       </div>`:''}
-      <div class="report-actions">
-        ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="openOfficerRespond(${i.id})">Respond</button>`:''}
+      <div class="report-actions" style="margin-top:10px;">
+        ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="event.stopPropagation();openOfficerRespond(${i.id})">Respond</button>`:''}
+        <span style="font-size:10px;color:var(--text-dim);align-self:center;">🔍 Click anywhere to open</span>
       </div>
     </div>`;
 }).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues found.</div>';
@@ -1359,42 +1396,131 @@ document.getElementById('annNotifViewBtn').onclick=()=>{
   switchTab('announcements');
 };
 
-// Fast poll: check for critical/high unresolved issues every 5s
+/* ══════════════════════════════════════════════════════════
+   REAL-TIME: Server-Sent Events (SSE)
+   The server pushes a tiny JSON event the instant the DB
+   changes (~1 s resolution). JS then fetches full data from
+   the existing REST endpoints.
+   ══════════════════════════════════════════════════════════ */
 let _lastUrgentId = null;
 function dismissEmergency(){ document.getElementById('emergencyAlert').style.display='none'; }
-setInterval(async()=>{
-  if(document.hidden) return;
-  try{
-    const u=await fetch('/api/issues/urgent-check',{headers:{'Accept':'application/json'}}).then(r=>r.json());
-    if(u.count>0&&u.latest_id!==_lastUrgentId){
-      _lastUrgentId=u.latest_id;
-      const el=document.getElementById('emergencyAlert');
-      const txt=document.getElementById('emergencyAlertText');
-      if(txt&&u.latest) txt.textContent=`🚨 CRITICAL ISSUE — "${u.latest.title}" by ${u.latest.resident}`;
-      if(el) el.style.display='block';
-      // immediately refresh issues list
-      const data=await safeGetArray('/api/issues');
-      if(Array.isArray(data)){ officerIssues=data; renderOfficerIssues(); }
-    }
-  }catch(e){}
-},5000);
 
-setInterval(async()=>{
-  if(document.hidden) return;
-  try{
-    const data=await safeGetArray('/api/announcements');
-    if(!Array.isArray(data)||!data.length) return;
-    if(data[0].id>lastAnnouncementId){
-      const newOnes=data.filter(a=>a.id>lastAnnouncementId);
-      lastAnnouncementId=data[0].id;
-      adminAnnouncements=data;
-      myAnnouncements=data.filter(a=>a.posted_by&&a.posted_by==='{{ $officerName }}');
+let _sseAnnId   = 0;
+let _sseIssueId = 0;
+let _sseEventId = 0;
+
+function connectSSE(){
+  if(document.hidden) { setTimeout(connectSSE, 2000); return; }
+
+  // Pick up latest IDs from current data (set by loadOfficerData)
+  _sseAnnId   = lastAnnouncementId;
+  _sseIssueId = officerIssues.length ? officerIssues[0].id : 0;
+
+  const url = `/api/stream/updates?lastEventId=${_sseEventId}&lastAnnId=${_sseAnnId}&lastIssueId=${_sseIssueId}`;
+  const es  = new EventSource(url);
+
+  // ── Fresh connection — load initial data once ─────────────
+  es.addEventListener('sync', () => {
+    if(!officerIssues || !officerIssues.length){
+      if(typeof loadOfficerData === 'function') loadOfficerData().catch(()=>{});
+    }
+  });
+
+  // ── Announcement pushed ──────────────────────────────────
+  es.addEventListener('announcement', async (e) => {
+    const evt = JSON.parse(e.data);
+    _sseAnnId = evt.latestId;
+    try {
+      const data = await safeGetArray('/api/announcements');
+      if(!Array.isArray(data)||!data.length) return;
+      const newOnes = data.filter(a => a.id > lastAnnouncementId);
+      lastAnnouncementId = data[0].id;
+      adminAnnouncements = data;
+      myAnnouncements    = data.filter(a => a.posted_by && a.posted_by === '{{ $officerName }}');
       renderOverviewAnn();
       renderMyAnn();
-      showAnnBanner(newOnes[0]);
+      if(newOnes.length) showAnnBanner(newOnes[0]);
+    } catch(err){}
+  });
+
+  // ── Issue pushed ─────────────────────────────────────────
+  es.addEventListener('issue', async (e) => {
+    const evt = JSON.parse(e.data);
+    _sseIssueId = evt.latestId;
+    try {
+      const data = await safeGetArray('/api/issues');
+      if(!Array.isArray(data)) return;
+      const prevCount = officerIssues.length;
+      officerIssues   = data;
+      renderOfficerIssues();
+      if(evt.isNew && prevCount > 0){
+        showToast(`🆕 New issue: "${evt.title}" — ${evt.priority||''}`);
+      }
+    } catch(err){}
+  });
+
+  // ── Urgent / critical issue ──────────────────────────────
+  es.addEventListener('urgent', (e) => {
+    const evt = JSON.parse(e.data);
+    if(evt.id === _lastUrgentId) return;
+    _lastUrgentId = evt.id;
+    const el  = document.getElementById('emergencyAlert');
+    const txt = document.getElementById('emergencyAlertText');
+    if(txt) txt.textContent = `🚨 CRITICAL ISSUE — "${evt.title}"`;
+    if(el)  el.style.display = 'block';
+  });
+
+  // ── HOA expense update ───────────────────────────────────
+  es.addEventListener('hoa-expense', async () => {
+    try{
+      if(typeof loadExpenses === 'function') await loadExpenses();
+    }catch(err){}
+  });
+
+  // ── Server asks client to reconnect (25-s cycle) ─────────
+  es.addEventListener('reconnect', (e) => {
+    const evt = JSON.parse(e.data);
+    if(evt.lastEventId) _sseEventId = evt.lastEventId;
+    es.close();
+    setTimeout(connectSSE, 200);  // reconnect almost instantly
+  });
+
+  // ── Connection error — retry after 3 s ──────────────────
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectSSE, 3000);
+  };
+
+  // Resume SSE when tab becomes visible again
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && es.readyState === EventSource.CLOSED){
+      setTimeout(connectSSE, 500);
     }
+  }, { once: true });
+}
+
+// Start SSE after initial data load so we have baseline IDs
+document.addEventListener('DOMContentLoaded', () => setTimeout(connectSSE, 1500));
+
+// ── Safety-net: light poll every 60 s in case SSE is blocked by a proxy
+setInterval(async()=>{
+  if(document.hidden) return;
+  try{
+    const [anns, isss] = await Promise.all([
+      safeGetArray('/api/announcements'),
+      safeGetArray('/api/issues'),
+    ]);
+    if(Array.isArray(anns) && anns.length && anns[0].id > lastAnnouncementId){
+      const newOnes = anns.filter(a => a.id > lastAnnouncementId);
+      lastAnnouncementId = anns[0].id; _sseAnnId = anns[0].id;
+      adminAnnouncements = anns;
+      myAnnouncements    = anns.filter(a => a.posted_by && a.posted_by === '{{ $officerName }}');
+      renderOverviewAnn(); renderMyAnn();
+      if(newOnes.length) showAnnBanner(newOnes[0]);
+    }
+    if(Array.isArray(isss)){ officerIssues = isss; _sseIssueId = isss[0]?.id||0; renderOfficerIssues(); }
   }catch(e){}
-},15000);
+}, 60000);
 
 // Poll active message thread every 10s when messages tab is open
 setInterval(async()=>{
@@ -1409,20 +1535,6 @@ setInterval(async()=>{
     }catch(e){}
   }
 },10000);
-
-// Poll issues every 30s when issues tab is visible (catches new resident submissions)
-setInterval(async()=>{
-  if(document.hidden) return;
-  if(document.getElementById('panel-reports')?.classList.contains('active')){
-    try{
-      const data=await safeGetArray('/api/issues');
-      if(Array.isArray(data)){
-        officerIssues=data;
-        renderOfficerIssues();
-      }
-    }catch(e){}
-  }
-},30000);
 
 // Load previously sent files from server
 (async()=>{

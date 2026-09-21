@@ -5,10 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Resident Portal</title>
+<script>
+window.APP_BASE = '{{ request()->getBaseUrl() }}';
+(function () {
+    var base = window.APP_BASE || '';
+    if (!base) return;
+    var prefix = function (url) {
+        if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
+        return url;
+    };
+    var origFetch = window.fetch;
+    window.fetch = function (url, opts) { return origFetch.call(this, prefix(url), opts); };
+    var OrigES = window.EventSource;
+    window.EventSource = function (url, cfg) { return new OrigES(prefix(url), cfg); };
+    window.EventSource.prototype = OrigES.prototype;
+    window.EventSource.CONNECTING = 0; window.EventSource.OPEN = 1; window.EventSource.CLOSED = 2;
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap"></noscript>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
 <style>
+/* Leaflet CSS is loaded lazily only when the map is opened */
 :root {
   --glass: #FFFFFF;
   --glass-hover: #FAF7F2;
@@ -534,6 +554,12 @@ select option { background: #FFFFFF; color: var(--text); }
     }
 }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
+<script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
 </head>
 <body>
 
@@ -560,6 +586,8 @@ select option { background: #FFFFFF; color: var(--text); }
     <li class="tab-btn" onclick="switchTab('recs')" id="tab-recs">💡 Suggestions</li>
     <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages">💬 Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
     <li class="tab-btn" onclick="switchTab('map')" id="tab-map">🗺️ Map</li>
+    <li class="tab-btn" onclick="switchTab('expenses')" id="tab-expenses">💰 Expenses</li>
+    <li class="tab-btn" onclick="switchTab('policies')" id="tab-policies">📜 Policies</li>
   </ul>
 
   <!-- Sidebar Profile Card -->
@@ -571,7 +599,7 @@ select option { background: #FFFFFF; color: var(--text); }
     <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="householdName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $residentName }}</div>
     <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Block/Lot: <span id="locationText">{{ $blockLot }}</span></div>
     
-    <form id="logoutForm" action="/logout" method="POST" style="display:none;">@csrf</form>
+    <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf</form>
     <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:14px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
 </aside>
@@ -600,17 +628,18 @@ select option { background: #FFFFFF; color: var(--text); }
         </script>
       </div>
 
-      <!-- Financial Dues Stat Card (Span 4) -->
-      <div class="res-balance-card bento-col-4" style="display:flex; flex-direction:column; justify-content:center;">
-        <div class="balance-label">Outstanding Balance</div>
-        <div class="balance-val" id="resBalanceDisplay">₱{{ number_format($residentBalance ?? 0, 2) }}</div>
+      <!-- Announcements Box (Span 8 - Front & Center) -->
+      <div class="card bento-col-8">
+        <div class="card-title">Announcements</div>
+        <div class="card-subtitle">Neighborhood notices and community calendar events.</div>
+        <div id="announcementList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card" style="margin-bottom:10px;"></div></div>
       </div>
 
-      <!-- Household Members (Span 8) -->
-      <div class="card bento-col-8">
+      <!-- Household Members (Span 4) -->
+      <div class="card bento-col-4">
         <div class="card-title">Household Members</div>
         <div class="card-subtitle">Add or update the list of residents living in your home.</div>
-        <div class="member-grid" id="memberGrid"></div>
+        <div class="member-grid" id="memberGrid"><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div></div>
         <div class="add-row">
           <input type="text" id="memberName" placeholder="Full name">
           <input type="text" id="memberRole" placeholder="Role (Head, Spouse…)">
@@ -618,29 +647,33 @@ select option { background: #FFFFFF; color: var(--text); }
         </div>
       </div>
 
-      <!-- Announcements Box (Span 4) -->
-      <div class="card bento-col-4">
-        <div class="card-title">Announcements</div>
-        <div class="card-subtitle">Neighborhood notices and community calendar events.</div>
-        <div id="announcementList"></div>
-      </div>
-
-      <!-- Financial Records & Dues History (Span 12) -->
-      <div class="card bento-col-12">
-        <div class="card-title">Financial Records &amp; Dues History</div>
-        <div class="card-subtitle">Review your monthly association dues and payment history.</div>
-        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%;">
-          <table style="width:100%;border-collapse:collapse;font-size:13px;min-width:500px;">
-            <thead><tr style="border-bottom:1px solid var(--glass-border);">
-              <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Type</th>
-              <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Description</th>
-              <th style="text-align:right;padding:12px 14px;color:var(--text-dim);font-weight:500;">Amount</th>
-              <th style="text-align:right;padding:12px 14px;color:var(--text-dim);font-weight:500;">Date</th>
-            </tr></thead>
-            <tbody id="myFinancialRecords"><tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:20px;">Loading…</td></tr></tbody>
-          </table>
+      
+        <!-- HOA Policies Preview Card (Span 12) -->
+        <div class="card bento-col-12">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>HOA Community Policies &amp; Regulations</span>
+            <button class="btn btn-sm" onclick="switchTab('policies')">View All Policies 📜</button>
+          </div>
+          <div class="card-subtitle">Essential guidelines for property maintenance, sanitation, security, and peaceful community living.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px;">
+            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">1. Waste Management &amp; Sanitation</div>
+              <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Garbage segregation, scheduled collection, and sanitation responsibilities.</div>
+            </div>
+            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">2. Property Maintenance &amp; Building</div>
+              <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Architectural guidelines, lawn upkeep, and construction clearance permits.</div>
+            </div>
+            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">4. Quiet Hours &amp; Noise Control</div>
+              <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Standard quiet hours (10:00 PM – 6:00 AM) and social gathering guidelines.</div>
+            </div>
+            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">5. Security, Gates &amp; Visitors</div>
+              <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Gate access procedures, visitor registration, and vehicle RFID guidelines.</div>
+            </div>
+          </div>
         </div>
-      </div>
     </div>
   </div>
 
@@ -672,8 +705,8 @@ select option { background: #FFFFFF; color: var(--text); }
             <div style="color:var(--text-dim);text-align:center;padding:40px;">Select a conversation to start messaging.</div>
           </div>
           <div class="msg-compose">
-            <textarea id="msgInput" placeholder="Type a message…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); sendMsg();}"></textarea>
-            <button class="send-btn" onclick="sendMsg()">➔</button>
+            <textarea id="msgInput" placeholder="Type a message…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); sendMessage();}"></textarea>
+            <button class="send-btn" onclick="sendMessage()">➔</button>
           </div>
         </div>
       </div>
@@ -738,14 +771,7 @@ select option { background: #FFFFFF; color: var(--text); }
 
     <div class="card">
       <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">My Submitted Reports</div>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;">
-        <thead><tr style="border-bottom:1px solid var(--glass-border);">
-          <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Title</th>
-          <th style="text-align:left;padding:12px 14px;color:var(--text-dim);font-weight:500;">Status</th>
-          <th style="text-align:right;padding:12px 14px;color:var(--text-dim);font-weight:500;">Submitted</th>
-        </tr></thead>
-        <tbody id="myIssues"><tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px;">Loading…</td></tr></tbody>
-      </table>
+      <div id="issueList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card"></div></div>
     </div>
   </div>
 
@@ -809,85 +835,127 @@ select option { background: #FFFFFF; color: var(--text); }
       </div>
     </div>
   </div>
-</main>
 
-  <!-- ═══════════ ISSUES ═══════════ -->
-  <div class="tab-panel" id="panel-issues">
-
+  <!-- ═══════════ HOA EXPENSES ═══════════ -->
+  <div class="tab-panel" id="panel-expenses">
     <div class="card">
-      <div class="card-title">Report a Concern or Complaint</div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">Category</span>
-          <select id="issueCategory">
-            <option value="">Select category…</option>
-            <option>Road / Pavement</option>
-            <option>Drainage / Flooding</option>
-            <option>Street Lighting</option>
-            <option>Garbage / Sanitation</option>
-            <option>Noise Complaint</option>
-            <option>Security Concern</option>
-            <option>Utilities</option>
-            <option>Other</option>
-          </select>
-        </div>
+      <div class="card-title">HOA Expenses &amp; Financials</div>
+      <div id="expensesList"><div class="empty-state">Loading expenses...</div></div>
+    </div>
+  </div>
 
-      </div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">Issue Title</span>
-          <input type="text" id="issueTitle" placeholder="Brief description of the issue">
-        </div>
-      </div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">Details</span>
-          <textarea id="issueBody" placeholder="Describe the issue in detail — location, when it started, how it affects residents…" style="min-height:88px;resize:vertical;"></textarea>
-        </div>
-      </div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">📸 Photos (optional, up to 5)</span>
-          <input type="file" id="issueImages" accept="image/*" multiple style="font-size:13px;padding:6px 0;">
-          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Attach photos to help our team understand the issue.</div>
-        </div>
-      </div>
-      <div class="f-row">
-        <div class="f-field">
-          <span class="f-label">📍 Location (optional)</span>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
-            <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="useMyLocation()">Use My GPS</button>
-            <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="openIssuePicker()">Pin on Map</button>
-            <span id="issue-loc-display" style="font-size:12px;color:var(--text-dim);">No location set</span>
+
+  <!-- ═══════════ HOA POLICIES ═══════════ -->
+    <div class="tab-panel" id="panel-policies">
+      <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#FAF4E7,#FAF6F0);border-left:4px solid var(--accent);">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="font-size:32px;">📜</div>
+          <div>
+            <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#2B2927;margin-bottom:4px;">Terra Nova Homeowners Association</div>
+            <div style="font-size:13px;color:var(--text-dim);">Community Rules, Regulations &amp; Policies — Effective Current Term</div>
           </div>
-          <div id="issue-picker-map" style="display:none;height:240px;border-radius:8px;border:1px solid var(--glass-border);margin-bottom:8px;z-index:1;"></div>
-          <input type="hidden" id="issue-lat">
-          <input type="hidden" id="issue-lng">
         </div>
       </div>
-      <button class="btn btn-full" onclick="submitIssue()">Submit Report</button>
+
+      <!-- Policy Section 1 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">1. Membership &amp; Community Conduct</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>All registered homeowners and residents are members of the Terra Nova Homeowners Association (TNHOA) and are expected to uphold the community's rules and values.</li>
+          <li>Members are expected to maintain courteous, respectful conduct toward neighbors, guests, and HOA staff at all times.</li>
+          <li>Households must keep their registered contact details and list of occupants up to date with the HOA office.</li>
+          <li>Participation in community meetings, clean-up drives, and general assemblies is encouraged to foster a cooperative neighborhood.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 2 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">2. Property Use &amp; Structural Guidelines</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>All renovations, extensions, or structural modifications to residential units must be approved in writing by the TNHOA Board prior to commencement.</li>
+          <li>Exterior aesthetics must conform to the subdivision's approved design standards. Unapproved alterations may be subject to fines and mandated restoration.</li>
+          <li>Properties must be maintained in a clean, orderly condition. Overgrown vegetation, visible debris, or dilapidated structures are subject to violation notices.</li>
+          <li>Commercial activities within residential lots are prohibited unless expressly approved by the Board.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 3 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">3. Noise, Conduct &amp; Community Standards</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Residents and their guests are expected to observe courteous conduct toward neighbors and subdivision staff at all times.</li>
+          <li>Noise levels must not disturb neighboring households, particularly during designated quiet hours (10:00 PM – 6:00 AM).</li>
+          <li>Parties, gatherings, or events that may cause significant noise or traffic must be reported to the HOA office at least 48 hours in advance.</li>
+          <li>Acts of harassment, intimidation, or threatening behavior within the subdivision premises are strictly prohibited and may be reported to the appropriate authorities.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 4 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">4. Waste Management &amp; Sanitation</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Garbage must be properly bagged, segregated by type (biodegradable, non-biodegradable, recyclable), and placed at the designated collection point on scheduled collection days.</li>
+          <li>Littering within the subdivision — including common areas, walkways, and drainage systems — is prohibited and subject to fines.</li>
+          <li>Residents are responsible for maintaining drainage systems adjacent to their properties free of blockages.</li>
+          <li>Burning of waste materials within the subdivision is strictly prohibited in compliance with environmental regulations.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 5 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">5. Security, Gate Access &amp; Visitor Policy</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>All visitors and delivery personnel must register at the main gate before entering the subdivision. Residents must authorize their guests prior to entry.</li>
+          <li>Resident identification stickers or RFID tags must be affixed to registered vehicles as required. Untagged vehicles may be denied entry at the guard's discretion.</li>
+          <li>Residents are responsible for the conduct of their authorized guests while within the subdivision premises.</li>
+          <li>Security personnel are authorized to refuse entry to individuals who cannot be verified or who pose a safety concern.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 6 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">6. Violations, Notices &amp; Penalties</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>A first-offense Violation Notice will be issued in writing for any breach of HOA rules. The resident will be given a specified period to rectify the violation.</li>
+          <li>Repeated or unresolved violations may result in escalating fines, suspension of amenity access, or referral to the appropriate legal body.</li>
+          <li>All fines and penalties are documented in the resident's account and must be settled within 30 days of issuance.</li>
+          <li>Residents have the right to contest a violation notice by submitting a written appeal to the Board within 10 business days of receipt.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 7 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">7. Dispute Resolution &amp; Conflict Management</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Residents are encouraged to resolve neighborly disputes amicably and in good faith before escalating to the HOA or authorities.</li>
+          <li>Formal complaints may be submitted in writing to the HOA office. All complaints will be acknowledged within 5 business days.</li>
+          <li>The Board may convene a mediation session between parties. Both parties are expected to cooperate and attend in good faith.</li>
+          <li>Decisions rendered by the Board following mediation are binding. Appeals may be escalated to the appropriate barangay or legal channels if unresolved.</li>
+          <li>Residents must not take matters into their own hands. Vigilante actions or retaliation against complainants are treated as separate violations.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 8 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">8. Issue Reporting &amp; Community Communication</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Residents are encouraged to report subdivision concerns through SubSync's Issue Reports feature. All submissions are documented and reviewed by the Administration.</li>
+          <li>Reports must be factual, specific, and submitted in good faith. False, malicious, or duplicate reports are subject to appropriate action.</li>
+          <li>Residents must not modify or tamper with another resident's submitted report. Each resident is responsible solely for their own submissions.</li>
+          <li>The HOA Administration will review and assign priority to submitted issues. Residents will be notified of updates via the SubSync portal.</li>
+          <li>For urgent or emergency concerns, residents must contact the HOA office or security personnel directly and not rely solely on the online portal.</li>
+        </ul>
+      </div>
+
+      <div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:8px;padding:12px;border:1px solid var(--glass-border);border-radius:var(--radius-sm);">
+        These policies are subject to amendment by the TNHOA Board. Residents will be notified of any changes through official announcements.
+        For inquiries, please contact the HOA Administration Office.
+      </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">My Submitted Reports</div>
-      <div id="issueList"></div>
-    </div>
-
-  </div>
 
 
-
-<div id="toast"></div>
-<div id="annNotif">
-  <span style="font-size:18px;">📢</span>
-  <div style="flex:1;min-width:0;">
-    <div class="ann-meta">New Announcement</div>
-    <div class="ann-notif-title" id="annNotifTitle">—</div>
-  </div>
-  <button class="btn-view" id="annNotifViewBtn">View</button>
-  <button class="btn-close" onclick="document.getElementById('annNotif').classList.remove('show')">✕</button>
-</div>
-
+</main>
 <script>
 /* ══ UTILS ══ */
 function toggleMobileSidebar() {
@@ -909,8 +977,10 @@ function changeImage(id,inp){
 function initials(n){ return n.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
 function nowTime(){ return new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}); }
 function todayStr(){ return new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
-function showToast(msg){
+function showToast(msg, type){
+  if(window.SubUI && typeof SubUI.toast==='function'){ SubUI.toast(msg, type||'info'); return; }
   const t=document.getElementById('toast');
+  if(!t) return;
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
 }
@@ -938,14 +1008,12 @@ function switchTab(name){
 /* ══ MEMBERS ══ */
 let members=[];
 async function loadHouseholdMembers(){
-  if(!HOUSE_ID) return;
+  if(!HOUSE_ID){ renderMembers(); return; }
   try{
     const data=await fetch('/api/household-members?house_id='+HOUSE_ID,{headers:{'Accept':'application/json'}}).then(r=>r.json());
-    if(Array.isArray(data)){
-      members=data.map(m=>({id:m.id,name:m.name,role:m.relationship||'Member'}));
-      renderMembers();
-    }
-  }catch(e){}
+    members=Array.isArray(data)?data.map(m=>({id:m.id,name:m.name,role:m.relationship||'Member'})):[];
+  }catch(e){ members=[]; }
+  renderMembers();
 }
 function renderMembers(){
   const g=document.getElementById('memberGrid');
@@ -1003,11 +1071,15 @@ function showAnnBanner(ann){
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  document.getElementById('annNotifViewBtn').onclick = ()=>{
-    document.getElementById('annNotif').classList.remove('show');
-    document.getElementById('announcementList').closest('.card').scrollIntoView({behavior:'smooth'});
-  };
-  // Poll for new announcements every 15 s (skip if tab hidden)
+  const _annNotifView = document.getElementById('annNotifViewBtn');
+  if (_annNotifView) {
+    _annNotifView.onclick = ()=>{
+      const _n = document.getElementById('annNotif');
+      if (_n) _n.classList.remove('show');
+      document.getElementById('announcementList').closest('.card').scrollIntoView({behavior:'smooth'});
+    };
+  }
+  // Safety-net: announcements poll every 60s (SSE handles real-time)
   setInterval(async ()=>{
     if(document.hidden) return;
     try {
@@ -1021,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
         showAnnBanner(newOnes[0]);
       }
     } catch(e){}
-  }, 15000);
+  }, 60000);
 
   // Poll active message thread every 10s when messages tab is open
   setInterval(async ()=>{
@@ -1052,14 +1124,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
       try{ recs = await fetch('/api/recommendations/my').then(r=>r.json()); renderRecs(); }catch(e){}
     }
   }, 30000);
-
-  // Poll financial records every 30s when finance tab is visible
-  setInterval(async ()=>{
-    if(document.hidden) return;
-    if(document.getElementById('panel-finance')?.classList.contains('active')){
-      try{ await loadResidentFinancials(); }catch(e){}
-    }
-  }, 30000);
 });
 function viewAnnouncement(id) {
   const ann = announcements.find(a => a.id === id);
@@ -1075,27 +1139,39 @@ function viewAnnouncement(id) {
   }
 }
 
-function renderAnnouncements(){
+let _annShowAll=false;
+function annItem(a){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
-  document.getElementById('announcementList').innerHTML=announcements.length?announcements.map(a=>{
-    const meta=[];
-    if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
-    if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
-    if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
-    // Add status pill (only show Active announcements to residents anyway, but good to have)
-    const statusClass = a.status === 'Archived' ? 'pill-inactive' : 'pill-active';
-    meta.push('<span class="pill '+statusClass+'" style="font-size:11px;">'+a.status+'</span>');
-    return `
-    <div class="ann-item ann-item-${a.tag||'notice'}" onclick="viewAnnouncement(${a.id})">
-      <div class="ann-meta">
-        <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
-        <span class="ann-date">${a.created_at}</span>
-      </div>
-      ${meta.length?'<div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0;">'+meta.join('')+'</div>':''}
-      <div class="ann-title">${a.title}</div>
-      <div class="ann-body">${a.content}</div>
-    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
+  const meta=[];
+  if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
+  if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
+  if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
+  const statusClass = a.status === 'Archived' ? 'pill-inactive' : 'pill-active';
+  meta.push('<span class="pill '+statusClass+'" style="font-size:11px;">'+a.status+'</span>');
+  return `
+  <div class="ann-item ann-item-${a.tag||'notice'}" onclick="viewAnnouncement(${a.id})">
+    <div class="ann-meta">
+      <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
+      <span class="ann-date">${a.created_at}</span>
+    </div>
+    ${meta.length?'<div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0;">'+meta.join('')+'</div>':''}
+    <div class="ann-title">${a.title}</div>
+    <div class="ann-body">${a.content}</div>
+  </div>`;
 }
+function renderAnnouncements(){
+  const el=document.getElementById('announcementList');
+  if(!announcements.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>'; return; }
+  const SHOW=5;
+  const list=_annShowAll?announcements:announcements.slice(0,SHOW);
+  el.innerHTML=list.map(annItem).join('');
+  if(announcements.length>SHOW){
+    const remaining=announcements.length-SHOW;
+    el.insertAdjacentHTML('beforeend',
+      `<button class="btn btn-sm" style="width:100%;margin-top:12px;justify-content:center;" onclick="toggleAnnShowAll()">${_annShowAll?'Show fewer':'Show all announcements ('+remaining+' more)'}</button>`);
+  }
+}
+function toggleAnnShowAll(){ _annShowAll=!_annShowAll; renderAnnouncements(); }
 
 /* ══ MESSAGES ══ */
 let threads={};
@@ -1109,16 +1185,15 @@ async function loadResidentThreads(){
     return;
   }
   data.forEach((t,i)=>{threads[t.id]={...t,messages:[]};});
+  // Sort threads to put group chat first (Community Chat)
+  const sortedData = [...data].sort((a, b) => {
+    const isGroupA = a.title === 'Community Chat';
+    const isGroupB = b.title === 'Community Chat';
+    if (isGroupA && !isGroupB) return -1;
+    if (!isGroupA && isGroupB) return 1;
+    return 0;
+  });
   if(sidebar){
-    // Sort threads to put group chat first (Community Chat)
-    const sortedData = [...data].sort((a, b) => {
-      const isGroupA = a.title === 'Community Chat';
-      const isGroupB = b.title === 'Community Chat';
-      if (isGroupA && !isGroupB) return -1;
-      if (!isGroupA && isGroupB) return 1;
-      return 0;
-    });
-
     sidebar.innerHTML=sortedData.map((t,i)=>`<div class="msg-thread-item${i===0?' active':''}" onclick="selectResThread(${t.id},this)">
       <div class="msg-thread-avatar ta-admin">${(t.title||'?').substring(0,2).toUpperCase()}</div>
       <div class="msg-thread-info">
@@ -1211,6 +1286,7 @@ async function sendMessage(){
     showToast('⚠ Could not send message.');
   }
 }
+const sendMsg = sendMessage; // alias for old inline handlers
 
 async function openNewConvModal(){
   const inp=document.getElementById('newConvTitle');
@@ -1259,6 +1335,17 @@ let issues = [];
 
 const csrfToken = () => document.querySelector('meta[name=csrf-token]').content;
 
+function deleteInBadge(i){
+  if(i.status!=='Resolved') return '';
+  const base = i.resolved_at || i.created_at;
+  if(!base) return '';
+  const d = new Date(base.length<=10 ? base+'T00:00:00' : base);
+  if(isNaN(d.getTime())) return '';
+  const daysLeft = Math.max(0, Math.ceil(30 - (Date.now()-d.getTime())/86400000));
+  if(daysLeft<=0) return '';
+  return `<span style="font-size:10px;font-weight:600;color:var(--text-dim);margin-left:6px;" title="Auto-deletes after 30 days">🗑 deletes in ${daysLeft}d</span>`;
+}
+
 async function loadIssues(){
   issues = await fetch('/api/issues/my').then(r=>r.json());
   renderIssues();
@@ -1282,7 +1369,7 @@ function renderIssues(){
     <div class="issue-item" style="${isCritical?'border-left:3px solid #ff4040;':''}">
       <div class="issue-top">
         <div class="issue-title">${i.title}</div>
-        <div style="display:flex;gap:6px;align-items:center;">${priSpan}${statusPill[i.status]||''}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${priSpan}${statusPill[i.status]||''}${deleteInBadge(i)}</div>
       </div>
       <div class="issue-body">${i.description}</div>
       ${gallery}
@@ -1323,6 +1410,8 @@ async function submitIssue(){
     if(disp) disp.textContent='No location set';
     closeIssuePicker();
     await loadIssues();
+  loadHOAExpenses();
+  loadHOAPolicies();
     showToast('✅ Report submitted. The admin will review it shortly.');
   } else {
     showToast('⚠ '+(data.message||'Failed to submit report. Please try again.'));
@@ -1336,6 +1425,74 @@ async function loadRecs(){
   recs = await fetch('/api/recommendations/my').then(r=>r.json());
   renderRecs();
 }
+let hoaExpenses = [];
+async function loadHOAExpenses(){
+  try {
+    hoaExpenses = await fetch('/api/hoa-expenses',{headers:{'Accept':'application/json'}}).then(r=>r.json());
+    renderHOAExpenses();
+  } catch(e){}
+}
+window.loadHOAExpenses = loadHOAExpenses;
+
+function renderHOAExpenses(){
+  const el = document.getElementById('expensesList');
+  if(!el) return;
+  if(!hoaExpenses.length){
+    el.innerHTML = '<div class="empty-state">No expenses recorded yet.</div>';
+    return;
+  }
+  let html = '<table class="data-table" style="width:100%;"><thead><tr><th>Date</th><th>Category</th><th>Title</th><th>Amount</th><th>Status</th></tr></thead><tbody>';
+  hoaExpenses.forEach(e => {
+    html += `<tr>
+      <td>${e.expense_date}</td>
+      <td>${e.category}</td>
+      <td>${e.title}</td>
+      <td>₱${parseFloat(e.amount).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
+      <td>${e.status}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+let hoaPolicies = [];
+async function loadHOAPolicies(){
+  try {
+    const res = await fetch('/api/hoa-policies', {headers:{'Accept':'application/json'}});
+    const data = await res.json();
+    hoaPolicies = Array.isArray(data) ? data : [];
+    renderHOAPoliciesPreview();
+  } catch(e){}
+}
+window.loadHOAPolicies = loadHOAPolicies;
+
+function renderHOAPoliciesPreview(){
+  const overviewEl = document.getElementById('overviewHoaPolicies');
+  if(!overviewEl) return;
+  
+  if(!hoaPolicies.length){
+    overviewEl.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:20px;">No HOA policies recorded yet.</td></tr>';
+    return;
+  }
+
+  let html = '';
+  hoaPolicies.slice(0, 3).forEach(p => {
+    html += `<tr>
+      <td style="font-weight:500;color:var(--text);"><span class="icon" style="color:var(--accent);margin-right:8px;">📜</span>${p.title}</td>
+      <td><span class="pill" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">${p.category}</span></td>
+      <td>${p.status}</td>
+    </tr>`;
+  });
+  overviewEl.innerHTML = html;
+}
+
+setInterval(async () => {
+  if(document.hidden) return;
+  if(document.getElementById('panel-expenses')?.classList.contains('active')){
+    try{ await loadHOAExpenses(); }catch(e){}
+  }
+}, 60000);
+
 function renderRecs(){
   const el=document.getElementById('recList');
   if(!recs.length){
@@ -1381,35 +1538,148 @@ async function submitRec(){
 const RESIDENT_ID = {{ $residentId ?? 'null' }};
 const HOUSE_ID = {{ $houseId ?? 'null' }};
 const RESIDENT_NAME = @json($residentName);
-const RESIDENT_BALANCE = {{ $residentBalance ?? 0 }};
-
-async function loadResidentFinancials(){
-  const tbody = document.getElementById('myFinancialRecords');
-  if(!tbody) return;
-  try {
-    const records = await fetch('/api/financial/my',{headers:{'Accept':'application/json'}}).then(r=>r.json());
-    if(!Array.isArray(records)||!records.length){
-      tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:16px;">No financial records yet.</td></tr>';
-      return;
-    }
-    tbody.innerHTML=records.map(r=>`<tr style="border-bottom:1px solid var(--glass-border);">
-      <td style="padding:12px 14px;"><span style="padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;background:${r.record_type==='Payment'?'rgba(130,201,138,0.15)':'rgba(240,128,128,0.15)'};color:${r.record_type==='Payment'?'#82c98a':'#f08080'};">${r.record_type}</span></td>
-      <td style="padding:12px 14px;color:var(--text-mid);">${r.description||'—'}</td>
-      <td style="padding:12px 14px;text-align:right;color:${r.record_type==='Payment'?'#82c98a':'#f08080'};">${r.record_type==='Payment'?'+':'-'}₱${Number(r.amount).toLocaleString()}</td>
-      <td style="padding:12px 14px;text-align:right;color:var(--text-dim);font-size:12px;">${r.record_date?new Date(r.record_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
-    </tr>`).join('');
-  } catch(e){
-    tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:16px;">Could not load records.</td></tr>';
-  }
-}
 
 /* ══ INIT ══ */
-loadHouseholdMembers();
-loadAnnouncements();
-loadResidentFinancials();
+async function loadPortalData() {
+    try {
+        const data = await fetch('/api/resident/portal-data', {headers: {'Accept': 'application/json'}}).then(r => r.json());
+        
+        if (data.resident) {
+            // Update resident info
+            RESIDENT_ID = data.resident.id;
+            HOUSE_ID = data.resident.house_id;
+            RESIDENT_NAME = data.resident.name;
+            
+            // Update greeting
+            const greetEl = document.getElementById('greetingText');
+            if (greetEl) {
+                const firstName = data.resident.name.split(' ')[0];
+                const hrs = new Date().getHours();
+                let greet = "Welcome back";
+                if (hrs < 12) greet = "Good morning";
+                else if (hrs < 18) greet = "Good afternoon";
+                else greet = "Good evening";
+                greetEl.innerHTML = `${greet}, ${firstName} 👋`;
+            }
+
+            // Update household name and location
+            const nameEl = document.getElementById('householdName');
+            if (nameEl) nameEl.textContent = data.resident.name;
+            const locEl = document.getElementById('locationText');
+            if (locEl) locEl.textContent = data.resident.block_lot;
+        }
+
+        if (data.members) {
+            members = data.members.map(m => ({ id: m.id, name: m.name, role: m.role }));
+        } else {
+            members = [];
+        }
+        renderMembers();
+
+        if (data.announcements) {
+            announcements = data.announcements;
+            if (announcements.length) lastAnnouncementId = announcements[0].id;
+            renderAnnouncements();
+        }
+
+        if (data.issues) {
+            issues = data.issues;
+            renderIssues();
+        }
+
+        if (data.recommendations) {
+            recs = data.recommendations;
+            renderRecs();
+        }
+
+        if (data.expenses) {
+            hoaExpenses = data.expenses;
+            renderHOAExpenses();
+        }
+
+        if (data.policies) {
+            hoaPolicies = data.policies;
+            renderHOAPoliciesPreview();
+        }
+    } catch (e) {
+        console.error('Failed to load portal data:', e);
+        // Fallback to individual loads
+        loadHouseholdMembers();
+        loadAnnouncements();
+        loadIssues();
+        loadRecs();
+        loadHOAExpenses();
+        loadHOAPolicies();
+    }
+}
+
+loadPortalData();
 renderMessages();
-loadIssues();
-loadRecs();
+
+/* ── Real-time SSE (replaces aggressive polling) ── */
+let _sseEventId = 0;
+
+function connectResidentSSE(){
+  if(document.hidden){ setTimeout(connectResidentSSE, 2000); return; }
+  const url = `/api/stream/updates?lastEventId=${_sseEventId}`;
+  const es  = new EventSource(url);
+
+  // Fresh connection — grab latest data once
+  es.addEventListener('sync', () => {
+    loadAnnouncements();
+    loadIssues();
+    loadHOAExpenses();
+    loadHOAPolicies();
+  });
+
+  // New / changed announcement
+  es.addEventListener('announcement', async () => {
+    try{
+      const data = await fetch('/api/announcements').then(r=>r.json());
+      if(!Array.isArray(data) || !data.length) return;
+      const newOnes = data.filter(a => a.id > lastAnnouncementId);
+      if(newOnes.length) showAnnBanner(newOnes[0]);
+      lastAnnouncementId = data[0].id;
+      announcements = data;
+      renderAnnouncements();
+    }catch(e){}
+  });
+
+  // New / changed issue (refresh my issues so status updates show instantly)
+  es.addEventListener('issue', async () => {
+    try{
+      const myIss = await fetch('/api/issues/my',{headers:{'Accept':'application/json'}}).then(r=>r.json());
+      if(Array.isArray(myIss)){ issues = myIss; renderIssues(); }
+    }catch(e){}
+  });
+
+  // HOA expense update
+  es.addEventListener('hoa-expense', () => {
+    loadHOAExpenses();
+  });
+
+  // Reconnect cycle — server sends lastEventId
+  es.addEventListener('reconnect', (e) => {
+    try{
+      const evt = JSON.parse(e.data);
+      if(evt.lastEventId) _sseEventId = evt.lastEventId;
+    }catch(err){}
+    es.close();
+    setTimeout(connectResidentSSE, 200);
+  });
+
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectResidentSSE, 3000);
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && es.readyState === EventSource.CLOSED){
+      setTimeout(connectResidentSSE, 500);
+    }
+  }, { once: true });
+}
+setTimeout(connectResidentSSE, 2000);
 
 /* ── Save resident name on blur ── */
 const _nameEl = document.getElementById('householdName');
@@ -1431,23 +1701,50 @@ if(_nameEl && RESIDENT_ID){
   });
   _nameEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); _nameEl.blur(); } });
 }
-
-/* ── Live balance refresh ── */
-async function loadResidentBalance(){
-  if(!RESIDENT_ID) return;
-  try{
-    const r = await fetch('/api/residents/me',{headers:{'Accept':'application/json'}});
-    const d = await r.json();
-    const el = document.getElementById('resBalanceDisplay');
-    if(el && d.balance!=null)
-      el.textContent = '₱' + Number(d.balance).toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2});
-  } catch(e){}
-}
-loadResidentBalance();
 </script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script>
+/* ══ LAZY LEAFLET LOADER — Leaflet loads from local origin only when the map is opened ══ */
+let _leafletLoaded = false;
+function loadLeaflet(){
+  if(_leafletLoaded) return Promise.resolve();
+  _leafletLoaded = true;
+  const AB = window.APP_BASE || '';
+  return new Promise((resolve, reject) => {
+    // CSS (same-origin → instant, and cached 1yr via .htaccess)
+    if(!document.querySelector('link[href*="leaflet.css"]')){
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = AB + '/vendor/leaflet/leaflet.css';
+      document.head.appendChild(l);
+    }
+    // JS (sequential to preserve dependency order)
+    const srcs = [
+      AB + '/vendor/leaflet/leaflet.js',
+      AB + '/vendor/leaflet/leaflet-heat.js',
+    ];
+    let i = 0;
+    (function next(){
+      if(i >= srcs.length){
+        // Point default marker icons at local images (issue-picker pin uses default marker)
+        if(window.L && L.Icon && L.Icon.Default){
+          L.Icon.Default.mergeOptions({
+            iconUrl: AB + '/vendor/leaflet/images/marker-icon.png',
+            iconRetinaUrl: AB + '/vendor/leaflet/images/marker-icon-2x.png',
+            shadowUrl: AB + '/vendor/leaflet/images/marker-shadow.png',
+          });
+        }
+        resolve(); return;
+      }
+      const s = document.createElement('script');
+      s.src = srcs[i++];
+      s.onload = next;
+      s.onerror = () => { s.onerror = null; next(); };
+      document.body.appendChild(s);
+    })();
+  });
+}
+</script>
 <script>
 /* ══ RESIDENT MAP ══ */
 const RES_CENTER = [10.62269, 122.96134];
@@ -1461,94 +1758,86 @@ function makeResCircle(color) {
   });
 }
 
-function initResidentMap() {
-  if (resMapInst) { setTimeout(()=>resMapInst.invalidateSize(),100); return; }
-  resMapInst = L.map('resident-map').setView(RES_CENTER, 17);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 20,
-  }).addTo(resMapInst);
-
-  fetch('/api/map/facilities').then(r=>r.json()).then(data=>{
-    data.forEach(f=>{
-      let popupContent = `<strong>${f.name}</strong>`;
-      if (f.description) popupContent += `<br><small>${f.description}</small>`;
-
-      // Add photo thumbnails if available
-      if (f.media && f.media.length > 0) {
-        popupContent += '<br><div style="margin-top:8px;">';
-        f.media.slice(0, 3).forEach(m => {
-          popupContent += `<img src="${m.file_path}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin:2px;border:1px solid rgba(255,255,255,0.2);" loading="lazy" />`;
-        });
-        if (f.media.length > 3) {
-          popupContent += `<span style="font-size:10px;color:var(--text-dim);">+${f.media.length - 3} more</span>`;
-        }
-        popupContent += '</div>';
-      }
-
-      L.marker([parseFloat(f.latitude),parseFloat(f.longitude)],{icon:makeResCircle('#4CAF50')})
-        .bindPopup(popupContent)
-        .addTo(resMapInst);
-    });
+function makeResIssueIcon(color, num) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
+    iconSize:[24,24], iconAnchor:[12,12], popupAnchor:[0,-12]
   });
-
-  resLayerHeatmap = L.heatLayer([], {
-    radius: 42, blur: 32, maxZoom: 17, max: 4, minOpacity: 0.0,
-    gradient: {
-      0.15: '#1a003e',
-      0.35: '#5c0099',
-      0.5:  '#0044bb',
-      0.65: '#cc4400',
-      0.82: '#cc1400',
-      1.0:  '#ff2200'
-    }
-  }).addTo(resMapInst);
-  setTimeout(() => { if (resLayerHeatmap._canvas) resLayerHeatmap._canvas.style.opacity = '0.70'; }, 150);
-
-  document.getElementById('res-layer-heatmap').addEventListener('change', function() {
-    this.checked ? resMapInst.addLayer(resLayerHeatmap) : resMapInst.removeLayer(resLayerHeatmap);
-  });
-
-  fetch('/api/map/issues').then(r=>r.json()).then(data=>{
-    data.forEach(i=>{
-      const color=i.status==='Resolved'?'#888':(i.status==='In Progress'?'#f5a623':'#e05555');
-      let popupContent = `<strong>${i.title}</strong>`;
-
-      // Add photo thumbnails if available
-      if (i.media && i.media.length > 0) {
-        popupContent += '<br><div style="margin-top:8px;">';
-        i.media.slice(0, 3).forEach(m => {
-          popupContent += `<img src="${m.file_path}" style="width:60px;height:60px;object-fit:cover;border-radius:4px;margin:2px;border:1px solid rgba(255,255,255,0.2);" loading="lazy" />`;
-        });
-        if (i.media.length > 3) {
-          popupContent += `<span style="font-size:10px;color:var(--text-dim);">+${i.media.length - 3} more</span>`;
-        }
-        popupContent += '</div>';
-      }
-
-      popupContent += `<br><small>${i.status}</small>`;
-
-      L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon:makeResCircle(color)})
-        .bindPopup(popupContent)
-        .addTo(resMapInst);
-    });
-    resLayerHeatmap.setLatLngs(data.map(i => [parseFloat(i.latitude), parseFloat(i.longitude), 1.0]));
-  });
-
-  // Place own household pin
-  if(HOUSE_ID){
-    fetch('/api/map/households',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(data=>{
-      const own=data.find(h=>h.id===HOUSE_ID);
-      if(own&&own.latitude&&own.longitude){
-        L.marker([parseFloat(own.latitude),parseFloat(own.longitude)],{icon:makeResCircle('#4287f5')})
-          .bindPopup(`<strong>My Household</strong><br><small>${own.block_lot_number||''}</small>`)
-          .addTo(resMapInst);
-      }
-    }).catch(()=>{});
-  }
 }
 
-/* ══ ISSUE LOCATION PICKER ══ */
+let mapSettings = null;
+async function fetchMapSettings(){
+  try{
+    const r = await fetch('/api/map/settings',{headers:{'Accept':'application/json'}});
+    mapSettings = await r.json();
+  }catch(e){
+    mapSettings = {min_lat:10.6195,max_lat:10.6260,min_lng:122.9580,max_lng:122.9650,center_lat:10.62269,center_lng:122.96134,zoom:17};
+  }
+  return mapSettings;
+}
+
+function initResidentMap() {
+    loadLeaflet().then(async ()=>{
+      if (resMapInst) { setTimeout(()=>resMapInst.invalidateSize(),100); return; }
+      const s = await fetchMapSettings();
+      const mapBounds = L.latLngBounds([
+      [+s.min_lat, +s.min_lng],
+      [+s.max_lat, +s.max_lng],
+    ]);
+    resMapInst = L.map('resident-map', {
+      minZoom: 16,
+      maxZoom: 20,
+      maxBounds: mapBounds,
+      maxBoundsViscosity: 1.0,
+    }).fitBounds(mapBounds, {padding: [12, 12]});
+    
+    // Using OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(resMapInst);
+
+    // Fetch all map data in a single request to prevent connection queuing
+          resLayerHeatmap = L.heatLayer([], {
+        radius: 42, blur: 32, maxZoom: 17, max: 4, minOpacity: 0.0,
+        gradient: {
+          0.15: '#1a003e',
+          0.35: '#5c0099',
+          0.5:  '#0044bb',
+          0.65: '#cc4400',
+          0.82: '#cc1400',
+          1.0:  '#ff2200'
+        }
+      }).addTo(resMapInst);
+      setTimeout(() => { if (resLayerHeatmap._canvas) resLayerHeatmap._canvas.style.opacity = '0.70'; }, 150);
+
+    fetch('/api/map/all').then(r=>r.json()).then(data=>{
+      (data.facilities || []).forEach(f=>{
+        let popupContent = '<strong>' + f.name + '</strong>';
+        if (f.description) popupContent += '<br><small>' + f.description + '</small>';
+        L.marker([parseFloat(f.latitude),parseFloat(f.longitude)],{icon:makeResCircle('#4CAF50')}).bindPopup(popupContent).addTo(resMapInst);
+      });
+
+      (data.issues || []).forEach((i, index)=>{
+        const color = i.status==='Resolved' ? '#888' : (i.status==='In Progress'?'#f5a623':'#e05555');
+        let popupContent = '<strong>Report #' + (index + 1) + ': ' + i.title + '</strong><br><small>' + i.status + '</small>';
+        L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon:makeResIssueIcon(color, index + 1)}).bindPopup(popupContent).addTo(resMapInst);
+      });
+
+      if(HOUSE_ID){
+        const own = (data.households || []).find(h=>h.id===HOUSE_ID);
+        if(own && own.latitude && own.longitude){
+          L.marker([parseFloat(own.latitude),parseFloat(own.longitude)],{icon:makeResCircle('#4287f5')})
+            .bindPopup('<strong>My Household</strong><br><small>'+(own.block_lot_number||'')+'</small>')
+            .addTo(resMapInst);
+        }
+      }
+      resLayerHeatmap.setLatLngs((data.issues || []).map(i => [parseFloat(i.latitude), parseFloat(i.longitude), 1.0]));
+    }).catch(err => console.error('Map data fetch error:', err));
+    });
+}
+
 let issuePickerMap = null, issuePickerPin = null;
 
 function useMyLocation() {
@@ -1557,30 +1846,43 @@ function useMyLocation() {
     const lat=pos.coords.latitude, lng=pos.coords.longitude;
     document.getElementById('issue-lat').value=lat;
     document.getElementById('issue-lng').value=lng;
-    document.getElementById('issue-loc-display').textContent=`📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    showToast('Location set via GPS.');
-  }, ()=>showToast('Could not get location. Try pinning on map instead.'));
+    document.getElementById('issue-loc-display').textContent='📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+    if(issuePickerPin) issuePickerPin.setLatLng([lat,lng]);
+    else if(issuePickerMap) issuePickerPin=L.marker([lat,lng]).addTo(issuePickerMap);
+    if(issuePickerMap) issuePickerMap.setView([lat,lng], 18);
+  }, ()=>showToast('Could not get location.'));
 }
 
 function openIssuePicker() {
-  const box = document.getElementById('issue-picker-map');
-  box.style.display = 'block';
-  if (!issuePickerMap) {
-    issuePickerMap = L.map('issue-picker-map').setView(RES_CENTER, 17);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20}).addTo(issuePickerMap);
-    issuePickerMap.on('click', function(e){
-      const {lat,lng}=e.latlng;
-      if(issuePickerPin) issuePickerPin.setLatLng([lat,lng]);
-      else issuePickerPin=L.marker([lat,lng]).addTo(issuePickerMap);
-      document.getElementById('issue-lat').value=lat.toFixed(7);
-      document.getElementById('issue-lng').value=lng.toFixed(7);
-      document.getElementById('issue-loc-display').textContent=`📍 ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    });
-  } else {
-    setTimeout(()=>issuePickerMap.invalidateSize(),80);
-  }
+  document.getElementById('issue-picker-map').style.display='block';
+  loadLeaflet().then(async ()=>{
+    if(!issuePickerMap) {
+      const s = mapSettings || await fetchMapSettings();
+      const mapBounds = L.latLngBounds([
+        [+s.min_lat, +s.min_lng],
+        [+s.max_lat, +s.max_lng],
+      ]);
+      issuePickerMap = L.map('issue-picker-map', {
+        minZoom: 16,
+        maxZoom: 20,
+        maxBounds: mapBounds,
+        maxBoundsViscosity: 1.0,
+      }).fitBounds(mapBounds, {padding: [8, 8]});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(issuePickerMap);
+      issuePickerMap.on('click', function(e){
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        if(issuePickerPin) issuePickerPin.setLatLng([lat,lng]);
+        else issuePickerPin=L.marker([lat,lng]).addTo(issuePickerMap);
+        document.getElementById('issue-lat').value=lat.toFixed(7);
+        document.getElementById('issue-lng').value=lng.toFixed(7);
+        document.getElementById('issue-loc-display').textContent='📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+      });
+    } else {
+      setTimeout(()=>issuePickerMap.invalidateSize(),80);
+    }
+  });
 }
-
 function closeIssuePicker() {
   document.getElementById('issue-picker-map').style.display='none';
 }
@@ -1625,5 +1927,44 @@ function closeIssuePicker() {
     </div>
   </div>
 </div>
+<script>
+  
+  // Safety-net: announcements poll every 60s (SSE handles real-time)
+  setInterval(async ()=>{
+    if(document.hidden) return;
+    try {
+      const anns = await fetch('/api/announcements').then(r=>r.json());
+      if(Array.isArray(anns) && anns.length && anns[0].id > lastAnnouncementId){
+        const newOnes = anns.filter(a=>a.id > lastAnnouncementId);
+        lastAnnouncementId = anns[0].id;
+        announcements = anns;
+        renderAnnouncements();
+        showAnnBanner(newOnes[0]);
+      }
+    }catch(e){}
+  }, 60000);
+
+  // Safety-net: my issues poll every 60s (SSE handles real-time)
+  setInterval(async ()=>{
+    if(document.hidden) return;
+    try {
+      const myIss = await fetch('/api/issues/my').then(r=>r.json());
+      if(Array.isArray(myIss) && JSON.stringify(myIss) !== JSON.stringify(issues)){
+        issues = myIss;
+        renderIssues();
+      }
+    }catch(e){}
+  }, 60000);
+</script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+

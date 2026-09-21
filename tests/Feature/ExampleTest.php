@@ -14,10 +14,21 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('login'));
+        $response->assertStatus(200)
+            ->assertSee('SubSync')
+            ->assertSee('Issue reporting')
+            ->assertSee('Subdivision mapping')
+            ->assertSee(route('login'))
+            ->assertDontSee('Administrator access'); // admin login intentionally hidden from public landing
+    }
 
-        // Follow the redirect and check that login page loads
-        $response = $this->get(route('login'));
-        $response->assertStatus(200);
+    public function test_mapping_page_loads_with_leaflet_map(): void
+    {
+        $response = $this->get('/mapping');
+
+        $response->assertStatus(200)
+            ->assertSee('leaflet')
+            ->assertSee('L.map')
+            ->assertSee('Terra Nova');
     }
 }

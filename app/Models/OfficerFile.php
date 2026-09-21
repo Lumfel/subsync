@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $notes
  * @property int $size_bytes
  * @property string|null $file_path
+ * @property bool $archived
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Officer|null $officer
@@ -39,8 +40,10 @@ class OfficerFile extends Model
 {
     protected $fillable = [
         'officer_id', 'officer_name', 'original_name',
-        'category', 'period', 'notes', 'size_bytes', 'file_path',
+        'category', 'period', 'notes', 'size_bytes', 'file_path', 'archived',
     ];
+
+    protected $casts = ['archived' => 'boolean'];
 
     public function officer()
     {

@@ -12,27 +12,12 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $description
  * @property numeric $amount
  * @property \Illuminate\Support\Carbon $record_date
- * @property string|null $gcash_transaction_id
- * @property string|null $gcash_reference
- * @property string|null $payment_gateway
  * @property string $created_at
  * @property-read \App\Models\Admin|null $admin
  * @property-read \App\Models\Resident $resident
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereAdminId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereAmount($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereRecordDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereRecordType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereResidentId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereGcashTransactionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereIn(string $column, mixed $values, string $boolean = 'and', bool $not = false)
- * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
- * @method static int count(string $columns = '*')
  * @mixin \Eloquent
  */
 class FinancialRecord extends Model
@@ -41,7 +26,6 @@ class FinancialRecord extends Model
 
     protected $fillable = [
         'resident_id', 'admin_id', 'record_type', 'description', 'amount', 'record_date',
-        'gcash_transaction_id', 'gcash_reference', 'payment_gateway',
     ];
 
     protected function casts(): array
@@ -49,7 +33,6 @@ class FinancialRecord extends Model
         return [
             'amount' => 'decimal:2',
             'record_date' => 'date',
-            // gcash fields as strings
         ];
     }
 

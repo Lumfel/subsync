@@ -12,7 +12,8 @@ class OfficerFileController extends Controller
     /** GET /api/officer-files — all files (admin view) */
     public function index()
     {
-        $files = OfficerFile::orderByDesc('created_at')->get();
+        $files = OfficerFile::where('archived', request()->boolean('archived'))
+            ->orderByDesc('created_at')->get();
         return response()->json($files);
     }
 
@@ -32,7 +33,7 @@ class OfficerFileController extends Controller
 
         $record = OfficerFile::create([
             'officer_id'    => $officer?->id,
-            'officer_name'  => $officer?->name ?? 'Officer',
+            'officer_name'  => $officer?->name ?? session('admin_name', 'Admin'),
             'original_name' => $uploaded->getClientOriginalName(),
             'category'      => $request->input('category'),
             'period'        => $request->input('period'),
@@ -51,5 +52,13 @@ class OfficerFileController extends Controller
         Storage::disk('public')->delete($file->file_path);
         $file->delete();
         return response()->json(['success' => true]);
+    }
+
+    public function archive($id)
+    {
+        $file = OfficerFile::findOrFail($id);
+        $file->update(['archived' => !$file->archived]);
+
+        return response()->json(['success' => true, 'archived' => $file->archived]);
     }
 }

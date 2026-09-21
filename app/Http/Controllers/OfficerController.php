@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Officer;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class OfficerController extends Controller
@@ -11,9 +12,12 @@ class OfficerController extends Controller
     /** GET /api/officers */
     public function index()
     {
-        return response()->json(
-            Officer::select('id', 'name', 'email', 'contact_number', 'role_description', 'status')->get()
-        );
+        return Cache::remember('officers.list', 30, function () {
+            return Officer::select('id', 'name', 'email', 'contact_number', 'role_description', 'status')
+                ->get()
+                ->map(fn($o) => $o->toArray())
+                ->all();
+        });
     }
 
     /** POST /api/officers */

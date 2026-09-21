@@ -40,6 +40,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Admin whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Admin whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Admin whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class Admin extends \Eloquent {}
 }
@@ -49,6 +52,7 @@ namespace App\Models{
  * @property int $id
  * @property int|null $admin_id
  * @property int|null $officer_id
+ * @property int|null $template_id
  * @property string $title
  * @property string $content
  * @property string $tag
@@ -60,6 +64,7 @@ namespace App\Models{
  * @property-read \App\Models\Officer|null $officer
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AnnouncementView> $views
  * @property-read int|null $views_count
+ * @property-read \App\Models\AnnouncementTemplate|null $template
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement query()
@@ -71,8 +76,48 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereTag($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereTemplateId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property string $target
+ * @property string $priority
+ * @property string|null $event_date
+ * @property string $status
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereEventDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement wherePriority($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Announcement whereTarget($value)
  */
 	class Announcement extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
+ * @property string $name
+ * @property string $type
+ * @property string $subject_template
+ * @property string $body_template
+ * @property string|null $variables
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereSubjectTemplate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereBodyTemplate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereVariables($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementTemplate whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ */
+	class AnnouncementTemplate extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -90,6 +135,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementView whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementView whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|AnnouncementView whereResidentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class AnnouncementView extends \Eloquent {}
 }
@@ -114,6 +162,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ConvParticipant whereOfficerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ConvParticipant whereParticipantType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ConvParticipant whereResidentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class ConvParticipant extends \Eloquent {}
 }
@@ -133,6 +184,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Conversation whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Conversation whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Conversation whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class Conversation extends \Eloquent {}
 }
@@ -140,23 +194,30 @@ namespace App\Models{
 namespace App\Models{
 /**
  * @property int $id
- * @property int $house_id
- * @property string|null $reason
- * @property string|null $date_flagged
+ * @property int $resident_id
+ * @property string $title
+ * @property string $description
+ * @property float $amount
+ * @property string $expense_date
+ * @property string $status
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Household $household
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent whereDateFlagged($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent whereHouseId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent whereReason($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Delinquent whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest query()
+ * @mixin \Eloquent
+ * @property-read \App\Models\Resident $resident
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereAmount($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereExpenseDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereResidentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|ExpenseRequest whereUpdatedAt($value)
  */
-	class Delinquent extends \Eloquent {}
+	class ExpenseRequest extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -181,6 +242,11 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Facility whereLongitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Facility whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Facility whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Media> $media
+ * @property-read int|null $media_count
  */
 	class Facility extends \Eloquent {}
 }
@@ -205,6 +271,11 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Family whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Family whereMembers($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Family whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property string $date_added
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Family whereDateAdded($value)
  */
 	class Family extends \Eloquent {}
 }
@@ -224,11 +295,18 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord query()
+ * @mixin \Eloquent
+ * @property string|null $gcash_transaction_id
+ * @property string|null $gcash_reference
+ * @property string|null $payment_gateway
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereAdminId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereAmount($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereGcashReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereGcashTransactionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord wherePaymentGateway($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereRecordDate($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereRecordType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord whereResidentId($value)
@@ -257,6 +335,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialReport whereMonth($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialReport wherePreviousBalance($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialReport whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class FinancialReport extends \Eloquent {}
 }
@@ -284,6 +365,18 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Household whereLongitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Household whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Household whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property int|null $family_id
+ * @property string|null $image
+ * @property string $date_added
+ * @property-read \App\Models\Family|null $family
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Media> $media
+ * @property-read int|null $media_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Household whereDateAdded($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Household whereFamilyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Household whereImage($value)
  */
 	class Household extends \Eloquent {}
 }
@@ -306,6 +399,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HouseholdMember whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HouseholdMember whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|HouseholdMember whereRelationship($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class HouseholdMember extends \Eloquent {}
 }
@@ -340,6 +436,11 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property string|null $priority
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport wherePriority($value)
  */
 	class IssueReport extends \Eloquent {}
 }
@@ -366,6 +467,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueResponse whereOfficerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueResponse whereResponderType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueResponse whereResponseContent($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class IssueResponse extends \Eloquent {}
 }
@@ -391,6 +495,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereUploaderId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Media whereUploaderType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class Media extends \Eloquent {}
 }
@@ -403,6 +510,25 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Member newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Member newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Member query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property int $id
+ * @property int $user_id
+ * @property int $house_id
+ * @property string $date_added
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property string $member_type
+ * @property int|null $family_id
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereDateAdded($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereFamilyId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereHouseId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereMemberType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Member whereUserId($value)
  */
 	class Member extends \Eloquent {}
 }
@@ -429,6 +555,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Message whereOfficerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Message whereResidentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Message whereSenderType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class Message extends \Eloquent {}
 }
@@ -464,6 +593,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Officer whereRoleDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Officer whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Officer whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class Officer extends \Eloquent {}
 }
@@ -479,6 +611,7 @@ namespace App\Models{
  * @property string|null $notes
  * @property int $size_bytes
  * @property string|null $file_path
+ * @property bool $archived
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\Officer|null $officer
@@ -496,8 +629,37 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|OfficerFile wherePeriod($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|OfficerFile whereSizeBytes($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|OfficerFile whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|OfficerFile whereArchived($value)
  */
 	class OfficerFile extends \Eloquent {}
+}
+
+namespace App\Models{
+/**
+ * @property int $id
+ * @property int $house_id
+ * @property string|null $reason
+ * @property string|null $date_flagged
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read Household $household
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus whereDateFlagged($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus whereHouseId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus whereReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PaymentStatus whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ */
+	class PaymentStatus extends \Eloquent {}
 }
 
 namespace App\Models{
@@ -518,6 +680,11 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Recommendation whereResidentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Recommendation whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Recommendation whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property string|null $category
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Recommendation whereCategory($value)
  */
 	class Recommendation extends \Eloquent {}
 }
@@ -560,6 +727,9 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Resident whereRememberToken($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Resident whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Resident whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
  */
 	class Resident extends \Eloquent {}
 }
@@ -570,6 +740,21 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Status newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Status newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Status query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property int $id
+ * @property int $house_id
+ * @property string $status
+ * @property string|null $reason
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Status whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Status whereHouseId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Status whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Status whereReason($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Status whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Status whereUpdatedAt($value)
  */
 	class Status extends \Eloquent {}
 }
@@ -585,6 +770,23 @@ namespace App\Models{
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
+ * @method static int count(string $columns = '*')
+ * @mixin \Eloquent
+ * @property int $id
+ * @property string $name
+ * @property string $email
+ * @property string $password
+ * @property string|null $location
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLocation($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePassword($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
  */
 	class User extends \Eloquent {}
 }

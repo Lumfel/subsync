@@ -5,10 +5,30 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Admin Dashboard</title>
+<script>
+window.APP_BASE = '{{ request()->getBaseUrl() }}';
+(function () {
+    var base = window.APP_BASE || '';
+    if (!base) return;
+    var prefix = function (url) {
+        if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
+        return url;
+    };
+    var origFetch = window.fetch;
+    window.fetch = function (url, opts) { return origFetch.call(this, prefix(url), opts); };
+    var OrigES = window.EventSource;
+    window.EventSource = function (url, cfg) { return new OrigES(prefix(url), cfg); };
+    window.EventSource.prototype = OrigES.prototype;
+    window.EventSource.CONNECTING = 0; window.EventSource.OPEN = 1; window.EventSource.CLOSED = 2;
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"></noscript>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
 <style>
+/* Leaflet CSS is loaded lazily only when the map is opened */
 :root {
   --glass: #FFFFFF;
   --glass-hover: #FAF7F2;
@@ -28,20 +48,20 @@
   --yellow-dim: #FAF4E7;
   --purple: #8C829E;
   --purple-dim: #F2EFF4;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --radius-xs: 6px;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-xs: 4px;
   --sidebar-w: 230px;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 body {
-  font-family: 'Times New Roman', serif;
+  font-family: 'DM Sans', sans-serif;
   background: #FAF6F0;
   min-height: 100vh;
   color: var(--text);
   display: flex;
-  font-size: 18px;
-  line-height: 1.75;
+  font-size: 15px;
+  line-height: 1.55;
 }
 
 /* ── SCROLLBAR ── */
@@ -176,6 +196,23 @@ body {
   border-color: var(--accent-border);
   color: var(--accent);
 }
+.alerts-wrap { position:relative; }
+.alerts-badge { position:absolute; top:-6px; right:-5px; min-width:18px; height:18px; padding:0 5px; border-radius:9px; background:var(--danger); color:#fff; font-size:10px; font-weight:700; display:none; align-items:center; justify-content:center; }
+.alerts-popover { display:none; position:absolute; top:calc(100% + 10px); right:0; width:min(390px, calc(100vw - 28px)); max-height:430px; overflow-y:auto; background:#fff; border:1px solid var(--glass-border); border-radius:var(--radius); box-shadow:0 16px 40px rgba(43,41,39,.16); z-index:1001; }
+.alerts-popover.open { display:block; }
+.alerts-popover-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:15px 16px; border-bottom:1px solid var(--glass-border); }
+.alerts-popover-head strong { font-size:14px; }
+.alerts-refresh { border:0; background:transparent; color:var(--blue); cursor:pointer; font-size:11px; }
+.alert-item { display:flex; gap:10px; padding:13px 16px; border-bottom:1px solid var(--glass-border); cursor:pointer; }
+.alert-item:hover { background:var(--glass-hover); }
+.alert-item:last-child { border-bottom:0; }
+.alert-mark { width:8px; height:8px; margin-top:5px; border-radius:50%; background:var(--blue); flex-shrink:0; }
+.alert-mark.warning { background:var(--yellow); }
+.alert-mark.critical { background:var(--danger); }
+.alert-title { font-size:13px; font-weight:600; color:var(--text); }
+.alert-message { font-size:12px; line-height:1.45; color:var(--text-mid); margin-top:2px; }
+.alert-time { font-size:10px; color:var(--text-dim); margin-top:5px; }
+.alerts-empty { padding:24px 16px; text-align:center; color:var(--text-dim); font-size:12px; }
 .menu-toggle {
   display: none;
   background: none;
@@ -184,7 +221,7 @@ body {
   font-size: 20px;
   cursor: pointer;
 }
-.content { padding: 24px 28px; flex: 1; overflow-y: auto; }
+.content { padding: 0; flex: 1; overflow-y: auto; }
 
 /* ── PANELS ── */
 .panel { display: none; animation: fadeUp 0.28s ease both; }
@@ -205,15 +242,17 @@ body {
   transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
 }
 .card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(43, 41, 39, 0.04);
+  transform: none;
+  box-shadow: 0 4px 18px rgba(43, 41, 39, 0.04);
 }
 .card-title {
-  font-size: 13px; font-weight: 600;
+  font-size: 15px; /* Increased from 13px */
+  font-weight: 600;
   color: var(--text); margin-bottom: 4px;
 }
 .card-subtitle {
-  font-size: 13px; color: var(--text-dim);
+  font-size: 14px; /* Increased from 13px */
+  color: var(--text-dim);
   margin-bottom: 18px; line-height: 1.65;
 }
 
@@ -235,8 +274,8 @@ body {
 }
 .stat-card:hover { background: var(--glass-hover); }
 .stat-card:active { opacity: 0.85; }
-.stat-label { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
-.stat-value { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.stat-label { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 10px; }
+.stat-value { font-family: 'DM Serif Display', serif; font-size: 32px; color: var(--text); line-height: 1; margin-bottom: 4px; }
 .stat-sub { font-size: 12px; color: var(--text-dim); }
 .stat-green { color: var(--green); }
 .stat-yellow { color: var(--yellow); }
@@ -341,20 +380,40 @@ select option { background: #FFFFFF; color: var(--text); }
 }
 @keyframes emergencyScroll { 0%{background-position:0 0} 100%{background-position:200% 0} }
 
+/* ── ANNOUNCEMENT / ISSUE FLOATING NOTIF BANNERS ── */
+#annNotif, #issueNotif {
+  display:none; position:fixed; bottom:24px; right:24px; z-index:9000;
+  background:#FFFFFF; border:1px solid var(--glass-border);
+  border-radius:var(--radius); padding:14px 16px;
+  box-shadow:0 8px 32px rgba(43,41,39,0.18);
+  max-width:360px; width:calc(100vw - 48px);
+  display:flex; align-items:center; gap:12px;
+  transform:translateY(20px); opacity:0; pointer-events:none;
+  transition:transform 0.3s ease, opacity 0.3s ease;
+}
+#annNotif.show, #issueNotif.show {
+  transform:translateY(0); opacity:1; pointer-events:auto;
+  display:flex;
+}
+#issueNotif { bottom:110px; border-left:3px solid var(--blue); }
+#annNotif   { border-left:3px solid var(--accent); }
+
 /* ── MODAL ── */
 .modal-overlay {
   display:none; position:fixed; inset:0;
-  background:rgba(0,0,0,0.75); z-index:100;
+  background:rgba(43,41,39,0.42); z-index:1000;
   align-items:center; justify-content:center; padding:20px;
 }
 .modal-overlay.open { display:flex; }
 .modal-box {
-  background: linear-gradient(160deg, #12101a, #1a120d);
+  background: #FFFFFF;
   border:1px solid var(--glass-border);
   border-radius:var(--radius);
   padding:28px;
   max-width:520px; width:100%;
   max-height:90vh; overflow-y:auto;
+  color:var(--text);
+  box-shadow:0 18px 48px rgba(43,41,39,0.18);
   animation:fadeUp 0.25s ease both;
 }
 .modal-box.wide { max-width: 760px; }
@@ -370,6 +429,16 @@ select option { background: #FFFFFF; color: var(--text); }
   font-size: 13px; padding: 6px 13px; cursor: pointer;
   font-family: 'DM Sans', sans-serif;
 }
+.modal-box input,
+.modal-box textarea,
+.modal-box select {
+  color:var(--text);
+  background:#FFFFFF;
+  border-color:var(--glass-border);
+}
+.modal-box input::placeholder,
+.modal-box textarea::placeholder { color:var(--text-dim); }
+.modal-box a { color:var(--blue); }
 
 /* ── TOAST ── */
 #toast {
@@ -479,6 +548,12 @@ select option { background: #FFFFFF; color: var(--text); }
 
 /* ── MESSAGING ── */
 .msg-layout { display:flex; height:520px; border:1px solid var(--glass-border); border-radius:var(--radius); overflow:hidden; }
+#panel-messages { padding: 24px 28px; }
+#panel-messages .msg-layout { display:flex; min-height:520px; }
+.msg-panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.msg-panel-heading .card-title { font-size:18px; margin-bottom:3px; }
+.msg-panel-heading .card-subtitle { margin-bottom:0; }
+.message-status { font-size:12px; color:var(--text-dim); padding-top:4px; text-align:right; }
 .msg-sidebar {
   width:220px; flex-shrink:0;
   background: #FAF7F2;
@@ -510,7 +585,7 @@ select option { background: #FFFFFF; color: var(--text); }
 .msg-bubble-wrap { display:flex; align-items:flex-end; gap:8px; }
 .msg-bubble-wrap.mine { flex-direction:row-reverse; }
 .bubble-avatar { width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
-.bubble { max-width:68%; padding:10px 14px; border-radius:14px; font-size:13px; line-height:1.55; }
+.bubble { max-width:68%; padding:10px 14px; border-radius:6px; font-size:13px; line-height:1.55; }
 .from-admin { background: #FFFFFF; border:1px solid var(--glass-border); border-bottom-left-radius:4px; }
 .from-mine { background:var(--accent-dim); border:1px solid var(--accent-border); border-bottom-right-radius:4px; }
 .bubble-time { font-size:10px; color:var(--text-dim); margin-top:3px; display:block; }
@@ -844,6 +919,9 @@ select option { background: #FFFFFF; color: var(--text); }
 }
 
 @media(max-width: 991px) {
+    .sidebar { left: -100% !important; }
+    .sidebar.open { left: 0 !important; }
+    .main { margin-left: 0 !important; }
     .bento-grid {
         grid-template-columns: 1fr;
         gap: 16px;
@@ -855,8 +933,22 @@ select option { background: #FFFFFF; color: var(--text); }
         grid-template-columns: 1fr;
         gap: 16px;
     }
+    .topbar-title { font-size: 14px; }
+    .content { padding: 16px 14px; }
+    .graph-grid { grid-template-columns: 1fr; }
+    .graph-grid-wide { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .msg-layout { flex-direction: column; height: auto; }
+    .msg-sidebar { width: 100%; height: auto; max-height: 200px; }
+    .msg-body { min-height: 260px; max-height: 320px; }
 }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+<link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
+<script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
 </head>
 <body>
 
@@ -867,7 +959,12 @@ select option { background: #FFFFFF; color: var(--text); }
     <div class="brand-logo">
       <img src="{{ asset('emblem_1.svg') }}" alt="SubSync">
     </div>
-    <div class="brand-sub">Terra Nova · Admin Portal</div>
+    <div class="brand-sub">Terra Nova Homeowners Association</div>
+  </div>
+  <div style="padding:10px 14px 2px;">
+    <button class="qa-btn" style="width:100%;justify-content:flex-start;background:#FAF6F0;" onclick="SubUI.openSearch()">
+      <span class="qa-icon">🔍</span> Search… <kbd style="margin-left:auto;background:#E6DFD5;border-radius:4px;padding:1px 6px;font-size:11px;">Ctrl K</kbd>
+    </button>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Overview</div>
@@ -881,13 +978,10 @@ select option { background: #FFFFFF; color: var(--text); }
 
     <div class="nav-section-label">Operations</div>
     <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon">🔧</span> Issue Reports <span class="nav-badge" id="issueBadge">0</span></div>
-    <div class="nav-item" onclick="nav('payment-statuses',this)"><span class="nav-icon">⚠️</span> Payment Statuses <span class="nav-badge" id="paymentStatusBadge">0</span></div>
     <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon">🗺️</span> Subdivision Map</div>
     <div class="nav-item" onclick="nav('announcements',this)"><span class="nav-icon">📢</span> Announcements</div>
+    <div class="nav-item" onclick="nav('policies',this)"><span class="nav-icon">📜</span> HOA Policies</div>
 
-    <div class="nav-section-label">Finance</div>
-    <div class="nav-item" onclick="nav('finance',this)"><span class="nav-icon">💳</span> Accounts &amp; Dues</div>
-    <div class="nav-item" onclick="nav('payment-statuses',this)"><span class="nav-icon">⚠️</span> Payment Status</div>
     <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon">📁</span> Reports <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
 
     <div class="nav-section-label">Communication &amp; System</div>
@@ -914,14 +1008,42 @@ select option { background: #FFFFFF; color: var(--text); }
     &nbsp;&nbsp;<button onclick="nav('issues');dismissEmergency()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:3px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;">View Issue</button>
     &nbsp;<button onclick="dismissEmergency()" style="background:transparent;border:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;line-height:1;">✕</button>
   </div>
+  <!-- Floating announcement notification banner -->
+  <div id="annNotif">
+    <span style="font-size:18px;">📢</span>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;">New Announcement</div>
+      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="annNotifTitle">—</div>
+    </div>
+    <button id="annNotifViewBtn" style="background:var(--accent);color:#fff;border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">View</button>
+    <button onclick="document.getElementById('annNotif').classList.remove('show')" style="background:transparent;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;line-height:1;padding:0 4px;">✕</button>
+  </div>
+  <!-- Floating new issue notification banner -->
+  <div id="issueNotif">
+    <span style="font-size:18px;">🆕</span>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin-bottom:2px;">New Issue Report</div>
+      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="issueNotifTitle">—</div>
+    </div>
+    <button id="issueNotifViewBtn" style="background:var(--blue);color:#fff;border:none;padding:5px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;">View</button>
+    <button onclick="document.getElementById('issueNotif').classList.remove('show')" style="background:transparent;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;line-height:1;padding:0 4px;">✕</button>
+  </div>
+
+  <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;">
-   <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+      <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
       <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
     </div>
     <div class="topbar-actions">
-      <button class="topbar-btn" onclick="showToast('🔔 No new system alerts.')">🔔 Alerts</button>
+      <div class="alerts-wrap">
+        <button class="topbar-btn" id="alertsButton" aria-expanded="false" aria-controls="alertsPopover" onclick="toggleAlerts()">🔔 Alerts <span class="alerts-badge" id="alertsBadge">0</span></button>
+        <section class="alerts-popover" id="alertsPopover" aria-label="System alerts">
+          <div class="alerts-popover-head"><strong>System alerts</strong><button class="alerts-refresh" onclick="loadAlerts(true)">Refresh</button></div>
+          <div id="alertsList"><div class="alerts-empty">Loading alerts…</div></div>
+        </section>
+      </div>
       <button class="topbar-btn primary" onclick="openModal('ann')">+ New Announcement</button>
-      <form id="logoutForm" action="/logout" method="POST" style="display:none;">@csrf</form>
+      <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf</form>
       <button class="topbar-btn" onclick="confirmLogout()" style="color:#f08080;border-color:rgba(240,128,128,0.3);">⏻ Log Out</button>
     </div>
   </div>
@@ -940,13 +1062,24 @@ select option { background: #FFFFFF; color: var(--text); }
         <button class="btn btn-sm" style="background:#f59e0b;border-color:#f59e0b;" onclick="nav('residents',null)">Review Now →</button>
       </div>
 
+      <!-- Quick actions -->
+      <div class="card" style="margin-bottom:16px;padding:18px 20px;">
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);margin-bottom:12px;">Quick Actions</div>
+        <div class="quick-actions">
+          <button class="qa-btn" onclick="nav('announcements',null)"><span class="qa-icon">📢</span> Post Announcement</button>
+          <button class="qa-btn" onclick="nav('residents',null)"><span class="qa-icon">👥</span> Approve Residents</button>
+          <button class="qa-btn" onclick="nav('issues',null)"><span class="qa-icon">🔧</span> Respond to Issues</button>
+          <button class="qa-btn" onclick="SubUI.openSearch()"><span class="qa-icon">🔍</span> Quick Search</button>
+        </div>
+      </div>
+
       <!-- BENTO GRID -->
       <div class="bento-grid">
         <!-- Bento A: Greeting Banner (Span 12) -->
         <div class="card bento-col-12" style="background: linear-gradient(135deg, #FAF4E7, #FAF6F0); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
           <div>
-            <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:6px;">Subdivision Control Tower</h1>
-            <p style="font-size:13px; color:#7D7975;">Manage directories, financials, issues, and communications from a unified command deck.</p>
+            <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:6px;">SubSync Administration Portal</h1>
+            <p style="font-size:13px; color:#7D7975;">Manage residents, resolve issues, monitor finances, and communicate with your community — all in one place.</p>
           </div>
           <div style="display: flex; gap: 10px;">
             <button class="btn" onclick="openModal('ann')">📣 Post Notice</button>
@@ -967,24 +1100,10 @@ select option { background: #FFFFFF; color: var(--text); }
             <div style="font-size:36px; font-weight:700; color:#f08080; margin: 10px 0 6px;" id="statIssues">—</div>
             <div style="font-size:11px; color:#7D7975;">requires resolution</div>
           </div>
-
-          <div class="card" onclick="nav('payment-statuses',null)" style="cursor:pointer; text-align: center;">
-            <div class="card-title" style="justify-content:center;">Payment Statuses</div>
-            <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statPaymentStatus">—</div>
-            <div style="font-size:11px; color:#7D7975;">households needing attention</div>
-          </div>
         </div>
 
-        <!-- Bento C: Balance & Approvals (Span 4) -->
+        <!-- Bento C: Approvals (Span 4) -->
         <div class="bento-col-4" style="display: flex; flex-direction: column; gap: 24px;">
-          <div class="card" onclick="nav('finance',null)" style="cursor:pointer; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px;">
-            <div>
-              <div class="card-title" style="margin-bottom:4px;">Unpaid Dues</div>
-              <div style="font-size:22px; font-weight:700; color:#2B2927;" id="statBalance">—</div>
-            </div>
-            <span style="font-size:24px;">💳</span>
-          </div>
-
           <div class="card" onclick="nav('residents',null)" id="pendingStatCard" style="cursor:pointer; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-left: 3px solid #f59e0b;">
             <div>
               <div class="card-title" style="margin-bottom:4px; color:#f59e0b;">Pending Accounts</div>
@@ -1000,39 +1119,11 @@ select option { background: #FFFFFF; color: var(--text); }
           <div id="activityFeed"></div>
         </div>
 
-        <!-- Bento E: Collection Rate Stats (Span 4) -->
-        <div class="card bento-col-4">
-          <div class="card-title">Collection Rate</div>
-          <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statPayPct">—</div>
-          <div style="font-size:11px; color:#7D7975; margin-bottom: 12px;" id="statPaySub">Dues summary</div>
-          <div class="progress-wrap"><div class="progress-bar" id="statPayBar" style="width:0%;background:var(--accent);"></div></div>
-          
-          <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
-            <div style="display:flex;justify-content:space-between;font-size:11px;">
-              <span>Paid</span><span style="color:#2E6F40;font-weight:600;"><span id="payCountPaid">—</span> hh</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar" id="payBarPaid" style="width:0%;background:rgba(46,111,64,0.75);"></div></div>
-            
-            <div style="display:flex;justify-content:space-between;font-size:11px;">
-              <span>Partial</span><span style="color:#A07D53;font-weight:600;"><span id="payCountPartial">—</span> hh</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar" id="payBarPartial" style="width:0%;background:rgba(160,125,83,0.75);"></div></div>
-            
-            <div style="display:flex;justify-content:space-between;font-size:11px;">
-              <span>Unpaid</span><span style="color:var(--danger);font-weight:600;"><span id="payCountUnpaid">—</span> hh</span>
-            </div>
-            <div class="progress-wrap"><div class="progress-bar" id="payBarUnpaid" style="width:0%;background:var(--danger);"></div></div>
-          </div>
-          <button class="btn btn-sm btn-full" style="margin-top:20px;" onclick="nav('payments',null)">View Details</button>
-        </div>
-
         <!-- Bento F: Issue Reports (Span 12) -->
         <div class="card bento-col-12">
           <div class="card-title">Recent Issue Reports</div>
-          <div id="dashIssueList"></div>
+          <div id="dashIssueList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card"></div></div>
           <button class="btn btn-sm" style="margin-top:16px;" onclick="nav('issues',null)">View All Issues</button>
-        </div>
-      </div>
         </div>
       </div>
     </div>
@@ -1085,131 +1176,19 @@ select option { background: #FFFFFF; color: var(--text); }
       <div class="members-grid" id="membersGrid"></div>
     </div>
 
-    <!-- ══════════ PAYMENT STATUSES ══════════ -->
-    <div class="panel" id="panel-payment-statuses">
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-title">Households Needing Attention</div>
-        <div style="font-size:13px;color:var(--text-dim);">Households with payment issues, outstanding balances, or violations. Click a card for details.</div>
-      </div>
-      <div class="res-content" id="paymentStatusGrid"></div>
-    </div>
-
-    <!-- ══════════ FINANCE ══════════ -->
-    <div class="panel" id="panel-finance">
-      <!-- Summary stats -->
-      <div class="finance-stats">
-        <div class="stat-card">
-          <div class="stat-label">Total Collected</div>
-          <div class="stat-value stat-green" id="finCollected">₱0</div>
-          <div class="stat-sub">All time</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Dues</div>
-          <div class="stat-value" style="color:#f08080;" id="finDues">₱0</div>
-          <div class="stat-sub">All time</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Outstanding Balance</div>
-          <div class="stat-value stat-accent" id="finBalance">₱0</div>
-          <div class="stat-sub">Net owed</div>
-        </div>
-      </div>
-
-      <!-- Upload + actions row -->
-      <div class="card" style="margin-bottom:16px;">
-        <div class="card-title">Upload & Import</div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;">
-          <div class="upload-zone" id="excelDropZone" style="flex:1;min-width:220px;position:relative;">
-            <div style="font-size:22px;margin-bottom:6px;pointer-events:none;">📂</div>
-            <div style="pointer-events:none;">Drop Excel file here or <label for="excelFile" style="color:var(--accent);cursor:pointer;text-decoration:underline;pointer-events:auto;">browse</label></div>
-            <input type="file" id="excelFile" accept=".xlsx,.xls" style="display:none;" onchange="uploadExcel()">
-            <div id="excelFileName" style="font-size:11px;margin-top:6px;color:var(--green);pointer-events:none;"></div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <button class="btn" onclick="openModal('addReceipt')">+ Add Receipt Manually</button>
-            <button class="btn btn-green" onclick="openAddRecordModal()">+ Add Financial Record</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Receipt scrollable container -->
-      <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);">Financial Receipts</div>
-        <button class="btn btn-sm btn-green" onclick="exportReceiptsCSV()">&#8595; Export</button>
-      </div>
-      <div class="receipt-container" id="receiptContainer">
-        <!-- Receipts rendered by JS -->
-        <button class="receipt-add-btn" onclick="openModal('addReceipt')">
-          <span class="receipt-add-icon">+</span>
-          <span>Add Receipt</span>
-        </button>
-      </div>
-
-      <!-- Financial Records Table -->
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
-          <div class="card-title" style="margin-bottom:0;">Financial Records</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <input type="text" id="finSearch" placeholder="Search resident…" style="width:150px;" oninput="filterFinRecords()">
-            <select id="finTypeFilter" onchange="filterFinRecords()">
-              <option value="">All Types</option>
-              <option>Due</option><option>Cash Payment</option><option>Penalty</option><option>Adjustment</option>
-            </select>
-            <label style="font-size:12px;color:var(--text-dim);">From</label>
-            <input type="date" id="finDateFrom" onchange="filterFinRecords()" style="width:140px;">
-            <label style="font-size:12px;color:var(--text-dim);">To</label>
-            <input type="date" id="finDateTo" onchange="filterFinRecords()" style="width:140px;">
-            <button class="btn btn-sm btn-green" onclick="exportFinRecordsCSV()">⬇ Export CSV</button>
-          </div>
-        </div>
-        <table class="panel-table" id="excelTable">
-          <thead>
-            <tr>
-              <th>Resident</th><th>Type</th><th>Description</th><th>Amount</th><th>Date</th><th></th>
-            </tr>
-          </thead>
-          <tbody><tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;">No financial records yet.</td></tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ══════════ PAYMENTS ══════════ -->
-    <div class="panel" id="panel-payments">
-      <div class="stat-grid" style="margin-bottom:16px;">
-        <div class="stat-card">
-          <div class="stat-label">Total Collected</div>
-          <div class="stat-value stat-green" id="payCollected">₱0</div>
-          <div class="stat-sub">All time</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Total Dues</div>
-          <div class="stat-value" style="color:#f08080;" id="payDues">₱0</div>
-          <div class="stat-sub">All time</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Outstanding Balance</div>
-          <div class="stat-value stat-accent" id="payBalance">₱0</div>
-          <div class="stat-sub">Net owed</div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Payment Status Records</div>
-        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-          <input type="text" id="paySearch" placeholder="Search household…" style="flex:1;min-width:160px;" oninput="filterPayments()">
-          <select id="payStatusFilter" style="width:auto;" onchange="filterPayments()">
-            <option value="">All Status</option><option>Paid</option><option>Partial</option><option value="Unpaid">Non-Compliant</option>
-          </select>
-          <button class="btn btn-sm btn-green" onclick="exportPaymentsCSV()">&#8595; Export Excel</button>
-        </div>
-        <div id="paymentList"></div>
-      </div>
-    </div>
-
     <!-- ══════════ MESSAGES ══════════ -->
     <div class="panel" id="panel-messages">
+      <div class="msg-panel-heading">
+        <div>
+          <div class="card-title">Community Correspondence</div>
+          <div class="card-subtitle">Review and respond to documented resident and officer communications.</div>
+        </div>
+        <div class="message-status" id="messageStatus" role="status">Select a correspondence record</div>
+      </div>
       <div class="msg-layout">
         <div class="msg-sidebar">
-          <div class="msg-sidebar-head" style="display:flex;align-items:center;justify-content:space-between;">Resident Conversations
+          <div class="msg-sidebar-head" style="display:flex;align-items:center;justify-content:space-between;">
+            <div id="msgHeaderTitle">Community Chat</div>
             <button class="btn btn-sm" style="padding:3px 8px;font-size:11px;" onclick="openNewThreadModal()">+ New</button>
           </div>
           <div class="msg-search-wrap">
@@ -1222,7 +1201,7 @@ select option { background: #FFFFFF; color: var(--text); }
             <div class="msg-header-avatar ta-r1" id="chatAvatar">DC</div>
             <div>
               <div class="msg-header-name" id="chatName">Dela Cruz Family</div>
-              <div class="msg-header-sub">Online</div>
+              <div class="msg-header-sub" id="chatSub">Official communication record</div>
             </div>
           </div>
           <div class="msg-body" id="msgBody"></div>
@@ -1237,40 +1216,48 @@ select option { background: #FFFFFF; color: var(--text); }
 
     <!-- ══════════ ANNOUNCEMENTS ══════════ -->
     <div class="panel" id="panel-announcements">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select id="annStatusFilter" onchange="renderAnnouncements()" style="width:auto;">
-            <option value="all">All</option>
-            <option value="Active" selected>Active</option>
-            <option value="Archived">Archived</option>
-          </select>
+      <div class="card" style="margin-bottom:16px;padding:16px 22px;">
+        <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Announcements Board</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="annSearch" placeholder="Search announcements…" style="width:200px;" oninput="renderAnnouncements()">
+            <select id="annStatusFilter" onchange="renderAnnouncements()" style="width:auto;">
+              <option value="all">All</option>
+              <option value="Active" selected>Active</option>
+              <option value="Archived">Archived</option>
+            </select>
+          </div>
+          <button class="btn" onclick="openModal('ann')">+ New Announcement</button>
         </div>
-        <button class="btn" onclick="openModal('ann')">+ New Announcement</button>
       </div>
       <div id="annList"></div>
     </div>
 
     <!-- ══════════ ISSUES ══════════ -->
     <div class="panel" id="panel-issues">
-      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
-        <select id="issueFilter" onchange="renderIssues()" style="width:auto;">
-          <option value="">All Status</option>
-          <option value="Pending">Pending</option>
-          <option value="In Progress">In Progress</option>
-          <option value="Resolved">Resolved</option>
-        </select>
-        <select id="issuePriFilter" onchange="renderIssues()" style="width:auto;">
-          <option value="">All Priority</option>
-          <option value="Critical">Critical</option>
-          <option value="High">High</option>
-          <option value="Medium">Medium</option>
-          <option value="Low">Low</option>
-        </select>
-        <label style="font-size:12px;color:var(--text-dim);margin-left:4px;">From</label>
-        <input type="date" id="issueDateFrom" onchange="renderIssues()" style="width:140px;">
-        <label style="font-size:12px;color:var(--text-dim);">To</label>
-        <input type="date" id="issueDateTo" onchange="renderIssues()" style="width:140px;">
-        <button class="btn btn-sm btn-green" style="margin-left:auto;" onclick="exportIssuesCSV()">&#8595; Export</button>
+      <div class="card" style="margin-bottom:16px;padding:16px 22px;">
+        <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Issue Reports Management</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <input type="text" id="issueSearch" placeholder="Search by title or resident…" style="flex:1;min-width:160px;" oninput="renderIssues()">
+          <select id="issueFilter" onchange="renderIssues()" style="width:auto;">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <select id="issuePriFilter" onchange="renderIssues()" style="width:auto;">
+            <option value="">All Priority</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+          <label style="font-size:12px;color:var(--text-dim);margin-left:4px;">From</label>
+          <input type="date" id="issueDateFrom" onchange="renderIssues()" style="width:140px;">
+          <label style="font-size:12px;color:var(--text-dim);">To</label>
+          <input type="date" id="issueDateTo" onchange="renderIssues()" style="width:140px;">
+          <button class="btn btn-sm btn-green" style="margin-left:auto;" onclick="exportIssuesCSV()">&#8595; Export</button>
+        </div>
       </div>
       <div id="issueList"></div>
     </div>
@@ -1376,20 +1363,33 @@ select option { background: #FFFFFF; color: var(--text); }
       <div class="stat-grid">
         <div class="stat-card"><div class="stat-label">Members</div><div class="stat-value stat-blue" id="analyticMembers">—</div></div>
         <div class="stat-card"><div class="stat-label">Houses</div><div class="stat-value stat-accent" id="analyticHouses">—</div></div>
-        <div class="stat-card"><div class="stat-label">Payment Statuses</div><div class="stat-value" style="color:#f08080;" id="analyticPaymentStatus">—</div></div>
       </div>
       <div class="graph-grid">
-        <div class="card">
-          <div class="card-title">Collections</div>
-          <div id="chart-collections" style="width:100%;min-height:180px;"></div>
-        </div>
         <div class="card">
           <div class="card-title">Resident Status</div>
           <div id="chart-payment-statuses" style="width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;"></div>
         </div>
         <div class="card">
+          <div class="card-title">Issues by Status</div>
+          <div id="chart-issue-status" style="width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;"></div>
+        </div>
+        <div class="card">
           <div class="card-title">Issues by Category</div>
           <div id="chart-complaints" style="width:100%;min-height:180px;"></div>
+        </div>
+      </div>
+      <div class="graph-grid">
+        <div class="card">
+          <div class="card-title">Recommendations by Status</div>
+          <div id="chart-recs-status" style="width:100%;min-height:180px;display:flex;align-items:center;justify-content:center;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">HOA Expenses by Category</div>
+          <div id="chart-expenses-cat" style="width:100%;min-height:180px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Issues Trend (6 Months)</div>
+          <div id="chart-issue-trend" style="width:100%;min-height:180px;"></div>
         </div>
       </div>
       <div class="graph-grid-wide">
@@ -1410,12 +1410,14 @@ select option { background: #FFFFFF; color: var(--text); }
       <!-- Toolbar -->
       <div class="card" style="margin-bottom:12px;padding:10px 16px;">
         <div class="map-toolbar">
-          <span style="font-size:13px;font-weight:500;color:var(--text);">Terra Nova Subdivision</span>
+          <div>
+            <span style="font-size:14px;font-weight:600;color:var(--text);">Terra Nova Subdivision</span>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Issue pins are numbered by report sequence. Map is limited to the Terra Nova subdivision boundary.</div>
+          </div>
           <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             <label class="map-toggle"><input type="checkbox" id="layer-households" checked> Households</label>
             <label class="map-toggle"><input type="checkbox" id="layer-facilities" checked> Facilities</label>
-            <label class="map-toggle"><input type="checkbox" id="layer-issues" checked> Issues</label>
-            <label class="map-toggle"><input type="checkbox" id="layer-heatmap" checked> Heatmap</label>
+            <label class="map-toggle"><input type="checkbox" id="layer-issues" checked> Issue Pins</label>
             <button class="btn btn-sm btn-green" onclick="enterAddFacilityMode()">+ Add Facility</button>
             <button class="btn btn-sm" onclick="if(mapInst)mapInst.setView([10.62269,122.96134],17)">⌖ Reset View</button>
           </div>
@@ -1428,40 +1430,181 @@ select option { background: #FFFFFF; color: var(--text); }
           <span><span class="map-dot" style="background:#4CAF50;"></span>Facility</span>
           <span><span class="map-dot" style="background:#4287f5;"></span>Household (Active)</span>
           <span><span class="map-dot" style="background:#f08080;"></span>Household (Non-Compliant)</span>
-          <span><span class="map-dot" style="background:#e05555;"></span>Issue (Pending)</span>
-          <span><span class="map-dot" style="background:#f5a623;"></span>Issue (In Progress)</span>
-          <span><span class="map-dot" style="background:#888;"></span>Issue (Resolved, ≤7d)</span>
-          <span><span class="map-dot" style="background:linear-gradient(to right,#1a003e,#5c0099,#0044bb,#cc4400,#ff2200);border-radius:2px;"></span>Issue Frequency</span>
+          <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#e05555;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">1</span>Issue (Pending)</span>
+          <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#f5a623;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">2</span>Issue (In Progress)</span>
+          <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#888;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">3</span>Issue (Resolved)</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">📍 Numbers = Report sequence</span>
         </div>
       </div>
 
       <!-- Map -->
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn btn-sm" onclick="enterCustomizeArea()" id="btn-customize-area">✏️ Customize Area</button>
+        <span id="map-customize-hint" style="display:none;font-size:12px;color:var(--accent);">Pan &amp; zoom to frame the subdivision area, then click <strong>Save Area</strong>.</span>
+        <span style="margin-left:auto;display:none;gap:8px;align-items:center;" id="map-area-toolbar">
+          <button class="btn btn-sm btn-green" onclick="saveMapArea()" id="btn-save-area">💾 Save Area</button>
+          <button class="btn btn-sm" onclick="resetMapArea()" id="btn-reset-area">↺ Reset</button>
+        </span>
+      </div>
       <div id="map-container"></div>
 
       <!-- Add-facility mode banner -->
       <div id="map-add-banner">
-        <span>📍 Click anywhere on the map to place the facility pin</span>
+        <span>📍 Click anywhere within the Terra Nova boundary to place the facility pin</span>
         <button class="btn btn-sm" style="margin-left:auto;" onclick="cancelAddFacilityMode()">Cancel</button>
+      </div>
+
+      <!-- Map Disclaimer -->
+      <div style="margin-top:10px;padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-dim);">
+        ℹ️ <strong>Map Scope:</strong> This map is focused on Terra Nova Subdivision. Reported issues are represented by numbered pins indicating report sequence. The geofence boundary is approximate. For precise location data, please consult official subdivision plans.
       </div>
 
     </div>
 
     <!-- ══════════ REPORTS ══════════ -->
     <div class="panel" id="panel-reports">
+      <!-- Date Range Filter -->
+      <div class="card" style="margin-bottom:16px;padding:16px 22px;">
+        <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:10px;">Report Date Range</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <label style="font-size:13px;color:var(--text-dim);">From</label>
+          <input type="date" id="reportDateFrom" style="width:160px;">
+          <label style="font-size:13px;color:var(--text-dim);">To</label>
+          <input type="date" id="reportDateTo" style="width:160px;">
+          <span style="font-size:12px;color:var(--text-dim);margin-left:4px;">Leave blank to include all records.</span>
+        </div>
+      </div>
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">Files from Officers</div>
+          <div class="card-title">Officer-Submitted Files</div>
+          <div class="card-subtitle">Documents uploaded by officers through their portal.</div>
           <div id="officerFiles"></div>
+          <!-- Admin file upload -->
+          <div style="margin-top:16px;border-top:1px solid var(--glass-border);padding-top:14px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text-mid);margin-bottom:8px;">Upload Supporting Document</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+              <input type="file" id="adminReportFile" accept=".pdf,.doc,.docx,.xlsx,.xls,.png,.jpg,.jpeg" style="flex:1;font-size:13px;padding:6px 0;">
+              <input type="text" id="adminReportNote" placeholder="Description / notes…" style="flex:1;min-width:160px;">
+              <button class="btn btn-sm" onclick="uploadAdminReport()">Upload</button>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-title">Generate Reports</div>
+          <div class="card-subtitle">Download filtered records as CSV. Use the date range above to narrow results.</div>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn" onclick="reportMonthlySummary()">📊 Monthly Summary</button>
-            <button class="btn btn-blue" onclick="reportPayments()">💳 Payment Report</button>
             <button class="btn btn-green" onclick="reportIssues()">🔧 Issue Report</button>
             <button class="btn" style="background:var(--purple-dim);border-color:rgba(185,154,245,0.25);color:var(--purple);" onclick="reportResidentDirectory()">👥 Resident Directory</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- ══════════ POLICIES ══════════ -->
+    <div class="panel" id="panel-policies">
+      <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#FAF4E7,#FAF6F0);border-left:4px solid var(--accent);">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="font-size:32px;">📜</div>
+          <div>
+            <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#2B2927;margin-bottom:4px;">Terra Nova Homeowners Association</div>
+            <div style="font-size:13px;color:var(--text-dim);">Community Rules, Regulations &amp; Policies — Effective Current Term</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Policy Section 1 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">1. Membership &amp; Community Conduct</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>All registered homeowners and residents are members of the Terra Nova Homeowners Association (TNHOA) and are expected to uphold the community's rules and values.</li>
+          <li>Members are expected to maintain courteous, respectful conduct toward neighbors, guests, and HOA staff at all times.</li>
+          <li>Households must keep their registered contact details and list of occupants up to date with the HOA office.</li>
+          <li>Participation in community meetings, clean-up drives, and general assemblies is encouraged to foster a cooperative neighborhood.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 2 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">2. Property Use &amp; Structural Guidelines</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>All renovations, extensions, or structural modifications to residential units must be approved in writing by the TNHOA Board prior to commencement.</li>
+          <li>Exterior aesthetics must conform to the subdivision's approved design standards. Unapproved alterations may be subject to fines and mandated restoration.</li>
+          <li>Properties must be maintained in a clean, orderly condition. Overgrown vegetation, visible debris, or dilapidated structures are subject to violation notices.</li>
+          <li>Commercial activities within residential lots are prohibited unless expressly approved by the Board.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 3 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">3. Noise, Conduct &amp; Community Standards</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Residents and their guests are expected to observe courteous conduct toward neighbors and subdivision staff at all times.</li>
+          <li>Noise levels must not disturb neighboring households, particularly during designated quiet hours (10:00 PM – 6:00 AM).</li>
+          <li>Parties, gatherings, or events that may cause significant noise or traffic must be reported to the HOA office at least 48 hours in advance.</li>
+          <li>Acts of harassment, intimidation, or threatening behavior within the subdivision premises are strictly prohibited and may be reported to the appropriate authorities.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 4 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">4. Waste Management &amp; Sanitation</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Garbage must be properly bagged, segregated by type (biodegradable, non-biodegradable, recyclable), and placed at the designated collection point on scheduled collection days.</li>
+          <li>Littering within the subdivision — including common areas, walkways, and drainage systems — is prohibited and subject to fines.</li>
+          <li>Residents are responsible for maintaining drainage systems adjacent to their properties free of blockages.</li>
+          <li>Burning of waste materials within the subdivision is strictly prohibited in compliance with environmental regulations.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 5 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">5. Security, Gate Access &amp; Visitor Policy</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>All visitors and delivery personnel must register at the main gate before entering the subdivision. Residents must authorize their guests prior to entry.</li>
+          <li>Resident identification stickers or RFID tags must be affixed to registered vehicles as required. Untagged vehicles may be denied entry at the guard's discretion.</li>
+          <li>Residents are responsible for the conduct of their authorized guests while within the subdivision premises.</li>
+          <li>Security personnel are authorized to refuse entry to individuals who cannot be verified or who pose a safety concern.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 6 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">6. Violations, Notices &amp; Penalties</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>A first-offense Violation Notice will be issued in writing for any breach of HOA rules. The resident will be given a specified period to rectify the violation.</li>
+          <li>Repeated or unresolved violations may result in escalating fines, suspension of amenity access, or referral to the appropriate legal body.</li>
+          <li>All fines and penalties are documented in the resident's account and must be settled within 30 days of issuance.</li>
+          <li>Residents have the right to contest a violation notice by submitting a written appeal to the Board within 10 business days of receipt.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 7 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">7. Dispute Resolution &amp; Conflict Management</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Residents are encouraged to resolve neighborly disputes amicably and in good faith before escalating to the HOA or authorities.</li>
+          <li>Formal complaints may be submitted in writing to the HOA office. All complaints will be acknowledged within 5 business days.</li>
+          <li>The Board may convene a mediation session between parties. Both parties are expected to cooperate and attend in good faith.</li>
+          <li>Decisions rendered by the Board following mediation are binding. Appeals may be escalated to the appropriate barangay or legal channels if unresolved.</li>
+          <li>Residents must not take matters into their own hands. Vigilante actions or retaliation against complainants are treated as separate violations.</li>
+        </ul>
+      </div>
+
+      <!-- Policy Section 8 -->
+      <div class="card" style="margin-bottom:12px;">
+        <div style="font-family:'DM Serif Display',serif;font-size:17px;color:var(--accent);margin-bottom:8px;border-bottom:1px solid var(--glass-border);padding-bottom:6px;">8. Issue Reporting &amp; Community Communication</div>
+        <ul style="padding-left:20px;font-size:14px;color:var(--text-mid);line-height:1.85;">
+          <li>Residents are encouraged to report subdivision concerns through SubSync's Issue Reports feature. All submissions are documented and reviewed by the Administration.</li>
+          <li>Reports must be factual, specific, and submitted in good faith. False, malicious, or duplicate reports are subject to appropriate action.</li>
+          <li>Residents must not modify or tamper with another resident's submitted report. Each resident is responsible solely for their own submissions.</li>
+          <li>The HOA Administration will review and assign priority to submitted issues. Residents will be notified of updates via the SubSync portal.</li>
+          <li>For urgent or emergency concerns, residents must contact the HOA office or security personnel directly and not rely solely on the online portal.</li>
+        </ul>
+      </div>
+
+      <div style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:8px;padding:12px;border:1px solid var(--glass-border);border-radius:var(--radius-sm);">
+        These policies are subject to amendment by the TNHOA Board. Residents will be notified of any changes through official announcements.
+        For inquiries, please contact the HOA Administration Office.
       </div>
     </div>
 
@@ -1594,92 +1737,7 @@ select option { background: #FFFFFF; color: var(--text); }
   </div>
 </div>
 
-<div class="modal-overlay" id="modal-addFinRecord">
-  <div class="modal-box">
-    <div class="modal-title">Add Financial Record</div>
-    <div class="f-row">
-      <div class="f-field" style="flex:2"><span class="f-label">Resident</span>
-        <select id="recResident"><option value="">— Select Resident —</option></select>
-      </div>
-      <div class="f-field"><span class="f-label">Record Type</span>
-        <select id="recType">
-          <option>Due</option>
-          <option>Payment</option>
-          <option>Penalty</option>
-          <option>Adjustment</option>
-        </select>
-      </div>
-    </div>
-    <div class="f-row">
-      <div class="f-field"><span class="f-label">Amount (₱)</span><input type="number" id="recAmount" min="0" step="0.01" placeholder="0.00"></div>
-      <div class="f-field"><span class="f-label">Date</span><input type="date" id="recDate"></div>
-    </div>
-    <div class="f-row">
-      <div class="f-field" style="flex:1"><span class="f-label">Description</span><input type="text" id="recDesc" placeholder="e.g. Monthly due – June 2026"></div>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-close-btn" onclick="closeModal('addFinRecord')">Cancel</button>
-      <button class="btn btn-sm" onclick="saveFinancialRecord()">Save Record</button>
-    </div>
-  </div>
-</div>
 
-<div class="modal-overlay" id="modal-addReceipt">
-  <div class="modal-box wide">
-    <div class="modal-title">Add Financial Receipt</div>
-    <div class="receipt-modal-split">
-      <!-- Live preview -->
-      <div class="preview">
-        <div class="receipt" id="previewReceipt" style="min-height:360px;">
-          <div class="receipt-title">Financial Report</div>
-          <div class="receipt-subtitle" id="p-month">Month</div>
-          <hr class="receipt-perforate">
-          <div class="receipt-section-label">Previous Balance</div>
-          <div class="receipt-line"><span class="r-label">Carried Over</span><span class="r-val" id="p-previous">₱0</span></div>
-          <div class="receipt-section-label">Collections</div>
-          <div id="p-collections"><div class="receipt-line"><span class="r-label">—</span><span class="r-val">₱0</span></div></div>
-          <div class="receipt-section-label">Expenses</div>
-          <div id="p-expenses"><div class="receipt-line"><span class="r-label">—</span><span class="r-val negative">₱0</span></div></div>
-          <hr class="receipt-perforate">
-          <div class="receipt-total">
-            <div class="rt-label">Net Savings</div>
-            <div class="rt-val" id="p-savings">₱0</div>
-          </div>
-        </div>
-      </div>
-      <!-- Form -->
-      <div class="form-col">
-        <div class="form-block">
-          <h4>Report Details</h4>
-          <div class="f-row">
-            <div class="f-field"><span class="f-label">Month</span><input type="month" id="r-month" oninput="updatePreview()"></div>
-            <div class="f-field"><span class="f-label">Previous Balance (₱)</span><input type="text" id="r-prev" placeholder="0" oninput="updatePreview()"></div>
-          </div>
-        </div>
-        <div class="form-block">
-          <h4>Add Collection Line</h4>
-          <div class="f-row">
-            <div class="f-field"><span class="f-label">Description</span><input type="text" id="c-name" placeholder="e.g. Monthly Dues"></div>
-            <div class="f-field"><span class="f-label">Amount (₱)</span><input type="text" id="c-amount" placeholder="0"></div>
-          </div>
-          <button class="btn btn-sm btn-green btn-full" style="margin-top:6px;" onclick="addReceiptLine('collection')">+ Add Collection</button>
-        </div>
-        <div class="form-block">
-          <h4>Add Expense Line</h4>
-          <div class="f-row">
-            <div class="f-field"><span class="f-label">Description</span><input type="text" id="e-name" placeholder="e.g. Street Repair"></div>
-            <div class="f-field"><span class="f-label">Amount (₱)</span><input type="text" id="e-amount" placeholder="0"></div>
-          </div>
-          <button class="btn btn-sm btn-danger btn-full" style="margin-top:6px;" onclick="addReceiptLine('expense')">+ Add Expense</button>
-        </div>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="modal-close-btn" onclick="closeModal('addReceipt')">Cancel</button>
-      <button class="btn" onclick="saveReceipt()">Save Receipt</button>
-    </div>
-  </div>
-</div>
 
 <div id="toast"></div>
 
@@ -1753,7 +1811,6 @@ select option { background: #FFFFFF; color: var(--text); }
     <div class="f-row">
       <div class="f-field"><span class="f-label">Reason for Status Change</span>
         <select id="statusHReason">
-          <option>Unpaid dues</option>
           <option>Violation of subdivision rules</option>
           <option>Extended leave / vacation</option>
           <option>Property sold / transferred</option>
@@ -1938,6 +1995,49 @@ function showToast(msg){
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2800);
 }
+
+function formatAlertTime(value){
+  const date=new Date(value);
+  if(Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function alertTab(tab){
+  const item=document.querySelector(`.nav-item[onclick*="nav('${tab}'"]`);
+  nav(tab,item||null);
+  document.getElementById('alertsPopover')?.classList.remove('open');
+  document.getElementById('alertsButton')?.setAttribute('aria-expanded','false');
+}
+async function loadAlerts(showLoading=false){
+  const list=document.getElementById('alertsList');
+  if(!list) return;
+  if(showLoading) list.innerHTML='<div class="alerts-empty">Loading alerts…</div>';
+  try{
+    const data=await apiGet('/api/alerts');
+    const alerts=Array.isArray(data.alerts)?data.alerts:[];
+    const badge=document.getElementById('alertsBadge');
+    if(badge){ badge.textContent=data.unread_count||0; badge.style.display=data.unread_count?'inline-flex':'none'; }
+    list.innerHTML=alerts.length?alerts.map(a=>`
+      <div class="alert-item" onclick="alertTab('${a.tab}')">
+        <span class="alert-mark ${a.severity||'notice'}"></span>
+        <div><div class="alert-title">${escHtml(a.title)}</div><div class="alert-message">${escHtml(a.message)}</div><div class="alert-time">${formatAlertTime(a.created_at)}</div></div>
+      </div>`).join(''):'<div class="alerts-empty">No alerts require your attention.</div>';
+  }catch(e){ list.innerHTML='<div class="alerts-empty">Alerts could not be loaded. Refresh and try again.</div>'; }
+}
+function toggleAlerts(){
+  const popover=document.getElementById('alertsPopover');
+  const button=document.getElementById('alertsButton');
+  if(!popover||!button) return;
+  const open=popover.classList.toggle('open');
+  button.setAttribute('aria-expanded',open?'true':'false');
+  if(open) loadAlerts();
+}
+document.addEventListener('click',event=>{
+  const wrap=document.querySelector('.alerts-wrap');
+  if(wrap&&!wrap.contains(event.target)){
+    document.getElementById('alertsPopover')?.classList.remove('open');
+    document.getElementById('alertsButton')?.setAttribute('aria-expanded','false');
+  }
+});
 function openModal(id){
   if(id==='addMember'){
     // populate household dropdown
@@ -1959,10 +2059,9 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
 /* ══════════════ NAVIGATION ══════════════ */
 const panelTitles={
   dashboard:'Dashboard Overview',residents:'Resident Management',members:'Members',
-  paymentStatuses:'Payment Statuses',finance:'Finance',payments:'Non-Compliant Records',
   messages:'Resident Messaging',announcements:'Announcements',issues:'Issue Reports',
   manageusers:'Manage Users',officers:'Officers',recommendations:'Recommendations',analytics:'Analytics',
-  mapping:'Maps · Terra Nova',reports:'Reports & Files'
+  mapping:'Maps · Terra Nova',reports:'Reports & Files',policies:'HOA Policies'
 };
 
 function nav(name, el){
@@ -1976,15 +2075,29 @@ function nav(name, el){
     if(n.textContent.trim().toLowerCase().includes(name)) n.classList.add('active');
   });
   document.getElementById('topbarTitle').textContent = panelTitles[name]||name;
-  if(name==='messages'){document.getElementById('msgBadge').style.display='none';loadThreads();}
+  if(name==='messages'){
+    document.getElementById('msgBadge').style.display='none';
+    loadThreads();
+    // Set header to Community Chat by default, will be updated when thread is selected
+    document.getElementById('msgHeaderTitle').textContent = 'Community Chat';
+    // Start real-time polling for new messages (every 10 seconds)
+    if(!window.messagePollInterval){
+      window.messagePollInterval = setInterval(async () => {
+        if(currentThread && document.getElementById('panel-messages').classList.contains('active')){
+          // Only refresh if we're viewing the messages panel and have a thread selected
+          const msgs = await apiGet('/api/messages/'+currentThread);
+          threads[currentThread].msgs = msgs;
+          renderChat();
+        }
+      }, 10000);
+    }
+  }
   if(name==='issues') renderIssues();
   if(name==='members') renderMembers();
-  if(name==='finance') loadReceipts();
   if(name==='analytics') setTimeout(renderAnalytics, 80);
   if(name==='reports') renderReports();
   if(name==='mapping') setTimeout(initMap, 80);
   if(name==='manageusers') loadManageData();
-  if(name==='payment-statuses') renderPaymentStatuses();
 }
 
 /* ══════════════ DATA ══════════════ */
@@ -1995,9 +2108,8 @@ let announcements = [];
 let issues = [];
 let officers = [];
 let recommendations = [];
-let payments = [];
+let expenses = [];
 let membersData = [];
-let paymentStatuses = [];
 let threads = {};
 let currentThread = null;
 
@@ -2023,9 +2135,9 @@ async function loadAllData(){
   announcements = d.announcements||[];
   issues        = d.issues||[];
   officers      = (d.officers||[]).map((x,i)=>({...x, color:colorFor(i), initials:initials(x.name)}));
-  recommendations = d.recommendations||[];
-  paymentStatuses   = Array.isArray(d.paymentStatuses) ? d.paymentStatuses : [];
-  payments      = residents; // same data, pay_status computed in renderPayments()
+recommendations = d.recommendations||[];
+  expenses       = d.expenses||[];
+  window.__subData = d;
 
   // Reuse for Manage panel — no extra API calls needed
   muHouseholds = households;
@@ -2056,35 +2168,21 @@ async function loadAllData(){
   if(document.getElementById('issueBadge'))    document.getElementById('issueBadge').textContent    = issues.filter(i=>i.status!=='Resolved').length;
   if(document.getElementById('msgBadge'))      document.getElementById('msgBadge').textContent      = d.msgCount||0;
 
-  // Payment collection stats computed from payments array
-  const totalPay=payments.length||1;
-  const paidC=payments.filter(p=>p.current_balance<=0).length;
-  const partialC=payments.filter(p=>p.current_balance>0&&p.current_balance<1000).length;
-  const unpaidC=payments.filter(p=>p.current_balance>=1000).length;
-  const pctPaid=Math.round(paidC/totalPay*100);
-  if(document.getElementById('statPayPct'))    document.getElementById('statPayPct').textContent=pctPaid+'%';
-  if(document.getElementById('statPayBar'))    document.getElementById('statPayBar').style.width=pctPaid+'%';
-  if(document.getElementById('payCountPaid'))  document.getElementById('payCountPaid').textContent=paidC;
-  if(document.getElementById('payBarPaid'))    document.getElementById('payBarPaid').style.width=Math.round(paidC/totalPay*100)+'%';
-  if(document.getElementById('payCountPartial'))document.getElementById('payCountPartial').textContent=partialC;
-  if(document.getElementById('payBarPartial')) document.getElementById('payBarPartial').style.width=Math.round(partialC/totalPay*100)+'%';
-  if(document.getElementById('payCountUnpaid'))document.getElementById('payCountUnpaid').textContent=unpaidC;
-  if(document.getElementById('payBarUnpaid'))  document.getElementById('payBarUnpaid').style.width=Math.round(unpaidC/totalPay*100)+'%';
-
   // Members panel stats
   // (handled by renderMembers())
 
   renderDashboard();
   renderResidents();
   renderMembers();
-  renderPaymentStatuses();
-  renderPayments();
   renderAnnouncements();
   renderIssues();
   renderOfficers();
   renderRecommendations();
-  renderFinancialRecords(finRecs);
   renderManageTables();
+
+  // Baseline for real-time polls — set AFTER initial render so polls won't trigger on existing data
+  if(announcements.length) _adminLastAnnId = announcements[0].id;
+  _adminLastIssueCount = issues.length;
 }
 
 /* ══════════════ RENDER FUNCTIONS ══════════════ */
@@ -2093,7 +2191,7 @@ function renderDashboard(){
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
   const recent=issues.slice(0,2);
   document.getElementById('dashIssueList').innerHTML=recent.length?recent.map(i=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);">
+    <div onclick="nav('issues');setTimeout(()=>openIssueDetail(${i.id}),300)" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;transition:background .15s;border-radius:4px;padding-left:4px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''" title="Click to view issue details">
       <div>
         <div style="font-size:13px;font-weight:500;">${i.title}</div>
         <div style="font-size:11px;color:var(--text-dim);">${i.resident} · ${i.block_lot}</div>
@@ -2241,8 +2339,9 @@ async function saveMemberDetail(){
   }catch(e){msg.textContent='Error saving.';}
 }
 
-async function deleteMember(){
-  const id=document.getElementById('modal-memberDetail').dataset.id;
+async function deleteMember(paramId){
+  const id = paramId || (document.getElementById('modal-memberDetail') ? document.getElementById('modal-memberDetail').dataset.id : null);
+  if(!id) return;
   if(!confirm('Delete this member? This cannot be undone.')) return;
   try{
     const res=await fetch(`/api/household-members/${id}`,{method:'DELETE',headers:{'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}});
@@ -2250,7 +2349,9 @@ async function deleteMember(){
     if(d.success){
       hhMembers=hhMembers.filter(m=>m.id!=id);
       renderMembers();
-      document.getElementById('modal-memberDetail').classList.remove('open');
+      const modal = document.getElementById('modal-memberDetail');
+      if(modal) modal.classList.remove('open');
+      if(typeof loadManageData === 'function') loadManageData();
       showToast('Member removed.');
     }
   }catch(e){showToast('Delete failed.');}
@@ -2352,6 +2453,7 @@ function renderThreads(){
       <div class="thread-info">
         <div class="thread-name">${t.title}</div>
         <div class="thread-preview">${t.last_message||'No messages yet'}</div>
+        ${t.last_time?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${t.last_time}</div>`:''}
       </div>
       <button class="thread-del-btn" onclick="event.stopPropagation();deleteConversation(${id})" title="Delete conversation">🗑</button>
     </div>`;
@@ -2359,8 +2461,12 @@ function renderThreads(){
 }
 async function openThread(id){
   currentThread=id;
-  document.getElementById('chatName').textContent=threads[id]?.title||'';
-  document.getElementById('chatAvatar').textContent=(threads[id]?.title||'??').substring(0,2).toUpperCase();
+  const threadTitle = threads[id]?.title||'';
+  document.getElementById('chatName').textContent=threadTitle;
+  document.getElementById('chatAvatar').textContent=(threadTitle||'??').substring(0,2).toUpperCase();
+  document.getElementById('msgHeaderTitle').textContent = threadTitle.includes('Community Chat') ? 'Community Chat' : threadTitle;
+  const status=document.getElementById('messageStatus');
+  if(status) status.textContent='Correspondence record selected';
   renderThreads();
   const msgs=await apiGet('/api/messages/'+id);
   threads[id].msgs=msgs;
@@ -2373,21 +2479,46 @@ function renderChat(){
   body.innerHTML=msgs.length?msgs.map(m=>{
     const isMe=m.sender_type==='admin';
     return `<div style="display:flex;justify-content:${isMe?'flex-end':'flex-start'};margin-bottom:10px;">
-      <div style="max-width:70%;background:${isMe?'var(--accent-dim)':'var(--surface)'};border:1px solid var(--glass-border);border-radius:12px;padding:8px 12px;">
-        ${!isMe?`<div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">${m.sender_name}</div>`:''}
-        <div style="font-size:13px;">${m.content}</div>
-        <div style="font-size:10px;color:var(--text-dim);text-align:right;margin-top:2px;">${m.created_at||''}</div>
+      <div style="max-width:70%;background:${isMe?'var(--accent-dim)':'#FFFFFF'};border:1px solid var(--glass-border);border-radius:8px;padding:10px 12px;">
+        ${!isMe?`<div style="font-size:10px;color:var(--text-dim);margin-bottom:3px;">${escHtml(m.sender_name)}</div>`:''}
+        <div style="font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;">${escHtml(m.content)}</div>
+        <div style="font-size:10px;color:var(--text-dim);text-align:right;margin-top:4px;">${escHtml(m.created_at||'')}</div>
       </div>
     </div>`;
   }).join(''):'<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px;">No messages yet.</div>';
   body.scrollTop=body.scrollHeight;
 }
+function escHtml(value){ const d=document.createElement('div'); d.textContent=value??''; return d.innerHTML; }
 async function loadThreads(){
   const data=await apiGet('/api/messages/threads');
+  if(!Array.isArray(data)){
+    const status=document.getElementById('messageStatus');
+    if(status) status.textContent='Unable to load correspondence records';
+    document.getElementById('threadList').innerHTML='<div style="color:var(--danger);font-size:12px;padding:12px;">Correspondence records could not be loaded. Refresh and try again.</div>';
+    return;
+  }
   data.forEach((t,i)=>{threads[t.id]={...t,idx:i,msgs:[]};});
-  if(!currentThread&&data.length) currentThread=data[0].id;
+  // Try to find and select the Community Chat (group chat) as the main conversation
+  const communityChat = data.find(t => t.title && t.title.includes('Community Chat'));
+  if(!currentThread && data.length) {
+    currentThread = communityChat ? communityChat.id : data[0].id;
+  }
   renderThreads();
   if(currentThread) openThread(currentThread);
+
+  // Set up real-time polling for new messages (every 10 seconds)
+  if(!window.messagePollInterval){
+    window.messagePollInterval = setInterval(async () => {
+      // Only poll if messages panel is visible and active
+      const messagesPanel = document.getElementById('panel-messages');
+      if(currentThread && messagesPanel && messagesPanel.classList.contains('active')){
+        // Only refresh if we're viewing the messages panel and have a thread selected
+        const msgs = await apiGet('/api/messages/'+currentThread);
+        threads[currentThread].msgs = msgs;
+        renderChat();
+      }
+    }, 10000);
+  }
 }
 async function deleteConversation(id){
   if(!confirm('Delete this conversation and all its messages?')) return;
@@ -2410,29 +2541,36 @@ async function deleteConversation(id){
 function renderAnnouncements(){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   const statusFilter=(document.getElementById('annStatusFilter')||{}).value||'Active';
-  const filtered=statusFilter==='all'?announcements:announcements.filter(a=>(a.status||'Active')===statusFilter);
+  const searchQ=((document.getElementById('annSearch')||{}).value||'').toLowerCase();
+  let filtered=statusFilter==='all'?announcements:announcements.filter(a=>(a.status||'Active')===statusFilter);
+  if(searchQ) filtered=filtered.filter(a=>(a.title||'').toLowerCase().includes(searchQ)||(a.content||'').toLowerCase().includes(searchQ));
   document.getElementById('annList').innerHTML=filtered.length?filtered.map(a=>{
+    const isArchived=(a.status||'Active')==='Archived';
+    // Format date formally
+    let postedDate='';
+    try{ postedDate=new Date(a.created_at).toLocaleString('en-PH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ postedDate=a.created_at; }
     const meta=[];
     if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
     if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
-    if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
-    const statusClass=(a.status||'Active')==='Archived'?'pill-inactive':'pill-active';
-    meta.push('<span class="pill '+statusClass+'" style="font-size:11px;">'+(a.status||'Active')+'</span>');
+    if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 Event: '+a.event_date+'</span>');
+    if(isArchived) meta.push('<span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase;">ARCHIVED</span>');
     return `
-    <div class="ann-item" onclick="openAnnView(${a.id})" style="cursor:pointer;" title="Click to view">
-      <div class="ann-meta">
-        <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
-        <span class="ann-date">${a.created_at}</span>
+    <div class="ann-item" onclick="openAnnView(${a.id})" style="cursor:pointer;${isArchived?'opacity:0.65;':''}">
+      <div class="ann-meta" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
+          ${meta.length?'<span style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">'+meta.join('')+'</span>':''}
+        </div>
+        <span class="ann-date" style="font-size:11px;color:var(--text-dim);">Posted: ${postedDate}</span>
       </div>
-      ${meta.length?'<div style="display:flex;gap:10px;flex-wrap:wrap;margin:4px 0;">'+meta.join('')+'</div>':''}
-      <div class="ann-title">${a.title}</div>
-      <div class="ann-body">${a.content}</div>
-      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">By: ${a.posted_by}</div>
+      <div class="ann-title" style="font-size:15px;font-weight:600;margin-bottom:4px;text-align:center;">${a.title}</div>
+      <div class="ann-body" style="font-size:13px;color:var(--text-mid);white-space:pre-line;line-height:1.65;text-align:center;">${a.content}</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;border-top:1px solid var(--glass-border);padding-top:6px;">Issued by: ${a.posted_by} &nbsp;·&nbsp; Audience: ${a.target||'All Residents'}</div>
       <div class="ann-actions">
-        <button class="btn btn-sm" onclick="event.stopPropagation();archiveAnn(${a.id})">${(a.status||'Active')==='Archived'?'♻ Unarchive':'📦 Archive'}</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();archiveAnn(${a.id})">${isArchived?'♻ Restore':'📦 Archive'}</button>
         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteAnn(${a.id})">Delete</button>
       </div>
-    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements.</div>';
+    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements found.</div>';
 }
 async function archiveAnn(id){
   const res=await apiPatch('/api/announcements/'+id+'/archive');
@@ -2528,15 +2666,27 @@ function issuePriority(i){
   if(medium.includes(i.category)) return 'Medium';
   return 'Low';
 }
+function deleteInBadge(i){
+  if(i.status!=='Resolved') return '';
+  const base = i.resolved_at || i.created_at;
+  if(!base) return '';
+  const d = new Date(String(base).length<=10 ? base+'T00:00:00' : base);
+  if(isNaN(d.getTime())) return '';
+  const daysLeft = Math.max(0, Math.ceil(30 - (Date.now()-d.getTime())/86400000));
+  if(daysLeft<=0) return '';
+  return `<span style="font-size:10px;font-weight:600;color:var(--text-dim);" title="Auto-deletes after 30 days">🗑 deletes in ${daysLeft}d</span>`;
+}
 function renderIssues(){
   const sf=(document.getElementById('issueFilter')||{}).value||'';
   const pf=(document.getElementById('issuePriFilter')||{}).value||'';
   const df=(document.getElementById('issueDateFrom')||{}).value||'';
   const dt=(document.getElementById('issueDateTo')||{}).value||'';
+  const sq=((document.getElementById('issueSearch')||{}).value||'').toLowerCase();
   const filtered=issues.filter(i=>{
     if(sf&&i.status!==sf) return false;
     const pri=i.priority||issuePriority(i);
     if(pf&&pri!==pf) return false;
+    if(sq&&!(i.title||'').toLowerCase().includes(sq)&&!(i.resident||'').toLowerCase().includes(sq)) return false;
     if(df||dt){
       const d=i.created_at?new Date(i.created_at):null;
       if(d){
@@ -2548,34 +2698,37 @@ function renderIssues(){
   });
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
   const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
+  const priBg={Critical:'rgba(255,85,85,0.12)',High:'rgba(240,128,128,0.12)',Medium:'rgba(196,150,70,0.12)',Low:'rgba(107,142,112,0.12)'};
   document.getElementById('issueList').innerHTML=filtered.length?filtered.map(i=>{
     const pri=i.priority||issuePriority(i);
     const isCritical=pri==='Critical';
+    let filedDate='';
+    try{ filedDate=new Date(i.created_at).toLocaleString('en-PH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ filedDate=i.created_at; }
     return `
     <div class="issue-item ${isCritical?'issue-critical-row':''}" onclick="openIssueDetail(${i.id})" style="cursor:pointer;" title="Click for full details">
-      <div class="issue-top">
-        <div>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${i.resident} · ${i.block_lot}</div>
-          <div class="issue-title">${isCritical?'🚨 ':''}${i.title}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;letter-spacing:.03em;">Report #${i.id} &nbsp;·&nbsp; Filed: ${filedDate}</div>
+          <div class="issue-title" style="font-size:15px;">${isCritical?'🚨 ':''}${i.title}</div>
+          <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">By: ${i.resident} &nbsp;·&nbsp; ${i.block_lot}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-          ${statusPill[i.status]||''}
-          <span style="font-size:10px;font-weight:700;color:${priColor[pri]||'var(--text-dim)'}">${pri||''}</span>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
+          ${statusPill[i.status]||''}${deleteInBadge(i)}
+          ${pri?`<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;background:${priBg[pri]||'transparent'};color:${priColor[pri]||'var(--text-dim)'};">${pri}</span>`:''}
         </div>
       </div>
-      <div class="issue-body">${i.description}</div>
-      <div class="issue-meta">
+      <div class="issue-body" style="font-size:13px;">${i.description}</div>
+      <div class="issue-meta" style="margin-top:8px;">
         <span class="pill pill-notice">${i.category}</span>
-        <span class="meta-txt">· #${i.id} · ${i.created_at}</span>
       </div>
-      ${(i.responses&&i.responses.length)?`<div style="margin-top:12px;padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;">
-        <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Response</div>
+      ${(i.responses&&i.responses.length)?`<div style="margin-top:10px;padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;">
+        <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Admin Response</div>
         <div style="font-size:13px;color:var(--text-mid);">${i.responses[0].content}</div>
       </div>`:''}
       <div class="issue-actions">
         ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="event.stopPropagation();openRespondModal(${i.id})">Respond</button>`:''}
       </div>
-    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues match the filter.</div>';
+    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues match the selected filters.</div>';
 }
 async function openRespondModal(id){
   respondingId=id;
@@ -2833,25 +2986,30 @@ async function updateRecStatus(id,status){
 function openResidentDetail(id){
   const r=residents.find(x=>x.id===id);
   if(!r) return;
-  const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
-  const payColor=bal=>bal<=0?'var(--green)':(bal<1000?'var(--yellow)':'#f08080');
   document.getElementById('resD-avatar').className='r-avatar '+r.color;
   document.getElementById('resD-avatar').textContent=r.initials;
   document.getElementById('resD-name').textContent=r.name;
   document.getElementById('resD-block').textContent=r.block_lot||'—';
   document.getElementById('resD-status').textContent=r.status;
   document.getElementById('resD-status').className='pill '+(r.status==='Active'?'pill-active':'pill-inactive');
-  document.getElementById('resD-balance').textContent='₱'+Number(r.current_balance||0).toLocaleString();
-  document.getElementById('resD-balance').style.color=payColor(r.current_balance||0);
-  document.getElementById('resD-payStatus').textContent=payLabel(r.current_balance||0);
+  document.getElementById('resD-household').textContent=r.block_lot||'—';
   document.getElementById('resD-email').textContent=r.email||'—';
   document.getElementById('resD-phone').textContent=r.contact_number||'—';
-  document.getElementById('resD-viewPayBtn').onclick=()=>{
+  const msgBtn=document.getElementById('resD-msgBtn');
+  msgBtn.onclick=()=>{
     document.getElementById('modal-residentDetail').classList.remove('open');
-    nav('payments',null);
-    setTimeout(()=>{ const s=document.getElementById('paymentSearch'); if(s){s.value=r.name;filterPayments&&filterPayments();} },200);
+    messageResident(r.id);
   };
   document.getElementById('modal-residentDetail').classList.add('open');
+}
+
+function messageResident(id){
+  openNewThreadModal();
+  const sel=document.getElementById('newThreadResident');
+  if(sel) sel.value=String(id);
+  const title=document.getElementById('newThreadTitle');
+  const r=residents.find(x=>x.id===id);
+  if(title && r) title.value='Message: '+(r.name||'');
 }
 
 let detailIssueId=null;
@@ -2874,7 +3032,7 @@ function openIssueDetail(id){
   const mediaEl=document.getElementById('issD-media');
   if(mediaEl){
     const photos=i.media||[];
-    mediaEl.innerHTML=photos.length?photos.map(m=>`<a href="${m.url}" target="_blank"><img src="${m.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--glass-border);cursor:pointer;" title="Click to open full size"></a>`).join(''):'';
+    mediaEl.innerHTML=photos.length?photos.map(m=>/\.(jpg|jpeg|png|gif|webp)$/i.test(m.name||m.url)?`<a href="${m.url}" target="_blank"><img src="${m.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--glass-border);cursor:pointer;" title="Click to open full size"></a>`:`<a href="${m.url}" target="_blank" style="display:inline-block;padding:8px 10px;border:1px solid var(--glass-border);border-radius:8px;color:var(--blue);font-size:12px;">📎 ${m.name||'Attachment'}</a>`).join(''):'';
   }
   const hasLoc=i.latitude&&i.longitude;
   document.getElementById('issD-location').innerHTML=hasLoc?`<a href="https://maps.google.com/?q=${i.latitude},${i.longitude}" target="_blank" style="color:var(--blue);font-size:12px;">📍 View on map</a>`:'';
@@ -3023,11 +3181,20 @@ async function renderReports(){
           ${f.notes?`<div style="font-size:11px;color:var(--text-mid);margin-top:3px;">${f.notes}</div>`:''}
           <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${new Date(f.created_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</div>
         </div>
-        ${f.file_path?`<a href="/storage/${f.file_path}" download="${f.original_name}" class="btn btn-sm" style="flex-shrink:0;">&darr; Download</a>`:''}
+        <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
+          ${f.file_path?`<a href="${(window.APP_BASE||'')}/storage/${f.file_path}" download="${f.original_name}" class="btn btn-sm">&darr; Download</a>`:''}
+          <button class="btn btn-sm" onclick="event.stopPropagation();toggleAdminFileArchive(${f.id})">📦 Archive</button>
+        </div>
       </div>`).join('');
   } catch(e) {
     el.innerHTML='<div style="color:var(--text-dim);font-size:13px;padding:8px 0;">Could not load files.</div>';
   }
+}
+
+async function toggleAdminFileArchive(id){
+  const res=await fetch('/api/officer-files/'+id+'/archive',{method:'PATCH',headers:{'Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content}}).then(r=>r.json()).catch(()=>null);
+  if(res?.success){ showToast(res.archived?'📦 File archived.':'♻ File restored.'); renderReports(); }
+  else showToast('⚠ Could not update file status.');
 }
 
 /* ══════════════ REPORT GENERATION (CSV downloads) ══════════════ */
@@ -3044,13 +3211,28 @@ function downloadCSV(filename, headers, rows){
   URL.revokeObjectURL(a.href);
 }
 
+function getReportDateRange(){
+  const from=(document.getElementById('reportDateFrom')||{}).value||'';
+  const to=(document.getElementById('reportDateTo')||{}).value||'';
+  return {from, to};
+}
+function inDateRange(dateStr, from, to){
+  if(!from&&!to) return true;
+  const d=new Date(dateStr);
+  if(isNaN(d)) return true;
+  if(from&&d<new Date(from)) return false;
+  if(to&&d>new Date(to+'T23:59:59')) return false;
+  return true;
+}
+
 function reportMonthlySummary(){
   if(!residents||!residents.length){ showToast('⚠ No resident data loaded yet.'); return; }
+  const {from,to}=getReportDateRange();
   const now = new Date();
   const label = now.toLocaleDateString('en-PH',{month:'long',year:'numeric'});
   const fname = `monthly-summary-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.csv`;
   const rows = residents.map(r=>{
-    const recs = Array.isArray(finRecs)?finRecs.filter(f=>String(f.resident_id)===String(r.id)):[];
+    const recs = Array.isArray(finRecs)?finRecs.filter(f=>String(f.resident_id)===String(r.id)&&inDateRange(f.date||f.created_at,from,to)):[];
     const dues = recs.filter(f=>['Due','Penalty'].includes(f.record_type)).reduce((s,f)=>s+Number(f.amount||0),0);
     const paid = recs.filter(f=>f.record_type==='Payment').reduce((s,f)=>s+Number(f.amount||0),0);
     return [r.id, r.name, r.block_lot||r.block_lot_number||'', dues.toFixed(2), paid.toFixed(2), Number(r.current_balance||0).toFixed(2), r.status||''];
@@ -3062,6 +3244,7 @@ function reportMonthlySummary(){
 function reportPayments(){
   const src = Array.isArray(payments)&&payments.length ? payments : residents;
   if(!src||!src.length){ showToast('⚠ No payment data loaded yet.'); return; }
+  const {from,to}=getReportDateRange();
   const fname = `payment-report-${new Date().toISOString().slice(0,10)}.csv`;
   const rows = src.map(r=>{
     const bal = Number(r.current_balance||0);
@@ -3074,14 +3257,16 @@ function reportPayments(){
 
 function reportIssues(){
   if(!issues||!issues.length){ showToast('⚠ No issue data loaded yet.'); return; }
+  const {from,to}=getReportDateRange();
+  const filtered=issues.filter(i=>inDateRange(i.created_at,from,to));
   const fname = `issue-report-${new Date().toISOString().slice(0,10)}.csv`;
-  const rows = issues.map(i=>[
+  const rows = filtered.map(i=>[
     i.id, i.category||'', i.title||i.description||'', i.resident||i.resident_name||'',
     i.block_lot||'', i.status||'', i.priority||'',
     i.created_at?new Date(i.created_at).toLocaleDateString('en-PH'):''
   ]);
   downloadCSV(fname, ['ID','Category','Title','Resident','Block/Lot','Status','Priority','Date Filed'], rows);
-  showToast('🔧 Issue Report downloaded!');
+  showToast(`🔧 Issue Report downloaded! (${filtered.length} record${filtered.length!==1?'s':''})`);
 }
 
 function reportResidentDirectory(){
@@ -3094,6 +3279,25 @@ function reportResidentDirectory(){
   ]);
   downloadCSV(fname, ['ID','Name','Email','Contact','Block/Lot','Status','Balance (₱)'], rows);
   showToast('👥 Resident Directory downloaded!');
+}
+
+async function uploadAdminReport(){
+  const fileEl=document.getElementById('adminReportFile');
+  const note=(document.getElementById('adminReportNote')||{}).value||'';
+  if(!fileEl||!fileEl.files.length){ showToast('⚠ Please select a file to upload.'); return; }
+  const fd=new FormData();
+  fd.append('file', fileEl.files[0]);
+  fd.append('notes', note);
+  fd.append('category', 'Admin Document');
+  try{
+    const res=await fetch('/api/officer-files',{
+      method:'POST',
+      headers:{'X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content,'Accept':'application/json'},
+      body:fd
+    }).then(r=>r.json());
+    if(res.success||res.id){ showToast('✅ Document uploaded successfully.'); fileEl.value=''; document.getElementById('adminReportNote').value=''; renderReports(); }
+    else showToast('⚠ Upload failed. '+(res.message||''));
+  }catch(e){ showToast('⚠ Upload error. Please try again.'); }
 }
 
 /* ══════════════ MANAGE USERS TABLES ══════════════ */
@@ -3183,7 +3387,7 @@ async function rejectRegistration(id){
   if(res?.success){ showToast('✅ Registration rejected and removed.'); loadAllData(); }
   else showToast('⚠ Could not reject registration.');
 }
-async function deleteMember(id){ await apiDelete('/api/household-members/'+id); await loadManageData(); showToast('🗑️ Member removed.'); }
+// async function deleteMember(id){ await apiDelete('/api/household-members/'+id); await loadManageData(); showToast('🗑️ Member removed.'); }
 async function deleteFamily(id){ await apiDelete('/api/families/'+id); await loadManageData(); showToast('🗑️ Family removed.'); }
 
 function switchManagePanel(){
@@ -3290,55 +3494,121 @@ let hhMembers = [];
 function renderAnalytics(){
   if(document.getElementById('analyticMembers')) document.getElementById('analyticMembers').textContent = residents.length||'—';
   if(document.getElementById('analyticHouses'))  document.getElementById('analyticHouses').textContent  = households.length||'—';
-  if(document.getElementById('analyticPaymentStatus'))  document.getElementById('analyticPaymentStatus').textContent  = paymentStatuses.length||'0';
   if(typeof d3 === 'undefined') return;
-  drawCollectionsChart();
-  drawPaymentStatusChart();
+  drawResidentStatusChart();
+  drawIssuesStatusChart();
+  drawRecsStatusChart();
+  drawExpensesCatChart();
+  drawIssuesTrendChart();
   drawComplaintsChart();
   setTimeout(renderAnalyticsHeatMap, 120);
 }
 
-function drawCollectionsChart(){
-  const el = document.getElementById('chart-collections');
+function drawDonut(elId, data, centerText){
+  const el = document.getElementById(elId);
   if(!el) return;
   el.innerHTML='';
-  const payments = finRecs.filter(r=>r.record_type==='Payment');
-  if(!payments.length){
-    el.innerHTML='<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:40px 0;">No payment records yet.</div>';
-    return;
-  }
-  const byMonth={};
-  payments.forEach(r=>{
-    const d=new Date(r.record_date||r.date);
-    const key=isNaN(d)?r.record_date:d.toLocaleDateString('en-PH',{month:'short',year:'numeric'});
-    byMonth[key]=(byMonth[key]||0)+parseFloat(r.amount||0);
+  if(!data.length){ el.innerHTML='<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:40px 0;">No data yet.</div>'; return; }
+  const W=Math.min(el.clientWidth||200,240), H=180;
+  const R=Math.min(W,H)/2-16;
+  const svg=d3.select(el).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform',`translate(${W/2},${H/2})`);
+  const pie=d3.pie().value(d=>d.value).sort(null);
+  const arc=d3.arc().innerRadius(R*0.52).outerRadius(R);
+  g.selectAll('path').data(pie(data)).join('path')
+    .attr('d',arc).attr('fill',d=>d.data.color).attr('stroke','rgba(0,0,0,0.2)').attr('stroke-width',1);
+  if(centerText) g.append('text').attr('text-anchor','middle').attr('dy','0.35em')
+    .attr('fill','rgba(240,236,228,0.9)').style('font-size','15px').style('font-weight','600').text(centerText);
+  const leg=svg.append('g').attr('transform',`translate(${W/2},${H-6})`);
+  data.forEach((d,i)=>{
+    const lx=(i-(data.length-1)/2)*90;
+    leg.append('circle').attr('cx',lx-12).attr('cy',-2).attr('r',5).attr('fill',d.color);
+    leg.append('text').attr('x',lx-4).attr('y',2).attr('fill','rgba(240,236,228,0.6)').style('font-size','10px').text(`${d.label} (${d.value})`);
   });
-  const data=Object.entries(byMonth).map(([month,amount])=>({month,amount}));
+}
+
+function drawIssuesStatusChart(){
+  const counts={}; issues.forEach(i=>{ counts[i.status]=(counts[i.status]||0)+1; });
+  const colors={'Pending':'#c49646','In Progress':'#7ab4f0','Resolved':'#82c98a'};
+  const data=Object.entries(counts).map(([label,value])=>({label,value,color:colors[label]||'#8c829e'}));
+  drawDonut('chart-issue-status', data, data.length?String(data.reduce((a,d)=>a+d.value,0)):'0');
+}
+
+function drawRecsStatusChart(){
+  const counts={}; recommendations.forEach(r=>{ counts[r.status]=(counts[r.status]||0)+1; });
+  const colors={'Pending':'#c49646','Reviewed':'#7ab4f0','Approved':'#82c98a','Rejected':'#f08080'};
+  const data=Object.entries(counts).map(([label,value])=>({label,value,color:colors[label]||'#8c829e'}));
+  drawDonut('chart-recs-status', data, data.length?String(data.reduce((a,d)=>a+d.value,0)):'0');
+}
+
+function drawExpensesCatChart(){
+  const el = document.getElementById('chart-expenses-cat');
+  if(!el) return;
+  el.innerHTML='';
+  const cats={}; (expenses||[]).forEach(e=>{ cats[e.category||'Other']=(cats[e.category||'Other']||0)+(parseFloat(e.amount)||0); });
+  const data=Object.entries(cats).map(([cat,amount])=>({cat,amount})).sort((a,b)=>b.amount-a.amount).slice(0,6);
+  if(!data.length){ el.innerHTML='<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:40px 0;">No expenses recorded.</div>'; return; }
   const W=el.clientWidth||320, H=180;
-  const m={top:16,right:16,bottom:36,left:52};
+  const m={top:10,right:20,bottom:36,left:52};
   const w=W-m.left-m.right, h=H-m.top-m.bottom;
   const svg=d3.select(el).append('svg').attr('width',W).attr('height',H);
   const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);
-  const x=d3.scaleBand().domain(data.map(d=>d.month)).range([0,w]).padding(0.35);
-  const y=d3.scaleLinear().domain([0,d3.max(data,d=>d.amount)*1.25||1]).range([h,0]);
+  const x=d3.scaleBand().domain(data.map(d=>d.cat)).range([0,w]).padding(0.3);
+  const y=d3.scaleLinear().domain([0,d3.max(data,d=>d.amount)*1.2||1]).range([h,0]);
   g.selectAll('rect').data(data).join('rect')
-    .attr('x',d=>x(d.month)).attr('y',d=>y(d.amount))
+    .attr('x',d=>x(d.cat)).attr('y',d=>y(d.amount))
     .attr('width',x.bandwidth()).attr('height',d=>h-y(d.amount))
-    .attr('fill','#82c98a').attr('rx',3);
+    .attr('fill','#c87941').attr('rx',3);
   g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x))
-    .call(ax=>{ax.select('.domain').attr('stroke','rgba(255,255,255,0.15)');ax.selectAll('.tick line').remove();ax.selectAll('text').attr('fill','rgba(240,236,228,0.6)').style('font-size','11px');});
-  g.append('g').call(d3.axisLeft(y).ticks(3).tickFormat(v=>'₱'+(v>=1000?(v/1000).toFixed(0)+'k':v)))
-    .call(ax=>{ax.select('.domain').remove();ax.selectAll('.tick line').attr('stroke','rgba(255,255,255,0.1)').attr('x2',w);ax.selectAll('text').attr('fill','rgba(240,236,228,0.6)').style('font-size','11px');});
+    .call(ax=>{ax.select('.domain').attr('stroke','rgba(255,255,255,0.15)');ax.selectAll('.tick line').remove();ax.selectAll('text').attr('fill','rgba(240,236,228,0.6)').style('font-size','10px');});
+  g.append('g').call(d3.axisLeft(y).ticks(4).tickFormat(v=>'₱'+(v>=1000?(v/1000).toFixed(0)+'k':v)))
+    .call(ax=>{ax.select('.domain').remove();ax.selectAll('.tick line').attr('stroke','rgba(255,255,255,0.1)').attr('x2',w);ax.selectAll('text').attr('fill','rgba(240,236,228,0.6)').style('font-size','10px');});
 }
 
-function drawPaymentStatusChart(){
-  const el=document.getElementById('chart-payment-status');
+function drawIssuesTrendChart(){
+  const el = document.getElementById('chart-issue-trend');
+  if(!el) return;
+  el.innerHTML='';
+  const months=[];
+  for(let i=5;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); months.push(d.toLocaleDateString('en-US',{month:'short',year:'2-digit'})); }
+  const counts={}; months.forEach(m=>counts[m]=0);
+  issues.forEach(i=>{
+    const d=new Date(i.created_at||Date.now());
+    if(isNaN(d)) return;
+    const key=d.toLocaleDateString('en-US',{month:'short',year:'2-digit'});
+    if(key in counts) counts[key]++;
+  });
+  const data=months.map(m=>({month:m,count:counts[m]||0}));
+  if(!data.reduce((a,d)=>a+d.count,0)){ el.innerHTML='<div style="color:var(--text-dim);font-size:13px;text-align:center;padding:40px 0;">No issues filed in the last 6 months.</div>'; return; }
+  const W=el.clientWidth||320, H=180;
+  const m={top:10,right:16,bottom:30,left:34};
+  const w=W-m.left-m.right, h=H-m.top-m.bottom;
+  const svg=d3.select(el).append('svg').attr('width',W).attr('height',H);
+  const g=svg.append('g').attr('transform',`translate(${m.left},${m.top})`);
+  const x=d3.scalePoint().domain(months).range([0,w]).padding(0.4);
+  const y=d3.scaleLinear().domain([0,d3.max(data,d=>d.count)+1]).range([h,0]);
+  g.append('path').datum(data)
+    .attr('fill','none').attr('stroke','#7ab4f0').attr('stroke-width',2)
+    .attr('d',d3.line().x(d=>x(d.month)).y(d=>y(d.count)).curve(d3.curveMonotoneX));
+  g.selectAll('circle').data(data).join('circle')
+    .attr('cx',d=>x(d.month)).attr('cy',d=>y(d.count)).attr('r',3.5).attr('fill','#7ab4f0');
+  g.selectAll('text.label').data(data).join('text')
+    .attr('x',d=>x(d.month)).attr('y',d=>y(d.count)-8).attr('text-anchor','middle')
+    .attr('fill','rgba(240,236,228,0.7)').style('font-size','10px').text(d=>d.count);
+  g.append('g').attr('transform',`translate(0,${h})`).call(d3.axisBottom(x).tickSize(0))
+    .call(ax=>{ax.select('.domain').attr('stroke','rgba(255,255,255,0.15)');ax.selectAll('.tick line').remove();ax.selectAll('text').attr('fill','rgba(240,236,228,0.6)').style('font-size','10px');});
+  g.append('g').call(d3.axisLeft(y).ticks(3).tickFormat(d3.format('d')))
+    .call(ax=>{ax.select('.domain').remove();ax.selectAll('.tick line').attr('stroke','rgba(255,255,255,0.1)').attr('x2',w);ax.selectAll('text').attr('fill','rgba(240,236,228,0.6)').style('font-size','10px');});
+}
+
+function drawResidentStatusChart(){
+  const el=document.getElementById('chart-payment-statuses');
   if(!el) return;
   el.innerHTML='';
   const activeCount=residents.filter(r=>r.status==='Active').length;
-  const paymentStatusCount=paymentStatuses.length;
-  const total=activeCount+paymentStatusCount||1;
-  const data=[{label:'Active',value:activeCount,color:'#82c98a'},{label:'Payment Status',value:paymentStatusCount,color:'#f08080'}];
+  const nonActiveCount=residents.filter(r=>r.status!=='Active').length;
+  const total=activeCount+nonActiveCount||1;
+  const data=[{label:'Active',value:activeCount,color:'#82c98a'},{label:'Non-Active',value:nonActiveCount,color:'#f08080'}];
   const W=Math.min(el.clientWidth||200,240), H=180;
   const R=Math.min(W,H)/2-16;
   const svg=d3.select(el).append('svg').attr('width',W).attr('height',H);
@@ -3837,10 +4107,18 @@ function renderAnalyticsHeatMap(){
   const el = document.getElementById('analytics-heat-map');
   if (!el) return;
   if (analyticsMapInst) { setTimeout(() => analyticsMapInst.invalidateSize(), 100); return; }
+  loadLeaflet().then(async ()=>{
+  const s = mapSettings || {min_lat:10.6195,max_lat:10.6260,min_lng:122.9580,max_lng:122.9650};
+  const analyticsBounds = L.latLngBounds([[+s.min_lat,+s.min_lng],[+s.max_lat,+s.max_lng]]);
   analyticsMapInst = L.map('analytics-heat-map', {
-    zoomControl: false, attributionControl: false
-  }).setView(MAP_CENTER, 16);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 20}).addTo(analyticsMapInst);
+    zoomControl: false,
+    attributionControl: false,
+    minZoom: 14,
+    maxZoom: 20,
+    maxBounds: analyticsBounds,
+    maxBoundsViscosity: 1.0,
+  }).fitBounds(analyticsBounds, {padding: [8, 8]});
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(analyticsMapInst);
   // Use all issues with lat/lng (including from module-level issues array)
   const pts = issues
     .filter(i => i.latitude && i.longitude)
@@ -3854,6 +4132,7 @@ function renderAnalyticsHeatMap(){
     );
   }
   setTimeout(() => analyticsMapInst.invalidateSize(), 150);
+  });
 }
 
 /* ══════════════ INIT ══════════════ */
@@ -3907,30 +4186,146 @@ window.nav = function(name, el){
 
 setInterval(pollOfficerFiles, 30000);
 
-// Fast poll: check for critical/high unresolved issues every 5s
+/* ══════════════════════════════════════════════════════════
+   REAL-TIME: Server-Sent Events (SSE)
+   Replaces all polling intervals. The server pushes events
+   within ~1 second of a DB change. JS then fetches full data
+   from existing REST endpoints.
+   ══════════════════════════════════════════════════════════ */
 let _lastUrgentId = null;
 function dismissEmergency(){ document.getElementById('emergencyAlert').style.display='none'; }
-setInterval(async ()=>{
-  if(document.hidden) return;
-  try{
-    const u = await apiGet('/api/issues/urgent-check');
-    if(u.count > 0 && u.latest_id !== _lastUrgentId){
-      _lastUrgentId = u.latest_id;
-      const el = document.getElementById('emergencyAlert');
-      const txt = document.getElementById('emergencyAlertText');
-      if(txt && u.latest) txt.textContent = `🚨 CRITICAL ISSUE — "${u.latest.title}" by ${u.latest.resident}`;
-      if(el) el.style.display = 'block';
-      // also immediately refresh issues list
+
+// ── Notification banner helpers ──────────────────────────
+let _adminLastAnnId = 0;
+let _adminLastIssueCount = 0;
+
+function showAnnBanner(ann){
+  document.getElementById('annNotifTitle').textContent = ann.title;
+  const notif = document.getElementById('annNotif');
+  notif.classList.add('show');
+  clearTimeout(notif._t);
+  notif._t = setTimeout(()=>notif.classList.remove('show'), 9000);
+}
+function showIssueBanner(issue){
+  document.getElementById('issueNotifTitle').textContent = issue.title + (issue.resident ? ' — ' + issue.resident : '');
+  const notif = document.getElementById('issueNotif');
+  notif.classList.add('show');
+  clearTimeout(notif._t);
+  notif._t = setTimeout(()=>notif.classList.remove('show'), 9000);
+}
+document.getElementById('annNotifViewBtn').onclick = ()=>{
+  document.getElementById('annNotif').classList.remove('show');
+  nav('announcements');
+};
+document.getElementById('issueNotifViewBtn').onclick = ()=>{
+  document.getElementById('issueNotif').classList.remove('show');
+  nav('issues');
+};
+
+// ── SSE connection ────────────────────────────────────────
+let _adminSseAnnId   = 0;
+let _adminSseIssueId = 0;
+let _adminSsePolicyId = 0;
+let _adminSseEventId  = 0;
+
+function connectAdminSSE(){
+  if(document.hidden){ setTimeout(connectAdminSSE, 2000); return; }
+
+  const url = `/api/stream/updates?lastEventId=${_adminSseEventId}&lastAnnId=${_adminSseAnnId}&lastIssueId=${_adminSseIssueId}&lastPolicyId=${_adminSsePolicyId}`;
+  const es  = new EventSource(url);
+
+  // ── Fresh connection — load initial data once ─────────────
+  es.addEventListener('sync', () => {
+    if(!issues || !issues.length) loadAllData().catch(()=>{});
+  });
+
+  // ── New / changed announcement ───────────────────────────
+  es.addEventListener('announcement', async (e) => {
+    const evt = JSON.parse(e.data);
+    _adminSseAnnId = evt.latestId;
+    try{
+      const data = await apiGet('/api/announcements');
+      if(!Array.isArray(data) || !data.length) return;
+      const newOnes = data.filter(a => a.id > _adminLastAnnId);
+      _adminLastAnnId = data[0].id;
+      announcements = data;
+      renderAnnouncements();
+      renderDashboard();
+      if(newOnes.length) showAnnBanner(newOnes[0]);
+    }catch(err){}
+  });
+
+  // ── New / changed policy ──────────────────────────────────
+  es.addEventListener('policy', async (e) => {
+    const evt = JSON.parse(e.data);
+    _adminSsePolicyId = evt.latestId;
+    try{
+      if(typeof loadPolicies === 'function') await loadPolicies();
+    }catch(err){}
+  });
+
+  // ── New / changed issue ──────────────────────────────────
+  es.addEventListener('issue', async (e) => {
+    const evt = JSON.parse(e.data);
+    _adminSseIssueId = evt.latestId;
+    try{
       const d = await apiGet('/api/dashboard-data');
-      issues = d.issues||[];
+      const newIssues = d.issues||[];
+      const newRecs   = d.recommendations||[];
+      const hadNew    = evt.isNew && _adminLastIssueCount > 0;
+      if(hadNew) showIssueBanner({title: evt.title});
+      issues          = newIssues;
+      recommendations = newRecs;
+      _adminLastIssueCount = newIssues.length;
       renderIssues();
+      renderRecommendations();
       renderDashboard();
       const openCount = issues.filter(i=>i.status!=='Resolved').length;
       if(document.getElementById('statIssues')) document.getElementById('statIssues').textContent = openCount;
       if(document.getElementById('issueBadge')) document.getElementById('issueBadge').textContent = openCount;
+    }catch(err){}
+  });
+
+  // ── Urgent / critical issue ──────────────────────────────
+  es.addEventListener('urgent', (e) => {
+    const evt = JSON.parse(e.data);
+    if(evt.id === _lastUrgentId) return;
+    _lastUrgentId = evt.id;
+    const el  = document.getElementById('emergencyAlert');
+    const txt = document.getElementById('emergencyAlertText');
+    if(txt) txt.textContent = `🚨 CRITICAL ISSUE — "${evt.title}"`;
+    if(el)  el.style.display = 'block';
+  });
+
+  // ── HOA expense update ───────────────────────────────────
+  es.addEventListener('hoa-expense', async () => {
+    try{
+      if(typeof loadExpenses === 'function') await loadExpenses();
+    }catch(err){}
+  });
+
+  // ── 90-s cycle reconnect ─────────────────────────────────
+  es.addEventListener('reconnect', (e) => {
+    const evt = JSON.parse(e.data);
+    if(evt.lastEventId) _adminSseEventId = evt.lastEventId;
+    es.close();
+    setTimeout(connectAdminSSE, 200);
+  });
+
+  // ── Error — retry after 3 s ──────────────────────────────
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectAdminSSE, 3000);
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && es.readyState === EventSource.CLOSED){
+      setTimeout(connectAdminSSE, 500);
     }
-  }catch(e){}
-}, 5000);
+  }, { once: true });
+}
+
+// ── Message thread poll (still needed — SSE doesn't cover messages) ──
 setInterval(async ()=>{
   if(document.hidden || !currentThread) return;
   if(!document.getElementById('panel-messages')?.classList.contains('active')) return;
@@ -3943,31 +4338,41 @@ setInterval(async ()=>{
   }catch(e){}
 }, 10000);
 
-// Poll for new issues + recommendations every 30s (resident submissions)
+// ── Safety-net: 60s fallback poll in case SSE is blocked ──
 setInterval(async ()=>{
   if(document.hidden) return;
   try{
-    const d = await apiGet('/api/dashboard-data');
+    const [annData, d] = await Promise.all([
+      apiGet('/api/announcements'),
+      apiGet('/api/dashboard-data'),
+    ]);
+    if(Array.isArray(annData) && annData.length && annData[0].id > _adminLastAnnId){
+      const newOnes = annData.filter(a => a.id > _adminLastAnnId);
+      _adminLastAnnId = annData[0].id; _adminSseAnnId = annData[0].id;
+      announcements = annData;
+      renderAnnouncements(); renderDashboard();
+      if(newOnes.length) showAnnBanner(newOnes[0]);
+    }
     const newIssues = d.issues||[];
-    const newRecs   = d.recommendations||[];
-    const issueCountChanged = newIssues.length !== issues.length;
-    const recCountChanged   = newRecs.length   !== recommendations.length;
-    if(issueCountChanged || recCountChanged){
-      issues          = newIssues;
-      recommendations = newRecs;
-      renderIssues();
-      renderRecommendations();
-      renderDashboard();
+    if(newIssues.length !== issues.length){
+      if(newIssues.length > issues.length && _adminLastIssueCount > 0) showIssueBanner(newIssues[0]);
+      issues = newIssues; _adminLastIssueCount = newIssues.length; _adminSseIssueId = newIssues[0]?.id||0;
+      renderIssues(); renderDashboard();
       const openCount = issues.filter(i=>i.status!=='Resolved').length;
-      if(document.getElementById('statIssues'))  document.getElementById('statIssues').textContent  = openCount;
-      if(document.getElementById('issueBadge'))  document.getElementById('issueBadge').textContent  = openCount;
+      if(document.getElementById('statIssues')) document.getElementById('statIssues').textContent = openCount;
+      if(document.getElementById('issueBadge')) document.getElementById('issueBadge').textContent = openCount;
     }
   }catch(e){}
-}, 30000);
+}, 60000);
 
-loadAllData();
-loadReceipts();
-renderReceipts();
+loadAllData().then(() => {
+  // Start SSE after initial data load — baseline IDs already set in loadAllData()
+  _adminSseAnnId   = _adminLastAnnId;
+  _adminSseIssueId = issues[0]?.id || 0;
+  connectAdminSSE();
+});
+loadAlerts();
+setInterval(()=>loadAlerts(), 30000);
 </script>
 
 <!-- Add Facility Modal -->
@@ -4014,10 +4419,47 @@ renderReceipts();
   </div>
 </div>
 
-<script src="/js/d3.v7.min.js"></script>
+<script src="{{ asset('js/d3.v7.min.js') }}"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script>
+/* ══ LAZY LEAFLET LOADER — Leaflet loads from local origin only when the map is opened ══ */
+let _leafletLoaded = false;
+function loadLeaflet(){
+  if(_leafletLoaded) return Promise.resolve();
+  _leafletLoaded = true;
+  const AB = window.APP_BASE || '';
+  return new Promise((resolve) => {
+    if(!document.querySelector('link[href*="leaflet.css"]')){
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = AB + '/vendor/leaflet/leaflet.css';
+      document.head.appendChild(l);
+    }
+    const srcs = [
+      AB + '/vendor/leaflet/leaflet.js',
+      AB + '/vendor/leaflet/leaflet-heat.js',
+    ];
+    let i = 0;
+    (function next(){
+      if(i >= srcs.length){
+        if(window.L && L.Icon && L.Icon.Default){
+          L.Icon.Default.mergeOptions({
+            iconUrl: AB + '/vendor/leaflet/images/marker-icon.png',
+            iconRetinaUrl: AB + '/vendor/leaflet/images/marker-icon-2x.png',
+            shadowUrl: AB + '/vendor/leaflet/images/marker-shadow.png',
+          });
+        }
+        resolve(); return;
+      }
+      const s = document.createElement('script');
+      s.src = srcs[i++];
+      s.onload = next;
+      s.onerror = () => { s.onerror = null; next(); };
+      document.body.appendChild(s);
+    })();
+  });
+}
+</script>
 <script>
   function toggleSidebar(){
   const sb  = document.getElementById('sidebar');
@@ -4034,11 +4476,11 @@ function closeSidebar(){
   document.getElementById('menuToggle').textContent = '☰';
 }
 /* ══════════════ LEAFLET MAP ══════════════ */
-const MAP_CENTER = [10.62269, 122.96134];
-let mapInst = null, layerHouseholds, layerFacilities, layerIssues, layerHeatmap;
+let mapInst = null, layerHouseholds, layerFacilities, layerIssues;
 let analyticsMapInst = null;
 let addFacilityMode = false, pendingPin = null;
 let editFacilityId = null;
+let issueMarkerCount = 0;
 
 function makeCircleIcon(color) {
   return L.divIcon({
@@ -4048,9 +4490,106 @@ function makeCircleIcon(color) {
   });
 }
 
+function makeNumberedIcon(color, num) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
+    iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -14]
+  });
+}
+
+let mapSettings = null;
+let areaRect = null;
+let customizingArea = false;
+
+async function fetchMapSettings(){
+  try{
+    const r = await fetch('/api/map/settings',{headers:{'Accept':'application/json'}});
+    mapSettings = await r.json();
+  }catch(e){
+    mapSettings = {min_lat:10.6195,max_lat:10.6260,min_lng:122.9580,max_lng:122.9650,center_lat:10.62269,center_lng:122.96134,zoom:17};
+  }
+}
+
+function applyMapArea(){
+  const b = mapSettings || {};
+  const bounds = L.latLngBounds([[b.min_lat,b.min_lng],[b.max_lat,b.max_lng]]);
+  mapInst.setMinZoom(14);
+  mapInst.setMaxZoom(20);
+  mapInst.setMaxBounds(bounds);
+  mapInst.options.maxBoundsViscosity = 1.0;
+  if(areaRect) areaRect.remove();
+  areaRect = L.rectangle(bounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.06}).addTo(mapInst);
+}
+
+function enterCustomizeArea(){
+  customizingArea = true;
+  document.getElementById('map-area-toolbar').style.display='flex';
+  document.getElementById('map-customize-hint').style.display='block';
+  // release the lock so the admin can pan/zoom to frame the new area
+  if(mapInst){
+    mapInst.setMaxBounds(null);
+    document.getElementById('btn-save-area').disabled = false;
+    document.getElementById('btn-reset-area').disabled = false;
+  }
+}
+
+function saveMapArea(){
+  if(!mapInst || !customizingArea) return;
+  const b = mapInst.getBounds();
+  const c = mapInst.getCenter();
+  const payload = {
+    min_lat:    +b.getSouthWest().lat.toFixed(7),
+    max_lat:    +b.getNorthEast().lat.toFixed(7),
+    min_lng:    +b.getSouthWest().lng.toFixed(7),
+    max_lng:    +b.getNorthEast().lng.toFixed(7),
+    center_lat: +c.lat.toFixed(7),
+    center_lng: +c.lng.toFixed(7),
+    zoom:       mapInst.getZoom(),
+  };
+  fetch('/api/map/settings',{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},
+    body: JSON.stringify(payload),
+  }).then(r=>r.json()).then(()=>{
+    mapSettings = payload;
+    applyMapArea();
+    customizingArea = false;
+    document.getElementById('map-customize-hint').style.display='none';
+    showToast('✅ Map area updated.');
+    if(typeof loadMapData === 'function') loadMapData();
+  }).catch(()=>showToast('⚠ Could not save map area.'));
+}
+
+function resetMapArea(){
+  const payload = {min_lat:10.6195,max_lat:10.6260,min_lng:122.9580,max_lng:122.9650,center_lat:10.62269,center_lng:122.96134,zoom:17};
+  fetch('/api/map/settings',{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},
+    body: JSON.stringify(payload),
+  }).then(r=>r.json()).then(()=>{
+    mapSettings = payload;
+    if(mapInst){ mapInst.setMaxBounds(null); mapInst.fitBounds([[payload.min_lat,payload.min_lng],[payload.max_lat,payload.max_lng]],{padding:[20,20]}); applyMapArea(); }
+    customizingArea = false;
+    document.getElementById('map-customize-hint').style.display='none';
+    showToast('✅ Map area reset to default.');
+    if(typeof loadMapData === 'function') loadMapData();
+  }).catch(()=>showToast('⚠ Could not reset map area.'));
+}
+
 function initMap() {
+  loadLeaflet().then(async ()=>{
   if (mapInst) { setTimeout(() => mapInst.invalidateSize(), 100); return; }
-  mapInst = L.map('map-container').setView(MAP_CENTER, 17);
+  await fetchMapSettings();
+  const b = mapSettings;
+  const areaBounds = L.latLngBounds([[b.min_lat,b.min_lng],[b.max_lat,b.max_lng]]);
+  mapInst = L.map('map-container', {
+    minZoom: 14,
+    maxZoom: 20,
+    maxBounds: areaBounds,
+    maxBoundsViscosity: 1.0,
+  }).fitBounds(areaBounds, {padding:[20,20]});
+  areaRect = L.rectangle(areaBounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.06}).addTo(mapInst);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -4097,6 +4636,7 @@ function initMap() {
   });
   document.getElementById('layer-heatmap').addEventListener('change', function() {
     this.checked ? mapInst.addLayer(layerHeatmap) : mapInst.removeLayer(layerHeatmap);
+  });
   });
 }
 
@@ -4247,13 +4787,9 @@ function deleteFacilityById(id) {
         <span id="resD-status" class="pill">—</span>
       </div>
       <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:12px;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Payment</div>
-        <div id="resD-payStatus" style="font-size:13px;font-weight:600;">—</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Household</div>
+        <div id="resD-household" style="font-size:13px;font-weight:600;">—</div>
       </div>
-    </div>
-    <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;">
-      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Outstanding Balance</div>
-      <div id="resD-balance" style="font-size:22px;font-weight:700;">₱0</div>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
       <div style="display:flex;gap:10px;align-items:center;font-size:13px;">
@@ -4267,7 +4803,7 @@ function deleteFacilityById(id) {
     </div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="document.getElementById('modal-residentDetail').classList.remove('open')">Close</button>
-      <button class="btn btn-sm" id="resD-viewPayBtn">View Payments →</button>
+      <button class="btn btn-sm" id="resD-msgBtn">✉️ Message Resident</button>
     </div>
   </div>
 </div>
@@ -4422,37 +4958,5 @@ function deleteFacilityById(id) {
   </div>
 </div>
 
-<!-- Payment Status Detail Modal -->
-<div class="modal-overlay" id="modal-payment-status">
-  <div class="modal-box wide" style="max-width:520px;">
-    <div class="modal-title" style="display:flex;align-items:center;gap:10px;">
-      <span style="font-size:22px;">⚠️</span>
-      <span>Payment Status Household — <span id="paymentStatus-modal-block" style="color:#f08080;">—</span></span>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
-      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Reason Flagged</div>
-        <div id="paymentStatus-modal-reason" style="font-size:13px;color:#f08080;font-weight:600;">—</div>
-      </div>
-      <div style="background:rgba(255,255,255,0.04);border-radius:10px;padding:14px;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Date Flagged</div>
-        <div id="paymentStatus-modal-flagged" style="font-size:13px;font-weight:600;">—</div>
-      </div>
-    </div>
-
-    <div style="background:rgba(240,128,128,0.08);border:1px solid rgba(240,128,128,0.25);border-radius:10px;padding:14px;margin-bottom:18px;text-align:center;">
-      <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:4px;">Total Outstanding Balance</div>
-      <div id="paymentStatus-modal-total" style="font-size:22px;font-weight:700;color:#f08080;">₱0</div>
-    </div>
-
-    <div style="font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:10px;">Residents in Household</div>
-    <div id="paymentStatus-modal-residents" style="max-height:260px;overflow-y:auto;"></div>
-
-    <div class="modal-actions" style="margin-top:20px;">
-      <button class="btn btn-sm" onclick="closePaymentStatus()">Close</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>

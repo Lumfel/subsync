@@ -23,16 +23,16 @@ class StatusController extends Controller
         ]);
 
         if ($request->status === 'Non-Compliant') {
-            // Apply subdivision policy validation before marking as delinquent
+            // Apply subdivision policy validation before marking as non-compliant
             if (!$this->validateSubdivisionPolicy($request->house_id, $request->reason)) {
                 return redirect('/manage_users')
-                    ->with('error', 'Cannot mark household as delinquent: Subdivision policy requirements not met.');
+                    ->with('error', 'Cannot mark household as non-compliant: Subdivision policy requirements not met.');
             }
 
             PaymentStatus::firstOrCreate(
                 ['house_id' => $request->house_id],
                 [
-                    'reason' => $request->reason ?? 'Status marked delinquent',
+                    'reason' => $request->reason ?? 'Status marked non-compliant',
                     'date_flagged' => now(),
                 ]
             );
@@ -42,7 +42,7 @@ class StatusController extends Controller
     }
 
     /**
-     * Validate subdivision policy before marking household as delinquent
+     * Validate subdivision policy before marking household as non-compliant
      */
     private function validateSubdivisionPolicy(int $houseId, string $reason): bool
     {
@@ -61,7 +61,7 @@ class StatusController extends Controller
 
         // Subdivision policy rules:
         // 1. Household must have a minimum balance threshold (e.g., $1000) to be considered for delinquency
-        // 2. Must be delinquent for at least 60 days (based on record_date of oldest unpaid dues)
+        // 2. Must be non-compliant for at least 60 days (based on record_date of oldest unpaid dues)
         // 3. Must have received at least 2 payment reminders
 
         $minBalanceThreshold = 1000.00; // Minimum balance to be considered for delinquency
@@ -73,7 +73,7 @@ class StatusController extends Controller
             return false;
         }
 
-        // Check days delinquent - find oldest unpaid Due/Penalty record
+        // Check days non-compliant - find oldest unpaid Due/Penalty record
         $oldestUnpaid = \App\Models\FinancialRecord::where('resident_id', $resident->id)
             ->whereIn('record_type', ['Due', 'Penalty'])
             ->orderBy('record_date', 'asc')
@@ -109,16 +109,16 @@ class StatusController extends Controller
         ]);
 
         if ($request->status === 'Non-Compliant') {
-            // Apply subdivision policy validation before marking as delinquent
+            // Apply subdivision policy validation before marking as non-compliant
             if (!$this->validateSubdivisionPolicy($status->house_id, $request->reason)) {
                 return redirect('/manage_users')
-                    ->with('error', 'Cannot mark household as delinquent: Subdivision policy requirements not met.');
+                    ->with('error', 'Cannot mark household as non-compliant: Subdivision policy requirements not met.');
             }
 
             PaymentStatus::firstOrCreate(
                 ['house_id' => $status->house_id],
                 [
-                    'reason' => $request->reason ?? 'Status marked delinquent',
+                    'reason' => $request->reason ?? 'Status marked non-compliant',
                     'date_flagged' => now(),
                 ]
             );

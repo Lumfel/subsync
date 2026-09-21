@@ -16,6 +16,8 @@ use App\Models\Conversation;
 use App\Models\ConvParticipant;
 use App\Models\Message;
 use App\Models\Facility;
+use App\Models\ReportTemplate;
+use App\Models\HoaExpense;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -194,6 +196,14 @@ class DatabaseSeeder extends Seeder
             Facility::create(['name' => 'Children\'s Playground', 'description' => 'Playground area for children aged 3–12.', 'latitude' => 10.6238, 'longitude' => 122.9602]);
             Facility::create(['name' => 'Multi-Purpose Hall', 'description' => 'Available for rent for community events.', 'latitude' => 10.6224, 'longitude' => 122.9619]);
         }
+
+        // Report Templates
+        $this->call(ReportTemplateSeeder::class);
+
+        // HOA Expenses
+        $this->call(HoaExpenseSeeder::class);
+        // HOA Policies
+        $this->call(HoaPolicySeeder::class);
     }
 }
 

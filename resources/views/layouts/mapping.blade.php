@@ -5,8 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Subsync Dashboard</title>
 <link rel="stylesheet" href="{{ asset('styles.css') }}">
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
+<script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
+<script>
+  // Point default marker icons at local images
+  if(window.L && L.Icon && L.Icon.Default){
+    L.Icon.Default.mergeOptions({
+      iconUrl: '{{ asset('vendor/leaflet/images/marker-icon.png') }}',
+      iconRetinaUrl: '{{ asset('vendor/leaflet/images/marker-icon-2x.png') }}',
+      shadowUrl: '{{ asset('vendor/leaflet/images/marker-shadow.png') }}',
+    });
+  }
+</script>
 </head>
 
 <body>
@@ -48,7 +58,6 @@
 
     <!-- FULLSCREEN MAP -->
     <div id="map"></div>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     
 </main>
 </div>
@@ -69,12 +78,20 @@ function toggleSidebar() {
 // 🎯 REAL Terra Nova center
 const terraNovaCenter = [10.62269, 122.96134];
 
+// Strict Terra Nova subdivision bounds.
+const bounds = L.latLngBounds(
+    [10.6195, 122.9585],
+    [10.6255, 122.9645]
+);
+
 // 🗺️ Create map
 const map = L.map('map', {
     center: terraNovaCenter,
     zoom: 17,
     minZoom: 16,
-    maxZoom: 19
+    maxZoom: 19,
+    maxBounds: bounds,
+    maxBoundsViscosity: 1.0
 });
 
 // 🌍 Tile
@@ -83,13 +100,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 }).addTo(map);
 
 
-// 🔒 STRICT SUBDIVISION BOUNDS (tight box)
-const bounds = L.latLngBounds(
-    [10.6195, 122.9585], // southwest (lower left)
-    [10.6255, 122.9645]  // northeast (upper right)
-);
-
 map.setMaxBounds(bounds);
+map.fitBounds(bounds, { padding: [12, 12] });
 
 // Prevent escaping the subdivision
 map.on('drag', function () {

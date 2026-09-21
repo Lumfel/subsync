@@ -7,6 +7,7 @@ use App\Models\AnnouncementView;
 use App\Models\AnnouncementTemplate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class AnnouncementController extends Controller
 {
@@ -18,29 +19,31 @@ class AnnouncementController extends Controller
     /** GET /api/announcements — all announcements (newest first) */
     public function index(Request $request)
     {
-        $query = Announcement::with(['admin:id,name', 'officer:id,name'])
-            ->orderByDesc('created_at');
-
-        // Residents only see Active; admin/officer can pass ?status=all or ?status=Archived
         $statusFilter = $request->query('status', 'Active');
-        if ($statusFilter !== 'all') {
-            $query->where('status', $statusFilter);
-        }
 
-        $announcements = $query->get()->map(fn($a) => [
-            'id'         => $a->id,
-            'title'      => $a->title,
-            'content'    => $a->content,
-            'tag'        => $a->tag ?? 'notice',
-            'target'     => $a->target ?? 'All Residents',
-            'priority'   => $a->priority ?? 'Normal',
-            'event_date' => $a->event_date,
-            'status'     => $a->status ?? 'Active',
-            'posted_by'  => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
-            'created_at' => $a->created_at?->format('M d, Y'),
-        ]);
+        return Cache::remember("announcements.{$statusFilter}", 30, function () use ($statusFilter) {
+            $query = Announcement::with(['admin:id,name', 'officer:id,name'])
+                ->orderByDesc('created_at')
+                ->limit(50);
 
-        return response()->json($announcements);
+            // Residents only see Active; admin/officer can pass ?status=all or ?status=Archived
+            if ($statusFilter !== 'all') {
+                $query->where('status', $statusFilter);
+            }
+
+            return $query->get()->map(fn($a) => [
+                'id'         => $a->id,
+                'title'      => $a->title,
+                'content'    => $a->content,
+                'tag'        => $a->tag ?? 'notice',
+                'target'     => $a->target ?? 'All Residents',
+                'priority'   => $a->priority ?? 'Normal',
+                'event_date' => $a->event_date,
+                'status'     => $a->status ?? 'Active',
+                'posted_by'  => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
+                'created_at' => $a->created_at?->format('M d, Y'),
+            ])->all();
+        });
     }
 
     /** POST /api/announcements — create (admin or officer) */

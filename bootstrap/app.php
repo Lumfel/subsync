@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.auth'   => \App\Http\Middleware\AdminAuth::class,
             'officer.auth' => \App\Http\Middleware\OfficerAuth::class,
+            'portal.role'  => \App\Http\Middleware\PortalRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

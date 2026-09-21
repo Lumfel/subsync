@@ -5,7 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SubSync — Access Portal</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+    window.APP_BASE = '{{ request()->getBaseUrl() }}';
+    (function () {
+        var base = window.APP_BASE || '';
+        if (!base) return;
+        var prefix = function (url) {
+            if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
+            return url;
+        };
+        var origFetch = window.fetch;
+        window.fetch = function (url, opts) { return origFetch.call(this, prefix(url), opts); };
+    })();
+    </script>
     <link rel="stylesheet" href="{{ asset('styles.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
+    <link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
     <style>
         /* ── PAGE SPECIFIC OVERRIDES ── */
         body {
@@ -518,11 +536,6 @@
 
         <button class="portal-btn btn-resident" id="registerBtn" onclick="handleRegister()">Create Account</button>
     </div>
-
-    <!-- ADMIN LINK -->
-    <a href="{{ route('admin.login') }}" class="admin-link">
-        🔐 Admin Access Portal
-    </a>
 </div>
 
 <script>

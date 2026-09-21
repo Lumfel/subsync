@@ -5,13 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Household;
 use App\Models\HouseholdMember;
 use App\Models\Resident;
-use App\Models\PaymentStatus;
+use App\Models\Announcement;
+use App\Models\IssueReport;
+use App\Models\Recommendation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 
 class ResidentController extends Controller
 {
-    /** GET /api/residents/me — current resident's own balance & name */
+    /** GET /api/residents/me — current resident's own profile */
     public function me()
     {
         $resident = \Illuminate\Support\Facades\Auth::guard('resident')->user();
@@ -19,7 +22,6 @@ class ResidentController extends Controller
         return response()->json([
             'id'      => $resident->id,
             'name'    => $resident->name,
-            'balance' => $resident->current_balance,
             'status'  => $resident->status,
         ]);
     }
@@ -28,7 +30,7 @@ class ResidentController extends Controller
     public function index()
     {
         $residents = Resident::with('household')
-            ->select('id', 'house_id', 'name', 'email', 'contact_number', 'status', 'current_balance')
+            ->select('id', 'house_id', 'name', 'email', 'contact_number', 'status')
             ->get()
             ->map(fn($r) => [
                 'id'              => $r->id,
@@ -36,7 +38,6 @@ class ResidentController extends Controller
                 'email'           => $r->email,
                 'contact_number'  => $r->contact_number,
                 'status'          => $r->status,
-                'current_balance' => $r->current_balance,
                 'house_id'        => $r->house_id,
                 'block_lot'       => $r->household?->block_lot_number ?? '—',
                 'household_status'=> $r->household?->status ?? '—',
@@ -69,6 +70,10 @@ class ResidentController extends Controller
     public function update(Request $request, int $id)
     {
         $resident = Resident::findOrFail($id);
+
+        if (auth('resident')->id() && auth('resident')->id() !== $resident->id) {
+            return response()->json(['message' => 'You may only update your own resident profile.'], 403);
+        }
 
         $data = $request->validate([
             'name'           => 'sometimes|required|string|max:150',
@@ -136,7 +141,7 @@ class ResidentController extends Controller
     {
         $data = $request->validate([
             'block_lot_number' => 'required|string|max:50|unique:households,block_lot_number',
-            'status'           => 'sometimes|in:Active,Inactive,Delinquent',
+            'status'           => 'sometimes|in:Active,Inactive,Non-Compliant',
             'family_name'      => 'nullable|string|max:255',
             'members'          => 'nullable|string|max:50',
             'family_head'      => 'nullable|string|max:255',
@@ -165,7 +170,7 @@ class ResidentController extends Controller
 
         $data = $request->validate([
             'block_lot_number' => 'sometimes|required|string|max:50|unique:households,block_lot_number,' . $id,
-            'status'           => 'sometimes|in:Active,Inactive,Delinquent',
+            'status'           => 'sometimes|in:Active,Inactive,Non-Compliant',
             'reason'           => 'nullable|string|max:255',
             'family_name'      => 'nullable|string|max:255',
             'members'          => 'nullable|string|max:50',
@@ -192,17 +197,7 @@ class ResidentController extends Controller
             \App\Models\Family::where('id', $household->family_id)->update(['members' => $data['members']]);
         }
 
-        if (($data['status'] ?? null) === 'Delinquent') {
-            PaymentStatus::updateOrCreate(
-                ['house_id' => $id],
-                [
-                    'reason'       => $data['reason'] ?? 'Status marked delinquent',
-                    'date_flagged' => now()->toDateString(),
-                ]
-            );
-        } elseif (isset($data['status']) && in_array($data['status'], ['Active', 'Inactive'])) {
-            PaymentStatus::where('house_id', $id)->delete();
-        }
+        // Payment-status tracking removed; household status is updated on line 180.
 
         return response()->json(['success' => true, 'household' => $household->fresh()->load('family:id,family_name,members')]);
     }
@@ -268,36 +263,146 @@ class ResidentController extends Controller
         return response()->json(['success' => true]);
     }
 
-    /** GET /api/payment-statuses — payment status households with reason/date */
-    public function paymentStatuses()
-    {
-        $records = PaymentStatus::with([
-            'household:id,block_lot_number,status',
-            'household.residents:id,house_id,name,contact_number,current_balance',
-        ])->orderByDesc('date_flagged')->get()->map(fn($d) => [
-            'id'           => $d->id,
-            'house_id'     => $d->house_id,
-            'reason'       => $d->reason,
-            'date_flagged' => $d->date_flagged,
-            'block_lot'    => $d->household?->block_lot_number ?? '—',
-            'residents'    => $d->household?->residents->map(fn($r) => [
-                'id'              => $r->id,
-                'name'            => $r->name,
-                'current_balance' => $r->current_balance,
-            ]) ?? [],
-        ]);
-
-        return response()->json($records);
-    }
-
     /** GET /api/stats — dashboard counts */
     public function stats()
     {
-        return response()->json([
-            'total_households'  => Household::count(),
-            'total_residents'   => Resident::count(),
-            'active_residents'  => Resident::where('status', 'Active')->count(),
-            'payment_status_count'  => PaymentStatus::count(),
-        ]);
+        return Cache::remember('resident.stats', 60, function () {
+            return [
+                'total_households'  => Household::count(),
+                'total_residents'   => Resident::count(),
+                'active_residents'  => Resident::where('status', 'Active')->count(),
+            ];
+        });
+    }
+
+    /** GET /api/resident/portal-data — combined data for resident portal initial load */
+    public function portalData(Request $request)
+    {
+        $residentId = $request->session()->get('resident_id') ?? auth('resident')->id();
+
+        if (!$residentId) {
+            return response()->json(['error' => 'Unauthenticated'], 401);
+        }
+
+        return response()->json(Cache::remember("resident.portal.data.{$residentId}", 30, function () use ($residentId) {
+            $resident = Resident::with('household:id,block_lot_number,status,latitude,longitude')
+                ->select('id', 'house_id', 'name', 'email', 'contact_number', 'status')
+                ->findOrFail($residentId);
+
+            $household = $resident->household;
+
+            // Household members
+            $members = $household ? HouseholdMember::where('house_id', $household->id)
+                ->get(['id', 'house_id', 'name', 'relationship', 'contact_number'])
+                ->map(fn($m) => [
+                    'id'             => $m->id,
+                    'house_id'       => $m->house_id,
+                    'name'           => $m->name,
+                    'role'           => $m->relationship ?? 'Member',
+                ])->all() : [];
+
+            // Announcements (recent 10)
+            $announcements = Announcement::with(['admin:id,name', 'officer:id,name'])
+                ->orderByDesc('created_at')
+                ->limit(10)
+                ->get()
+                ->map(fn($a) => [
+                    'id'         => $a->id,
+                    'title'      => $a->title,
+                    'content'    => $a->content,
+                    'tag'        => $a->tag ?? 'notice',
+                    'target'     => $a->target ?? 'All Residents',
+                    'priority'   => $a->priority ?? 'Normal',
+                    'event_date' => $a->event_date,
+                    'posted_by'  => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
+                    'created_at' => $a->created_at?->format('M d, Y'),
+                ])->all();
+
+            // My issues (recent 20)
+            $myIssues = IssueReport::where('resident_id', $residentId)
+                ->with('responses', 'media')
+                ->orderByDesc('created_at')
+                ->limit(20)
+                ->get()
+                ->map(fn($i) => [
+                    'id'          => $i->id,
+                    'category'    => $i->category,
+                    'title'       => $i->title,
+                    'description' => $i->description,
+                    'status'      => $i->status,
+                    'priority'    => $i->priority,
+                    'created_at'  => $i->created_at?->format('M d, Y'),
+                    'resolved_at' => $i->resolved_at?->format('Y-m-d'),
+                    'response'    => $i->responses->first()?->response_content,
+                    'media'       => $i->media->map(fn($m) => [
+                        'id' => $m->id,
+                        'name' => $m->file_name,
+                        'url' => \Illuminate\Support\Facades\Storage::url($m->file_path),
+                    ])->all(),
+                ])->all();
+
+            // My recommendations (recent 20)
+            $myRecs = Recommendation::where('resident_id', $residentId)
+                ->orderByDesc('created_at')
+                ->limit(20)
+                ->get(['id', 'category', 'title', 'description', 'status', 'created_at'])
+                ->map(fn($r) => [
+                    'id'          => $r->id,
+                    'category'    => $r->category,
+                    'title'       => $r->title,
+                    'description' => $r->description,
+                    'status'      => $r->status,
+                    'created_at'  => $r->created_at?->format('M d, Y') ?? now()->format('M d, Y'),
+                ])->all();
+
+            // HOA expenses (recent 30)
+            $expenses = \App\Models\HoaExpense::orderByDesc('created_at')
+                ->limit(30)
+                ->get()
+                ->map(fn($e) => [
+                    'id'           => $e->id,
+                    'title'        => $e->title,
+                    'description'  => $e->description,
+                    'amount'       => $e->amount,
+                    'expense_date' => $e->expense_date?->format('Y-m-d'),
+                    'category'     => $e->category,
+                    'status'       => $e->status,
+                    'created_at'   => $e->created_at?->format('M d, Y'),
+                ])->all();
+
+            // HOA policies
+            $policies = \App\Models\HoaPolicy::orderByDesc('created_at')
+                ->limit(30)
+                ->get()
+                ->map(fn($p) => [
+                    'id'             => $p->id,
+                    'title'          => $p->title,
+                    'description'    => $p->description,
+                    'category'       => $p->category,
+                    'effective_date' => $p->effective_date?->format('Y-m-d'),
+                    'status'         => $p->status,
+                ])->all();
+
+            return [
+                'resident'     => [
+                    'id'              => $resident->id,
+                    'name'            => $resident->name,
+                    'email'           => $resident->email,
+                    'contact_number'  => $resident->contact_number,
+                    'status'          => $resident->status,
+                    'house_id'        => $resident->house_id,
+                    'block_lot'       => $household?->block_lot_number ?? '-',
+                    'household_status'=> $household?->status ?? '-',
+                    'latitude'        => $household?->latitude,
+                    'longitude'       => $household?->longitude,
+                ],
+                'members'        => $members,
+                'announcements'  => $announcements,
+                'issues'         => $myIssues,
+                'recommendations'=> $myRecs,
+                'expenses'       => $expenses,
+                'policies'       => $policies,
+            ];
+        }));
     }
 }

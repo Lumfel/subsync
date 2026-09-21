@@ -31,7 +31,7 @@ class MessageController extends Controller
         }
 
         if ($activeRole === 'resident' && session('resident_id')) {
-            $resident = Resident::find(session('resident_id'));
+            $resident = Resident::query()->find(session('resident_id'));
             return ['type' => 'resident', 'id' => session('resident_id'), 'name' => $resident?->name];
         }
 
@@ -46,7 +46,7 @@ class MessageController extends Controller
         }
 
         if ($activeRole === 'officer' && session('officer_id')) {
-            $officer = Officer::find(session('officer_id'));
+            $officer = Officer::query()->find(session('officer_id'));
             return ['type' => 'officer', 'id' => session('officer_id'), 'name' => $officer?->name];
         }
 
@@ -89,41 +89,35 @@ class MessageController extends Controller
     }
 
     /**
-     * Ensure group conversation exists for residents
+     * Ensure group conversation exists for residents.
+     * Participant sync is cached for 60s — new residents join within a minute,
+     * which is acceptable and avoids 2-3 queries on every threads() call.
      */
     private function ensureGroupConversationExists(): int
     {
-        // Check if group conversation already exists
-        $groupConv = Conversation::where('title', 'Community Chat')->first();
+        $groupConv = Conversation::firstOrCreate(['title' => 'Community Chat']);
 
-        if (!$groupConv) {
-            // Create group conversation
-            $groupConv = Conversation::create([
-                'title' => 'Community Chat'
-            ]);
-
-            // Add all active residents to the group conversation
-            $residents = Resident::where('status', 'Active')->get();
-            foreach ($residents as $resident) {
-                ConvParticipant::create([
-                    'conversation_id' => $groupConv->id,
-                    'resident_id' => $resident->id,
-                    'participant_type' => 'resident',
-                ]);
-            }
-        } else {
-            // Ensure all active residents are participants (in case new residents were added)
-            $activeResidentIds = Resident::where('status', 'Active')->pluck('id')->toArray();
-            $participantIds = $groupConv->participants->where('participant_type', 'resident')->pluck('resident_id')->toArray();
-            $toAdd = array_diff($activeResidentIds, $participantIds);
-            foreach ($toAdd as $residentId) {
-                ConvParticipant::create([
-                    'conversation_id' => $groupConv->id,
-                    'resident_id' => $residentId,
-                    'participant_type' => 'resident',
-                ]);
-            }
+        if (\Illuminate\Support\Facades\Cache::has('group.chat.participants.synced')) {
+            return $groupConv->id;
         }
+
+        $activeResidentIds = Resident::where('status', 'Active')->pluck('id');
+        $participantIds = ConvParticipant::where('conversation_id', $groupConv->id)
+            ->where('participant_type', 'resident')
+            ->whereNotNull('resident_id')
+            ->pluck('resident_id');
+        $toAdd = $activeResidentIds->diff($participantIds)->values();
+
+        if ($toAdd->isNotEmpty()) {
+            ConvParticipant::insert($toAdd->map(fn ($residentId) => [
+                'conversation_id' => $groupConv->id,
+                'resident_id' => $residentId,
+                'participant_type' => 'resident',
+                'created_at' => now(),
+            ])->all());
+        }
+
+        \Illuminate\Support\Facades\Cache::put('group.chat.participants.synced', true, 60);
 
         return $groupConv->id;
     }
@@ -132,6 +126,10 @@ class MessageController extends Controller
     public function threads()
     {
         $actor = $this->currentActor();
+
+        if (!$actor['type']) {
+            return response()->json(['message' => 'Session expired. Please log in again.'], 401);
+        }
 
         if ($actor['type'] === 'resident') {
             // For residents, ensure group conversation exists and include it
@@ -199,7 +197,8 @@ class MessageController extends Controller
     /** POST /api/messages/{convId} — send a message */
     public function send(Request $request, int $convId)
     {
-        $data = $request->validate(['content' => 'required|string']);
+        $data = $request->validate(['content' => 'required|string|max:4000']);
+        $data['content'] = trim($data['content']);
         $actor = $this->currentActor();
 
         if (!$actor['type']) {
@@ -236,7 +235,15 @@ class MessageController extends Controller
     /** DELETE /api/messages/{convId} — delete a conversation and all its messages */
     public function destroy(int $convId)
     {
+        $actor = $this->currentActor();
+        if (!$actor['type']) {
+            return response()->json(['message' => 'Session expired. Please log in again.'], 401);
+        }
+
+        abort_unless($this->canAccessConversation($actor, $convId), 403);
+
         $conv = Conversation::findOrFail($convId);
+        abort_if($conv->title === 'Community Chat' && $actor['type'] !== 'admin', 403);
         Message::where('conversation_id', $convId)->delete();
         ConvParticipant::where('conversation_id', $convId)->delete();
         $conv->delete();
@@ -246,14 +253,20 @@ class MessageController extends Controller
     /** POST /api/messages/start — start a new conversation */
     public function start(Request $request)
     {
-        $request->validate(['title' => 'required|string|max:200']);
+        $request->validate([
+            'title' => 'required|string|max:200',
+            'recipient_type' => 'nullable|in:resident,officer',
+            'recipient_id' => 'nullable|integer',
+            'resident_id' => 'nullable|integer|exists:residents,id',
+            'officer_id' => 'nullable|integer|exists:officers,id',
+        ]);
         $actor = $this->currentActor();
 
         if (!$actor['type']) {
             return response()->json(['success' => false, 'message' => 'Session expired. Please log in again.'], 401);
         }
 
-        $conv = Conversation::create(['title' => $request->title]);
+        $conv = Conversation::create(['title' => trim($request->title)]);
 
         if ($actor['type'] === 'resident') {
             ConvParticipant::create([
@@ -288,12 +301,14 @@ class MessageController extends Controller
         // Also add the selected recipient (for resident→officer or officer→resident conversations)
         if ($request->filled('recipient_type') && $request->filled('recipient_id')) {
             if ($request->recipient_type === 'officer' && $actor['type'] !== 'officer') {
+                abort_unless(Officer::whereKey($request->recipient_id)->exists(), 422);
                 ConvParticipant::create([
                     'conversation_id'  => $conv->id,
                     'officer_id'       => $request->recipient_id,
                     'participant_type' => 'officer',
                 ]);
             } elseif ($request->recipient_type === 'resident' && $actor['type'] !== 'resident') {
+                abort_unless(Resident::whereKey($request->recipient_id)->exists(), 422);
                 ConvParticipant::create([
                     'conversation_id'  => $conv->id,
                     'resident_id'      => $request->recipient_id,

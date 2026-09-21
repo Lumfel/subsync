@@ -1,0 +1,391 @@
+/* ─────────────────────────────────────────────
+   SubSync UI Polish — readability & presentation
+   Loaded after each page's inline styles.
+   ───────────────────────────────────────────── */
+
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+}
+
+body {
+  font-family: var(--font-sans) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  line-height: 1.6;
+}
+
+/* Headings — tighter, clearer, professional */
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  font-family: var(--font-sans) !important;
+  font-weight: 600 !important;
+}
+
+/* Better links */
+a { text-decoration: none; color: inherit; }
+
+/* Selection */
+::selection { background: rgba(160,125,83,0.28); color: #1a100a; }
+
+/* Scrollbar — clean */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(43,41,39,0.18); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(43,41,39,0.32); }
+
+/* Tables — easier to scan */
+table { border-collapse: collapse; }
+thead th {
+  background: #FAF6F0;
+  color: #7D7975;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+tbody tr { transition: background 0.12s ease; }
+tbody tr:nth-child(even) td { background: rgba(43,41,39,0.02); }
+tbody tr:hover td { background: rgba(160,125,83,0.06); }
+th, td { padding: 12px 14px; }
+
+/* Buttons — consistent feel */
+.btn { transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+.btn:focus-visible, button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(160,125,83,0.28);
+}
+
+/* Inputs — clearer focus */
+input:focus, textarea:focus, select:focus {
+  border-color: rgba(160,125,83,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(160,125,83,0.12) !important;
+}
+
+/* Cards — consistent depth */
+.card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(43,41,39,0.05), 0 4px 16px rgba(43,41,39,0.03);
+}
+.card:hover { box-shadow: 0 4px 12px rgba(43,41,39,0.06), 0 10px 30px rgba(43,41,39,0.05); }
+
+/* Panel content — readable max width */
+.panel > .card, .card { max-width: 100%; }
+
+/* Status pills — clearer */
+.pill, .tab-badge { letter-spacing: 0.04em; }
+
+/* Empty states — friendlier */
+.empty-state { padding: 40px 20px; }
+.empty-icon { margin-bottom: 10px; }
+
+/* Messages — bubble legibility */
+.bubble { line-height: 1.6; }
+.bubble-time { letter-spacing: 0.02em; }
+
+/* Announcements — readable body */
+.ann-body, .issue-body, .rec-body { line-height: 1.7; }
+
+/* Section labels — clearer */
+.nav-section-label, .f-label, .card-subtitle, .meta-txt {
+  letter-spacing: 0.04em;
+}
+
+/* Form rows — comfortable spacing */
+.f-row { margin-bottom: 14px; }
+
+/* Resident overview — friendlier numbers */
+.balance-val { letter-spacing: -0.01em; }
+
+/* ─────────────────────────────────────────────
+   SCALE UP — larger, easier-on-the-eyes UI
+   ───────────────────────────────────────────── */
+body { font-size: 18px !important; line-height: 1.65 !important; }
+
+h1 { font-size: 32px !important; }
+h2 { font-size: 26px !important; }
+h3 { font-size: 22px !important; }
+h4 { font-size: 19px !important; }
+
+/* Buttons */
+.btn { font-size: 16px !important; padding: 11px 22px !important; }
+.btn-sm { font-size: 14.5px !important; padding: 8px 16px !important; }
+
+/* Inputs & controls */
+input[type=text], input[type=email], input[type=password], input[type=number],
+input[type=date], input[type=file], textarea, select {
+  font-size: 17px !important;
+  padding: 12px 16px !important;
+}
+textarea { line-height: 1.6 !important; }
+.f-label { font-size: 14px !important; letter-spacing: 0.03em; }
+.f-row { margin-bottom: 14px !important; }
+
+/* Cards — balanced padding & consistent rhythm */
+.card { padding: 24px 26px !important; }
+.card-title { font-size: 18px !important; }
+.card-subtitle { font-size: 15px !important; line-height: 1.65 !important; }
+.card-divider { margin: 16px 0 !important; }
+
+/* Consistent card spacing between sections */
+.card { margin-top: 18px !important; }
+
+/* Tables */
+th, td { padding: 13px 15px !important; font-size: 16px !important; }
+thead th { font-size: 13px !important; }
+
+/* Pills / badges */
+.pill, .tab-badge { font-size: 12.5px !important; padding: 4px 10px !important; }
+
+/* Navigation / sidebar */
+.sidebar li, .nav-item { font-size: 16px !important; padding: 13px 18px !important; }
+.nav-section-label { font-size: 12px !important; padding: 14px 18px 6px !important; }
+.sidebar-brand, .sidebar .logo { font-size: 26px !important; }
+
+/* Announcements / issues / recs */
+.ann-title, .issue-title, .rec-title { font-size: 20px !important; }
+.ann-body, .issue-body, .rec-body { font-size: 18px !important; line-height: 1.7 !important; }
+.report-title { font-size: 20px !important; font-weight: 600 !important; }
+.report-meta { font-size: 15px !important; line-height: 1.7 !important; }
+.ann-date, .meta-txt { font-size: 13px !important; }
+.ann-item, .issue-item, .rec-item { margin-bottom: 12px !important; }
+
+/* Messages */
+.bubble { font-size: 16px !important; padding: 11px 15px !important; }
+.bubble-time { font-size: 12px !important; }
+.msg-thread-name { font-size: 15px !important; }
+.msg-thread-preview { font-size: 13px !important; }
+.msg-compose textarea { font-size: 16px !important; }
+
+/* Member cards */
+.member-name { font-size: 16px !important; }
+.member-role { font-size: 12px !important; }
+.member-avatar { width: 44px !important; height: 44px !important; font-size: 17px !important; }
+
+/* Stats / numbers */
+.balance-val, .stat-value { font-size: 26px !important; }
+.balance-label, .stat-label { font-size: 13px !important; }
+
+/* Empty states */
+.empty-state { font-size: 15px !important; padding: 40px 22px !important; }
+.empty-icon { font-size: 34px !important; }
+
+/* Status / toggle rows */
+.map-toggle, .chart-toggles label, .layer-toggle { font-size: 14px !important; }
+
+/* Grid & list rhythm — balanced gaps */
+.bento-grid, .stat-grid, .graph-grid, .graph-grid-wide, .finance-stats {
+  gap: 18px !important;
+}
+.member-grid { gap: 14px !important; }
+.quick-actions { gap: 12px !important; }
+.tab-nav { gap: 6px !important; }
+.add-row, .f-row, .msg-compose { gap: 12px !important; }
+.msg-layout { gap: 16px !important; }
+
+/* Mobile readability */
+@media (max-width: 768px) {
+  body { font-size: 15px; line-height: 1.6; }
+  .card { padding: 18px 16px; }
+  .bento-grid, .stat-grid, .graph-grid, .graph-grid-wide, .finance-stats { gap: 14px; }
+  .card { margin-top: 14px; }
+}
+/* ─────────────────────────────────────────────
+   UI/UX ENHANCEMENTS — skeletons, empty states,
+   global search, quick actions, toasts
+   ───────────────────────────────────────────── */
+
+/* Skeletons */
+.skeleton {
+  background: linear-gradient(90deg, rgba(43,41,39,0.05) 25%, rgba(43,41,39,0.12) 50%, rgba(43,41,39,0.05) 75%);
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@keyframes skeletonShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.sk-row { height: 18px; margin-bottom: 12px; }
+.sk-card { height: 72px; border-radius: 10px; }
+
+/* Empty states */
+.empty-state {
+  background: #FAF6F0;
+  border: 1px dashed var(--glass-border, #E6DFD5);
+  border-radius: 12px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.empty-state .empty-icon { font-size: 38px; margin-bottom: 12px; }
+.empty-state .empty-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--text); }
+.empty-state .empty-hint { font-size: 14px; color: var(--text-dim); line-height: 1.6; max-width: 320px; margin: 0 auto; }
+
+/* Global search modal */
+.ui-modal {
+  position: fixed; inset: 0; background: rgba(20,18,16,0.5);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 12vh; z-index: 10000;
+}
+.ui-modal-box {
+  width: min(580px, 92vw);
+  background: #FFFFFF; border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+  overflow: hidden;
+}
+.ui-search-input {
+  width: 100%; border: none; padding: 20px 22px;
+  font-size: 18px; font-family: inherit; outline: none;
+  border-bottom: 1px solid #F0EBE3;
+}
+.ui-search-results { max-height: 55vh; overflow-y: auto; }
+.ui-search-item {
+  display: block; width: 100%; text-align: left;
+  padding: 15px 22px; border-bottom: 1px solid #F7F3EC;
+  cursor: pointer; transition: background 0.12s;
+  background: #fff; border: none;
+}
+.ui-search-item:hover, .ui-search-item.active { background: #FAF6F0; }
+.ui-search-item .s-label { font-weight: 600; font-size: 15.5px; color: var(--text); }
+.ui-search-item .s-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
+.ui-search-item .s-tag {
+  float: right; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 3px 8px; border-radius: 20px;
+  background: #FAF4E7; color: var(--accent); margin-top: 4px;
+}
+.ui-search-empty { padding: 34px; text-align: center; color: var(--text-dim); font-size: 15px; }
+.ui-search-footer {
+  padding: 10px 22px; font-size: 12px; color: var(--text-dim);
+  border-top: 1px solid #F0EBE3; display: flex; gap: 14px; justify-content: center;
+}
+.ui-search-footer kbd {
+  background: #F0EBE3; border-radius: 4px; padding: 2px 6px; font-size: 11px;
+}
+
+/* Quick actions */
+.quick-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.qa-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 12px 18px; border-radius: 12px;
+  background: #FFFFFF; border: 1px solid var(--glass-border, #E6DFD5);
+  font-size: 15px; font-weight: 600; color: var(--text);
+  cursor: pointer; transition: all 0.15s;
+}
+.qa-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(43,41,39,0.08); border-color: var(--accent); }
+.qa-btn .qa-icon { font-size: 20px; }
+
+/* Toasts (shared) */
+.ui-toast-wrap { position: fixed; bottom: 28px; right: 28px; z-index: 10001; display: flex; flex-direction: column; gap: 10px; }
+.ui-toast {
+  display: flex; align-items: center; gap: 10px;
+  background: #2B2927; color: #FAF6F0;
+  padding: 13px 18px; border-radius: 12px;
+  font-size: 14.5px; box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+  opacity: 0; transform: translateY(10px); transition: all 0.25s;
+  max-width: 340px;
+}
+.ui-toast.show { opacity: 1; transform: translateY(0); }
+.ui-toast.success { border-left: 4px solid #6B8E70; }
+.ui-toast.error { border-left: 4px solid #BD5B5B; }
+.ui-toast.info { border-left: 4px solid #5A7F9E; }
+
+/* Mobile: keep announcements compact (scrollable, capped height) */
+@media (max-width: 768px) {
+  #announcementList { max-height: 460px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .ann-item { padding: 13px 14px !important; }
+}
+
+/* ─────────────────────────────────────────────
+   MODALS — centered overlay + box (fixes residents
+   announcements which had no modal styles)
+   ───────────────────────────────────────────── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(43,41,39,0.45);
+  z-index: 1000;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8vh 20px 20px;
+  overflow-y: auto;
+}
+.modal-overlay.open { display: flex; }
+.modal-box {
+  background: #FFFFFF;
+  border: 1px solid var(--glass-border, #E6DFD5);
+  border-radius: var(--radius, 12px);
+  padding: 26px 28px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  color: var(--text, #2B2927);
+  box-shadow: 0 18px 48px rgba(43,41,39,0.22);
+  animation: uiModalIn 0.22s ease both;
+}
+@keyframes uiModalIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+.modal-box.wide { max-width: 760px; }
+.modal-title { font-size: 18px; font-weight: 700; margin-bottom: 18px; color: var(--text, #2B2927); }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.modal-close-btn {
+  background: var(--glass, #fff);
+  border: 1px solid var(--glass-border, #E6DFD5);
+  color: var(--text-mid, #4A4744);
+  border-radius: var(--radius-sm, 8px);
+  font-size: 13px; padding: 6px 14px; cursor: pointer;
+  font-family: inherit;
+}
+.modal-box input, .modal-box textarea, .modal-box select { color: var(--text); background: #fff; }
+.modal-box a { color: var(--blue, #5A7F9E); }
+
+/* ─────────────────────────────────────────────
+   UNIFORM MESSAGING — consistent look across
+   resident / admin / officer portals
+   ───────────────────────────────────────────── */
+.msg-thread-item, .thread-item {
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+.msg-thread-item:hover, .thread-item:hover { background: #FAF6F0; }
+.msg-thread-item.active, .thread-item.active {
+  background: #FAF6F0;
+  border-color: #E6DFD5;
+}
+.msg-thread-avatar, .thread-avatar, .bubble-avatar {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.msg-thread-avatar, .thread-avatar { width: 36px; height: 36px; font-size: 13px; }
+.bubble-avatar { width: 28px; height: 28px; font-size: 11px; }
+.bubble {
+  border-radius: 12px;
+  font-size: 15px;
+  line-height: 1.6;
+  padding: 11px 15px;
+}
+.bubble.from-admin { background: #FFFFFF; border: 1px solid #E6DFD5; border-bottom-left-radius: 4px; }
+.bubble.from-mine  { background: #FAF6F0; border: 1px solid #E6DFD5; border-bottom-right-radius: 4px; }
+.msg-thread-name { font-size: 14px; font-weight: 500; }
+.msg-thread-preview { font-size: 12px; }
+.bubble-time { font-size: 11px; }
+
+/* Unify avatar palette across portals */
+.ta-admin, .ta-r1 { background: rgba(122,180,240,0.22); color: #5A7F9E; }
+.ta-hoa,   .ta-r2 { background: rgba(185,154,245,0.22); color: #8C829E; }
+.ta-r3 { background: rgba(130,201,138,0.22); color: #6B8E70; }
+.ta-r4 { background: rgba(240,192,96,0.22); color: #C49646; }
+.ta-r5 { background: rgba(232,168,124,0.25); color: #A07D53; }
+.ba-admin { background: rgba(122,180,240,0.2); color: #5A7F9E; }
+.ba-mine { background: linear-gradient(135deg, #A07D53, #c87941); color: #FFFFFF; }
+
+/* Consistent message panel headers & empty states */
+.msg-header { border-radius: 10px 10px 0 0; }
+.msg-compose { border-radius: 0 0 10px 10px; }
+.msg-body { border-radius: 0; }

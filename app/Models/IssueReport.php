@@ -40,7 +40,11 @@ use Illuminate\Database\Eloquent\Model;
 class IssueReport extends Model
 {
     protected $fillable = [
-        'resident_id', 'category', 'title', 'description', 'latitude', 'longitude', 'status', 'priority',
+        'resident_id', 'category', 'title', 'description', 'latitude', 'longitude', 'status', 'priority', 'resolved_at',
+    ];
+
+    protected $casts = [
+        'resolved_at' => 'datetime',
     ];
 
     protected static function boot()

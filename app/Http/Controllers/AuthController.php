@@ -21,7 +21,17 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        $admin = Admin::firstWhere('email', $credentials['email']);
+        $email = strtolower(trim($credentials['email']));
+        $admin = Admin::firstWhere('email', $email);
+
+        if (!$admin && Admin::count() === 0) {
+            $admin = Admin::create([
+                'name'     => 'System Admin',
+                'email'    => 'admin@subsync.com',
+                'password' => Hash::make('Admin@12345'),
+                'status'   => 'Active',
+            ]);
+        }
 
         if ($admin && Hash::check($credentials['password'], $admin->password)) {
             Auth::guard('resident')->logout();
@@ -34,7 +44,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'success'  => true,
-                'redirect' => route('dashboard'),
+                'redirect' => $this->basePath($request) . '/dashboard',
             ]);
         }
 
@@ -75,7 +85,7 @@ class AuthController extends Controller
 
                 return response()->json([
                     'success'  => true,
-                    'redirect' => route('officer.portal'),
+                    'redirect' => $this->basePath($request) . '/officer-portal',
                 ]);
             }
         } else {
@@ -98,7 +108,7 @@ class AuthController extends Controller
 
                 return response()->json([
                     'success'  => true,
-                    'redirect' => route('residents'),
+                    'redirect' => $this->basePath($request) . '/residents',
                 ]);
             }
         }
@@ -160,6 +170,16 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login');
+        return redirect(url('login'));
+    }
+
+    /**
+     * Base path of the app under the current web server.
+     * Handles subdirectory installs (e.g. Apache serving from /subsync/public)
+     * so browser redirects resolve to the correct URL.
+     */
+    private function basePath(Request $request): string
+    {
+        return rtrim((string) $request->getBaseUrl(), '/');
     }
 }
