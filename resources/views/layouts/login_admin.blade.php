@@ -16,7 +16,7 @@
             return url;
         };
         var origFetch = window.fetch;
-        window.fetch = function (url, opts) { return origFetch.call(this, prefix(url), opts); };
+        window.fetch = function (url, opts) { opts = opts || {}; opts.headers = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' }); return origFetch.call(this, prefix(url), opts); };
     })();
     </script>
     <link rel="stylesheet" href="{{ asset('styles.css') }}">
@@ -278,12 +278,12 @@
     </div>
 
     <!-- MESSAGE -->
-    <div class="form-msg" id="formMsg"></div>
+    <div class="form-msg" id="formMsg" role="alert" aria-live="polite"></div>
 
     <!-- FORM -->
     <div class="input-group">
         <span class="input-icon">✉️</span>
-        <input type="email" id="admin-email" placeholder="Admin Gmail Address" autocomplete="email"
+        <input type="email" id="admin-email" placeholder="Admin Gmail Address" autocomplete="email" autofocus
             onkeydown="if(event.key==='Enter')focusNext('admin-password')">
     </div>
 
@@ -291,11 +291,11 @@
         <span class="input-icon">🔒</span>
         <input type="password" id="admin-password" placeholder="Password" autocomplete="current-password"
             onkeydown="if(event.key==='Enter')handleAdminLogin()">
-        <button class="eye-btn" onclick="togglePwd()" type="button">👁</button>
+        <button class="eye-btn" onclick="togglePwd()" type="button" aria-label="Show or hide password">👁</button>
     </div>
 
     <div style="text-align:right; margin:-6px 0 16px;">
-        <a href="#" style="font-size:12px;color:rgba(255,255,255,0.3);text-decoration:none;"
+        <a href="#" style="font-size:12px;color:#A07D53;text-decoration:none;"
            onclick="showMsg('Contact the system administrator to reset your password.','error');return false;">
             Forgot password?
         </a>

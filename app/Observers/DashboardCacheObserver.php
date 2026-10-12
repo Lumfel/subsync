@@ -37,7 +37,6 @@ class DashboardCacheObserver
         return [
             'admin.dashboard.data',
             'resident.stats',
-            'financial.summary',
             'hoa.expenses',
             'hoa.policies',
             'map.all',

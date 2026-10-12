@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,13 +15,14 @@ use Illuminate\Database\Eloquent\Model;
  * @property numeric|null $latitude
  * @property numeric|null $longitude
  * @property string $status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Media> $media
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Media> $media
  * @property-read int|null $media_count
- * @property-read \App\Models\Resident $resident
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\IssueResponse> $responses
+ * @property-read Resident $resident
+ * @property-read Collection<int, IssueResponse> $responses
  * @property-read int|null $responses_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport query()
@@ -35,16 +38,19 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|IssueReport whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
  * @method static int count(string $columns = '*')
+ *
  * @mixin \Eloquent
  */
 class IssueReport extends Model
 {
     protected $fillable = [
-        'resident_id', 'category', 'title', 'description', 'latitude', 'longitude', 'status', 'priority', 'resolved_at',
+        'resident_id', 'category', 'title', 'description', 'latitude', 'longitude', 'status', 'priority', 'resolved_at', 'archived_at', 'assigned_officer_id', 'due_date',
     ];
 
     protected $casts = [
         'resolved_at' => 'datetime',
+        'archived_at' => 'datetime',
+        'due_date' => 'date',
     ];
 
     protected static function boot()
@@ -52,7 +58,7 @@ class IssueReport extends Model
         parent::boot();
 
         static::creating(function ($issue) {
-            if (!$issue->priority) {
+            if (! $issue->priority) {
                 $issue->priority = $issue->autoSetPriority();
             }
         });
@@ -61,6 +67,19 @@ class IssueReport extends Model
     public function resident()
     {
         return $this->belongsTo(Resident::class);
+    }
+
+    public function assignee()
+    {
+        return $this->belongsTo(Officer::class, 'assigned_officer_id');
+    }
+
+    /** True when the SLA due date has passed and the issue is still open. */
+    public function getIsOverdueAttribute(): bool
+    {
+        return $this->due_date
+            && $this->status !== 'Resolved'
+            && $this->due_date->isPast();
     }
 
     public function responses()
@@ -79,19 +98,28 @@ class IssueReport extends Model
     public function autoSetPriority()
     {
         $categoryPriorityMap = [
+            // Resident-facing categories (see the resident issue form)
+            'Security Concern' => 'Critical',
+            'Drainage / Flooding' => 'High',
+            'Road / Pavement' => 'High',
+            'Utilities' => 'High',
+            'Street Lighting' => 'Medium',
+            'Garbage / Sanitation' => 'Medium',
+            'Noise Complaint' => 'Low',
+            'Other' => 'Low',
+            // Legacy / alternate category names
             'Safety' => 'Critical',
             'Security' => 'Critical',
             'Infrastructure' => 'High',
-            'Utilities' => 'High',
             'Sanitation' => 'Medium',
             'Maintenance' => 'Medium',
-            'Landscaping' => 'Low',
             'Noise' => 'Medium',
-            'Pet Issues' => 'Low',
             'Parking' => 'Medium',
+            'Landscaping' => 'Low',
+            'Pet Issues' => 'Low',
             'Administrative' => 'Low',
             // Default fallback
-            'default' => 'Low'
+            'default' => 'Low',
         ];
 
         return $categoryPriorityMap[$this->category] ?? $categoryPriorityMap['default'];

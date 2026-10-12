@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,14 +15,15 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $status
  * @property string|null $role_description
  * @property string|null $remember_token
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Announcement> $announcements
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Announcement> $announcements
  * @property-read int|null $announcements_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Conversation> $conversations
+ * @property-read Collection<int, Conversation> $conversations
  * @property-read int|null $conversations_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\IssueResponse> $issueResponses
+ * @property-read Collection<int, IssueResponse> $issueResponses
  * @property-read int|null $issue_responses_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Officer newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Officer newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Officer query()
@@ -36,12 +39,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Officer whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
  * @method static int count(string $columns = '*')
+ *
  * @mixin \Eloquent
  */
 class Officer extends Authenticatable
 {
     protected $fillable = [
-        'name', 'email', 'password', 'contact_number', 'status', 'role_description',
+        'name', 'email', 'password', 'contact_number', 'status', 'role_description', 'google_id', 'avatar',
     ];
 
     protected $hidden = ['password', 'remember_token'];

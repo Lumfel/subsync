@@ -14,6 +14,7 @@ class OfficerFileController extends Controller
     {
         $files = OfficerFile::where('archived', request()->boolean('archived'))
             ->orderByDesc('created_at')->get();
+
         return response()->json($files);
     }
 
@@ -21,25 +22,25 @@ class OfficerFileController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'file'     => 'required|file|mimes:xlsx,xls,csv,pdf,doc,docx|max:10240',
+            'file' => 'required|file|mimes:xlsx,xls,csv,pdf,doc,docx,png,jpg,jpeg,gif,webp|max:10240',
             'category' => 'required|string|max:100',
-            'period'   => 'nullable|string|max:100',
-            'notes'    => 'nullable|string|max:500',
+            'period' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:500',
         ]);
 
-        $officer   = Auth::guard('officer')->user();
-        $uploaded  = $request->file('file');
-        $path      = $uploaded->store('officer-files', 'public');
+        $officer = Auth::guard('officer')->user();
+        $uploaded = $request->file('file');
+        $path = $uploaded->store('officer-files', 'public');
 
         $record = OfficerFile::create([
-            'officer_id'    => $officer?->id,
-            'officer_name'  => $officer?->name ?? session('admin_name', 'Admin'),
+            'officer_id' => $officer?->id,
+            'officer_name' => $officer?->name ?? session('admin_name', 'Admin'),
             'original_name' => $uploaded->getClientOriginalName(),
-            'category'      => $request->input('category'),
-            'period'        => $request->input('period'),
-            'notes'         => $request->input('notes'),
-            'size_bytes'    => $uploaded->getSize(),
-            'file_path'     => $path,
+            'category' => $request->input('category'),
+            'period' => $request->input('period'),
+            'notes' => $request->input('notes'),
+            'size_bytes' => $uploaded->getSize(),
+            'file_path' => $path,
         ]);
 
         return response()->json(['success' => true, 'file' => $record]);
@@ -51,13 +52,14 @@ class OfficerFileController extends Controller
         $file = OfficerFile::findOrFail($id);
         Storage::disk('public')->delete($file->file_path);
         $file->delete();
+
         return response()->json(['success' => true]);
     }
 
     public function archive($id)
     {
         $file = OfficerFile::findOrFail($id);
-        $file->update(['archived' => !$file->archived]);
+        $file->update(['archived' => ! $file->archived]);
 
         return response()->json(['success' => true, 'archived' => $file->archived]);
     }

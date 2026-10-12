@@ -8,6 +8,7 @@ use App\Models\IssueReport;
 use App\Models\MapSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class MapController extends Controller
 {
@@ -32,13 +33,13 @@ class MapController extends Controller
     public function updateSettings(Request $request)
     {
         $data = $request->validate([
-            'min_lat'    => 'required|numeric|between:-90,90',
-            'max_lat'    => 'required|numeric|between:-90,90',
-            'min_lng'    => 'required|numeric|between:-180,180',
-            'max_lng'    => 'required|numeric|between:-180,180',
+            'min_lat' => 'required|numeric|between:-90,90',
+            'max_lat' => 'required|numeric|between:-90,90|gt:min_lat',
+            'min_lng' => 'required|numeric|between:-180,180',
+            'max_lng' => 'required|numeric|between:-180,180|gt:min_lng',
             'center_lat' => 'nullable|numeric|between:-90,90',
             'center_lng' => 'nullable|numeric|between:-180,180',
-            'zoom'       => 'nullable|integer|between:1,22',
+            'zoom' => 'nullable|integer|between:1,22',
         ]);
 
         $setting = MapSetting::current();
@@ -53,6 +54,7 @@ class MapController extends Controller
     {
         return Cache::remember('map.all', 60, function () {
             $b = self::bounds();
+
             return [
                 'households' => Household::select('id', 'block_lot_number', 'status', 'latitude', 'longitude')
                     ->whereNotNull('latitude')
@@ -61,16 +63,16 @@ class MapController extends Controller
                     ->whereBetween('longitude', [$b['min_lng'], $b['max_lng']])
                     ->with('media')
                     ->get()
-                    ->map(fn($h) => $h->toArray())
+                    ->map(fn ($h) => $h->toArray())
                     ->all(),
-                'facilities' => Facility::select('id', 'name', 'description', 'status', 'latitude', 'longitude')
+                'facilities' => Facility::select('id', 'name', 'description', 'image_path', 'status', 'latitude', 'longitude')
                     ->whereNotNull('latitude')
                     ->whereNotNull('longitude')
                     ->whereBetween('latitude', [$b['min_lat'], $b['max_lat']])
                     ->whereBetween('longitude', [$b['min_lng'], $b['max_lng']])
                     ->with('media')
                     ->get()
-                    ->map(fn($f) => $f->toArray())
+                    ->map(fn ($f) => $f->toArray())
                     ->all(),
                 'issues' => IssueReport::select('id', 'title', 'category', 'status', 'latitude', 'longitude', 'created_at')
                     ->whereNotNull('latitude')
@@ -79,11 +81,11 @@ class MapController extends Controller
                     ->whereBetween('longitude', [$b['min_lng'], $b['max_lng']])
                     ->where(function ($q) {
                         $q->where('status', '!=', 'Resolved')
-                          ->orWhere('updated_at', '>=', now()->subDays(7));
+                            ->orWhere('updated_at', '>=', now()->subDays(7));
                     })
                     ->with('media')
                     ->get()
-                    ->map(fn($i) => $i->toArray())
+                    ->map(fn ($i) => $i->toArray())
                     ->all(),
             ];
         });
@@ -92,6 +94,7 @@ class MapController extends Controller
     public function households()
     {
         $b = self::bounds();
+
         return response()->json(
             Household::select('id', 'block_lot_number', 'status', 'latitude', 'longitude')
                 ->whereBetween('latitude', [$b['min_lat'], $b['max_lat']])
@@ -104,8 +107,9 @@ class MapController extends Controller
     public function facilities()
     {
         $b = self::bounds();
+
         return response()->json(
-            Facility::select('id', 'name', 'description', 'status', 'latitude', 'longitude')
+            Facility::select('id', 'name', 'description', 'image_path', 'status', 'latitude', 'longitude')
                 ->whereBetween('latitude', [$b['min_lat'], $b['max_lat']])
                 ->whereBetween('longitude', [$b['min_lng'], $b['max_lng']])
                 ->with('media')
@@ -116,6 +120,7 @@ class MapController extends Controller
     public function issues()
     {
         $b = self::bounds();
+
         return response()->json(
             IssueReport::select('id', 'title', 'category', 'status', 'latitude', 'longitude', 'created_at')
                 ->whereNotNull('latitude')
@@ -124,7 +129,7 @@ class MapController extends Controller
                 ->whereBetween('longitude', [$b['min_lng'], $b['max_lng']])
                 ->where(function ($q) {
                     $q->where('status', '!=', 'Resolved')
-                      ->orWhere('updated_at', '>=', now()->subDays(7));
+                        ->orWhere('updated_at', '>=', now()->subDays(7));
                 })
                 ->with('media')
                 ->get()
@@ -134,23 +139,30 @@ class MapController extends Controller
     public function storeFacility(Request $request)
     {
         $data = $request->validate([
-            'name'        => 'required|string|max:150',
+            'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:500',
-            'latitude'    => 'required|numeric|between:-90,90',
-            'longitude'   => 'required|numeric|between:-180,180',
-            'status'      => 'sometimes|in:Active,Inactive',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'status' => 'sometimes|in:Active,Inactive',
+            'image' => 'nullable|image|max:4096',
         ]);
 
-        if (!self::withinArea($data['latitude'], $data['longitude'])) {
+        if (! self::withinArea($data['latitude'], $data['longitude'])) {
             return response()->json(['success' => false, 'message' => 'Facilities must be located within the fixed subdivision area.'], 422);
         }
 
+        unset($data['image']);
         $data['admin_id'] = session('admin_id');
-        $data['status']   = $data['status'] ?? 'Active';
+        $data['status'] = $data['status'] ?? 'Active';
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('facilities', 'public');
+        }
 
         $facility = Facility::create($data);
+        Cache::forget('map.all');
 
-        return response()->json(['success' => true, 'facility' => $facility]);
+        return response()->json(['success' => true, 'facility' => $facility->fresh()]);
     }
 
     public function updateFacility(Request $request, int $id)
@@ -158,25 +170,48 @@ class MapController extends Controller
         $facility = Facility::findOrFail($id);
 
         $data = $request->validate([
-            'name'        => 'sometimes|required|string|max:150',
+            'name' => 'sometimes|required|string|max:150',
             'description' => 'nullable|string|max:500',
-            'latitude'    => 'sometimes|required|numeric|between:-90,90',
-            'longitude'   => 'sometimes|required|numeric|between:-180,180',
-            'status'      => 'sometimes|in:Active,Inactive',
+            'latitude' => 'sometimes|required|numeric|between:-90,90',
+            'longitude' => 'sometimes|required|numeric|between:-180,180',
+            'status' => 'sometimes|in:Active,Inactive',
+            'image' => 'nullable|image|max:4096',
+            'remove_image' => 'nullable|boolean',
         ]);
 
-        if (isset($data['latitude'], $data['longitude']) && !self::withinArea($data['latitude'], $data['longitude'])) {
+        if (isset($data['latitude'], $data['longitude']) && ! self::withinArea($data['latitude'], $data['longitude'])) {
             return response()->json(['success' => false, 'message' => 'Facilities must be located within the fixed subdivision area.'], 422);
         }
 
+        unset($data['image'], $data['remove_image']);
+
+        if ($request->hasFile('image')) {
+            if ($facility->image_path) {
+                Storage::disk('public')->delete($facility->image_path);
+            }
+            $data['image_path'] = $request->file('image')->store('facilities', 'public');
+        } elseif ($request->boolean('remove_image')) {
+            if ($facility->image_path) {
+                Storage::disk('public')->delete($facility->image_path);
+            }
+            $data['image_path'] = null;
+        }
+
         $facility->update($data);
+        Cache::forget('map.all');
 
         return response()->json(['success' => true, 'facility' => $facility->fresh()]);
     }
 
     public function deleteFacility(int $id)
     {
-        Facility::findOrFail($id)->delete();
+        $facility = Facility::findOrFail($id);
+        if ($facility->image_path) {
+            Storage::disk('public')->delete($facility->image_path);
+        }
+        $facility->delete();
+        Cache::forget('map.all');
+
         return response()->json(['success' => true]);
     }
 
@@ -185,11 +220,11 @@ class MapController extends Controller
         $household = Household::findOrFail($id);
 
         $data = $request->validate([
-            'latitude'  => 'required|numeric|between:-90,90',
+            'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
         ]);
 
-        if (!self::withinArea($data['latitude'], $data['longitude'])) {
+        if (! self::withinArea($data['latitude'], $data['longitude'])) {
             return response()->json(['success' => false, 'message' => 'Households must be located within the fixed subdivision area.'], 422);
         }
 
@@ -203,14 +238,15 @@ class MapController extends Controller
     {
         try {
             $s = MapSetting::current();
+
             return [
-                'min_lat'    => (float) $s->min_lat,
-                'max_lat'    => (float) $s->max_lat,
-                'min_lng'    => (float) $s->min_lng,
-                'max_lng'    => (float) $s->max_lng,
+                'min_lat' => (float) $s->min_lat,
+                'max_lat' => (float) $s->max_lat,
+                'min_lng' => (float) $s->min_lng,
+                'max_lng' => (float) $s->max_lng,
                 'center_lat' => (float) $s->center_lat,
                 'center_lng' => (float) $s->center_lng,
-                'zoom'       => (int) $s->zoom,
+                'zoom' => (int) $s->zoom,
             ];
         } catch (\Throwable $e) {
             return self::DEFAULT_BOUNDS;
@@ -220,6 +256,7 @@ class MapController extends Controller
     private static function withinArea(float|int $latitude, float|int $longitude): bool
     {
         $b = self::bounds();
+
         return $latitude >= $b['min_lat']
             && $latitude <= $b['max_lat']
             && $longitude >= $b['min_lng']

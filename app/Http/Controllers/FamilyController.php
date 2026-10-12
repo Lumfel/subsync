@@ -2,22 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Family;
+use App\Models\Household;
+use Illuminate\Http\Request;
 
 class FamilyController extends Controller
 {
     /** GET /api/families */
     public function index()
     {
-        try {
-            $families = Family::select('id', 'family_name', 'family_head', 'members')
-                ->orderBy('family_name')
-                ->get();
-            return response()->json($families);
-        } catch (\Exception $e) {
-            return response()->json([]);
-        }
+        $families = Family::select('id', 'family_name', 'family_head', 'members')
+            ->orderBy('family_name')
+            ->get();
+
+        return response()->json($families);
     }
 
     public function store(Request $request)
@@ -25,10 +23,11 @@ class FamilyController extends Controller
         $data = $request->validate([
             'family_name' => 'required|string|max:255',
             'family_head' => 'nullable|string|max:255',
-            'members'     => 'nullable|string|max:50',
+            'members' => 'nullable|string|max:50',
         ]);
 
         $family = Family::create($data);
+
         return response()->json(['success' => true, 'family' => $family]);
     }
 
@@ -39,16 +38,22 @@ class FamilyController extends Controller
         $data = $request->validate([
             'family_name' => 'sometimes|required|string|max:255',
             'family_head' => 'nullable|string|max:255',
-            'members'     => 'nullable|string|max:50',
+            'members' => 'nullable|string|max:50',
         ]);
 
         $family->update($data);
+
         return response()->json(['success' => true, 'family' => $family->fresh()]);
     }
 
     public function destroy($id)
     {
-        Family::findOrFail($id)->delete();
+        $family = Family::findOrFail($id);
+
+        // Detach households first so no row keeps a dangling family_id.
+        Household::where('family_id', $family->id)->update(['family_id' => null]);
+        $family->delete();
+
         return response()->json(['success' => true]);
     }
 }

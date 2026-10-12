@@ -31,6 +31,14 @@ class SsePublishingObserver
         [$event, $data] = $this->payloadFor($model, $action);
 
         SseEvent::emit($channel, $event, $data);
+
+        // Also push over WebSockets (Laravel Reverb) for true real-time. If the
+        // Reverb server is offline this must not break the request — SSE still covers it.
+        try {
+            broadcast(new \App\Events\SubSyncEvent($event, $data));
+        } catch (\Throwable $e) {
+            // Reverb unavailable — ignore, SSE remains the fallback.
+        }
     }
 
     protected function payloadFor($model, string $action): array

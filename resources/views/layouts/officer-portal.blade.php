@@ -15,9 +15,9 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
         return url;
     };
     var origFetch = window.fetch;
-    window.fetch = function (url, opts) { return origFetch.call(this, prefix(url), opts); };
+    window.fetch = function (url, opts) { opts = opts || {}; var h = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' }); if (window.__PORTAL) h['X-Portal'] = window.__PORTAL; opts.headers = h; return origFetch.call(this, prefix(url), opts); };
     var OrigES = window.EventSource;
-    window.EventSource = function (url, cfg) { return new OrigES(prefix(url), cfg); };
+    window.EventSource = function (url, cfg) { var u = prefix(url); if (window.__PORTAL) u += (u.indexOf('?') < 0 ? '?' : '&') + 'portal=' + window.__PORTAL; return new OrigES(u, cfg); };
     window.EventSource.prototype = OrigES.prototype;
     window.EventSource.CONNECTING = 0; window.EventSource.OPEN = 1; window.EventSource.CLOSED = 2;
 })();
@@ -26,497 +26,18 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"></noscript>
-<style>
-:root {
-  --glass: #FFFFFF;
-  --glass-hover: #FAF7F2;
-  --glass-border: rgba(230,223,213,0.65);
-  --accent: #A07D53;
-  --accent-dim: #FAF4E7;
-  --accent-border: #E6DFD5;
-  --text: #2B2927;
-  --text-dim: #7D7975;
-  --text-mid: #4A4744;
-  --danger: #BD5B5B;
-  --blue: #4A7FA5;
-  --blue-dim: #EEF3F6;
-  --green: #5A7A5E;
-  --green-dim: #EAF2EC;
-  --yellow: #A07830;
-  --yellow-dim: #FAF4E7;
-  --purple: #7A6A90;
-  --purple-dim: #F2EFF4;
-  --radius: 8px;
-  --radius-sm: 6px;
-  --radius-xs: 4px;
-}
-*{ box-sizing:border-box; margin:0; padding:0; }
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: #FAF6F0;
-  min-height: 100vh;
-  color: var(--text);
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-/* ── BANNER ── */
-.banner-wrap {
-  position: relative; height: 120px; overflow: hidden; cursor: default;
-}
-@media(max-width:480px){ .banner-wrap { height: 150px; } }
-.banner-wrap img {
-  width: 100%; height: 100%; object-fit: cover;
-  transition: transform 0.4s ease, filter 0.3s;
-  filter: brightness(0.65) saturate(1.1);
-}
-.banner-wrap:hover img { transform: scale(1.03); filter: brightness(0.5) saturate(1.2); }
-.banner-overlay {
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, transparent 35%, rgba(10,14,26,0.96) 100%);
-  pointer-events: none;
-}
-.banner-edit-hint {
-  position: absolute; top: 14px; right: 16px;
-  background: rgba(0,0,0,0.45); border: 1px solid var(--glass-border);
-  backdrop-filter: blur(10px); color: var(--text); font-size: 12px;
-  padding: 5px 12px; border-radius: 20px; opacity: 0;
-  transition: opacity 0.2s; pointer-events: none;
-}
-.banner-wrap:hover .banner-edit-hint { opacity: 1; }
-#bannerInput, #avatarInput { display: none; }
-
-/* ── LAYOUT ── */
-.page { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-@media(max-width:480px){ .page { padding: 0 12px; } }
-/* ── PROFILE ── */
-.profile-header {
-  display: flex; align-items: flex-end; gap: 22px;
-  margin-top: -54px; padding-bottom: 20px;
-  position: relative; z-index: 2;
-  flex-wrap: wrap;
-}
-@media(max-width:480px){
-  .profile-header { margin-top: -40px; gap:14px; }
-  .avatar-wrap img { width:80px; height:80px; }
-  .profile-meta h2 { font-size:18px; }
-}
-.avatar-wrap { position: relative; flex-shrink: 0; cursor: pointer; }
-.avatar-wrap img {
-  width: 110px; height: 110px;
-  border-radius: var(--radius);
-  border: 3px solid rgba(122,180,240,0.3);
-  object-fit: cover; display: block;
-  transition: filter 0.25s;
-}
-.avatar-wrap:hover img { filter: brightness(0.55); }
-.avatar-edit {
-  position: absolute; inset: 0; display: flex;
-  align-items: center; justify-content: center;
-  border-radius: var(--radius); opacity: 0;
-  transition: opacity 0.2s; font-size: 11px; color: #fff;
-  background: rgba(0,0,0,0.32); letter-spacing: 0.04em;
-}
-.avatar-wrap:hover .avatar-edit { opacity: 1; }
-.profile-meta { padding-bottom: 6px; }
-.profile-meta h2 {
-  font-family: 'DM Serif Display', serif; font-size: 24px;
-  font-weight: 400; letter-spacing: 0.01em; margin-bottom: 6px;
-}
-.location {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 13px; color: var(--blue);
-  background: var(--blue-dim); border: 1px solid rgba(122,180,240,0.28);
-  padding: 3px 10px; border-radius: 20px;
-}
-.role-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 13px; color: var(--purple);
-  background: var(--purple-dim); border: 1px solid rgba(185,154,245,0.28);
-  padding: 3px 10px; border-radius: 20px; margin-left: 8px;
-}
-[contenteditable]:focus { outline: none; }
-
-/* ── TABS ── */
-.tab-nav {
-  display: flex; gap: 4px;
-  background: #FFFFFF; border: 1px solid var(--glass-border);
-  border-radius: var(--radius); padding: 5px;
-  margin-top: 6px; overflow-x: auto; scrollbar-width: none;
-}
-.tab-nav::-webkit-scrollbar { display: none; }
-.tab-btn {
-    flex: 0 0 auto; min-width: max-content;
-  padding: 9px 16px; border-radius: var(--radius-sm);
-  border: 1px solid transparent; background: transparent;
-  color: var(--text-dim); font-family: 'DM Sans', sans-serif;
-  font-size: 13px; font-weight: 500; cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-  display: flex; align-items: center; justify-content: center;
-  gap: 7px; white-space: nowrap;
-}
-.tab-btn:hover { background: var(--glass-hover); color: var(--text); }
-.tab-btn.active { background: #2B2927; color: #FFFFFF; border-color: #2B2927; box-shadow: 0 4px 12px rgba(28,26,23,0.1); }
-.tab-badge {
-  background: var(--accent-dim); color: var(--accent);
-  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px;
-}
-
-/* ── PANELS ── */
-.tab-panel { display: none; animation: fadeUp 0.3s ease both; }
-.tab-panel.active { display: block; }
-.modal-overlay { display:none; position:fixed; inset:0; background:rgba(43,41,39,0.4); z-index:1000; align-items:center; justify-content:center; }
-.modal-overlay.active { display:flex; }
-.modal-box { background:#FFFFFF; border:1px solid var(--glass-border); border-radius:var(--radius); padding:28px; min-width:360px; max-width:500px; width:90%; box-shadow: 0 16px 48px rgba(43,41,39,0.08); }
-.modal-title { font-size:16px; font-weight:600; margin-bottom:16px; color: var(--text); }
-.modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
-.modal-close-btn { background:transparent; border:1px solid var(--glass-border); color:var(--text-mid); padding:8px 16px; border-radius:8px; cursor:pointer; }
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(10px); }
-  to { opacity:1; transform:translateY(0); }
-}
-
-/* ── CARDS ── */
-.card {
-  background: var(--glass); border: 1px solid var(--glass-border);
-  border-radius: var(--radius);
-  padding: 28px 30px; margin-top: 16px;
-  box-shadow: 0 4px 20px rgba(43,41,39,0.02);
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.card:hover {
-  transform: none;
-  box-shadow: 0 4px 18px rgba(43, 41, 39, 0.04);
-}
-.card-title {
-  font-size: 13px; font-weight: 600;
-  color: var(--text); margin-bottom: 4px;
-}
-.card-subtitle {
-  font-size: 13px; color: var(--text-dim);
-  margin-bottom: 20px; line-height: 1.65;
-}
-
-/* ── FORMS ── */
-.f-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
-.f-field { display:flex; flex-direction:column; gap:5px; flex:1; min-width:140px; }
-.f-label { font-size:12px; color:var(--text-dim); letter-spacing:0.03em; }
-input[type=text],input[type=date],textarea,select {
-  background: #FFFFFF; border: 1px solid var(--glass-border);
-  color: var(--text); padding: 10px 14px; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 14px;
-  outline: none; transition: border-color 0.2s, background 0.2s; width: 100%;
-}
-input:focus, textarea:focus, select:focus {
-  background: #FFFFFF; border-color: rgba(160,125,83,0.4);
-}
-input::placeholder, textarea::placeholder { color: var(--text-dim); }
-textarea { resize: vertical; min-height: 88px; line-height: 1.65; }
-select { cursor: pointer; }
-select option { background: #FFFFFF; color: var(--text); }
-
-/* ── BUTTONS ── */
-.btn {
-  padding: 10px 20px; background: var(--accent-dim);
-  border: 1px solid var(--accent-border);
-  color: var(--accent); border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
-  cursor: pointer; transition: background 0.2s, transform 0.15s; white-space: nowrap;
-}
-.btn:hover { background: rgba(160,125,83,0.2); transform: translateY(-1px); }
-.btn:active { transform: scale(0.98); }
-.btn-full { width: 100%; justify-content: center; margin-top: 12px; }
-.btn-accent { background:var(--accent-dim); border-color:var(--accent-border); color:var(--accent); }
-.btn-green { background:var(--green-dim); border-color:rgba(90,122,94,0.25); color:var(--green); }
-.btn-purple { background:var(--purple-dim); border-color:rgba(122,106,144,0.25); color:var(--purple); }
-.btn-danger { background:rgba(189,91,91,0.1); border-color:rgba(189,91,91,0.25); color:var(--danger); }
-.btn-sm { padding: 7px 14px; font-size: 13px; }
-
-/* ── PILLS ── */
-.pill {
-  display:inline-block; font-size:10px; font-weight:700;
-  letter-spacing:0.07em; text-transform:uppercase;
-  padding:2px 9px; border-radius:20px;
-}
-.pill-notice  { background:var(--blue-dim); color:var(--blue); border:1px solid rgba(122,180,240,0.25); }
-.pill-urgent  { background:rgba(220,80,80,0.13); color:#f08080; border:1px solid rgba(220,80,80,0.25); }
-.pill-event   { background:var(--green-dim); color:var(--green); border:1px solid rgba(130,201,138,0.25); }
-.pill-pending { background:var(--yellow-dim); color:var(--yellow); border:1px solid rgba(240,192,96,0.25); }
-.pill-progress{ background:var(--blue-dim); color:var(--blue); border:1px solid rgba(122,180,240,0.25); }
-.pill-resolved{ background:var(--green-dim); color:var(--green); border:1px solid rgba(130,201,138,0.25); }
-.pill-idea    { background:var(--purple-dim); color:var(--purple); border:1px solid rgba(185,154,245,0.25); }
-
-/* ── ANNOUNCEMENTS ── */
-.ann-item {
-  padding:15px; border-radius:var(--radius-sm);
-  background:#FFFFFF; border:1px solid var(--glass-border);
-  margin-bottom:9px; transition: all 0.25s;
-  border-left: 3px solid var(--glass-border);
-  cursor: pointer;
-}
-.ann-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(43,41,39,0.08); border-color: var(--accent-border); }
-.ann-item.ann-item-notice { border-left-color: var(--blue); }
-.ann-item.ann-item-urgent { border-left-color: var(--danger); }
-.ann-item.ann-item-event  { border-left-color: var(--green); }
-.ann-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
-.ann-date { font-size:11px; color:var(--text-dim); }
-.ann-title { font-size:14px; font-weight:600; margin-bottom:4px; text-align:left; }
-.ann-body { font-size:13px; color:var(--text-mid); line-height:1.6; text-align:left; }
-.ann-actions { display:flex; gap:8px; margin-top:10px; }
-.ann-click-hint { font-size:10px; color:var(--text-dim); margin-top:6px; opacity:0; transition:opacity .2s; }
-.ann-item:hover .ann-click-hint { opacity:1; }
-
-/* ── REPORTS ── */
-.report-item {
-  background:#FFFFFF; border:1px solid var(--glass-border);
-  border-radius:var(--radius-sm); padding:16px; margin-bottom:10px;
-  transition: all 0.25s; cursor: pointer;
-}
-.report-item:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(43,41,39,0.08); border-color: var(--accent-border); }
-.report-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px; }
-.report-title { font-size:14px; font-weight:500; }
-.report-meta { font-size:11px; color:var(--text-dim); margin-bottom:10px; }
-.report-actions { display:flex; gap:8px; flex-wrap:wrap; }
-
-/* ── UPLOAD ZONE ── */
-.upload-zone {
-  border: 2px dashed rgba(122,180,240,0.3);
-  border-radius: var(--radius-sm);
-  padding: 36px 20px; text-align: center;
-  cursor: pointer; transition: border-color 0.2s, background 0.2s;
-  margin-bottom: 16px;
-}
-.upload-zone:hover, .upload-zone.drag-over {
-  border-color: rgba(122,180,240,0.6);
-  background: rgba(122,180,240,0.06);
-}
-.upload-icon { font-size: 36px; margin-bottom: 10px; opacity: 0.7; }
-.upload-label { font-size: 14px; font-weight: 500; color: var(--blue); margin-bottom: 4px; }
-.upload-sub { font-size: 12px; color: var(--text-dim); }
-#fileUploadInput { display: none; }
-
-.file-item {
-  display:flex; align-items:center; gap:12px;
-  padding:12px; border-radius:var(--radius-sm);
-  background:rgba(255,255,255,0.04); border:1px solid var(--glass-border);
-  margin-bottom:8px; transition: background 0.2s;
-}
-.file-item:hover { background:rgba(255,255,255,0.07); }
-.file-icon { font-size:24px; flex-shrink:0; }
-.file-info { flex:1; min-width:0; }
-.file-name { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.file-meta { font-size:11px; color:var(--text-dim); margin-top:2px; }
-.file-status {
-  font-size:10px; font-weight:700; letter-spacing:0.06em;
-  text-transform:uppercase; padding:3px 10px; border-radius:20px;
-  flex-shrink:0;
-}
-.file-sent { background:var(--green-dim); color:var(--green); border:1px solid rgba(130,201,138,0.25); }
-.file-pending-send { background:var(--yellow-dim); color:var(--yellow); border:1px solid rgba(240,192,96,0.25); }
-
-/* ── MESSAGES ── */
-.msg-layout { display:flex; gap:14px; }
-.msg-sidebar {
-  width: 196px; flex-shrink:0;
-  background: rgba(0,0,0,0.2); border:1px solid var(--glass-border);
-  border-radius:var(--radius-sm); padding:12px; height:fit-content;
-}
-@media(max-width:600px){
-  .msg-layout { flex-direction:column; }
-  .msg-sidebar { width:100%; }
-  .msg-body { min-height:220px; max-height:280px; }
-}
-.msg-sidebar-title { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-dim); margin-bottom:10px; }
-.msg-thread-item {
-  display:flex; align-items:center; gap:9px;
-  padding:9px 10px; border-radius:var(--radius-xs);
-  cursor:pointer; transition:background 0.15s;
-  border:1px solid transparent; margin-bottom:3px;
-}
-.msg-thread-item:hover { background:var(--glass-hover); }
-.msg-thread-item.active { background:var(--blue-dim); border-color:rgba(122,180,240,0.3); }
-.msg-thread-del { display:none; background:none; border:none; cursor:pointer; font-size:13px; padding:2px 5px; color:var(--text-dim); border-radius:4px; flex-shrink:0; line-height:1; }
-.msg-thread-del:hover { color:#f08080; }
-.msg-thread-item:hover .msg-thread-del { display:block; }
-.msg-thread-avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
-.ta-admin { background:rgba(122,180,240,0.22); color:var(--blue); }
-.ta-hoa   { background:rgba(185,154,245,0.22); color:var(--purple); }
-.msg-thread-info { overflow:hidden; flex:1; }
-.msg-thread-name { font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.msg-thread-preview { font-size:11px; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.msg-unread { min-width:18px; height:18px; border-radius:9px; background:var(--blue); color:#0a0e1a; font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; flex-shrink:0; }
-.msg-main { flex:1; display:flex; flex-direction:column; min-width:0; }
-.msg-header { background:rgba(0,0,0,0.22); border:1px solid var(--glass-border); border-radius:var(--radius-sm) var(--radius-sm) 0 0; padding:12px 16px; display:flex; align-items:center; gap:10px; }
-.msg-header-avatar { width:34px; height:34px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; }
-.msg-header-name { font-size:14px; font-weight:500; }
-.msg-header-sub { font-size:11px; color:var(--green); display:flex; align-items:center; gap:4px; }
-.msg-header-sub::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--green); display:inline-block; }
-.msg-body { flex:1; min-height:300px; max-height:360px; overflow-y:auto; background:rgba(0,0,0,0.14); border-left:1px solid var(--glass-border); border-right:1px solid var(--glass-border); padding:18px 16px; display:flex; flex-direction:column; gap:12px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.1) transparent; }
-.msg-bubble-wrap { display:flex; align-items:flex-end; gap:8px; }
-.msg-bubble-wrap.mine { flex-direction:row-reverse; }
-.bubble-avatar { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
-.ba-admin { background:rgba(122,180,240,0.2); color:var(--blue); }
-.ba-mine  { background:linear-gradient(135deg,var(--blue),#5090d0); color:#0a0e1a; }
-.bubble { max-width:68%; max-width:min(68%, 340px); padding:10px 14px; border-radius:6px; font-size:13px; line-height:1.55; word-break:break-word; overflow-wrap:anywhere; }
-.from-admin { background:rgba(255,255,255,0.09); border:1px solid var(--glass-border); border-bottom-left-radius:4px; }
-.from-mine { background:var(--blue-dim); border:1px solid rgba(122,180,240,0.28); border-bottom-right-radius:4px; }
-.bubble-time { font-size:10px; color:var(--text-dim); margin-top:3px; display:block; }
-.msg-compose { background:rgba(0,0,0,0.22); border:1px solid var(--glass-border); border-top:none; border-radius:0 0 var(--radius-sm) var(--radius-sm); padding:12px 14px; display:flex; gap:10px; align-items:flex-end; }
-.msg-compose textarea { flex:1; min-height:44px; max-height:120px; resize:none; background:rgba(255,255,255,0.07); border:1px solid var(--glass-border); border-radius:var(--radius-sm); padding:10px 12px; font-size:13px; line-height:1.45; }
-.send-btn { width:44px; height:44px; border-radius:var(--radius-sm); background:var(--blue-dim); border:1px solid rgba(122,180,240,0.28); color:var(--blue); font-size:18px; cursor:pointer; transition:background 0.2s, transform 0.15s; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-.send-btn:hover { background:rgba(122,180,240,0.26); transform:scale(1.05); }
-.date-divider { display:flex; align-items:center; gap:10px; font-size:10px; color:var(--text-dim); letter-spacing:0.06em; text-transform:uppercase; }
-.date-divider::before, .date-divider::after { content:''; flex:1; height:1px; background:var(--glass-border); }
-
-/* ── EMPTY ── */
-.empty-state { text-align:center; padding:36px 20px; color:var(--text-dim); font-size:13px; line-height:1.7; }
-.empty-icon { font-size:30px; margin-bottom:8px; opacity:0.5; }
-@keyframes pulse-critical {
-  0%,100% { box-shadow: 0 0 0 0 rgba(255,64,64,0); }
-  50%      { box-shadow: 0 0 12px 5px rgba(255,64,64,0.35); }
-}
-.issue-critical-row { border-left:3px solid #ff4040!important; animation:pulse-critical 2s ease-in-out infinite; }
-/* ── EMERGENCY ALERT BANNER ── */
-#emergencyAlert {
-  display:none; position:fixed; top:0; left:0; right:0; z-index:9999;
-  background:linear-gradient(90deg,#7a0000,#cc1400,#7a0000);
-  background-size:200% 100%; animation:emergencyScroll 3s linear infinite;
-  color:#fff; padding:12px 16px; text-align:center; font-size:14px; font-weight:700;
-  box-shadow:0 2px 16px rgba(200,20,20,0.6);
-}
-@keyframes emergencyScroll { 0%{background-position:0 0} 100%{background-position:200% 0} }
-
-/* ── TOAST ── */
-#toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:#2B2927; border:1px solid rgba(43,41,39,0.1); color:#FAF6F0; font-size:13px; padding:10px 22px; border-radius:20px; opacity:0; pointer-events:none; transition:opacity 0.25s, transform 0.25s; z-index:999; white-space:nowrap; }
-#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-/* ── Live Announcement Banner ── */
-#annNotif { position:fixed; top:-90px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,rgba(30,22,50,0.98),rgba(18,16,26,0.98)); border:1px solid rgba(122,180,240,0.35); backdrop-filter:blur(14px); color:var(--text); font-size:13px; padding:10px 14px 10px 16px; border-radius:14px; z-index:9999; display:flex; align-items:center; gap:10px; max-width:420px; box-shadow:0 4px 24px rgba(0,0,0,0.45); transition:top 0.38s cubic-bezier(.22,.68,0,1.2); }
-#annNotif.show { top:18px; }
-#annNotif .ann-notif-title { font-weight:600; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-#annNotif .ann-meta { font-size:10px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.06em; }
-#annNotif .btn-view { background:var(--accent); color:#fff; border:none; padding:5px 11px; border-radius:8px; font-size:11px; cursor:pointer; }
-#annNotif .btn-close { background:rgba(255,255,255,0.08); color:var(--text-dim); border:none; padding:5px 9px; border-radius:8px; font-size:11px; cursor:pointer; }
-@media(max-width:768px) {
-  .page-grid {
-    grid-template-columns: 1fr !important;
-  }
-}
-
-/* SIDEBAR (PREMIUM VERTICAL STYLE) */
-.sidebar {
-    width: 250px;
-    padding: 30px 24px;
-    background: #FFFFFF;
-    border-right: 1px solid #E6DFD5;
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    z-index: 100;
-}
-.sidebar li a, .panel .cards ul li a, .cards-main a {
-   text-decoration: none;
-   color: inherit;
-}
-.sidebar ul, .panel .cards ul {
-    list-style: none;
-}
-.sidebar li, .panel .cards li {
-    padding: 12px 16px;
-    margin-bottom: 8px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: #7D7975;
-    font-size: 14px;
-    font-weight: 500;
-    list-style: none;
-}
-.sidebar li:hover {
-    background: #FAF4E7;
-    color: #1C1A17;
-}
-.sidebar .active, .sidebar li.active {
-    background: #1C1A17;
-    color: #FFFFFF !important;
-    box-shadow: 0 4px 12px rgba(28,26,23,0.1);
-}
-
-/* MAIN CONTENT AREA */
-.main {
-    flex: 1;
-    margin-left: 250px;
-    padding: 40px;
-    min-height: 100vh;
-}
-
-/* BENTO GRID SYSTEM */
-.bento-grid {
-    display: grid;
-    grid-template-columns: repeat(12, 1fr);
-    gap: 24px;
-    margin-top: 24px;
-}
-.bento-col-12 { grid-column: span 12; }
-.bento-col-8  { grid-column: span 8; }
-.bento-col-6  { grid-column: span 6; }
-.bento-col-4  { grid-column: span 4; }
-.bento-col-3  { grid-column: span 3; }
-
-/* Mobile Header & Overlay Styles */
-.mobile-header {
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 24px;
-    background: #FFFFFF;
-    border-bottom: 1px solid #E6DFD5;
-    position: sticky;
-    top: 0;
-    z-index: 99;
-}
-.sidebar-overlay {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(43,41,39,0.3);
-    z-index: 98;
-    backdrop-filter: blur(2px);
-}
-.sidebar-overlay.show {
-    display: block;
-}
-
-@media(max-width: 991px) {
-    .bento-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-    .bento-col-12, .bento-col-8, .bento-col-6, .bento-col-4, .bento-col-3 {
-        grid-column: span 12;
-    }
-    .mobile-header {
-        display: flex;
-    }
-    .sidebar {
-        left: -250px;
-        transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .sidebar.open {
-        left: 0;
-    }
-    .main {
-        margin-left: 0;
-        padding: 24px 20px;
-    }
-}
-</style>
+<link rel="stylesheet" href="{{ asset('css/officer-portal.css') . '?v=' . filemtime(public_path('css/officer-portal.css')) }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
-<script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
+<meta name="theme-color" content="#86653D">
+  <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+  <script src="{{ asset('js/pwa.js') . '?v=' . filemtime(public_path('js/pwa.js')) }}" defer></script>
+  <script>window.__PORTAL = @json($role ?? ''); window.__PREFS = @json($prefs ?? []); window.__ACTOR = @json($role ?? '');</script>
+  <script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
+  @vite('resources/js/app.js')
 </head>
 <body>
 
@@ -542,22 +63,30 @@ select option { background: #FFFFFF; color: var(--text); }
   <ul style="margin-top:20px;">
     <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">🏠 Overview</li>
     <li class="tab-btn" onclick="switchTab('announcements')" id="tab-announcements">📢 Announcements</li>
-    <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports">📋 Reports</li>
-    <li class="tab-btn" onclick="switchTab('files')" id="tab-files">📊 Send Files</li>
+    <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports">📋 Issues</li>
+    <li class="tab-btn" onclick="switchTab('map')" id="tab-map">🗺️ Map</li>
+    <li class="tab-btn" onclick="switchTab('files')" id="tab-files">📊 Documents</li>
     <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages">💬 Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
   </ul>
 
+  <!-- Sidebar tools: search + notifications -->
+  <div class="sidebar-tools">
+    <button type="button" class="nc-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)" aria-label="Search">&#128269;</button>
+    @include('partials.notification-center')
+  </div>
+
   <!-- Sidebar Profile Card -->
-  <div style="position:absolute; bottom:30px; left:24px; right:24px; text-align:center;">
+  <div class="sidebar-profile" style="text-align:center;">
     <div class="avatar-wrap" onclick="document.getElementById('avatarInput').click()" style="margin: 0 auto 12px; width:64px;">
       <img id="avatarPreview" src="https://ui-avatars.com/api/?name={{ urlencode($officerName) }}&amp;background=2a6acc&amp;color=fff&amp;size=120" alt="Officer" style="width:64px; height:64px; border-radius:50%; border: 2px solid var(--glass-border);">
       <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)" style="display:none;">
     </div>
     <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="officerName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $officerName }}</div>
-    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Role: <span id="roleText" contenteditable="true" spellcheck="false" title="Click to edit role">{{ $officerRole }}</span></div>
+    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Officer</div>
     
-    <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf</form>
-    <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:14px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
+    <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'officer' }}"></form>
+    <a href="{{ url('settings') }}?portal={{ $role ?? 'officer' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;">&#9881; Settings</a>
+    <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:8px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
 </aside>
 
@@ -579,7 +108,7 @@ select option { background: #FFFFFF; color: var(--text); }
           <div style="font-size:22px;font-weight:700;color:var(--blue);" id="annCount">—</div>
         </div>
         <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Concerns</div>
+          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Issues</div>
           <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="openReportsCount">—</div>
         </div>
         <div class="card" style="padding:16px 12px; text-align:center;">
@@ -605,7 +134,7 @@ select option { background: #FFFFFF; color: var(--text); }
         <div class="card-subtitle">Jump to the task you need to work on.</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
           <button class="btn btn-full" style="text-align:left;" onclick="switchTab('announcements')">📢 Post Announcement</button>
-          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('reports')">📋 Resolve Concerns</button>
+          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('reports')">📋 Resolve Issues</button>
           <button class="btn btn-full" style="text-align:left;" onclick="switchTab('files')">📊 Send Report File</button>
         </div>
       </div>
@@ -662,7 +191,7 @@ select option { background: #FFFFFF; color: var(--text); }
           <textarea id="annBody" placeholder="Write the full announcement here…"></textarea>
         </div>
       </div>
-      <button class="btn btn-full" onclick="postAnnouncement()">📢 Post Announcement</button>
+      <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,postAnnouncement):postAnnouncement()">📢 Post Announcement</button>
     </div>
 
     <div class="card">
@@ -674,7 +203,7 @@ select option { background: #FFFFFF; color: var(--text); }
   <!-- ═══════════ REPORTS ═══════════ -->
   <div class="tab-panel" id="panel-reports">
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;flex-wrap:wrap;gap:10px; margin-top:0;">
-      <div class="card-title" style="margin:0;">Issue Reports</div>
+      <div class="card-title" style="margin:0;">Issues</div>
       <div style="display:flex;gap:8px;">
         <select id="officerIssueFilter" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
           <option value="">All Statuses</option>
@@ -682,9 +211,18 @@ select option { background: #FFFFFF; color: var(--text); }
           <option value="In Progress">In Progress</option>
           <option value="Resolved">Resolved</option>
         </select>
+        <select id="officerIssueSort" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
+          <option value="">Newest first</option>
+          <option value="urgent">Urgent first</option>
+        </select>
+        <button class="btn btn-sm" style="background:var(--green);border-color:var(--green);color:#fff;" onclick="SubUI.exportCsv('/api/export/issues')">&#8595; Export</button>
       </div>
     </div>
     <div id="officerIssueList"></div>
+    <div class="card" style="margin-top:4px;">
+      <div class="card-title" style="margin:0 0 12px;">Most Reported Issues</div>
+      <div id="officerCommonIssues" style="min-height:40px;"></div>
+    </div>
 
     <!-- Respond Modal -->
     <div class="modal-overlay" id="modal-officerRespond">
@@ -699,14 +237,69 @@ select option { background: #FFFFFF; color: var(--text); }
             <option value="Resolved">Resolved</option>
           </select>
         </div>
+        <div class="f-field" style="margin-bottom:12px;">
+          <span class="f-label">Urgency / Priority</span>
+          <select id="officerRespondPriority" style="background:rgba(255,255,255,0.07);border:1px solid var(--glass-border);color:var(--text);padding:8px;border-radius:6px;width:100%;">
+            <option value="Low">Low</option>
+            <option value="Medium">Medium</option>
+            <option value="High">High</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
         <div class="f-field">
           <span class="f-label">Response / Notes</span>
           <textarea id="officerRespondText" placeholder="Enter your response…" style="min-height:100px;"></textarea>
         </div>
         <div class="modal-actions">
           <button class="modal-close-btn" onclick="closeModal('officerRespond')">Cancel</button>
-          <button class="btn btn-sm" onclick="submitOfficerResponse()">Submit</button>
+          <button class="btn btn-sm" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitOfficerResponse):submitOfficerResponse()">Submit</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Issue location map modal -->
+    <div class="modal-overlay" id="modal-officerMap">
+      <div class="modal-box" style="max-width:640px;">
+        <div class="modal-title">Issue Location</div>
+        <div id="officerMapTitle" style="font-size:14px;color:var(--text-mid);margin-bottom:10px;"></div>
+        <div id="officerMapCanvas" style="width:100%;height:360px;border-radius:8px;border:1px solid var(--glass-border);"></div>
+        <div class="modal-actions">
+          <button class="modal-close-btn" onclick="closeModal('officerMap')">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ MAP (issue monitoring) ═══════════ -->
+  <div class="tab-panel" id="panel-map">
+    <div class="card" style="margin-top:0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        <div class="card-title" style="margin:0;">Subdivision Issue Map</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select id="officerMapStatus" onchange="renderOfficerMapPins()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
+            <option value="">All Statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+          </select>
+          <select id="officerMapPriority" onchange="renderOfficerMapPins()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
+            <option value="">All Priorities</option>
+            <option value="Critical">Critical</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+          </select>
+        </div>
+      </div>
+      <div id="officerMonitorMap" style="width:100%;height:520px;border-radius:10px;border:1px solid var(--glass-border);background:#EDE7DC;"></div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-mid);margin-top:10px;align-items:center;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;display:inline-block;"></span>Pending</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;"></span>In Progress</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#888;display:inline-block;"></span>Resolved</span>
+        <span style="margin-left:auto;font-size:12px;color:var(--text-dim);">Pins are numbered by report; click a pin for details and to respond.</span>
+      </div>
+      <div style="margin-top:12px;padding:12px 14px;border-left:3px solid var(--accent);background:rgba(160,125,83,0.06);border-radius:0 8px 8px 0;">
+        <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong>Map scope &amp; limitations.</strong> Limited to the Terra Nova subdivision boundary, which is approximate. For precise locations, consult official subdivision plans. Only reported issues inside the boundary are shown.</div>
       </div>
     </div>
   </div>
@@ -836,725 +429,9 @@ select option { background: #FFFFFF; color: var(--text); }
   <button class="btn-close" onclick="document.getElementById('annNotif').classList.remove('show')">✕</button>
 </div>
 
-<script>
-/* ══ UTILS ══ */
-function toggleMobileSidebar() {
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.querySelector('.sidebar-overlay');
-  if (sidebar) sidebar.classList.toggle('open');
-  if (overlay) overlay.classList.toggle('show');
-}
-function confirmLogout(){
-  if(confirm('Are you sure you want to log out?'))
-    document.getElementById('logoutForm').submit();
-}
-function changeImg(id,inp){
-  const f=inp.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload=e=>document.getElementById(id).src=e.target.result;
-  r.readAsDataURL(f);
-}
-function nowTime(){ return new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}); }
-function todayStr(){ return new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
-}
-function fmtBytes(b){ if(b<1024)return b+'B'; if(b<1048576)return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; }
-
-/* ══ TABS ══ */
-function switchTab(name){
-  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  document.getElementById('tab-'+name).classList.add('active');
-  if(name==='messages'){
-    const b=document.getElementById('msg-badge');
-    if(b) b.style.display='none';
-    loadOfficerThreads();
-  }
-  
-  // Auto-close sidebar on mobile
-  const sidebar = document.querySelector('.sidebar');
-  const overlay = document.querySelector('.sidebar-overlay');
-  if (sidebar) sidebar.classList.remove('open');
-  if (overlay) overlay.classList.remove('show');
-}
-
-/* ══ DATA ══ */
-let adminAnnouncements=[];
-let myAnnouncements=[];
-let officerIssues=[];
-let sentFiles=[];
-let lastAnnouncementId=0;
-
-const csrfToken=()=>document.querySelector('meta[name=csrf-token]').content;
-async function apiGet(url){const r=await fetch(url,{headers:{'Accept':'application/json'}});return r.json();}
-async function apiPost(url,data){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify(data)});return r.json();}
-async function apiPut(url,data){const r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify(data)});return r.json();}
-async function apiDelete(url){const r=await fetch(url,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()}});return r.json();}
-async function safeGetArray(url){
-  try{
-    const data=await apiGet(url);
-    return Array.isArray(data)?data:[];
-  }catch(e){
-    return [];
-  }
-}
-function openModal(id){const el=document.getElementById('modal-'+id);if(el)el.classList.add('active');}
-function closeModal(id){const el=document.getElementById('modal-'+id);if(el)el.classList.remove('active');}
-
-async function loadOfficerData(){
-  const [ann, iss, res]=await Promise.all([
-    safeGetArray('/api/announcements'),
-    safeGetArray('/api/issues'),
-    safeGetArray('/api/residents'),
-  ]);
-  adminAnnouncements=ann;
-  if(ann.length) lastAnnouncementId=ann[0].id;
-  myAnnouncements=ann.filter(a=>a.posted_by&&a.posted_by==='{{ $officerName }}');
-  // Create a map for quick lookup by id
-  announcementMap = {};
-  adminAnnouncements.forEach(a => {
-    announcementMap[a.id] = a;
-  });
-  officerIssues=iss;
-  renderOverviewAnn();
-  renderMyAnn();
-  renderOfficerIssues();
-  // Update overview stat cards
-  const now=new Date();
-  const myAnnThisMonth=myAnnouncements.filter(a=>{
-    if(!a.created_at) return false;
-    const d=new Date(a.created_at);
-    return !isNaN(d)&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-  }).length;
-  const openIssues=iss.filter(i=>i.status!=='Resolved').length;
-  if(document.getElementById('annCount'))         document.getElementById('annCount').textContent=myAnnThisMonth;
-  if(document.getElementById('openReportsCount')) document.getElementById('openReportsCount').textContent=openIssues;
-  if(document.getElementById('blockResidentsCount')) document.getElementById('blockResidentsCount').textContent=Array.isArray(res)?res.length:'—';
-}
-
-// View announcement details
-function viewAnnouncement(id) {
-  const ann = announcementMap[id];
-  if (ann) {
-    document.getElementById('annV-tag').className = `pill pill-${ann.tag||'notice'}`;
-    document.getElementById('annV-tag').textContent = ann.tag.charAt(0).toUpperCase() + ann.tag.slice(1);
-    document.getElementById('annV-priority').style.display = ann.priority === 'High' ? '' : 'none';
-    document.getElementById('annV-title').textContent = ann.title;
-    document.getElementById('annV-by').textContent = ann.posted_by;
-    document.getElementById('annV-meta').innerHTML = `<span>${ann.created_at}</span>${ann.target && ann.target !== 'All Residents' ? `<span> • ${ann.target}</span>` : ''}${ann.event_date ? `<span> • ${ann.event_date}</span>` : ''}`;
-    document.getElementById('annV-content').textContent = ann.content;
-    document.getElementById('modal-annView').classList.add('open');
-  }
-}
-
-/* ══ MESSAGES ══ */
-let threads={};
-let currentThread=null;
-
-async function loadOfficerThreads(){
-  const data=await fetch('/api/messages/threads',{headers:{'Accept':'application/json'}}).then(r=>r.json()).catch(()=>[]);
-  const sidebar=document.querySelector('.msg-sidebar-threads');
-  if(!Array.isArray(data)||!data.length){
-    if(sidebar) sidebar.innerHTML='<div style="color:var(--text-dim);font-size:12px;padding:12px;">No conversations yet.<br><button class="btn btn-sm" style="margin-top:8px;" onclick="openOfficerNewConv()">Start one</button></div>';
-    return;
-  }
-  data.forEach(t=>{threads[t.id]={...t,msgs:[]};});
-  if(sidebar){
-    sidebar.innerHTML=data.map((t,i)=>`<div class="msg-thread-item${i===0?' active':''}" onclick="selectOfficerThread(${t.id},this)">
-      <div class="msg-thread-avatar ta-admin">${(t.title||'?').substring(0,2).toUpperCase()}</div>
-      <div class="msg-thread-info">
-        <div class="msg-thread-name">${t.title}</div>
-        <div class="msg-thread-preview">${t.last_message||'No messages yet'}</div>
-        ${t.last_time?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Updated ${t.last_time}</div>`:''}
-      </div>
-      <button class="msg-thread-del" onclick="event.stopPropagation();deleteOfficerConversation(${t.id})" title="Delete">🗑</button>
-    </div>`).join('');
-  }
-  currentThread=data[0].id;
-  document.getElementById('chat-name').textContent=data[0].title||'Admin';
-  document.getElementById('chat-avatar').textContent=(data[0].title||'SA').substring(0,2).toUpperCase();
-  const msgs=await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json()).catch(()=>[]);
-  threads[currentThread].msgs=msgs;
-  renderMessages();
-}
-async function selectOfficerThread(id,el){
-  currentThread=id;
-  document.querySelectorAll('.msg-thread-item').forEach(x=>x.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('chat-name').textContent=threads[id]?.title||'Admin';
-  document.getElementById('chat-avatar').textContent=(threads[id]?.title||'SA').substring(0,2).toUpperCase();
-  const msgs=await fetch('/api/messages/'+id,{headers:{'Accept':'application/json'}}).then(r=>r.json()).catch(()=>[]);
-  threads[id].msgs=msgs;
-  renderMessages();
-}
-function selectThread(id,el){ /* legacy */ }
-async function deleteOfficerConversation(id){
-  if(!confirm('Delete this conversation and all its messages?')) return;
-  const csrfToken=document.querySelector('meta[name=csrf-token]')?.content||'';
-  const res=await fetch('/api/messages/'+id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken}}).then(r=>r.json()).catch(()=>({success:false}));
-  if(res.success){
-    delete threads[id];
-    if(currentThread==id){
-      currentThread=null;
-      const remaining=Object.keys(threads);
-      if(remaining.length){currentThread=remaining[0];loadOfficerThreads();}
-      else{document.getElementById('msgBody').innerHTML='<div style="color:var(--text-dim);text-align:center;padding:20px;font-size:13px;">No conversations.</div>';document.getElementById('chat-name').textContent='';}
-    }
-    // Re-load threads list
-    loadOfficerThreads();
-  } else {
-    alert('Failed to delete conversation.');
-  }
-}
-
-function escHtml(s){ const d=document.createElement('div'); d.textContent=s??''; return d.innerHTML; }
-function renderMessages(){
-  const body=document.getElementById('msgBody');
-  const t=threads[currentThread];
-  if(!t) return;
-  const msgs=t.msgs||[];
-  body.innerHTML=(msgs.length?'<div class="date-divider">Today</div>':'')+
-    msgs.map(m=>{
-      const isMe=m.sender_type==='officer';
-      const avatar=isMe?'Me':(m.sender_name||'SA').substring(0,2).toUpperCase();
-      return `<div class="msg-bubble-wrap ${isMe?'mine':''}">
-        <div class="bubble-avatar ${isMe?'ba-mine':'ba-admin'}">${escHtml(avatar)}</div>
-        <div>
-          <div class="bubble ${isMe?'from-mine':'from-admin'}">${escHtml(m.content)}</div>
-          <span class="bubble-time">${escHtml(m.created_at||'')}</span>
-        </div>
-      </div>`;
-    }).join('');
-  body.scrollTop=body.scrollHeight;
-}
-
-async function sendMessage(){
-  const inp=document.getElementById('msgInput');
-  const txt=inp.value.trim(); if(!txt||!currentThread) return;
-  inp.value='';
-  const res=await fetch('/api/messages/'+currentThread,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},
-    body:JSON.stringify({content:txt}),
-  }).then(r=>r.json()).catch(()=>null);
-  if(res?.success){
-    if(!threads[currentThread].msgs) threads[currentThread].msgs=[];
-    threads[currentThread].msgs.push(res.message);
-    renderMessages();
-  }
-}
-
-/* New officer conversation */
-async function openOfficerNewConv(){
-  const el=document.getElementById('modal-officerNewConv');
-  if(!el) return;
-  document.getElementById('officerConvTitle').value='';
-  // Populate recipient dropdown with Admin + residents
-  const sel=document.getElementById('officerConvRecipient');
-  if(sel){
-    const residents=await apiGet('/api/residents').catch(()=>[]);
-    sel.innerHTML='<option value="admin|0">🏢 HOA Admin</option>'+
-      (residents||[]).map(r=>`<option value="resident|${r.id}">👤 ${r.name} (Resident)</option>`).join('');
-  }
-  el.classList.add('active');
-}
-async function startOfficerConversation(){
-  const sel=document.getElementById('officerConvRecipient');
-  const [recipientType,recipientId]=sel?(sel.value||'admin|0').split('|'):['admin','0'];
-  const recipientLabel=sel?sel.options[sel.selectedIndex].text:'HOA Admin';
-  let title=document.getElementById('officerConvTitle').value.trim();
-  if(!title) title=recipientLabel.replace(/^[^ ]+ /,'');
-  const payload={title};
-  if(recipientType==='resident'){ payload.recipient_type='resident'; payload.recipient_id=recipientId; }
-  const res=await apiPost('/api/messages/start',payload);
-  if(res.success){
-    closeModal('officerNewConv');
-    const t=res.conversation;
-    threads[t.id]={...t,msgs:[]};
-    await loadOfficerThreads();
-    currentThread=t.id;
-    showToast('✅ Conversation started.');
-  } else {
-    showToast('⚠ Could not start conversation.');
-  }
-}
-
-/* ══ RENDER ══ */
-function renderOverviewAnn(){
-  const el=document.getElementById('overviewAnnList');
-  const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
-  el.innerHTML=adminAnnouncements.length?adminAnnouncements.slice(0,5).map(a=>`
-    <div class="ann-item ann-item-${a.tag||'notice'}" onclick="viewAnnouncement(${a.id})" title="Click to view full announcement">
-      <div class="ann-meta">
-        <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
-        ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
-        <span class="ann-date">${a.created_at}</span>
-      </div>
-      <div class="ann-title">${a.title}</div>
-      <div class="ann-body">${a.content}</div>
-      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
-      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
-      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
-        <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
-      </div>
-      <div class="ann-click-hint">🔍 Click to view full details</div>
-    </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
-}
-
-function renderMyAnn(){
-  const el=document.getElementById('myAnnList');
-  const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
-  if(!myAnnouncements.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div>No announcements posted yet.</div>';
-    return;
-  }
-  el.innerHTML=myAnnouncements.map(a=>`
-    <div class="ann-item" onclick="viewAnnouncement(${a.id})">
-      <div class="ann-meta">
-        <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
-        ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
-        <span class="ann-date">${a.created_at}</span>
-      </div>
-      <div class="ann-title">${a.title}</div>
-      <div class="ann-body">${a.content}</div>
-      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
-      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
-      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
-        <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
-      </div>
-      <div class="ann-actions">
-        <button class="btn btn-sm btn-danger" onclick="deleteMyAnn(${a.id});event.stopPropagation();">Delete</button>
-      </div>
-    </div>`).join('');
-}
-async function deleteMyAnn(id){
-  if(!confirm('Delete this announcement? This cannot be undone.')) return;
-  const res=await apiDelete('/api/announcements/'+id);
-  if(res.success){
-    adminAnnouncements=adminAnnouncements.filter(a=>a.id!==id);
-    myAnnouncements=myAnnouncements.filter(a=>a.id!==id);
-    renderMyAnn();
-    renderOverviewAnn();
-    showToast('🗑️ Announcement deleted.');
-    if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnouncements.length;
-  } else {
-    showToast('⚠ Failed to delete announcement.');
-  }
-}
-async function postAnnouncement(){
-  const tag=document.getElementById('annType').value;
-  const title=document.getElementById('annTitle').value.trim();
-  const content=document.getElementById('annBody').value.trim();
-  const target=document.getElementById('annTarget').value;
-  const priority=document.getElementById('annPriority').value;
-  const event_date=document.getElementById('annDate').value||null;
-  if(!title||!content){showToast('⚠ Please fill in all fields.');return;}
-  const res=await apiPost('/api/announcements',{tag,title,content,target,priority,event_date});
-  if(res.success){
-    adminAnnouncements.unshift(res.announcement);
-    myAnnouncements.unshift(res.announcement);
-    document.getElementById('annTitle').value='';
-    document.getElementById('annBody').value='';
-    renderMyAnn();
-    renderOverviewAnn();
-    if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnouncements.length;
-    showToast('✅ Announcement posted!');
-  } else {
-    showToast('⚠ '+(res.message||'Failed to post announcement.'));
-  }
-}
-
-/* ══ ISSUE RESPONSES ══ */
-let officerRespondingId=null;
-function renderOfficerIssues(){
-  const sf=(document.getElementById('officerIssueFilter')||{}).value||'';
-  const filtered=officerIssues.filter(i=>!sf||i.status===sf);
-  const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
-  const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
-  const el=document.getElementById('officerIssueList');
-  el.innerHTML=filtered.length?filtered.map(i=>{
-    const isCritical=i.priority==='Critical';
-    return `
-    <div class="report-item ${isCritical?'issue-critical-row':''}" style="margin-bottom:12px;" onclick="openOfficerRespond(${i.id})" title="Click to view / respond to this issue">
-      <div class="report-top">
-        <div>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${escHtml(i.resident)} · ${escHtml(i.block_lot)}</div>
-          <div class="report-title">${isCritical?'🚨 ':''}${escHtml(i.title)}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
-          ${statusPill[i.status]||''}
-          ${i.priority?`<span style="font-size:10px;font-weight:700;color:${priColor[i.priority]||'var(--text-dim)'}">${escHtml(i.priority)}</span>`:''}
-        </div>
-      </div>
-      <div class="report-meta" style="font-size:13px;color:var(--text-mid);margin-bottom:10px;line-height:1.55;">${escHtml(i.description)}</div>
-      <div class="report-meta">
-        <span class="pill pill-notice">${escHtml(i.category)}</span>
-        <span style="font-size:11px;color:var(--text-dim);">· #${i.id} · ${escHtml(i.created_at)}</span>
-      </div>
-      ${(i.responses&&i.responses.length)?`<div style="margin-top:12px;padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;">
-        <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Response</div>
-        <div style="font-size:13px;color:var(--text-mid);">${escHtml(i.responses[0].content)}</div>
-      </div>`:''}
-      <div class="report-actions" style="margin-top:10px;">
-        ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="event.stopPropagation();openOfficerRespond(${i.id})">Respond</button>`:''}
-        <span style="font-size:10px;color:var(--text-dim);align-self:center;">🔍 Click anywhere to open</span>
-      </div>
-    </div>`;
-}).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues found.</div>';
-}
-async function openOfficerRespond(id){
-  officerRespondingId=id;
-  const issue=officerIssues.find(i=>i.id===id);
-  if(!issue) return;
-  document.getElementById('officerRespondTitle').textContent=issue.title;
-  document.getElementById('officerRespondStatus').value=issue.status;
-  document.getElementById('officerRespondText').value=(issue.responses&&issue.responses[0])?issue.responses[0].content:'';
-  openModal('officerRespond');
-}
-async function submitOfficerResponse(){
-  const issue=officerIssues.find(i=>i.id===officerRespondingId);
-  if(!issue) return;
-  const newStatus=document.getElementById('officerRespondStatus').value;
-  const content=document.getElementById('officerRespondText').value.trim();
-  const [statusRes]=await Promise.all([
-    apiPut('/api/issues/'+officerRespondingId+'/status',{status:newStatus}),
-    content ? apiPost('/api/issues/'+officerRespondingId+'/respond',{content}) : Promise.resolve({success:true}),
-  ]);
-  if(!statusRes.success){showToast('⚠ Failed to update status.');return;}
-  issue.status=newStatus;
-  if(content) issue.responses=[{content}];
-  closeModal('officerRespond');
-  renderOfficerIssues();
-  showToast('✅ Response submitted.');
-}
-
-/* ══ FILE HANDLING ══ */
-let selectedFile=null;
-function handleFileSelect(inp){
-  const f=inp.files[0]; if(!f) return;
-  selectedFile=f;
-  document.getElementById('selectedFileName').textContent=f.name;
-  document.getElementById('selectedFileMeta').textContent=fmtBytes(f.size)+' · '+(f.type.split('/')[1]||'File').toUpperCase();
-  document.getElementById('selectedFilePreview').style.display='flex';
-}
-function clearFileSelection(){
-  selectedFile=null;
-  document.getElementById('fileUploadInput').value='';
-  document.getElementById('selectedFilePreview').style.display='none';
-}
-function handleDragOver(e){
-  e.preventDefault();
-  document.getElementById('uploadZone').classList.add('drag-over');
-}
-function handleDragLeave(){
-  document.getElementById('uploadZone').classList.remove('drag-over');
-}
-function handleDrop(e){
-  e.preventDefault();
-  document.getElementById('uploadZone').classList.remove('drag-over');
-  const f=e.dataTransfer.files[0];
-  if(!f){return;}
-  if(!f.name.match(/\.(xlsx|xls|csv)$/i)){showToast('⚠ Please upload an Excel or CSV file.');return;}
-  selectedFile=f;
-  document.getElementById('selectedFileName').textContent=f.name;
-  document.getElementById('selectedFileMeta').textContent=fmtBytes(f.size)+' · Spreadsheet';
-  document.getElementById('selectedFilePreview').style.display='flex';
-}
-async function sendFile(){
-  const cat    = document.getElementById('fileCategory').value;
-  const period = document.getElementById('filePeriod').value.trim();
-  const notes  = document.getElementById('fileNotes').value.trim();
-  const input  = document.getElementById('fileUploadInput');
-  if(!input.files.length){showToast('⚠ Please select a file to send.'); return;}
-
-  const fd = new FormData();
-  fd.append('file',     input.files[0]);
-  fd.append('category', cat);
-  fd.append('period',   period || todayStr());
-  fd.append('notes',    notes);
-
-  const sendBtn = document.querySelector('[onclick="sendFile()"]');
-  if(sendBtn){ sendBtn.disabled=true; sendBtn.textContent='📤 Uploading…'; }
-  try {
-    const r   = await fetch('/api/officer-files', {
-      method: 'POST',
-      headers: {'Accept':'application/json','X-CSRF-TOKEN': csrfToken()},
-      body: fd,
-    });
-    const res = await r.json();
-    if(res.success){
-      sentFiles.unshift({
-        id: res.file.id, name: res.file.original_name, category: res.file.category,
-        period: res.file.period, date: todayStr(),
-        size: fmtBytes(res.file.size_bytes), status: 'sent',
-      });
-      clearFileSelection();
-      document.getElementById('filePeriod').value = '';
-      document.getElementById('fileNotes').value  = '';
-      renderSentFiles();
-      showToast('✅ File sent to admin: ' + res.file.original_name);
-    } else {
-      showToast('⚠ Upload failed.');
-    }
-  } catch(e) {
-    showToast('⚠ Upload error: ' + e.message);
-  } finally {
-    if(sendBtn){ sendBtn.disabled=false; sendBtn.textContent='📤 Send to Admin'; }
-  }
-}
-
-function renderSentFiles(){
-  const el=document.getElementById('sentFilesList');
-  if(!sentFiles.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div>No files sent yet.</div>';
-  } else {
-    el.innerHTML=sentFiles.map((f,i)=>`
-      <div class="file-item">
-        <span class="file-icon">📊</span>
-        <div class="file-info">
-          <div class="file-name">${f.name}</div>
-          <div class="file-meta">${f.category} · ${f.period} · ${f.date} · ${f.size}</div>
-        </div>
-        <span class="file-status ${f.status==='sent'?'file-sent':'file-pending-send'}">${f.status==='sent'?'Sent':'Pending'}</span>
-        ${f.id?`<button class="btn btn-sm btn-danger" style="margin-left:8px;" onclick="deleteSentFile(${f.id})">Delete</button>`:''}
-      </div>`).join('');
-  }
-  if(document.getElementById('filesSentCount')) document.getElementById('filesSentCount').textContent=sentFiles.length;
-}
-
-async function deleteSentFile(id){
-  if(!confirm('Delete this sent file? This cannot be undone.')) return;
-  const res=await apiDelete('/api/officer-files/'+id).catch(()=>({}));
-  if(res.success){
-    const idx=sentFiles.findIndex(f=>f.id===id);
-    if(idx>-1) sentFiles.splice(idx,1);
-    renderSentFiles();
-    showToast('✅ File removed.');
-  }
-}
-
-/* ══ INIT ══ */
-const OFFICER_ID = {{ $officerId ?? 'null' }};
-loadOfficerData();
-
-/* ── Save officer name on blur ── */
-const _oNameEl = document.getElementById('officerName');
-if(_oNameEl && OFFICER_ID){
-  let _oNameSaved = _oNameEl.textContent.trim();
-  _oNameEl.addEventListener('blur', async()=>{
-    const n = _oNameEl.textContent.trim();
-    if(!n || n === _oNameSaved){ _oNameEl.textContent=_oNameSaved||n; return; }
-    try{
-      const r = await fetch('/api/officers/'+OFFICER_ID,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},
-        body: JSON.stringify({name: n}),
-      });
-      const res = await r.json();
-      if(res.success){ _oNameSaved=n; showToast('✅ Name updated.'); }
-      else { _oNameEl.textContent=_oNameSaved; showToast('⚠ Could not save name.'); }
-    } catch(e){ _oNameEl.textContent=_oNameSaved; showToast('⚠ Network error.'); }
-  });
-  _oNameEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); _oNameEl.blur(); } });
-}
-
-/* ── Save officer role on blur ── */
-const _oRoleEl = document.getElementById('roleText');
-if(_oRoleEl && OFFICER_ID){
-  let _oRoleSaved = _oRoleEl.textContent.trim();
-  _oRoleEl.addEventListener('blur', async()=>{
-    const v = _oRoleEl.textContent.trim();
-    if(!v || v === _oRoleSaved){ _oRoleEl.textContent=_oRoleSaved||v; return; }
-    try{
-      const r = await fetch('/api/officers/'+OFFICER_ID,{
-        method:'PUT',
-        headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},
-        body: JSON.stringify({role_description: v}),
-      });
-      const res = await r.json();
-      if(res.success){ _oRoleSaved=v; showToast('✅ Role updated.'); }
-      else { _oRoleEl.textContent=_oRoleSaved; showToast('⚠ Could not save role.'); }
-    } catch(e){ _oRoleEl.textContent=_oRoleSaved; showToast('⚠ Network error.'); }
-  });
-  _oRoleEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); _oRoleEl.blur(); } });
-}
-
-function showAnnBanner(ann){
-  document.getElementById('annNotifTitle').textContent=ann.title;
-  const notif=document.getElementById('annNotif');
-  notif.classList.add('show');
-  clearTimeout(notif._t);
-  notif._t=setTimeout(()=>notif.classList.remove('show'),8000);
-}
-
-document.getElementById('annNotifViewBtn').onclick=()=>{
-  document.getElementById('annNotif').classList.remove('show');
-  switchTab('announcements');
-};
-
-/* ══════════════════════════════════════════════════════════
-   REAL-TIME: Server-Sent Events (SSE)
-   The server pushes a tiny JSON event the instant the DB
-   changes (~1 s resolution). JS then fetches full data from
-   the existing REST endpoints.
-   ══════════════════════════════════════════════════════════ */
-let _lastUrgentId = null;
-function dismissEmergency(){ document.getElementById('emergencyAlert').style.display='none'; }
-
-let _sseAnnId   = 0;
-let _sseIssueId = 0;
-let _sseEventId = 0;
-
-function connectSSE(){
-  if(document.hidden) { setTimeout(connectSSE, 2000); return; }
-
-  // Pick up latest IDs from current data (set by loadOfficerData)
-  _sseAnnId   = lastAnnouncementId;
-  _sseIssueId = officerIssues.length ? officerIssues[0].id : 0;
-
-  const url = `/api/stream/updates?lastEventId=${_sseEventId}&lastAnnId=${_sseAnnId}&lastIssueId=${_sseIssueId}`;
-  const es  = new EventSource(url);
-
-  // ── Fresh connection — load initial data once ─────────────
-  es.addEventListener('sync', () => {
-    if(!officerIssues || !officerIssues.length){
-      if(typeof loadOfficerData === 'function') loadOfficerData().catch(()=>{});
-    }
-  });
-
-  // ── Announcement pushed ──────────────────────────────────
-  es.addEventListener('announcement', async (e) => {
-    const evt = JSON.parse(e.data);
-    _sseAnnId = evt.latestId;
-    try {
-      const data = await safeGetArray('/api/announcements');
-      if(!Array.isArray(data)||!data.length) return;
-      const newOnes = data.filter(a => a.id > lastAnnouncementId);
-      lastAnnouncementId = data[0].id;
-      adminAnnouncements = data;
-      myAnnouncements    = data.filter(a => a.posted_by && a.posted_by === '{{ $officerName }}');
-      renderOverviewAnn();
-      renderMyAnn();
-      if(newOnes.length) showAnnBanner(newOnes[0]);
-    } catch(err){}
-  });
-
-  // ── Issue pushed ─────────────────────────────────────────
-  es.addEventListener('issue', async (e) => {
-    const evt = JSON.parse(e.data);
-    _sseIssueId = evt.latestId;
-    try {
-      const data = await safeGetArray('/api/issues');
-      if(!Array.isArray(data)) return;
-      const prevCount = officerIssues.length;
-      officerIssues   = data;
-      renderOfficerIssues();
-      if(evt.isNew && prevCount > 0){
-        showToast(`🆕 New issue: "${evt.title}" — ${evt.priority||''}`);
-      }
-    } catch(err){}
-  });
-
-  // ── Urgent / critical issue ──────────────────────────────
-  es.addEventListener('urgent', (e) => {
-    const evt = JSON.parse(e.data);
-    if(evt.id === _lastUrgentId) return;
-    _lastUrgentId = evt.id;
-    const el  = document.getElementById('emergencyAlert');
-    const txt = document.getElementById('emergencyAlertText');
-    if(txt) txt.textContent = `🚨 CRITICAL ISSUE — "${evt.title}"`;
-    if(el)  el.style.display = 'block';
-  });
-
-  // ── HOA expense update ───────────────────────────────────
-  es.addEventListener('hoa-expense', async () => {
-    try{
-      if(typeof loadExpenses === 'function') await loadExpenses();
-    }catch(err){}
-  });
-
-  // ── Server asks client to reconnect (25-s cycle) ─────────
-  es.addEventListener('reconnect', (e) => {
-    const evt = JSON.parse(e.data);
-    if(evt.lastEventId) _sseEventId = evt.lastEventId;
-    es.close();
-    setTimeout(connectSSE, 200);  // reconnect almost instantly
-  });
-
-  // ── Connection error — retry after 3 s ──────────────────
-  es.onerror = () => {
-    es.close();
-    setTimeout(connectSSE, 3000);
-  };
-
-  // Resume SSE when tab becomes visible again
-  document.addEventListener('visibilitychange', () => {
-    if(!document.hidden && es.readyState === EventSource.CLOSED){
-      setTimeout(connectSSE, 500);
-    }
-  }, { once: true });
-}
-
-// Start SSE after initial data load so we have baseline IDs
-document.addEventListener('DOMContentLoaded', () => setTimeout(connectSSE, 1500));
-
-// ── Safety-net: light poll every 60 s in case SSE is blocked by a proxy
-setInterval(async()=>{
-  if(document.hidden) return;
-  try{
-    const [anns, isss] = await Promise.all([
-      safeGetArray('/api/announcements'),
-      safeGetArray('/api/issues'),
-    ]);
-    if(Array.isArray(anns) && anns.length && anns[0].id > lastAnnouncementId){
-      const newOnes = anns.filter(a => a.id > lastAnnouncementId);
-      lastAnnouncementId = anns[0].id; _sseAnnId = anns[0].id;
-      adminAnnouncements = anns;
-      myAnnouncements    = anns.filter(a => a.posted_by && a.posted_by === '{{ $officerName }}');
-      renderOverviewAnn(); renderMyAnn();
-      if(newOnes.length) showAnnBanner(newOnes[0]);
-    }
-    if(Array.isArray(isss)){ officerIssues = isss; _sseIssueId = isss[0]?.id||0; renderOfficerIssues(); }
-  }catch(e){}
-}, 60000);
-
-// Poll active message thread every 10s when messages tab is open
-setInterval(async()=>{
-  if(document.hidden||!currentThread) return;
-  if(document.getElementById('panel-messages')?.classList.contains('active')){
-    try{
-      const msgs=await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json());
-      if(msgs.length!==(threads[currentThread]?.msgs||[]).length){
-        threads[currentThread].msgs=msgs;
-        renderMessages();
-      }
-    }catch(e){}
-  }
-},10000);
-
-// Load previously sent files from server
-(async()=>{
-  try{
-    const files=await apiGet('/api/officer-files');
-    if(Array.isArray(files)&&files.length){
-      sentFiles=files.map(f=>({
-        id:f.id,
-        name:f.original_name,
-        category:f.category,
-        period:f.period||'—',
-        date:f.created_at?new Date(f.created_at).toLocaleDateString('en-PH'):'',
-        size:f.size_bytes?Math.round(f.size_bytes/1024)+'KB':'—',
-        status:'sent',
-      }));
-    }
-  }catch(e){}
-  renderSentFiles();
-})();
-</script>
+<script>window.__OFFICER = { id: {{ $officerId ?? 'null' }}, name: @json($officerName), role: 'Officer' };</script>
+<script src="{{ asset('js/officer-portal.js') . '?v=' . filemtime(public_path('js/officer-portal.js')) }}"></script>
+<script src="{{ asset('js/notifications.js') . '?v=' . filemtime(public_path('js/notifications.js')) }}"></script>
 
 <!-- Announcement View Modal -->
 <div class="modal-overlay" id="modal-annView" onclick="if(event.target===this)this.classList.remove('open')">
@@ -1570,8 +447,6 @@ setInterval(async()=>{
       <div id="annV-content" style="font-size:14px;line-height:1.7;white-space:pre-wrap;color:var(--text-mid);"></div>
     </div>
     <div class="modal-actions">
-      <button class="modal-close-btn" id="annV-delBtn" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
-      <button class="btn btn-sm" id="annV-archBtn" style="background:var(--yellow-dim);border-color:rgba(196,150,70,0.3);color:var(--yellow);" onclick="toggleAnnArchive()">📦 Archive</button>
       <button class="btn btn-sm" onclick="document.getElementById('modal-annView').classList.remove('open')">Close</button>
     </div>
   </div>

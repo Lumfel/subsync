@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Workflow Rules
+
+- **Run the test suite after every change.** Execute `php artisan test` after any code
+  edit and report the result. Do not consider a change complete until tests pass.
+  If a change adds a feature, add/extend a test for it in the same change.
+- **NEVER run `php artisan config:cache` in this project.** Tests rely on the `phpunit.xml`
+  env overrides (`DB_DATABASE=:memory:`, `SESSION_DRIVER=array`, `CACHE_STORE=array`); a cached
+  config ignores them, so `RefreshDatabase` runs against the **real** SQLite file and wipes it.
+  Keep config uncached (`php artisan config:clear`) before running tests.
+
 ## Development Commands
 
 ### Setup

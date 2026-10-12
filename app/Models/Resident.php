@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -14,19 +16,20 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @property string $status
  * @property numeric $current_balance
  * @property string|null $remember_token
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\AnnouncementView> $announcementViews
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, AnnouncementView> $announcementViews
  * @property-read int|null $announcement_views_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Conversation> $conversations
+ * @property-read Collection<int, Conversation> $conversations
  * @property-read int|null $conversations_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\FinancialRecord> $financialRecords
+ * @property-read Collection<int, FinancialRecord> $financialRecords
  * @property-read int|null $financial_records_count
- * @property-read \App\Models\Household|null $household
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\IssueReport> $issueReports
+ * @property-read Household|null $household
+ * @property-read Collection<int, IssueReport> $issueReports
  * @property-read int|null $issue_reports_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Recommendation> $recommendations
+ * @property-read Collection<int, Recommendation> $recommendations
  * @property-read int|null $recommendations_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Resident newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Resident newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Resident query()
@@ -43,12 +46,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Resident whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
  * @method static int count(string $columns = '*')
+ *
  * @mixin \Eloquent
  */
 class Resident extends Authenticatable
 {
     protected $fillable = [
-        'house_id', 'name', 'email', 'password', 'contact_number', 'status', 'current_balance',
+        'house_id', 'name', 'email', 'password', 'contact_number', 'status', 'current_balance', 'google_id', 'avatar',
     ];
 
     protected $hidden = ['password', 'remember_token'];
@@ -56,7 +60,7 @@ class Resident extends Authenticatable
     protected function casts(): array
     {
         return [
-            'password'        => 'hashed',
+            'password' => 'hashed',
             'current_balance' => 'decimal:2',
         ];
     }

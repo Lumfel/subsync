@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -11,13 +12,15 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $record_type
  * @property string|null $description
  * @property numeric $amount
- * @property \Illuminate\Support\Carbon $record_date
+ * @property Carbon $record_date
  * @property string $created_at
- * @property-read \App\Models\Admin|null $admin
- * @property-read \App\Models\Resident $resident
+ * @property-read Admin|null $admin
+ * @property-read Resident $resident
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|FinancialRecord query()
+ *
  * @mixin \Eloquent
  */
 class FinancialRecord extends Model
@@ -26,6 +29,8 @@ class FinancialRecord extends Model
 
     protected $fillable = [
         'resident_id', 'admin_id', 'record_type', 'description', 'amount', 'record_date',
+        'assessment_id', 'period', 'due_date', 'source',
+        'gcash_transaction_id', 'gcash_reference', 'payment_gateway',
     ];
 
     protected function casts(): array
@@ -33,6 +38,7 @@ class FinancialRecord extends Model
         return [
             'amount' => 'decimal:2',
             'record_date' => 'date',
+            'due_date' => 'date',
         ];
     }
 
@@ -44,5 +50,18 @@ class FinancialRecord extends Model
     public function admin()
     {
         return $this->belongsTo(Admin::class);
+    }
+
+    public function assessment()
+    {
+        return $this->belongsTo(Assessment::class);
+    }
+
+    /** Charges increase the balance; payments/credits reduce it. */
+    public function getSignedAmountAttribute(): float
+    {
+        $amount = (float) $this->amount;
+
+        return in_array($this->record_type, ['Payment', 'Credit'], true) ? -$amount : $amount;
     }
 }

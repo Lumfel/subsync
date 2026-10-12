@@ -39,7 +39,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 class Admin extends Authenticatable
 {
     protected $fillable = [
-        'name', 'email', 'password', 'contact_number', 'status',
+        'name', 'email', 'password', 'contact_number', 'status', 'avatar',
     ];
 
     public function announcements()

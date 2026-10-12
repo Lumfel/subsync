@@ -26,18 +26,12 @@
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="logo">
-        <img src="dashbaord_2.svg" alt="Logo">
+        <img src="{{ asset('emblem_1.svg') }}" alt="SubSync logo">
         </div>
         <ul>
-         <li><a href="/">Dashboard</a></li>
-            <li><a href="/finance">Finance</a></li>
-            <li><a href="/manage_users">Manage Users</a></li>
-            <li ><a href="/deliquents">Deliquents</a></li>
-            <li><a href="/analytics">Analytics</a></li>
-            <li ><a href="/reports">Reports</a></li>
-            <li class="active"><a href="/mapping"> Maps</a></li>
-       
-
+            <li><a href="/">Home</a></li>
+            <li><a href="/login">Portal Sign-in</a></li>
+            <li class="active"><a href="/mapping">Subdivision Map</a></li>
         </ul>
         <hr>
         <br>
@@ -48,7 +42,6 @@
 
     <header class="topbar">
         <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
-        <input type="text" placeholder="Search...">
      @auth
     <div class="admin-btn">
         {{ Auth::user()->name }}

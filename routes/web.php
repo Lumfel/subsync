@@ -1,21 +1,35 @@
 <?php
 
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\AnnouncementTemplateController;
+use App\Http\Controllers\AssessmentController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FamilyController;
+use App\Http\Controllers\GcashSettingController;
+use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\HoaExpenseController;
+use App\Http\Controllers\HoaPolicyController;
 use App\Http\Controllers\IssueController;
+use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\OfficerController;
 use App\Http\Controllers\OfficerFileController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\RecommendationController;
-use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\HoaExpenseController;
-use App\Http\Controllers\HoaPolicyController;
+use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\SearchController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StreamController;
+use App\Models\Household;
+use App\Support\Actor;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // Public landing page
@@ -26,10 +40,16 @@ Route::get('/', function () {
 // Resident / Officer login
 Route::get('/login', function () {
     return view('layouts.login_residen_officers');
-})->name('login');
+})->name('login')->middleware('cache.headers:no_store;private');
 
 Route::post('/login', [AuthController::class, 'residentLogin'])->name('login.post');
 Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+
+// Google OAuth login (residents and officers; admin stays password-only)
+Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
+Route::get('/auth/google/complete', [GoogleAuthController::class, 'showComplete'])->name('google.complete');
+Route::post('/auth/google/complete', [GoogleAuthController::class, 'complete'])->name('google.complete.post');
 
 // Admin login — kept off the public /login page and on a non-obvious path.
 Route::get('/admin-access', function () {
@@ -48,37 +68,56 @@ Route::get('/mapping', function () {
 Route::get('/dashboard', function () {
     return view('layouts.admin-dashboard', [
         'adminName' => session('admin_name', 'Admin'),
-        'adminId'   => session('admin_id'),
+        'adminId' => session('admin_id'),
+        'prefs' => Actor::prefs(),
+        'role' => 'admin',
     ]);
-})->name('dashboard')->middleware('admin.auth');
+})->name('dashboard')->middleware(['admin.auth', 'cache.headers:no_store;private']);
 
 Route::get('/officer-portal', function () {
-    $officer = \Illuminate\Support\Facades\Auth::guard('officer')->user();
+    $officer = Auth::guard('officer')->user();
+
     return view('layouts.officer-portal', [
         'officerName' => $officer?->name ?? 'Officer',
-        'officerId'   => $officer?->id,
-        'officerRole' => $officer?->role_description ?? 'HOA Officer',
+        'officerId' => $officer?->id,
+        'prefs' => Actor::prefs(),
+        'role' => 'officer',
     ]);
-})->name('officer.portal')->middleware('officer.auth');
+})->name('officer.portal')->middleware(['officer.auth', 'cache.headers:no_store;private']);
 
 Route::get('/residents', function () {
-    $resident = \Illuminate\Support\Facades\Auth::guard('resident')->user();
+    $resident = Auth::guard('resident')->user();
     request()->session()->forget(['admin_id', 'admin_name']);
     request()->session()->put('active_role', 'resident');
     request()->session()->put('resident_id', $resident?->id);
     $household = $resident?->house_id
-        ? \App\Models\Household::query()->find($resident->house_id)
+        ? Household::query()->find($resident->house_id)
         : null;
+
     return view('layouts.residents', [
-        'residentName'    => $resident?->name ?? 'Resident',
-        'residentId'      => $resident?->id,
-        'houseId'         => $resident?->house_id,
-        'blockLot'        => $household?->block_lot_number ?? '',
+        'residentName' => $resident?->name ?? 'Resident',
+        'residentId' => $resident?->id,
+        'houseId' => $resident?->house_id,
+        'blockLot' => $household?->block_lot_number ?? '',
+        'avatar' => $resident?->avatar,
+        'balance' => (float) ($resident?->current_balance ?? 0),
+        'prefs' => Actor::prefs(),
+        'role' => 'resident',
     ]);
-})->name('residents')->middleware('auth:resident');
+})->name('residents')->middleware(['auth:resident', 'cache.headers:no_store;private']);
+
+// Printable issued documents (owner resident or staff)
+Route::get('/reports/{id}/print', [ReportController::class, 'printView'])
+    ->name('reports.print')
+    ->middleware(['portal.role:admin,officer,resident', 'cache.headers:no_store;private']);
 
 // Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Standalone settings page (profile, security, appearance, notifications) — all roles
+Route::get('/settings', [SettingsController::class, 'page'])
+    ->name('settings')
+    ->middleware(['portal.role:admin,officer,resident', 'cache.headers:no_store;private']);
 
 // ═══ API ROUTES ═══
 
@@ -102,7 +141,7 @@ Route::middleware('portal.role:admin,officer,resident')->group(function () {
         Route::get('/issues', [MapController::class, 'issues']);
     });
 });
-Route::middleware('portal.role:admin,officer')->group(function () {
+Route::middleware('portal.role:admin')->group(function () {
     Route::prefix('api/map')->group(function () {
         Route::put('/settings', [MapController::class, 'updateSettings']);
         Route::post('/facility', [MapController::class, 'storeFacility']);
@@ -116,23 +155,48 @@ Route::middleware('portal.role:admin,officer')->group(function () {
 Route::prefix('api')->group(function () {
     Route::get('/alerts', [AlertController::class, 'index'])->middleware('portal.role:admin,officer,resident');
     // Stats
-    Route::get('/stats', [ResidentController::class, 'stats']);
+    Route::get('/stats', [ResidentController::class, 'stats'])->middleware('portal.role:admin,officer,resident');
+
+    // User settings (profile / password / photo / preferences) + global search — all roles
+    Route::middleware('portal.role:admin,officer,resident')->group(function () {
+        Route::get('/settings', [SettingsController::class, 'show']);
+        Route::put('/settings/profile', [SettingsController::class, 'updateProfile']);
+        Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
+        Route::post('/settings/photo', [SettingsController::class, 'updatePhoto']);
+        Route::put('/settings/preferences', [SettingsController::class, 'updatePreferences']);
+        Route::get('/search', [SearchController::class, 'index']);
+    });
 
     // Combined portal data (single request replaces 6+ parallel calls)
     Route::middleware('portal.role:resident')->group(function () {
         Route::get('/resident/portal-data', [ResidentController::class, 'portalData']);
         Route::get('/residents/me', [ResidentController::class, 'me']);
+        Route::post('/residents/avatar', [ResidentController::class, 'updateAvatar']);
     });
     Route::middleware('portal.role:admin,officer')->group(function () {
         Route::get('/residents', [ResidentController::class, 'index']);
+        Route::post('/residents/bulk-approve', [ResidentController::class, 'bulkApprove']);
+        Route::post('/residents/bulk-reject', [ResidentController::class, 'bulkReject']);
         Route::post('/residents', [ResidentController::class, 'store']);
         Route::delete('/residents/{id}', [ResidentController::class, 'destroy']);
         Route::post('/residents/{id}/approve', [ResidentController::class, 'approve']);
         Route::delete('/residents/{id}/reject', [ResidentController::class, 'reject']);
+        Route::post('/residents/{id}/remind', [ResidentController::class, 'remind']);
+    });
+
+    // CSV exports (admin/officer)
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/export/residents', [ExportController::class, 'residents']);
+        Route::get('/export/issues', [ExportController::class, 'issues']);
+        Route::get('/export/payments', [ExportController::class, 'payments']);
+        Route::get('/export/hoa-expenses', [ExportController::class, 'hoaExpenses']);
+        // Bulk import residents/households from CSV.
+        Route::post('/import/residents', [ResidentController::class, 'import']);
     });
     // Residents may update their OWN profile (controller enforces self-only).
     Route::middleware('portal.role:admin,officer,resident')->group(function () {
         Route::put('/residents/{id}', [ResidentController::class, 'update']);
+        Route::get('/residents/{id}/statement', [ExportController::class, 'residentStatement']);
     });
 
     // Households
@@ -165,16 +229,50 @@ Route::prefix('api')->group(function () {
         Route::patch('/announcements/{id}/archive', [AnnouncementController::class, 'archive']);
     });
 
+    // Announcement Templates
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/announcement-templates', [AnnouncementTemplateController::class, 'index']);
+    });
+    Route::middleware('portal.role:admin')->group(function () {
+        Route::post('/announcement-templates', [AnnouncementTemplateController::class, 'store']);
+        Route::put('/announcement-templates/{id}', [AnnouncementTemplateController::class, 'update']);
+        Route::delete('/announcement-templates/{id}', [AnnouncementTemplateController::class, 'destroy']);
+    });
+
+    // Report Templates — all roles can list; only staff can manage.
+    Route::get('/report-templates', [ReportController::class, 'index'])
+        ->middleware('portal.role:admin,officer,resident');
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::post('/report-templates', [ReportController::class, 'store']);
+        Route::put('/report-templates/{id}', [ReportController::class, 'update']);
+        Route::delete('/report-templates/{id}', [ReportController::class, 'destroy']);
+    });
+    // Issued documents — staff list + issue on behalf of a resident.
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/reports', [ReportController::class, 'staffIndex']);
+        Route::post('/reports/issue', [ReportController::class, 'issue']);
+    });
+    Route::middleware('portal.role:resident')->group(function () {
+        Route::get('/reports/my', [ReportController::class, 'myReports']);
+        Route::post('/reports/generate/{templateId}', [ReportController::class, 'generate']);
+    });
+
     // Issues
     Route::middleware('portal.role:resident')->group(function () {
         Route::get('/issues/my', [IssueController::class, 'myIssues']);
+        Route::get('/issues/my/{id}/timeline', [IssueController::class, 'myTimeline']);
         Route::post('/issues', [IssueController::class, 'store']);
     });
     Route::middleware('portal.role:admin,officer')->group(function () {
         Route::get('/issues/urgent-check', [IssueController::class, 'urgentCheck']);
+        Route::get('/issues/common', [IssueController::class, 'common']);
+        Route::get('/issues/{id}/history', [IssueController::class, 'history']);
         Route::get('/issues', [IssueController::class, 'index']);
         Route::put('/issues/{id}/status', [IssueController::class, 'updateStatus']);
         Route::put('/issues/{id}/priority', [IssueController::class, 'setPriority']);
+        Route::put('/issues/{id}/assign', [IssueController::class, 'assign']);
+        Route::patch('/issues/bulk-archive', [IssueController::class, 'bulkArchive']);
+        Route::patch('/issues/{id}/archive', [IssueController::class, 'archive']);
         Route::post('/issues/{id}/respond', [IssueController::class, 'respond']);
     });
 
@@ -198,6 +296,18 @@ Route::prefix('api')->group(function () {
         Route::put('/recommendations/{id}/status', [RecommendationController::class, 'updateStatus']);
     });
 
+    // Community events / calendar
+    Route::middleware('portal.role:admin,officer,resident')->group(function () {
+        Route::get('/events', [EventController::class, 'index']);
+    });
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::post('/events', [EventController::class, 'store']);
+        Route::put('/events/{id}', [EventController::class, 'update']);
+        Route::delete('/events/{id}', [EventController::class, 'destroy']);
+    });
+    Route::post('/events/{id}/rsvp', [EventController::class, 'rsvp'])
+        ->middleware('portal.role:resident');
+
     // Officers
     Route::middleware('portal.role:admin,officer')->group(function () {
         Route::get('/officers', [OfficerController::class, 'index']);
@@ -209,25 +319,92 @@ Route::prefix('api')->group(function () {
     // Messages  (static routes MUST come before wildcard {convId})
     Route::middleware('portal.role:admin,officer,resident')->group(function () {
         Route::get('/messages/threads', [MessageController::class, 'threads']);
+        Route::get('/messages/officers', [MessageController::class, 'officers']);
+        Route::get('/messages/residents', [MessageController::class, 'residents'])
+            ->middleware('portal.role:admin,officer');
+        Route::get('/messages/requests', [MessageController::class, 'requests']);
         Route::post('/messages/start', [MessageController::class, 'start']);
+        Route::post('/messages/{convId}/accept', [MessageController::class, 'accept']);
+        Route::post('/messages/{convId}/reject', [MessageController::class, 'reject']);
         Route::get('/messages/{convId}', [MessageController::class, 'show']);
         Route::post('/messages/{convId}', [MessageController::class, 'send']);
         Route::delete('/messages/{convId}', [MessageController::class, 'destroy']);
     });
 
     // Officer Files
-    Route::middleware('portal.role:officer')->group(function () {
+    Route::middleware('portal.role:admin,officer')->group(function () {
         Route::get('/officer-files', [OfficerFileController::class, 'index']);
         Route::post('/officer-files', [OfficerFileController::class, 'store']);
+        Route::patch('/officer-files/{id}/archive', [OfficerFileController::class, 'archive']);
         Route::delete('/officer-files/{id}', [OfficerFileController::class, 'destroy']);
     });
 
-    // HOA Expenses Transparency - Residents can view how HOA fees are being utilized
-    Route::prefix('hoa-expenses')->middleware('portal.role:resident')->group(function () {
-        Route::get('/', [HoaExpenseController::class, 'index']);
+    // HOA Expenses Transparency — how fees are utilized (all roles view; admin records)
+    Route::get('/hoa-expenses', [HoaExpenseController::class, 'index'])
+        ->middleware('portal.role:admin,officer,resident');
+    Route::middleware('portal.role:admin')->group(function () {
+        Route::post('/hoa-expenses', [HoaExpenseController::class, 'store']);
+        Route::put('/hoa-expenses/{id}', [HoaExpenseController::class, 'update']);
+        Route::delete('/hoa-expenses/{id}', [HoaExpenseController::class, 'destroy']);
     });
-    // HOA Policies - Residents can view community rules and regulations
-    Route::prefix("hoa-policies")->middleware("portal.role:resident")->group(function () {
-        Route::get("/", [HoaPolicyController::class, "index"]);
+
+    // GCash payments: residents submit + view own; staff manage the queue; admin validates
+    Route::middleware('portal.role:resident')->group(function () {
+        Route::post('/payments', [PaymentController::class, 'store']);
+        Route::get('/payments/my', [PaymentController::class, 'my']);
     });
+    // Community finance summary — visible to every portal (admin dashboard reads it too).
+    Route::get('/transparency/summary', [PaymentController::class, 'transparency'])
+        ->middleware('portal.role:admin,officer,resident');
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/payments', [PaymentController::class, 'index']);
+    });
+    Route::middleware('portal.role:admin')->group(function () {
+        Route::post('/payments/{id}/validate', [PaymentController::class, 'validatePayment']);
+    });
+    // Receipts streamed to the owner or staff only (controller enforces access)
+    Route::middleware('portal.role:admin,officer,resident')->group(function () {
+        Route::get('/payments/{id}/receipt', [PaymentController::class, 'receipt']);
+        Route::get('/payments/{id}/official-receipt', [PaymentController::class, 'officialReceipt']);
+    });
+    // HOA Policies - all roles can view; admin manages
+    Route::get('/hoa-policies', [HoaPolicyController::class, 'index'])
+        ->middleware('portal.role:admin,officer,resident');
+    Route::middleware('portal.role:admin')->group(function () {
+        Route::post('/hoa-policies', [HoaPolicyController::class, 'store']);
+        Route::put('/hoa-policies/{id}', [HoaPolicyController::class, 'update']);
+        Route::delete('/hoa-policies/{id}', [HoaPolicyController::class, 'destroy']);
+    });
+
+    // Ledger — statements + aging (single source of truth for balances)
+    Route::middleware('portal.role:resident')->group(function () {
+        Route::get('/ledger/my', [LedgerController::class, 'my']);
+    });
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/ledger/aging', [LedgerController::class, 'aging']);
+        Route::get('/ledger/{residentId}', [LedgerController::class, 'show']);
+    });
+
+    // Assessments (dues schedule) — staff read; admin manages
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/assessments', [AssessmentController::class, 'index']);
+    });
+    Route::middleware('portal.role:admin')->group(function () {
+        Route::post('/assessments', [AssessmentController::class, 'store']);
+        Route::post('/assessments/generate', [AssessmentController::class, 'generate']);
+        Route::put('/assessments/{id}', [AssessmentController::class, 'update']);
+        Route::delete('/assessments/{id}', [AssessmentController::class, 'destroy']);
+
+        // Category budgets
+        Route::get('/budgets', [BudgetController::class, 'index']);
+        Route::post('/budgets', [BudgetController::class, 'store']);
+        Route::put('/budgets/{id}', [BudgetController::class, 'update']);
+        Route::delete('/budgets/{id}', [BudgetController::class, 'destroy']);
+    });
+
+    // GCash Payment Settings - admin changes the receiving account/QR; all roles can read it
+    Route::get('/gcash-settings', [GcashSettingController::class, 'show'])
+        ->middleware('portal.role:admin,officer,resident');
+    Route::post('/gcash-settings', [GcashSettingController::class, 'update'])
+        ->middleware('portal.role:admin');
 });

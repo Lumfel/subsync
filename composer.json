@@ -9,6 +9,8 @@
         "php": "^8.3",
         "doctrine/dbal": "^4.4",
         "laravel/framework": "^13.0",
+        "laravel/reverb": "^1.12",
+        "laravel/socialite": "^5.31",
         "laravel/tinker": "^3.0"
     },
     "require-dev": {
@@ -44,11 +46,14 @@
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "@php -r \"echo PHP_EOL . 'SubSync is served by Laragon Apache at http://subsync.test' . PHP_EOL . 'php artisan serve is disabled: the Windows built-in server crashes on the 2nd request.' . PHP_EOL . 'Logs: tail -f storage/logs/laravel.log  (Pail needs pcntl, which is not available on Windows).' . PHP_EOL . PHP_EOL;\"",
-            "npx concurrently -c \"#c4b5fd,#fdba74,#86efac\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan schedule:work\" \"npm run dev\" --names=queue,schedule,vite --kill-others"
+            "npx concurrently -c \"#c4b5fd,#fdba74,#86efac,#fca5a5\" \"php artisan queue:listen --tries=1 --timeout=0\" \"php artisan schedule:work\" \"php artisan reverb:start\" \"npm run dev\" --names=queue,schedule,reverb,vite --kill-others"
         ],
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "test:ngrok": [
+            "@php artisan test tests/Feature/LiveNgrokSmokeTest.php"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

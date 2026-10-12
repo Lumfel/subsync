@@ -6,6 +6,18 @@
 :root {
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-serif: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+
+  /* Accessible contrast palette — overrides each portal's :root (this file loads last).
+     Targets WCAG AA (>= 4.5:1 for normal text) on the warm cream canvas (#FAF6F0). */
+  --text: #26231F;
+  --text-mid: #45413C;
+  --text-dim: #5F5A53;
+  --accent: #86653D;
+  --blue: #3E6A8F;
+  --green: #4F7A57;
+  --yellow: #946E1E;
+  --purple: #6E6486;
+  --danger: #A84545;
 }
 
 body {
@@ -31,10 +43,11 @@ a { text-decoration: none; color: inherit; }
 ::selection { background: rgba(160,125,83,0.28); color: #1a100a; }
 
 /* Scrollbar — clean */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 8px; height: 8px; background: transparent; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(43,41,39,0.18); border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(43,41,39,0.32); }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.18); }
 
 /* Tables — easier to scan */
 table { border-collapse: collapse; }
@@ -289,6 +302,10 @@ thead th { font-size: 13px !important; }
 .ui-toast.error { border-left: 4px solid #BD5B5B; }
 .ui-toast.info { border-left: 4px solid #5A7F9E; }
 
+/* Toasts must always be light text on a dark background (contrast) */
+#toast, .ui-toast { background: #2B2927 !important; color: #FAF6F0 !important; }
+#toast a, .ui-toast a { color: #FAF6F0 !important; }
+
 /* Mobile: keep announcements compact (scrollable, capped height) */
 @media (max-width: 768px) {
   #announcementList { max-height: 460px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
@@ -389,3 +406,1271 @@ thead th { font-size: 13px !important; }
 .msg-header { border-radius: 10px 10px 0 0; }
 .msg-compose { border-radius: 0 0 10px 10px; }
 .msg-body { border-radius: 0; }
+
+/* ─────────────────────────────────────────────
+   Formal correspondence view — reduces the
+   chat/Messenger feel in favour of a professional
+   message-log appearance (all portals).
+   ───────────────────────────────────────────── */
+.msg-header-sub {
+  color: var(--text-dim) !important;
+  letter-spacing: .02em;
+}
+.msg-header-sub::before { display: none !important; }
+
+.bubble {
+  border-radius: 6px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E6DFD5 !important;
+  border-left: 3px solid #A07D53 !important;
+  box-shadow: none !important;
+  padding: 10px 14px !important;
+}
+.bubble.from-mine {
+  background: #FAF6F0 !important;
+  border-left: 3px solid #7D7975 !important;
+}
+.msg-thread-avatar, .thread-avatar, .bubble-avatar {
+  border-radius: 8px !important;
+}
+
+/* ─────────────────────────────────────────────
+   Polished buttons — consistent, tactile, readable
+   (overrides per-page base styles; loaded last)
+   ───────────────────────────────────────────── */
+.btn {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  letter-spacing: .01em;
+  box-shadow: 0 1px 2px rgba(43,41,39,0.06);
+  line-height: 1.2;
+}
+.btn:hover { box-shadow: 0 6px 18px rgba(160,125,83,0.22) !important; }
+.btn:active { box-shadow: 0 1px 2px rgba(43,41,39,0.12) !important; transform: scale(0.98); }
+.btn:disabled, .btn[disabled] { opacity: .55; cursor: not-allowed; box-shadow: none !important; transform: none !important; }
+
+.btn-primary {
+  background: linear-gradient(135deg, #A07D53, #bd8f5f) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+.btn-primary:hover { filter: brightness(1.06); }
+
+.btn-ghost {
+  background: #FFFFFF !important;
+  border: 1px solid #E6DFD5 !important;
+  color: #5C5852 !important;
+}
+.btn-ghost:hover { background: #FAF6F0 !important; color: #2B2927 !important; }
+
+.btn-danger {
+  background: rgba(199,80,80,0.12) !important;
+  border-color: rgba(199,80,80,0.30) !important;
+  color: #b5504a !important;
+}
+.btn-danger:hover { background: rgba(199,80,80,0.20) !important; }
+
+.btn-green, .btn-success {
+  background: rgba(107,142,112,0.15) !important;
+  border-color: rgba(107,142,112,0.32) !important;
+  color: #5c7d61 !important;
+}
+.btn-green:hover, .btn-success:hover { background: rgba(107,142,112,0.24) !important; }
+
+.topbar-btn { border-radius: 10px !important; font-weight: 600; box-shadow: 0 1px 2px rgba(43,41,39,0.05); }
+.topbar-btn:hover { box-shadow: 0 4px 14px rgba(160,125,83,0.18); }
+
+/* ─────────────────────────────────────────────
+   Confirmation dialog (SubUI.confirm)
+   ───────────────────────────────────────────── */
+.ui-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(28,26,23,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 4000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+.ui-confirm-overlay.show { opacity: 1; pointer-events: auto; }
+
+.ui-confirm-box {
+  width: 100%;
+  max-width: 420px;
+  background: #FFFFFF;
+  border: 1px solid #E6DFD5;
+  border-radius: 16px;
+  padding: 26px 24px 20px;
+  box-shadow: 0 24px 70px rgba(28,26,23,0.30);
+  transform: translateY(14px) scale(.98);
+  transition: transform .2s ease;
+}
+.ui-confirm-overlay.show .ui-confirm-box { transform: translateY(0) scale(1); }
+
+.ui-confirm-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  background: rgba(160,125,83,0.14);
+  color: #A07D53;
+}
+.ui-confirm-box.danger .ui-confirm-icon { background: rgba(199,80,80,0.14); color: #b5504a; }
+
+.ui-confirm-title {
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 21px;
+  color: #2B2927;
+  margin-bottom: 6px;
+}
+.ui-confirm-msg {
+  font-size: 15px;
+  color: #7D7975;
+  line-height: 1.6;
+  margin-bottom: 22px;
+}
+.ui-confirm-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.ui-confirm-actions .btn { min-width: 104px; }
+
+/* Google sign-in button */
+.google-btn { transition: box-shadow .15s ease, transform .15s ease, background .15s ease; }
+.google-btn:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.18); transform: translateY(-1px); background: #f8f9fa !important; }
+.google-btn:active { transform: scale(.99); }
+.google-btn svg { flex-shrink: 0; }
+
+/* ─────────────────────────────────────────────
+   PROFESSIONAL REFINEMENT — cohesive surfaces,
+   rhythm, and states (loaded last on all portals)
+   ───────────────────────────────────────────── */
+:root {
+  --pro-canvas:   #FAF6F0;
+  --pro-surface:  #FFFFFF;
+  --pro-border:   #E7E1D8;
+  --pro-border-2: #D8CFC2;
+  --pro-ink:      #2B2927;
+  --pro-dim:      #7D7975;
+  --pro-radius:   14px;
+  --pro-radius-sm: 9px;
+  --pro-shadow:       0 1px 2px rgba(43,41,39,0.04), 0 8px 24px rgba(43,41,39,0.05);
+  --pro-shadow-hover: 0 2px 6px rgba(43,41,39,0.06), 0 16px 42px rgba(43,41,39,0.10);
+}
+
+body { background: var(--pro-canvas); }
+
+/* Cards — crisp border, soft depth, calm hover */
+.card {
+  border: 1px solid var(--pro-border) !important;
+  border-radius: var(--pro-radius) !important;
+  box-shadow: var(--pro-shadow) !important;
+  transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+}
+.card:hover { box-shadow: var(--pro-shadow-hover) !important; border-color: var(--pro-border-2) !important; }
+.panel > .card:first-child { margin-top: 0 !important; }
+
+.card-title { font-weight: 700 !important; color: var(--pro-ink) !important; letter-spacing: -0.005em !important; }
+.card-subtitle { color: var(--pro-dim) !important; }
+
+/* Section eyebrows — quieter, more structured */
+.nav-section-label { color: #9A948C !important; font-weight: 700 !important; letter-spacing: 0.11em !important; }
+
+/* Navigation — consistent pill states with an accent rail
+   (.nav-item = admin sidebar, .tab-btn = resident/officer sidebar) */
+.nav-item, .tab-btn {
+  border-radius: 10px !important;
+  border-left: 3px solid transparent !important;
+  transition: background .15s ease, color .15s ease, border-color .15s ease;
+}
+.nav-item:hover, .tab-btn:hover { background: #F5EFE6 !important; }
+.nav-item.active, .tab-btn.active {
+  background: linear-gradient(90deg, rgba(160,125,83,0.16), rgba(160,125,83,0.03)) !important;
+  border-left-color: #A07D53 !important;
+  color: #7a5c34 !important;
+  font-weight: 700 !important;
+}
+
+/* Sidebar chrome */
+.sidebar { background: #FFFFFF !important; border-right: 1px solid var(--pro-border) !important; }
+.sidebar-brand { border-bottom: 1px solid var(--pro-border) !important; }
+
+/* Topbar */
+.topbar { background: #FFFFFF !important; border-bottom: 1px solid var(--pro-border) !important; }
+
+/* Tables — lighter grid, clearer header */
+thead th {
+  background: #F7F2EA !important;
+  color: #8A847C !important;
+  border-bottom: 1px solid var(--pro-border) !important;
+  font-weight: 700 !important;
+}
+tbody td { border-bottom: 1px solid #F1ECE4 !important; }
+tbody tr:last-child td { border-bottom: 0 !important; }
+tbody tr:hover td { background: #FBF7F1 !important; }
+
+/* Inputs — uniform radius + gentle transition (colors left to each page) */
+input[type=text], input[type=email], input[type=password], input[type=number],
+input[type=date], input[type=file], textarea, select {
+  border-radius: var(--pro-radius-sm) !important;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+/* Pills / badges */
+.pill, .tab-badge, .role-badge { border-radius: 999px !important; font-weight: 600 !important; }
+
+/* Stat values */
+.stat-value, .balance-val { font-weight: 700 !important; color: var(--pro-ink) !important; letter-spacing: -0.02em; }
+
+/* Modals */
+.modal-box {
+  border-radius: var(--pro-radius) !important;
+  border: 1px solid var(--pro-border) !important;
+  box-shadow: 0 26px 74px rgba(28,26,23,0.32) !important;
+}
+.modal-title { font-weight: 700 !important; color: var(--pro-ink) !important; }
+
+/* Quick-action buttons */
+.qa-btn { border-radius: var(--pro-radius-sm) !important; box-shadow: 0 1px 2px rgba(43,41,39,0.04); }
+
+/* ─────────────────────────────────────────────
+   File inputs — replace the default "Choose Files"
+   control with a proper button (all portals)
+   ───────────────────────────────────────────── */
+input[type=file] {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #8A847C !important;
+  font-size: 13.5px !important;
+  cursor: pointer;
+  line-height: 1.5;
+  max-width: 100%;
+}
+input[type=file]::file-selector-button {
+  font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7a5c34;
+  background: rgba(160,125,83,0.12);
+  border: 1px solid rgba(160,125,83,0.35);
+  border-radius: 9px;
+  padding: 9px 16px;
+  margin-right: 12px;
+  cursor: pointer;
+  transition: background .15s ease, box-shadow .15s ease, transform .15s ease, border-color .15s ease;
+}
+input[type=file]::-webkit-file-upload-button {
+  font-family: 'Inter', -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7a5c34;
+  background: rgba(160,125,83,0.12);
+  border: 1px solid rgba(160,125,83,0.35);
+  border-radius: 9px;
+  padding: 9px 16px;
+  margin-right: 12px;
+  cursor: pointer;
+  transition: background .15s ease, box-shadow .15s ease, transform .15s ease, border-color .15s ease;
+}
+input[type=file]::file-selector-button:hover {
+  background: rgba(160,125,83,0.20);
+  border-color: rgba(160,125,83,0.5);
+  box-shadow: 0 4px 14px rgba(160,125,83,0.22);
+}
+input[type=file]::-webkit-file-upload-button:hover {
+  background: rgba(160,125,83,0.20);
+  border-color: rgba(160,125,83,0.5);
+  box-shadow: 0 4px 14px rgba(160,125,83,0.22);
+}
+input[type=file]::file-selector-button:active { transform: scale(0.98); box-shadow: none; }
+input[type=file]::-webkit-file-upload-button:active { transform: scale(0.98); box-shadow: none; }
+input[type=file]:focus-visible::file-selector-button { box-shadow: 0 0 0 3px rgba(160,125,83,0.28); }
+input[type=file]:focus-visible::-webkit-file-upload-button { box-shadow: 0 0 0 3px rgba(160,125,83,0.28); }
+
+/* ─────────────────────────────────────────────
+   Sidebar — scrollable nav with a fixed profile
+   footer so menu items never hide behind it
+   (officer / resident / admin)
+   ───────────────────────────────────────────── */.sidebar {
+  display: flex !important;
+  flex-direction: column;
+  overflow: hidden;
+}
+.sidebar > ul,
+.sidebar .sidebar-nav {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+.sidebar-profile,
+.sidebar-footer {
+  flex: 0 0 auto !important;
+  position: static !important;
+  margin-top: 12px;
+}
+.sidebar-profile {
+  padding-top: 14px;
+  border-top: 1px solid #E6DFD5;
+}
+@media (max-width: 991px) {
+  .sidebar-profile { margin-top: 8px; padding-top: 10px; }
+  .sidebar > ul, .sidebar .sidebar-nav { padding-bottom: 6px; }
+}
+
+/* ─────────────────────────────────────────────
+   MOBILE — make every portal usable on small screens
+   ───────────────────────────────────────────── */
+@media (max-width: 768px) {
+  body { overflow-x: hidden; }
+
+  /* Wide tables scroll inside their card instead of overflowing the page */
+  .card { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .panel-table, .data-table { min-width: 560px; }
+
+  /* Grids collapse to a single column */
+  .graph-grid, .graph-grid-wide, .stat-grid, .bento-grid,
+  .finance-stats, .feature-grid, .member-grid { grid-template-columns: 1fr !important; }
+
+  /* Toasts wrap and fit the viewport */
+  #toast, .ui-toast { white-space: normal !important; max-width: 90vw !important; text-align: center; }
+  .ui-toast-wrap { right: 10px; left: 10px; align-items: stretch; }
+
+  /* Forms stack; inputs go full width */
+  .f-row { flex-wrap: wrap !important; }
+  .f-field { min-width: 100% !important; }
+  .add-row { flex-wrap: wrap; }
+  .add-row input, .add-row select, .add-row .btn { min-width: 100% !important; }
+  .input-row { flex-direction: column; }
+
+  /* Modals use the screen width */
+  .modal-overlay { padding: 4vh 10px 10px; }
+  .modal-box { max-width: 100% !important; padding: 20px 16px; }
+
+  /* Maps get generous height on phones */
+  #officerMonitorMap, #resident-map, #issue-picker-map, #officerMapCanvas, #map { height: 62vh !important; }
+
+  /* Messaging: threads above the chat, full width */
+  .msg-layout { flex-direction: column !important; gap: 10px !important; }
+  .msg-sidebar { width: 100% !important; max-height: 40vh; }
+  .bubble { max-width: 82% !important; }
+
+  /* Sidebar scrolls; already off-canvas on mobile */
+  .sidebar { max-width: 84vw; }
+}
+
+/* ─────────────────────────────────────────────
+   Contrast & UX polish (WCAG-minded)
+   ───────────────────────────────────────────── */
+/* Placeholders readable */
+::placeholder { color: #8A847C !important; opacity: 1; }
+
+/* Table headers clearer */
+thead th { color: #5C5750 !important; }
+
+/* Links inside content get a clear, high-contrast colour */
+.ann-body a, .issue-body a, .rec-body a, .card-subtitle a, td a:not(.btn) {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Status pills: readable text on light backgrounds */
+.pill, .tab-badge { font-weight: 700 !important; letter-spacing: .03em; }
+
+/* Keyboard focus ring everywhere (accessibility) */
+:focus-visible { outline: 2px solid #86653D; outline-offset: 2px; border-radius: 4px; }
+
+/* Muted helper text stays legible */
+.card-subtitle, .stat-label, .balance-label, .report-meta { color: var(--text-dim) !important; }
+
+/* Stronger selection */
+::selection { background: rgba(134,101,61,0.25); color: #26231F; }
+
+/* ─────────────────────────────────────────────
+   MODERN MESSAGING — contemporary web-chat look
+   (threads sidebar + chat pane, aligned bubbles)
+   Loaded last so it wins over the earlier "formal" rules.
+   ───────────────────────────────────────────── */
+.msg-layout {
+  display: flex !important;
+  gap: 0 !important;
+  align-items: stretch;
+  min-height: 480px;
+  background: #FFFFFF;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.msg-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--glass-border);
+  background: #FBF7F1;
+  overflow-y: auto;
+}
+.msg-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #FFFFFF; }
+
+/* Thread list */
+.msg-sidebar-title, .msg-sidebar-head {
+  font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--text-dim); padding: 14px 16px 8px; border-bottom: 1px solid var(--glass-border);
+}
+.msg-thread-item, .thread-item {
+  display: flex !important; align-items: center; gap: 10px;
+  padding: 11px 14px !important; margin: 0 !important; border-radius: 0 !important;
+  border: 0 !important; border-bottom: 1px solid rgba(230,223,213,0.6) !important;
+  cursor: pointer; transition: background .15s;
+}
+.msg-thread-item:hover, .thread-item:hover { background: #F3ECE1 !important; }
+.msg-thread-item.active, .thread-item.active { background: #EDE4D6 !important; box-shadow: inset 3px 0 0 var(--accent); }
+.msg-thread-name { font-weight: 600 !important; font-size: 14px !important; color: var(--text); }
+.msg-thread-preview { font-size: 12.5px !important; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Header */
+.msg-header { padding: 12px 16px !important; background: #FFFFFF !important; border-bottom: 1px solid var(--glass-border) !important; display: flex; align-items: center; gap: 10px; }
+
+/* Scrollable message area */
+.msg-body {
+  flex: 1 1 auto; overflow-y: auto;
+  padding: 18px 18px 8px !important;
+  background: #FBF7F1;
+  min-height: 320px; max-height: none !important;
+}
+
+/* Rows + bubbles */
+.msg-bubble-wrap { width: 100% !important; display: flex !important; align-items: flex-end; gap: 8px; margin-bottom: 12px; }
+.msg-bubble-wrap.mine { flex-direction: row-reverse !important; }
+.bubble-avatar { width: 32px !important; height: 32px !important; border-radius: 50% !important; font-size: 12px !important; font-weight: 700; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.bubble {
+  max-width: min(72%, 520px) !important;
+  padding: 10px 14px !important;
+  border-radius: 16px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  border: 0 !important;
+  box-shadow: 0 1px 1px rgba(43,41,39,0.06);
+  word-break: break-word;
+}
+.bubble.from-admin {
+  background: #FFFFFF !important;
+  border: 1px solid #E6DFD5 !important;
+  border-bottom-left-radius: 6px !important;
+  border-left: 1px solid #E6DFD5 !important;
+  color: var(--text) !important;
+}
+.bubble.from-mine {
+  background: linear-gradient(135deg, #A07D53, #bd8f5f) !important;
+  border: 0 !important;
+  color: #FFFFFF !important;
+  border-bottom-right-radius: 6px !important;
+}
+.bubble.from-mine .bubble-time { color: rgba(255,255,255,0.85) !important; }
+.bubble-time { font-size: 11px !important; color: var(--text-dim); margin-top: 4px; display: block; }
+
+/* Date divider */
+.date-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 12px; color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.date-divider::before, .date-divider::after { content: ''; flex: 1; height: 1px; background: #E6DFD5; }
+
+/* Compose bar */
+.msg-compose { padding: 12px !important; border-top: 1px solid var(--glass-border) !important; background: #FFFFFF !important; display: flex; gap: 10px; align-items: flex-end; }
+.msg-compose textarea, .msg-compose input { border-radius: 20px !important; resize: none; }
+
+/* ─────────────────────────────────────────────
+   PROFESSIONAL / INSTITUTIONAL THEME
+   Flatter, calmer, form-driven — the opposite of a social feed.
+   Overrides the decorative styling above.
+   ───────────────────────────────────────────── */
+:root { --pro-radius: 6px; --pro-radius-sm: 5px; }
+
+/* Calm cards & modals (no big radius, no lift) */
+.card, .modal-box, .ui-confirm-box {
+  border-radius: 6px !important;
+  box-shadow: 0 1px 2px rgba(43,41,39,0.05) !important;
+}
+.card:hover { box-shadow: 0 1px 3px rgba(43,41,39,0.07) !important; transform: none !important; }
+
+/* Flat, restrained buttons (no gradient, no hover lift) */
+.btn { border-radius: 6px !important; box-shadow: none !important; }
+.btn:hover { transform: none !important; box-shadow: 0 1px 2px rgba(0,0,0,0.08) !important; }
+.btn-primary { background: #86653D !important; }
+.btn-primary:hover { background: #745733 !important; filter: none !important; }
+.qa-btn:hover { transform: none !important; }
+
+/* Square avatars — removes the social "profile circle" cue */
+.msg-thread-avatar, .thread-avatar, .bubble-avatar, .member-avatar, .msg-header-avatar,
+.r-avatar, .admin-avatar, .officer-avatar, .msg-header-avatar { border-radius: 5px !important; }
+
+/* Institutional pills (not playfully round) */
+.pill, .tab-badge { border-radius: 4px !important; }
+
+/* Messaging → formal correspondence log (no chat bubbles) */
+.msg-layout { min-height: 420px; }
+.msg-body { background: #FFFFFF !important; padding: 6px 18px !important; }
+.msg-bubble-wrap {
+  display: block !important; margin: 0 !important; padding: 14px 0 !important;
+  border-bottom: 1px solid #EFEAE1 !important;
+}
+.msg-bubble-wrap.mine { flex-direction: row !important; }
+.msg-bubble-wrap > .bubble-avatar { display: none !important; }
+.msg-sender { font-weight: 700; font-size: 13px; color: var(--text); margin-bottom: 3px; }
+.msg-sender .bubble-time { font-weight: 400; font-size: 12px; color: var(--text-dim); margin-left: 8px; }
+.bubble,
+.bubble.from-admin,
+.bubble.from-mine {
+  max-width: 100% !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  color: var(--text) !important;
+  font-size: 14.5px !important;
+  line-height: 1.6 !important;
+}
+.bubble-time { color: var(--text-dim) !important; font-size: 12px !important; }
+.msg-compose { background: #FFFFFF !important; }
+.msg-compose textarea, .msg-compose input { border-radius: 6px !important; }
+
+/* ─────────────────────────────────────────────
+   APPEARANCE — density, text size, theme
+   Driven by data-density / data-font / data-theme on <html>
+   (set by SubUI.applyPrefs in ui.js).
+   ───────────────────────────────────────────── */
+
+/* Text size (zoom keeps px-based layouts consistent across portals) */
+html[data-font="small"] body { zoom: .94; }
+html[data-font="default"] body { zoom: 1; }
+html[data-font="large"] body { zoom: 1.08; }
+
+/* Density */
+html[data-density="compact"] .card { padding: 12px !important; }
+html[data-density="compact"] th,
+html[data-density="compact"] td { padding: 8px 10px !important; }
+html[data-density="compact"] .nav-item,
+html[data-density="compact"] .tab-btn { padding-top: 6px !important; padding-bottom: 6px !important; }
+
+/* ── Dark theme ── */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --text: #F1ECE3;
+  --text-mid: #CFC8BC;
+  --text-dim: #A9A294;
+  --accent: #C79A63;
+  --blue: #7FA6C9;
+  --green: #7FAF86;
+  --yellow: #D6B25E;
+  --purple: #A99FC4;
+  --danger: #E08A8A;
+  --glass: rgba(255,255,255,0.06);
+  --glass-border: rgba(255,255,255,0.13);
+}
+html[data-theme="dark"] body {
+  background: #15130F !important;
+  color: #F1ECE3 !important;
+}
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .modal-box,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .bento-card,
+html[data-theme="dark"] .qa-btn {
+  background: #211E1A !important;
+  border-color: #35302A !important;
+}
+html[data-theme="dark"] .topbar,
+html[data-theme="dark"] .mobile-header {
+  background: #211E1A !important;
+  border-color: #35302A !important;
+}
+html[data-theme="dark"] .sidebar { background: #1B1815 !important; border-color: #35302A !important; }
+html[data-theme="dark"] .sidebar * { color: #E9E3D8 !important; }
+html[data-theme="dark"] .sidebar .nav-item.active,
+html[data-theme="dark"] .sidebar .tab-btn.active { background: rgba(199,154,99,0.18) !important; color: #F3D9B4 !important; }
+
+html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3,
+html[data-theme="dark"] h4, html[data-theme="dark"] h5, html[data-theme="dark"] h6 { color: #F1ECE3 !important; }
+html[data-theme="dark"] .card, html[data-theme="dark"] .panel, html[data-theme="dark"] .tab-panel { color: #E9E3D8 !important; }
+html[data-theme="dark"] .card-title, html[data-theme="dark"] .panel-title { color: #F1ECE3 !important; }
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  background: #2A2622 !important;
+  color: #F1ECE3 !important;
+  border-color: #3A352F !important;
+}
+html[data-theme="dark"] thead th { background: #26221E !important; color: #A9A294 !important; }
+html[data-theme="dark"] tbody tr:nth-child(even) td { background: rgba(255,255,255,0.02) !important; }
+html[data-theme="dark"] tbody tr:hover td { background: rgba(199,154,99,0.08) !important; }
+
+/* Catch common hard-coded inline colours so text/surfaces stay readable */
+html[data-theme="dark"] [style*="color:#2B2927"],
+html[data-theme="dark"] [style*="color: #2B2927"],
+html[data-theme="dark"] [style*="color:#1C1A17"],
+html[data-theme="dark"] [style*="color: #1C1A17"] { color: #F1ECE3 !important; }
+html[data-theme="dark"] [style*="background:#FFFFFF"],
+html[data-theme="dark"] [style*="background: #FFFFFF"],
+html[data-theme="dark"] [style*="background:#FAF6F0"],
+html[data-theme="dark"] [style*="background: #FAF6F0"],
+html[data-theme="dark"] [style*="background:white"],
+html[data-theme="dark"] [style*="background: white"] { background: #211E1A !important; }
+
+/* Dark-mode refinement — broader coverage of hard-coded inline greys */
+html[data-theme="dark"] [style*="color:#45413C"], html[data-theme="dark"] [style*="color: #45413C"],
+html[data-theme="dark"] [style*="color:#5F5A53"], html[data-theme="dark"] [style*="color: #5F5A53"],
+html[data-theme="dark"] [style*="color:#7D7975"], html[data-theme="dark"] [style*="color: #7D7975"],
+html[data-theme="dark"] [style*="color:#4A4A4A"], html[data-theme="dark"] [style*="color: #4A4A4A"],
+html[data-theme="dark"] [style*="color:#333"], html[data-theme="dark"] [style*="color: #333"] { color: #CFC8BC !important; }
+
+html[data-theme="dark"] [style*="background:#E6DFD5"], html[data-theme="dark"] [style*="background: #E6DFD5"],
+html[data-theme="dark"] [style*="background:#F3ECE1"], html[data-theme="dark"] [style*="background: #F3ECE1"] { background: #2A2622 !important; }
+
+html[data-theme="dark"] th, html[data-theme="dark"] td { border-color: #35302A !important; }
+html[data-theme="dark"] hr, html[data-theme="dark"] .divider { border-color: #35302A !important; }
+html[data-theme="dark"] .modal-close-btn { background: #2A2622 !important; color: #E9E3D8 !important; border-color: #3A352F !important; }
+html[data-theme="dark"] .pill { background: rgba(255,255,255,0.08) !important; color: #E9E3D8 !important; }
+html[data-theme="dark"] .tab-btn, html[data-theme="dark"] .nav-item { color: #CFC8BC !important; }
+html[data-theme="dark"] .tab-btn:hover, html[data-theme="dark"] .nav-item:hover { background: rgba(255,255,255,0.05) !important; }
+html[data-theme="dark"] .msg-body, html[data-theme="dark"] .msg-compose { background: #1B1815 !important; }
+html[data-theme="dark"] .bubble.from-admin { background: #26221E !important; border-color: #35302A !important; }
+
+/* ─────────────────────────────────────────────
+   NOTIFICATION CENTER + sidebar tools
+   ───────────────────────────────────────────── */
+.nc-wrap { position: relative; display: inline-flex; gap: 8px; }
+.nc-btn {
+  position: relative; width: 38px; height: 38px; border-radius: 8px;
+  border: 1px solid var(--glass-border, #E6DFD5);
+  background: var(--glass, #FFFFFF); color: inherit; cursor: pointer;
+  font-size: 16px; line-height: 1; display: inline-flex; align-items: center; justify-content: center;
+}
+.nc-btn:hover { border-color: var(--accent, #86653D); }
+.nc-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 9px; background: var(--danger, #A84545); color: #fff;
+  font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center;
+}
+.nc-pop {
+  position: absolute; top: calc(100% + 8px); right: 0; width: 320px; max-width: 86vw;
+  background: #FFFFFF; border: 1px solid var(--glass-border, #E6DFD5); border-radius: 8px;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.16); z-index: 60; display: none; overflow: hidden;
+}
+.nc-pop.open { display: block; }
+.nc-head {
+  padding: 12px 14px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--text-dim, #5F5A53); border-bottom: 1px solid var(--glass-border, #E6DFD5);
+}
+.nc-list { max-height: 360px; overflow-y: auto; }
+.nc-item {
+  display: flex; gap: 10px; padding: 12px 14px;
+  border-bottom: 1px solid rgba(230,223,213,0.6); cursor: pointer; transition: background .12s;
+}
+.nc-item:hover { background: rgba(134,101,61,0.06); }
+.nc-item.unread { background: rgba(134,101,61,0.05); }
+.nc-mark { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; background: #9C9791; }
+.nc-mark.critical { background: var(--danger, #A84545); }
+.nc-mark.warning { background: var(--yellow, #946E1E); }
+.nc-mark.notice { background: var(--blue, #3E6A8F); }
+.nc-title { font-size: 13px; font-weight: 600; color: var(--text, #26231F); }
+.nc-msg { font-size: 12.5px; color: var(--text-dim, #5F5A53); line-height: 1.45; }
+.nc-time { font-size: 11px; color: var(--text-dim, #5F5A53); margin-top: 3px; }
+.nc-empty { padding: 20px 14px; text-align: center; font-size: 13px; color: var(--text-dim, #5F5A53); }
+
+/* Sidebar tools row (search + bell) */
+.sidebar-tools { display: flex; align-items: center; gap: 8px; padding: 4px 14px 6px; }
+
+/* Notification popover: anchor to the tools row (full sidebar width) so it
+   fits inside the sidebar. Anchoring it to the bell made it open 320px to the
+   left, overflow the sidebar, and get clipped into a blank box. */
+.sidebar-tools { position: relative; }
+.sidebar-tools .nc-wrap { position: static; }
+.sidebar-tools .nc-pop { left: 8px; right: 8px; width: auto; top: calc(100% + 6px); z-index: 200; }
+
+html[data-theme="dark"] .nc-btn { background: #211E1A !important; border-color: #35302A !important; color: #F1ECE3 !important; }
+html[data-theme="dark"] .nc-pop { background: #211E1A !important; border-color: #35302A !important; }
+html[data-theme="dark"] .nc-title { color: #F1ECE3 !important; }
+html[data-theme="dark"] .nc-item { border-color: rgba(255,255,255,0.08) !important; }
+
+/* ─────────────────────────────────────────────
+   MESSAGING — final consolidated theme (light + dark).
+   Overrides the earlier stacked layers so the sidebar, header,
+   conversation area, dividers and compose bar all agree in both
+   themes (fixes the light-on-dark messaging + stray divider lines).
+   ───────────────────────────────────────────── */
+:root {
+  --msg-bg: #FFFFFF;
+  --msg-panel: #FFFFFF;
+  --msg-sidebar: #FBF7F1;
+  --msg-line: #E6DFD5;
+}
+html[data-theme="dark"] {
+  --msg-bg: #15130F;
+  --msg-panel: #211E1A;
+  --msg-sidebar: #1B1815;
+  --msg-line: #35302A;
+  /* Brighter secondary text for AA contrast on the dark canvas */
+  --text-mid: #DED8CD;
+  --text-dim: #B7B0A3;
+  /* Portal tint variables so pills/badges/active rows don't stay light */
+  --glass-hover: rgba(255,255,255,0.08);
+  --accent-dim: rgba(199,154,99,0.16);
+  --accent-border: rgba(199,154,99,0.35);
+  --blue-dim: rgba(127,166,201,0.18);
+  --green-dim: rgba(127,175,134,0.18);
+  --yellow-dim: rgba(214,178,94,0.20);
+  --purple-dim: rgba(169,159,196,0.18);
+  --red-dim: rgba(224,138,138,0.18);
+}
+
+/* Layout: no gaps between panes (kills the stray line between thread list and chat) */
+.msg-layout { gap: 0 !important; background: var(--msg-panel) !important; border: 1px solid var(--msg-line) !important; }
+.msg-sidebar { background: var(--msg-sidebar) !important; border-right: 1px solid var(--msg-line) !important; }
+.msg-sidebar-title, .msg-sidebar-head {
+  color: var(--text-dim) !important; background: transparent !important;
+  border-bottom: 1px solid var(--msg-line) !important;
+}
+.msg-thread-item, .thread-item { border-bottom: 1px solid var(--msg-line) !important; }
+.msg-thread-item:hover, .thread-item:hover { background: rgba(134,101,61,0.08) !important; }
+.msg-thread-item.active, .thread-item.active {
+  background: rgba(134,101,61,0.16) !important; box-shadow: inset 3px 0 0 var(--accent) !important;
+}
+.msg-thread-name { color: var(--text) !important; }
+.msg-thread-preview { color: var(--text-dim) !important; }
+
+.msg-main { background: var(--msg-bg) !important; }
+.msg-header { background: var(--msg-panel) !important; border-bottom: 1px solid var(--msg-line) !important; color: var(--text) !important; }
+.msg-header-sub { color: var(--text-dim) !important; }
+.msg-body { background: var(--msg-bg) !important; }
+
+.msg-bubble-wrap { border-bottom: 1px solid var(--msg-line) !important; }
+.msg-sender { color: var(--text) !important; }
+.msg-sender .bubble-time { color: var(--text-dim) !important; }
+.bubble, .bubble.from-admin, .bubble.from-mine { background: transparent !important; border: 0 !important; color: var(--text) !important; }
+.bubble-time { color: var(--text-dim) !important; }
+
+.date-divider { color: var(--text-dim) !important; }
+.date-divider::before, .date-divider::after { background: var(--msg-line) !important; }
+
+.msg-compose { background: var(--msg-panel) !important; border-top: 1px solid var(--msg-line) !important; }
+.msg-compose textarea, .msg-compose input {
+  background: var(--msg-bg) !important; color: var(--text) !important; border: 1px solid var(--msg-line) !important;
+}
+
+/* Dark-mode contrast polish: secondary text, labels, placeholders */
+html[data-theme="dark"] ::placeholder { color: #8F8779 !important; }
+html[data-theme="dark"] .meta-txt,
+html[data-theme="dark"] .f-label,
+html[data-theme="dark"] .f-field span,
+html[data-theme="dark"] .empty-state,
+html[data-theme="dark"] label,
+html[data-theme="dark"] .issue-meta,
+html[data-theme="dark"] .report-meta,
+html[data-theme="dark"] .card-sub,
+html[data-theme="dark"] .msg-thread-preview,
+html[data-theme="dark"] .nc-msg,
+html[data-theme="dark"] .nc-time,
+html[data-theme="dark"] small { color: var(--text-dim) !important; }
+html[data-theme="dark"] .issue-title,
+html[data-theme="dark"] .report-title,
+html[data-theme="dark"] .r-name { color: var(--text) !important; }
+
+@media (max-width: 768px) {
+  .msg-layout { gap: 0 !important; }
+  .msg-sidebar { border-right: 0 !important; border-bottom: 1px solid var(--msg-line) !important; }
+}
+
+/* ─────────────────────────────────────────────
+   MESSENGER-STYLE CHAT — sender's messages on the right,
+   the other person's on the left, as chat bubbles.
+   Overrides the "correspondence log" rules above.
+   ───────────────────────────────────────────── */
+.msg-bubble-wrap {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  width: 100% !important;
+  margin: 7px 0 !important;
+  padding: 0 !important;
+  border-bottom: 0 !important;
+}
+.msg-bubble-wrap.mine {
+  flex-direction: column !important;
+  align-items: flex-end !important;
+}
+
+.msg-sender {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--text-dim) !important;
+  margin: 0 6px 3px !important;
+}
+.msg-sender .bubble-time { color: var(--text-dim) !important; font-weight: 400 !important; margin-left: 6px !important; }
+
+.msg-body .bubble {
+  max-width: min(78%, 560px) !important;
+  padding: 9px 13px !important;
+  border-radius: 18px !important;
+  font-size: 14.5px !important;
+  line-height: 1.45 !important;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05) !important;
+  word-break: break-word !important;
+}
+.bubble.from-admin {
+  background: #F0F2F5 !important;
+  color: var(--text) !important;
+  border: 0 !important;
+  border-bottom-left-radius: 5px !important;
+}
+.bubble.from-mine {
+  background: linear-gradient(135deg, #9C7748, #B98C5D) !important;
+  color: #FFFFFF !important;
+  border: 0 !important;
+  border-bottom-right-radius: 5px !important;
+}
+
+html[data-theme="dark"] .bubble.from-admin { background: #2A2622 !important; color: var(--text) !important; }
+html[data-theme="dark"] .bubble.from-mine { background: linear-gradient(135deg, #7D5F39, #A07D53) !important; color: #FFFFFF !important; }
+
+/* ─────────────────────────────────────────────
+   DARK MODE — surfaces that were still light
+   (announcements, cards, empty states, search modal, banners…)
+   ───────────────────────────────────────────── */
+html[data-theme="dark"] .card,
+html[data-theme="dark"] .modal-box,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .bento-card,
+html[data-theme="dark"] .member-card,
+html[data-theme="dark"] .member-avatar,
+html[data-theme="dark"] .member-role,
+html[data-theme="dark"] .ann-item,
+html[data-theme="dark"] .issue-item,
+html[data-theme="dark"] .report-item,
+html[data-theme="dark"] .resident-card,
+html[data-theme="dark"] .tab-nav,
+html[data-theme="dark"] .alerts-popover,
+html[data-theme="dark"] .ui-modal-box,
+html[data-theme="dark"] .qa-btn,
+html[data-theme="dark"] .announcement-card {
+  background: #211E1A !important;
+  border-color: #35302A !important;
+}
+html[data-theme="dark"] .empty-state {
+  background: #1B1815 !important;
+  border-color: #35302A !important;
+}
+html[data-theme="dark"] .member-avatar { background: #2A2622 !important; }
+html[data-theme="dark"] .member-card:hover,
+html[data-theme="dark"] .issue-item:hover,
+html[data-theme="dark"] .report-item:hover,
+html[data-theme="dark"] .resident-card:hover { background: #2A2622 !important; }
+
+/* Global search modal */
+html[data-theme="dark"] .ui-search-item { background: #211E1A !important; border-color: #2A2622 !important; }
+html[data-theme="dark"] .ui-search-item:hover,
+html[data-theme="dark"] .ui-search-item.active { background: #2A2622 !important; }
+html[data-theme="dark"] .ui-search-input {
+  background: #211E1A !important; color: var(--text) !important; border-color: #35302A !important;
+}
+html[data-theme="dark"] .ui-search-input::placeholder { color: #8F8779 !important; }
+html[data-theme="dark"] .ui-search-footer { border-color: #35302A !important; }
+html[data-theme="dark"] .ui-search-footer kbd { background: #2A2622 !important; color: var(--text) !important; }
+html[data-theme="dark"] .ui-search-item .s-tag { background: rgba(199,154,99,0.18) !important; }
+
+/* Floating banners */
+html[data-theme="dark"] #annNotif,
+html[data-theme="dark"] #issueNotif { background: #211E1A !important; border-color: #35302A !important; }
+
+/* ─────────────────────────────────────────────
+   MESSAGING — keep the chat inside its panel
+   (scroll the conversation instead of growing the page)
+   ───────────────────────────────────────────── */
+.msg-layout { height: 68vh !important; max-height: 660px !important; min-height: 420px !important; }
+.msg-main { min-height: 0 !important; }
+.msg-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+@media (max-width: 768px) {
+  .msg-layout { height: auto !important; max-height: none !important; min-height: 0 !important; }
+  .msg-body { flex: 0 1 auto !important; max-height: 55vh !important; min-height: 200px !important; }
+}
+
+/* Belt-and-suspenders: max-specificity dark overrides for the popovers/modals
+   that were reported as still light. */
+html[data-theme="dark"] body .ui-modal .ui-modal-box,
+html[data-theme="dark"] .ui-modal .ui-modal-box { background: #211E1A !important; }
+html[data-theme="dark"] body .alerts-popover,
+html[data-theme="dark"] .topbar .alerts-popover { background: #211E1A !important; border-color: #35302A !important; color: var(--text) !important; }
+html[data-theme="dark"] .alerts-popover .alerts-popover-head { color: var(--text) !important; }
+html[data-theme="dark"] .alerts-item { border-bottom-color: #2A2622 !important; }
+html[data-theme="dark"] .alerts-empty { color: var(--text-dim) !important; }
+html[data-theme="dark"] .ui-modal-box .ui-search-input { background: #211E1A !important; color: var(--text) !important; }
+
+/* ─────────────────────────────────────────────
+   DARK MODE — font/token fixes.
+   The "professional" theme used fixed light tokens (--pro-ink,
+   --pro-canvas…) which produced dark-on-dark text (e.g. the ₱ value
+   in the Outstanding Balance card). Re-map them for dark mode.
+   ───────────────────────────────────────────── */
+html[data-theme="dark"] {
+  --pro-canvas: #15130F;
+  --pro-surface: #211E1A;
+  --pro-border: #35302A;
+  --pro-border-2: #453F36;
+  --pro-ink: #F1ECE3;
+  --pro-dim: #B7B0A3;
+}
+/* These three set --pro-ink with !important, so nudge them directly too */
+html[data-theme="dark"] .stat-value,
+html[data-theme="dark"] .balance-val,
+html[data-theme="dark"] .card-title,
+html[data-theme="dark"] .modal-title { color: #F1ECE3 !important; }
+html[data-theme="dark"] .card-subtitle { color: var(--text-dim) !important; }
+html[data-theme="dark"] .nav-section-label { color: #928B7F !important; }
+
+/* Light-background buttons in dark mode → dark surface + light text */
+html[data-theme="dark"] .btn-ghost {
+  background: #2A2622 !important; border-color: #3A352F !important; color: #E9E3D8 !important;
+}
+html[data-theme="dark"] .btn-ghost:hover { background: #35302A !important; color: #F1ECE3 !important; }
+html[data-theme="dark"] .btn-green, html[data-theme="dark"] .btn-success {
+  color: var(--green) !important; border-color: rgba(127,175,134,0.35) !important;
+}
+html[data-theme="dark"] .btn-danger { color: var(--danger) !important; border-color: rgba(224,138,138,0.35) !important; }
+
+/* Confirmation dialog (was white box + dark text) */
+html[data-theme="dark"] .ui-confirm-box { background: #211E1A !important; border-color: #35302A !important; }
+html[data-theme="dark"] .ui-confirm-title { color: #F1ECE3 !important; }
+html[data-theme="dark"] .ui-confirm-msg { color: #CFC8BC !important; }
+html[data-theme="dark"] .ui-confirm-icon { background: rgba(199,154,99,0.16) !important; color: var(--accent) !important; }
+html[data-theme="dark"] .ui-confirm-box.danger .ui-confirm-icon { background: rgba(224,138,138,0.16) !important; color: var(--danger) !important; }
+
+/* Native <select> dropdown options */
+html[data-theme="dark"] select option { background: #211E1A !important; color: #F1ECE3 !important; }
+
+/* ─────────────────────────────────────────────
+   SIDEBAR — wider, readable, scalable
+   No text wrapping and no horizontal scrollbar
+   (admin / officer / resident).
+   ───────────────────────────────────────────── */
+:root { --sidebar-w: 320px; }
+@media (max-width: 1400px) { :root { --sidebar-w: 300px; } }
+@media (max-width: 1150px) { :root { --sidebar-w: 276px; } }
+
+.sidebar {
+  width: var(--sidebar-w) !important;
+  flex-shrink: 0 !important;
+  overflow-x: hidden !important;
+}
+.sidebar-nav, .sidebar > ul { overflow-x: hidden !important; }
+
+/* Keep every sidebar label on one line (no mid-word wrapping) */
+.nav-item, .tab-btn, .sidebar li, .nav-section-label,
+.sidebar .admin-name, .sidebar .admin-role,
+.sidebar .qa-btn, .sidebar-tools { white-space: nowrap; }
+
+.sidebar .qa-btn { width: 100%; }
+.sidebar .qa-btn kbd { flex-shrink: 0; }
+.nav-icon, .tab-btn .tab-icon { flex-shrink: 0; }
+.nav-item .nav-badge, .tab-btn .tab-badge, .nav-item .nav-badge { flex-shrink: 0; }
+
+/* ─────────────────────────────────────────────
+   SIDEBAR ACTIVE STATE — the base CSS forced white text,
+   which was invisible on the light bronze highlight in light
+   mode (and vice-versa). Give the highlight matching text.
+   ───────────────────────────────────────────── */
+.sidebar li.active, .sidebar .tab-btn.active, .sidebar .nav-item.active {
+  background: linear-gradient(90deg, rgba(160,125,83,0.20), rgba(160,125,83,0.06)) !important;
+  color: #7A5C34 !important;
+  border-left-color: #A07D53 !important;
+}
+html[data-theme="dark"] .sidebar li.active,
+html[data-theme="dark"] .sidebar .tab-btn.active,
+html[data-theme="dark"] .sidebar .nav-item.active {
+  background: rgba(199,154,99,0.18) !important;
+  color: #F3D9B4 !important;
+  border-left-color: #C79A63 !important;
+}
+
+/* ─────────────────────────────────────────────
+   Outstanding Balance card — follow the active theme
+   (it was hard-coded dark, so it looked wrong in light mode).
+   ───────────────────────────────────────────── */
+.res-balance-card {
+  background: #FFFFFF !important;
+  border: 1px solid var(--glass-border, #E6DFD5) !important;
+  color: var(--text) !important;
+  box-shadow: 0 8px 24px rgba(43,41,39,0.05) !important;
+}
+.res-balance-card .balance-label { color: var(--text-dim) !important; opacity: 1 !important; }
+.res-balance-card .balance-val { color: var(--text) !important; }
+.res-balance-card .btn {
+  background: rgba(43,41,39,0.05) !important;
+  border: 1px solid rgba(43,41,39,0.15) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="dark"] .res-balance-card {
+  background: #211E1A !important;
+  border-color: #35302A !important;
+  color: var(--text) !important;
+}
+html[data-theme="dark"] .res-balance-card .balance-label { color: var(--text-dim) !important; }
+html[data-theme="dark"] .res-balance-card .balance-val { color: var(--text) !important; }
+html[data-theme="dark"] .res-balance-card .btn {
+  background: rgba(255,255,255,0.10) !important;
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  color: #FFFFFF !important;
+}
+
+/* ─────────────────────────────────────────────
+   MAIN AREA — align with the (wider) fixed sidebar and
+   stop the 40px padding from insetting the admin topbar
+   (which left empty space above/left of the bar).
+   ───────────────────────────────────────────── */
+.main { margin-left: var(--sidebar-w) !important; }
+.topbar { margin: -40px -40px 0 !important; }
+@media (max-width: 991px) {
+  .main { margin-left: 0 !important; }
+  .topbar { margin: 0 !important; }
+}
+
+/* ─────────────────────────────────────────────
+   FINANCE SUB-TABS (admin) — group the finance cards
+   ───────────────────────────────────────────── */
+.fin-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px;
+  border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;
+}
+.fin-tab {
+  padding: 8px 14px; border-radius: 8px; border: 1px solid transparent;
+  background: transparent; color: var(--text-mid); font-size: 13px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; font-family: inherit;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.fin-tab:hover { background: var(--glass-hover, rgba(0,0,0,0.05)); }
+.fin-tab.active {
+  background: var(--accent-dim, rgba(134,101,61,0.14));
+  color: var(--accent);
+  border-color: var(--accent-border, rgba(134,101,61,0.3));
+}
+.fin-section { display: none; }
+.fin-section.active { display: block; }
+
+.fin-summary { display: flex; gap: 14px; flex-wrap: wrap; }
+.fin-summary .fs-cell {
+  flex: 1; min-width: 150px; background: var(--glass, #fff);
+  border: 1px solid var(--glass-border); border-radius: 10px; padding: 12px 14px;
+}
+.fin-summary .fs-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); }
+.fin-summary .fs-val { font-size: 20px; font-weight: 700; color: var(--text); margin-top: 2px; }
+
+/* ─────────────────────────────────────────────
+   DARK MODE — light gradient headers + remaining light inline hexes
+   (the panel-header cards used linear-gradient(135deg,#FAF4E7,#FAF6F0),
+   which wasn't caught, leaving light-on-light text in dark mode).
+   ───────────────────────────────────────────── */
+html[data-theme="dark"] [style*="linear-gradient(135deg,#FAF4E7"],
+html[data-theme="dark"] [style*="linear-gradient(135deg, #FAF4E7"],
+html[data-theme="dark"] [style*="linear-gradient(135deg,#FAF6F0"],
+html[data-theme="dark"] [style*="linear-gradient(135deg, #FAF6F0"] {
+  background: #211E1A !important;
+  border-color: #35302A !important;
+}
+html[data-theme="dark"] [style*="background:#FAF4E7"],
+html[data-theme="dark"] [style*="background: #FAF4E7"],
+html[data-theme="dark"] [style*="background:#FAF7F2"],
+html[data-theme="dark"] [style*="background: #FAF7F2"],
+html[data-theme="dark"] [style*="background:#FBF7F1"],
+html[data-theme="dark"] [style*="background: #FBF7F1"],
+html[data-theme="dark"] [style*="background:#F8F9FA"],
+html[data-theme="dark"] [style*="background: #F8F9FA"],
+html[data-theme="dark"] [style*="background:#F7F2EA"],
+html[data-theme="dark"] [style*="background: #F7F2EA"] {
+  background: #211E1A !important;
+}
+
+/* ─────────────────────────────────────────────
+   LIGHT-MODE contrast fixes
+   (pale-red danger text + soft placeholders were low-contrast on cream)
+   ───────────────────────────────────────────── */
+html:not([data-theme="dark"]) [style*="color:#f08080"],
+html:not([data-theme="dark"]) [style*="color: #f08080"],
+html:not([data-theme="dark"]) [style*="color:#f88"],
+html:not([data-theme="dark"]) [style*="color: #f88"] { color: #b5504a !important; }
+html:not([data-theme="dark"]) ::placeholder { color: #6E6960 !important; opacity: 1; }
+
+/* Remaining light tint backgrounds + a dark text colour used inline */
+html[data-theme="dark"] [style*="background:#FAF3E5"],
+html[data-theme="dark"] [style*="background: #FAF3E5"],
+html[data-theme="dark"] [style*="background:#EDE7DC"],
+html[data-theme="dark"] [style*="background: #EDE7DC"],
+html[data-theme="dark"] [style*="background:#EAF2EC"],
+html[data-theme="dark"] [style*="background: #EAF2EC"],
+html[data-theme="dark"] [style*="background:#F9ECEC"],
+html[data-theme="dark"] [style*="background: #F9ECEC"] { background: #26221E !important; }
+html[data-theme="dark"] [style*="color:#3C4043"],
+html[data-theme="dark"] [style*="color: #3C4043"] { color: #E9E3D8 !important; }
+
+/* ═════════════════════════════════════════════
+   ENTERPRISE PORTAL POLISH (final layer)
+   A tighter, consistent system: restrained surfaces,
+   scannable data tables, clear hierarchy — in the spirit
+   of mainstream HOA management portals (PayHOA/Buildium/AppFolio).
+   ═════════════════════════════════════════════ */
+
+/* Page titles in the top bar → clean sans, not decorative serif */
+.topbar-title {
+  font-family: var(--font-sans) !important;
+  font-weight: 700 !important;
+  font-size: 17px !important;
+  letter-spacing: -0.01em;
+  color: var(--text) !important;
+}
+
+/* Card headers: consistent size + hierarchy */
+.card-title { font-size: 14.5px !important; font-weight: 700 !important; letter-spacing: -0.005em !important; color: var(--text) !important; }
+.card-subtitle { font-size: 12.5px !important; color: var(--text-dim) !important; }
+
+/* One disciplined card surface */
+.card { border-radius: 9px !important; border: 1px solid var(--glass-border, #E6DFD5) !important; box-shadow: 0 1px 2px rgba(43,41,39,0.04) !important; }
+.card:hover { box-shadow: 0 2px 8px rgba(43,41,39,0.07) !important; border-color: var(--glass-border, #E6DFD5) !important; transform: none !important; }
+
+/* Data tables → scannable enterprise grid */
+.panel-table, .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.panel-table thead th, .data-table thead th {
+  font-size: 11px !important; text-transform: uppercase; letter-spacing: .06em; font-weight: 700 !important;
+  color: var(--text-dim) !important; background: transparent !important;
+  border-bottom: 1px solid var(--glass-border, #E6DFD5) !important;
+  padding: 10px 12px !important; text-align: left; white-space: nowrap;
+}
+.panel-table tbody td, .data-table tbody td {
+  padding: 11px 12px !important; border-bottom: 1px solid rgba(43,41,39,0.06) !important; vertical-align: middle;
+}
+html[data-theme="dark"] .panel-table tbody td,
+html[data-theme="dark"] .data-table tbody td { border-bottom-color: rgba(255,255,255,0.07) !important; }
+.panel-table tbody tr:last-child td, .data-table tbody tr:last-child td { border-bottom: 0 !important; }
+.panel-table tbody tr:hover td, .data-table tbody tr:hover td { background: rgba(134,101,61,0.05) !important; }
+.panel-table td:first-child, .data-table td:first-child { font-weight: 600; }
+
+/* Form micro-labels */
+.f-label { font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim) !important; }
+
+/* Status pills → consistent, uppercase */
+.pill, .tab-badge {
+  font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: .04em;
+  text-transform: uppercase; padding: 3px 9px !important; border-radius: 5px !important;
+}
+
+/* Buttons: crisp hierarchy */
+.btn { font-weight: 600 !important; border-radius: 7px !important; }
+.btn-primary { background: var(--accent, #86653D) !important; color: #fff !important; border-color: transparent !important; }
+html[data-theme="dark"] .btn-primary { color: #1A1610 !important; }
+
+/* KPI / stat cards: clean sans number, small uppercase label */
+.stat-card { border-radius: 9px !important; }
+.stat-value {
+  font-family: var(--font-sans) !important;
+  font-size: 27px !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.stat-label { font-size: 11px !important; font-weight: 700 !important; }
+
+/* ── Contrast fixes ─────────────────────────────────────────
+   Dark theme: .sidebar forces light text on everything, which made
+   light badges unreadable. Keep badge text dark / tuned. */
+html[data-theme="dark"] .sidebar .tab-badge {
+  background: rgba(199,154,99,0.22) !important;
+  color: #F3D9B4 !important;
+  border-color: rgba(199,154,99,0.35) !important;
+}
+html[data-theme="dark"] .sidebar .nav-badge { color: #1a100a !important; }
+html[data-theme="dark"] .sidebar #pendingBadge { color: #1a100a !important; }
+
+/* Dark theme: lowercase #fff backgrounds escaped the existing override. */
+html[data-theme="dark"] [style*="background:#fff"],
+html[data-theme="dark"] [style*="background: #fff"] { background: #211E1A !important; }
+
+/* Light theme: hard-coded status colours were too faint on white. */
+html:not([data-theme="dark"]) .pill-urgent,
+html:not([data-theme="dark"]) .priority-high,
+html:not([data-theme="dark"]) .res-reason,
+html:not([data-theme="dark"]) .pay-amount.unpaid { color: #B23B3B !important; }
+html:not([data-theme="dark"]) [style*="color:#ff5555"] { color: #C43A3A !important; }
+html:not([data-theme="dark"]) [style*="color:#f59e0b"] { color: #A9660A !important; }
+
+
+
+
+
+
+
+
+
+/* ── Message requests ───────────────────────────────────── */
+.msg-req-block { border-bottom: 1px solid var(--glass-border, #E6DFD5); padding-bottom: 8px; margin-bottom: 8px; }
+.msg-req-title { font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); padding: 8px 12px 4px; }
+.msg-req-item { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-bottom: 1px dashed var(--glass-border, #E6DFD5); }
+.msg-req-item:last-child { border-bottom: 0; }
+.msg-req-actions { display: flex; gap: 8px; }
+.msg-req-actions .btn { flex: 1; }
+
+/* Sidebar: never scroll horizontally; long labels wrap instead */
+.sidebar, .sidebar-nav { overflow-x: hidden; }
+.sidebar .nav-item, .sidebar .tab-btn { min-width: 0; }
+.sidebar .nav-item .nav-icon { flex-shrink: 0; }
+
+/* Officer/Resident sidebar rows: left-align the icon + label.
+   .tab-btn defaulted to justify-content:center, which made the whole
+   nav look indented/broken in the vertical sidebar. */
+.sidebar .tab-btn {
+  justify-content: flex-start !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  text-align: left;
+}
+.sidebar .tab-btn .tab-badge { margin-left: auto; }
+.sidebar .tab-btn .tab-icon { flex-shrink: 0; }
+
+/* Sidebar: fill the true viewport height (mobile address bars included) and
+   keep the profile/footer pinned to the bottom so no dead strip shows. */
+.sidebar { height: 100vh; height: 100dvh; }
+.sidebar-profile, .sidebar-footer { margin-top: auto !important; }
+
+/* Bento grids collapse to ONE column on tablet/mobile. The old "span 12"
+   created 11 implicit tracks and made the whole page scroll horizontally.
+   Spanning the first→last explicit line keeps every item in the single column. */
+@media (max-width: 991px) {
+  .bento-col-12, .bento-col-8, .bento-col-6, .bento-col-4, .bento-col-3 {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+/* Tighten the gap under the sidebar footer (was ~30px of padding) */
+.sidebar { padding-bottom: 14px !important; }
+
+/* Resident/Officer sidebar: spread the nav rows so they fill the column
+   instead of leaving a large empty block above the footer. */
+.sidebar > ul {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+.sidebar > ul > li { margin-bottom: 0 !important; }

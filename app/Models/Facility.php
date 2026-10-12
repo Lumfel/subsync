@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * @property int $id
@@ -33,7 +34,15 @@ class Facility extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['admin_id', 'name', 'description', 'latitude', 'longitude', 'status'];
+    protected $fillable = ['admin_id', 'name', 'description', 'image_path', 'latitude', 'longitude', 'status'];
+
+    protected $appends = ['image_url'];
+
+    /** Public URL of the facility photo (nullable). */
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->image_path ? Storage::url($this->image_path) : null;
+    }
 
     public function admin()
     {

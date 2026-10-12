@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Model;
 class HoaExpense extends Model
 {
     protected $fillable = [
-        'title', 'description', 'amount', 'expense_date', 'category', 'status', 'receipt_path',
+        'title', 'description', 'amount', 'expense_date', 'category', 'status', 'fund', 'receipt_path',
     ];
 
     protected $casts = [

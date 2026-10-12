@@ -11,9 +11,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $officer_id
  * @property string $participant_type
  * @property string $created_at
- * @property-read \App\Models\Conversation $conversation
- * @property-read \App\Models\Officer|null $officer
- * @property-read \App\Models\Resident|null $resident
+ * @property-read Conversation $conversation
+ * @property-read Officer|null $officer
+ * @property-read Resident|null $resident
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ConvParticipant newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ConvParticipant newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ConvParticipant query()
@@ -25,13 +26,14 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|ConvParticipant whereResidentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static> where(string|\Closure $column, mixed $operator = null, mixed $value = null, string $boolean = 'and')
  * @method static int count(string $columns = '*')
+ *
  * @mixin \Eloquent
  */
 class ConvParticipant extends Model
 {
     public $timestamps = false;
 
-    protected $fillable = ['conversation_id', 'resident_id', 'officer_id', 'participant_type'];
+    protected $fillable = ['conversation_id', 'resident_id', 'officer_id', 'participant_type', 'status'];
 
     public function conversation()
     {

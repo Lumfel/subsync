@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Admin;
+use App\Models\Household;
 use App\Models\Officer;
 use App\Models\Resident;
 use Illuminate\Http\Request;
@@ -17,19 +18,19 @@ class AuthController extends Controller
     public function adminLogin(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
         $email = strtolower(trim($credentials['email']));
         $admin = Admin::firstWhere('email', $email);
 
-        if (!$admin && Admin::count() === 0) {
+        if (! $admin && Admin::count() === 0) {
             $admin = Admin::create([
-                'name'     => 'System Admin',
-                'email'    => 'admin@subsync.com',
+                'name' => 'System Admin',
+                'email' => 'admin@subsync.com',
                 'password' => Hash::make('Admin@12345'),
-                'status'   => 'Active',
+                'status' => 'Active',
             ]);
         }
 
@@ -43,8 +44,8 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return response()->json([
-                'success'  => true,
-                'redirect' => $this->basePath($request) . '/dashboard',
+                'success' => true,
+                'redirect' => $this->basePath($request).'/dashboard',
             ]);
         }
 
@@ -60,7 +61,7 @@ class AuthController extends Controller
     public function residentLogin(Request $request)
     {
         $credentials = $request->validate([
-            'email'    => ['required', 'email'],
+            'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
 
@@ -84,8 +85,8 @@ class AuthController extends Controller
                 $request->session()->regenerate();
 
                 return response()->json([
-                    'success'  => true,
-                    'redirect' => $this->basePath($request) . '/officer-portal',
+                    'success' => true,
+                    'redirect' => $this->basePath($request).'/officer-portal',
                 ]);
             }
         } else {
@@ -97,7 +98,7 @@ class AuthController extends Controller
                 ]);
             }
             if (Auth::guard('resident')->attempt([
-                'email'    => $credentials['email'],
+                'email' => $credentials['email'],
                 'password' => $credentials['password'],
             ])) {
                 Auth::guard('officer')->logout();
@@ -107,8 +108,8 @@ class AuthController extends Controller
                 $request->session()->regenerate();
 
                 return response()->json([
-                    'success'  => true,
-                    'redirect' => $this->basePath($request) . '/residents',
+                    'success' => true,
+                    'redirect' => $this->basePath($request).'/residents',
                 ]);
             }
         }
@@ -128,29 +129,36 @@ class AuthController extends Controller
 
         if ($role === 'officer') {
             $data = $request->validate([
-                'name'             => 'required|string|max:150',
-                'email'            => 'required|email|unique:officers,email',
-                'password'         => 'required|string|min:8',
-                'role_description' => 'nullable|string|max:150',
+                'name' => 'required|string|max:150',
+                'email' => 'required|email|unique:officers,email',
+                'password' => 'required|string|min:8',
             ]);
             $data['password'] = Hash::make($data['password']);
-            $data['status']   = 'Pending';
+            $data['status'] = 'Pending';
             Officer::create($data);
         } else {
             $data = $request->validate([
-                'name'           => 'required|string|max:150',
-                'email'          => 'required|email|unique:residents,email',
-                'password'       => 'required|string|min:8',
+                'name' => 'required|string|max:150',
+                'email' => 'required|email|unique:residents,email',
+                'password' => 'required|string|min:8',
                 'contact_number' => 'nullable|string|max:20',
+                'block_lot' => 'nullable|string|max:50',
             ]);
-            Resident::create([
-                'name'            => $data['name'],
-                'email'           => $data['email'],
-                'password'        => Hash::make($data['password']),
-                'contact_number'  => $data['contact_number'] ?? null,
-                'status'          => 'Pending',
+
+            $residentData = [
+                'name' => $data['name'],
+                'email' => $data['email'],
+                'password' => Hash::make($data['password']),
+                'contact_number' => $data['contact_number'] ?? null,
+                'status' => 'Pending',
                 'current_balance' => 0,
-            ]);
+            ];
+
+            if (! empty($data['block_lot'])) {
+                $residentData['house_id'] = Household::findOrCreateByBlockLot($data['block_lot'])->id;
+            }
+
+            Resident::create($residentData);
         }
 
         return response()->json([

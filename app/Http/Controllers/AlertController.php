@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\AnnouncementView;
 use App\Models\IssueReport;
+use App\Models\PaymentSubmission;
 use App\Models\Resident;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -21,6 +22,23 @@ class AlertController extends Controller
             'resident' => $this->residentAlerts($actor['id']),
             default => [],
         };
+
+        // Respect the user's notification preferences.
+        $prefs = \App\Support\Actor::settings($request)->toPrefs();
+        $alerts = array_values(array_filter($alerts, function (array $alert) use ($prefs) {
+            $id = $alert['id'];
+            if (str_starts_with($id, 'announcement') && ! $prefs['notify_announcements']) {
+                return false;
+            }
+            if (str_starts_with($id, 'payment') && ! $prefs['notify_payments']) {
+                return false;
+            }
+            if (str_starts_with($id, 'issue') && ! $prefs['notify_issues']) {
+                return false;
+            }
+
+            return true;
+        }));
 
         usort($alerts, fn (array $a, array $b) => strcmp($b['created_at'], $a['created_at']));
 
@@ -125,6 +143,24 @@ class AlertController extends Controller
                 'issues',
                 $issue->priority === 'Critical' ? 'critical' : 'notice',
                 $issue->updated_at
+            );
+        }
+
+        // Payment submitted → admin response (validated / rejected / needs info)
+        $reviewedPayments = PaymentSubmission::where('resident_id', $residentId)
+            ->whereIn('status', ['Validated', 'Rejected', 'Needs Info'])
+            ->where('validated_at', '>=', Carbon::now()->subDays(30))
+            ->latest('validated_at')->take(5)->get();
+
+        foreach ($reviewedPayments as $payment) {
+            $alerts[] = $this->alert(
+                "payment-{$payment->id}",
+                'Payment ' . $payment->status,
+                'GCash payment of ₱' . number_format((float) $payment->amount, 2) . ' — '
+                    . $payment->status . ($payment->rejection_reason ? ': ' . $payment->rejection_reason : '.'),
+                'payments',
+                $payment->status === 'Validated' ? 'notice' : 'warning',
+                $payment->validated_at
             );
         }
 

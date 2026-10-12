@@ -54,7 +54,7 @@ class StreamController extends Controller
                     flush();
                 }
 
-                $maxSeconds = 25;
+                $maxSeconds = 5;
                 $elapsed    = 0;
                 $lastId     = $lastEventId;
 

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('reports', function (Blueprint $table) {
             $table->id();
             $table->foreignId('resident_id')->constrained()->onDelete('cascade');
-            $table->foreignId('template_id')->constrained()->onDelete('cascade');
+            $table->foreignId('template_id')->constrained('report_templates')->onDelete('cascade');
             $table->string('subject');
             $table->text('content');
             $table->string('status')->default('Generated');

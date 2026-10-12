@@ -93,8 +93,8 @@
         <section class="hero">
             <div>
                 <div class="eyebrow">A formal community management portal</div>
-                <h1>Clearer communication for a better subdivision.</h1>
-                <p class="hero-copy">SubSync brings Terra Nova residents, officers, and administrators into one organized platform for announcements, issue reporting, recommendations, and subdivision mapping.</p>
+                <h1>One organized platform for the Terra Nova community.</h1>
+                <p class="hero-copy">SubSync is a web-based community management platform for residential subdivisions. It strengthens resident engagement through organized communication, issue reporting, recommendations, and interactive subdivision mapping &mdash; giving residents, officers, and administrators a single, reliable community record.</p>
                 <div class="actions">
                     <a class="button" href="{{ route('login') }}">Enter resident portal</a>
                 </div>

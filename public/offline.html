@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offline — SubSync</title>
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:#FAF6F0; color:#26231F; font-family:Inter,-apple-system,'Segoe UI',Roboto,sans-serif; text-align:center; }
+  .box { max-width:420px; padding:40px 24px; }
+  .mark { font-size:44px; }
+  h1 { font-size:22px; margin:14px 0 6px; }
+  p { color:#5F5A53; font-size:14px; line-height:1.6; }
+  button { margin-top:18px; padding:10px 22px; border:none; border-radius:6px; background:#86653D; color:#fff;
+    font-size:14px; font-weight:600; cursor:pointer; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="mark">🏡</div>
+    <h1>You're offline</h1>
+    <p>SubSync can't reach the network right now. Reconnect and try again — any pages you already visited are still available.</p>
+    <button onclick="location.reload()">Retry</button>
+  </div>
+</body>
+</html>

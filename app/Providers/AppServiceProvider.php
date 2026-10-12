@@ -12,13 +12,13 @@ use App\Models\HouseholdMember;
 use App\Models\IssueReport;
 use App\Models\Media;
 use App\Models\Officer;
-use App\Models\PaymentStatus;
 use App\Models\Recommendation;
 use App\Models\Resident;
 use App\Observers\DashboardCacheObserver;
 use App\Observers\SsePublishingObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,15 +30,23 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Route id params are always numeric DB keys; constrain them so a
+        // malformed id yields 404 instead of a 500 TypeError from int-typed
+        // controller args (e.g. /api/officers/abc).
+        Route::pattern('id', '[0-9]+');
+        Route::pattern('residentId', '[0-9]+');
+        Route::pattern('convId', '[0-9]+');
+        Route::pattern('templateId', '[0-9]+');
+
         // Dev only: surface N+1 queries + silent attribute issues immediately
         // so slow queries get fixed instead of accumulating silently.
         if ($this->app->isLocal()) {
             Model::shouldBeStrict();
         }
 
-        // Apply SQLite performance PRAGMAs (WAL, NORMAL sync) as a safety net
-        // even if config is cached with older values.
-        if (getenv('PRAGMA_WAL') === '1') {
+        // Apply SQLite performance PRAGMAs (WAL, NORMAL sync, busy timeout) so concurrent
+        // reads/writes don't block. No-op/ignored for non-SQLite or :memory: databases.
+        if (config('database.default') === 'sqlite') {
             try {
                 DB::connection('sqlite')->statement('PRAGMA journal_mode = wal');
                 DB::connection('sqlite')->statement('PRAGMA synchronous = normal');
@@ -57,7 +65,6 @@ class AppServiceProvider extends ServiceProvider
             FinancialRecord::class,
             Announcement::class,
             Recommendation::class,
-            PaymentStatus::class,
             HoaExpense::class,
             HoaPolicy::class,
             Facility::class,
