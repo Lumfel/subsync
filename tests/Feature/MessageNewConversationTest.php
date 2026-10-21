@@ -150,6 +150,24 @@ class MessageNewConversationTest extends TestCase
         $this->assertNotContains($convId, array_column($this->getJson('/api/messages/threads')->assertOk()->json(), 'id'));
     }
 
+    public function test_admin_initiated_request_names_the_sender(): void
+    {
+        $admin = Admin::create(['name' => 'A', 'email' => 'a2@example.test', 'password' => 'Secret@12345', 'status' => 'Active']);
+        $resident = $this->resident();
+
+        $this->withSession(['admin_id' => $admin->id])
+            ->withHeaders(['Accept' => 'application/json'])
+            ->postJson('/api/messages/start', ['title' => 'Water bill follow-up', 'resident_id' => $resident->id])
+            ->assertOk();
+
+        // The recipient must see WHO is trying to contact them, not "Someone".
+        $this->as('resident', $resident);
+        $requests = $this->getJson('/api/messages/requests')->assertOk()->json();
+
+        $this->assertCount(1, $requests);
+        $this->assertSame('HOA Admin', $requests[0]['from']);
+    }
+
     public function test_accept_is_rejected_for_non_pending_conversations(): void
     {
         $officer = $this->officer();

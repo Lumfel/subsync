@@ -52,7 +52,6 @@ function switchTab(name){
   }
   if(name==='map') setTimeout(initResidentMap,80);
   if(name==='payments') loadPayments();
-  if(name==='reports'){ loadReportTemplates(); loadMyReports(); }
   if(name==='calendar') loadEvents();
   
   // Auto-close sidebar on mobile
@@ -154,18 +153,10 @@ document.addEventListener('DOMContentLoaded', ()=>{
     } catch(e){}
   }, 60000);
 
-  // Poll active message thread every 10s when messages tab is open
-  setInterval(async ()=>{
-    if(document.hidden || !currentThread) return;
-    if(document.getElementById('panel-messages')?.classList.contains('active')){
-      try{
-        const msgs = await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json());
-        if(msgs.length !== (threads[currentThread]?.messages||[]).length){
-          threads[currentThread].messages = msgs;
-          renderMessages();
-        }
-      }catch(e){}
-    }
+  // Fallback poll for the active thread (WebSocket pushes are the instant path)
+  setInterval(()=>{
+    if(document.hidden) return;
+    if(document.getElementById('panel-messages')?.classList.contains('active')) refreshResidentMessages();
   }, 10000);
 
   // Poll issues every 30s when issues tab is visible (catches admin status updates)
@@ -220,7 +211,7 @@ function annItem(a){
 }
 function renderAnnouncements(){
   const el=document.getElementById('announcementList');
-  if(!announcements.length){ el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>'; return; }
+  if(!announcements.length){ el.innerHTML='<div class="empty-state">' + SubUI.icon('megaphone', 28) + 'No announcements yet.</div>'; return; }
   const SHOW=5;
   const list=_annShowAll?announcements:announcements.slice(0,SHOW);
   el.innerHTML=list.map(annItem).join('');
@@ -424,7 +415,7 @@ function deleteInBadge(i){
   if(isNaN(d.getTime())) return '';
   const daysLeft = Math.max(0, Math.ceil(30 - (Date.now()-d.getTime())/86400000));
   if(daysLeft<=0) return '';
-  return `<span style="font-size:10px;font-weight:600;color:var(--text-dim);margin-left:6px;" title="Auto-deletes after 30 days">🗑 deletes in ${daysLeft}d</span>`;
+  return `<span style="font-size:10px;font-weight:600;color:var(--text-dim);margin-left:6px;" title="Auto-deletes after 30 days">${SubUI.icon('trash',11)} deletes in ${daysLeft}d</span>`;
 }
 
 async function loadIssues(){
@@ -434,7 +425,7 @@ async function loadIssues(){
 function renderIssues(){
   const el=document.getElementById('issueList');
   if(!issues.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">📋</div>No reports submitted yet.</div>';
+    el.innerHTML='<div class="empty-state">' + SubUI.icon('clipboard', 28) + 'No reports submitted yet.</div>';
     return;
   }
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
@@ -456,7 +447,7 @@ function renderIssues(){
       ${gallery}
       <div class="issue-meta">
         <span class="pill pill-notice">${i.category}</span>
-        ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">👤 ${escHtml(i.assigned_officer)}</span>`:''}
+        ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">${SubUI.icon('user',12)} ${escHtml(i.assigned_officer)}</span>`:''}
         ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="Expected resolution">${i.overdue?'Overdue ':'ETA '}${escHtml(i.due_date)}</span>`:''}
         <span class="meta-txt">· #${i.id} · Filed ${i.created_at}</span>
       </div>
@@ -479,8 +470,8 @@ async function openTimeline(id){
   document.getElementById('timelineMeta').innerHTML=
     statusPillHtml(it.status)
     +(it.priority?` <span style="font-size:11px;color:var(--text-dim);">· Priority ${escHtml(it.priority)}</span>`:'')
-    +(it.assigned_officer?`<div style="margin-top:6px;">👤 Assigned to <strong>${escHtml(it.assigned_officer)}</strong></div>`:'')
-    +(it.due_date?`<div style="margin-top:4px;">${it.overdue?'<span style="color:#f08080;">⏰ Overdue</span>':'🗓 Expected by'} <strong>${escHtml(it.due_date)}</strong></div>`:'');
+    +(it.assigned_officer?`<div style="margin-top:6px;">${SubUI.icon('user',12)} Assigned to <strong>${escHtml(it.assigned_officer)}</strong></div>`:'')
+    +(it.due_date?`<div style="margin-top:4px;">${it.overdue?'<span style="color:#f08080;">' + SubUI.icon('clock',12) + ' Overdue</span>':SubUI.icon('calendar',12) + ' Expected by'} <strong>${escHtml(it.due_date)}</strong></div>`:'');
   const labels={status:'Status changed',priority:'Priority set',assign:'Assigned officer',due_date:'Due date set',archive:'Archive state'};
   const tl=(data.timeline||[]);
   document.getElementById('timelineList').innerHTML=tl.length?tl.map(t=>{
@@ -492,6 +483,11 @@ async function openTimeline(id){
     </div>`;
   }).join(''):'<div style="font-size:13px;color:var(--text-dim);padding:8px 0;">No changes yet — your report is with the HOA team.</div>';
   document.getElementById('modal-timeline').classList.add('open');
+}
+/* First human-readable error from a Laravel JSON error response */
+function errMsg(data,fallback){
+  if(data&&data.errors){ const keys=Object.keys(data.errors); if(keys.length&&Array.isArray(data.errors[keys[0]])&&data.errors[keys[0]][0]) return data.errors[keys[0]][0]; }
+  return (data&&data.message)||fallback;
 }
 async function submitIssue(){
   const category=document.getElementById('issueCategory').value;
@@ -511,6 +507,11 @@ async function submitIssue(){
   if(imgInput&&imgInput.files.length){
     Array.from(imgInput.files).slice(0,5).forEach(f=>fd.append('images[]',f));
   }
+  const camImgs=window._cameraIssueImages||[];
+  if(camImgs.length){
+    const room=Math.max(0,5-(imgInput?imgInput.files.length:0));
+    camImgs.slice(0,room).forEach(f=>fd.append('images[]',f));
+  }
   const docInput=document.getElementById('issueDocuments');
   if(docInput&&docInput.files.length){
     Array.from(docInput.files).slice(0,5).forEach(f=>fd.append('documents[]',f));
@@ -521,6 +522,10 @@ async function submitIssue(){
     ['issueCategory','issueTitle','issueBody','issue-lat','issue-lng'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     if(imgInput) imgInput.value='';
     if(docInput) docInput.value='';
+    window._cameraIssueImages=[];
+    const camCount=document.getElementById('issueCameraCount');
+    if(camCount) camCount.textContent='';
+    if(typeof toggleEmergencyNote==='function') toggleEmergencyNote();
     const disp=document.getElementById('issue-loc-display');
     if(disp) disp.textContent='No location set';
     closeIssuePicker();
@@ -529,7 +534,7 @@ async function submitIssue(){
   loadHOAPolicies();
     showToast('✅ Report submitted. The admin will review it shortly.');
   } else {
-    showToast('⚠ '+(data.message||'Failed to submit report. Please try again.'));
+    showToast('⚠ '+errMsg(data,'Failed to submit report. Please try again.'));
   }
 }
 
@@ -726,7 +731,7 @@ async function submitPayment(){
       document.getElementById('payReceipt').value='';
       await loadMyPayments();
       showToast('✅ Payment submitted for validation.');
-    } else showToast('⚠ '+(data.message||'Could not submit payment.'));
+    } else showToast('⚠ '+errMsg(data,'Could not submit payment.'));
   }catch(e){ showToast('⚠ Could not submit payment.'); }
 }
 
@@ -776,7 +781,7 @@ function renderHOAPoliciesPreview(){
   let html = '';
   hoaPolicies.slice(0, 3).forEach(p => {
     html += `<tr>
-      <td style="font-weight:500;color:var(--text);"><span class="icon" style="color:var(--accent);margin-right:8px;">📜</span>${p.title}</td>
+      <td style="font-weight:500;color:var(--text);"><span class="icon" style="color:var(--accent);margin-right:8px;">${SubUI.icon('scroll',14)}</span>${p.title}</td>
       <td><span class="pill" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);">${p.category}</span></td>
       <td>${p.status}</td>
     </tr>`;
@@ -794,7 +799,7 @@ setInterval(async () => {
 function renderRecs(){
   const el=document.getElementById('recList');
   if(!recs.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">💡</div>No suggestions yet. Be the first to share an idea!</div>';
+    el.innerHTML='<div class="empty-state">' + SubUI.icon('lightbulb', 28) + 'No suggestions yet. Be the first to share an idea!</div>';
     return;
   }
   const statusLabel={Pending:'Pending',Reviewed:'Reviewed',Approved:'✅ Approved',Rejected:'❌ Rejected'};
@@ -921,13 +926,54 @@ async function loadPortalData() {
 loadPortalData();
 renderMessages();
 
-/* ── Real-time SSE (replaces aggressive polling) ── */
+/* ── Real-time: WebSocket (Reverb) first, SSE only as fallback ── */
 let _sseEventId = 0;
+let _rtWsReady = false;   // true while the Reverb socket is connected
+let _rtSse = null;        // the fallback EventSource (null when WS is primary)
+
+/* Re-fetch the open thread; used by the WS push and the 10s fallback poll. */
+async function refreshResidentMessages(){
+  if(!currentThread) return;
+  try{
+    const msgs = await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json());
+    if(Array.isArray(msgs) && msgs.length !== (threads[currentThread]?.messages||[]).length){
+      threads[currentThread].messages = msgs;
+      renderMessages();
+    }
+  }catch(e){}
+}
+
+/* Refresh just the "Message Requests" block — who is trying to reach you. */
+async function refreshResidentRequestBlock(){
+  const sidebar = document.querySelector('.msg-sidebar-threads');
+  if(!sidebar) return;
+  let reqs = [];
+  try{ reqs = await fetch('/api/messages/requests',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){}
+  reqs = Array.isArray(reqs) ? reqs : [];
+  const existing = sidebar.querySelector('.msg-req-block');
+  if(!reqs.length){ if(existing) existing.remove(); return; }
+  const html = `<div class="msg-req-block">
+    <div class="msg-req-title">Message Requests (${reqs.length})</div>
+    ${reqs.map(q=>`<div class="msg-req-item">
+      <div class="msg-thread-info">
+        <div class="msg-thread-name">${escHtml(q.from||q.title||'Someone')}</div>
+        <div class="msg-thread-preview">${escHtml(q.last_message||'No message')}</div>
+      </div>
+      <div class="msg-req-actions">
+        <button class="btn btn-sm" onclick="acceptResRequest(${q.id})">Accept</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectResRequest(${q.id})">Reject</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+  if(existing) existing.outerHTML = html; else sidebar.insertAdjacentHTML('afterbegin', html);
+}
 
 function connectResidentSSE(){
+  if(_rtWsReady) return; // WebSocket is live — SSE is only the fallback
   if(document.hidden){ setTimeout(connectResidentSSE, 2000); return; }
   const url = `/api/stream/updates?lastEventId=${_sseEventId}`;
   const es  = new EventSource(url);
+  _rtSse = es;
 
   // Fresh connection — grab latest data once
   es.addEventListener('sync', () => {
@@ -970,6 +1016,8 @@ function connectResidentSSE(){
       if(evt.lastEventId) _sseEventId = evt.lastEventId;
     }catch(err){}
     es.close();
+    _rtSse = null;
+    if(_rtWsReady) return; // WS came up while this cycle ran — stop the SSE loop
     // Refresh on every cycle so updates still land through buffering tunnels (e.g. ngrok)
     loadAnnouncements();
     loadIssues();
@@ -980,11 +1028,12 @@ function connectResidentSSE(){
 
   es.onerror = () => {
     es.close();
-    setTimeout(connectResidentSSE, 3000);
+    _rtSse = null;
+    if(!_rtWsReady) setTimeout(connectResidentSSE, 3000);
   };
 
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden && es.readyState === EventSource.CLOSED){
+    if(!document.hidden && es.readyState === EventSource.CLOSED && !_rtWsReady){
       setTimeout(connectResidentSSE, 500);
     }
   }, { once: true });
@@ -1012,7 +1061,7 @@ if(_nameEl && RESIDENT_ID){
   _nameEl.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); _nameEl.blur(); } });
 }
 
-/* ══ REVERB (WebSocket) real-time — instant updates; SSE remains the fallback ══ */
+/* ══ REVERB (WebSocket) real-time — primary channel; SSE only as fallback ══ */
 (function initSubSyncRealtime(attempt){
   attempt = attempt || 0;
   if(!window.Echo){
@@ -1021,8 +1070,52 @@ if(_nameEl && RESIDENT_ID){
   }
   try {
     const ch = window.Echo.channel('subsync');
-    const refresh = () => { loadAnnouncements(); loadIssues(); loadHOAExpenses(); loadHOAPolicies(); };
+    const refresh = () => {
+      loadAnnouncements(); loadIssues(); loadHOAExpenses(); loadHOAPolicies();
+      document.dispatchEvent(new Event('subsync:refresh-alerts'));
+    };
     ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
+
+    // Real-time data changes relevant to this resident.
+    ch.listen('.payment', (evt) => {
+      if(!evt || Number(evt.residentId) !== Number(RESIDENT_ID)) return;
+      showToast('Payment update: ' + (evt.status || 'updated') + '.');
+      loadPayments();
+      document.dispatchEvent(new Event('subsync:refresh-alerts'));
+    });
+    ch.listen('.recommendation', (evt) => {
+      if(evt && Number(evt.residentId) === Number(RESIDENT_ID)) loadRecs();
+    });
+    ch.listen('.event', () => loadEvents());
+    ch.listen('.rsvp', () => loadEvents());
+    ch.listen('.resident', (evt) => {
+      if(evt && Number(evt.latestId) === Number(RESIDENT_ID)) loadPortalData();
+    });
+    ch.listen('.message', (evt) => {
+      if(!evt || !evt.conversationId) return;
+      const isOpen = String(evt.conversationId) === String(currentThread);
+      const panelOpen = document.getElementById('panel-messages')?.classList.contains('active');
+      const mine = evt.senderType === 'resident' && Number(evt.senderId) === Number(RESIDENT_ID);
+      if(mine){ if(isOpen) refreshResidentMessages(); return; }
+      if(isOpen && panelOpen){ refreshResidentMessages(); return; }
+      showToast('New message from ' + (evt.senderName || 'someone') + '.');
+      const badge = document.getElementById('badge-messages');
+      if(badge){ badge.textContent = (parseInt(badge.textContent,10)||0) + 1; badge.style.display = 'inline-flex'; }
+      refreshResidentRequestBlock();
+      if(isOpen) refreshResidentMessages();
+    });
+
+    // WebSocket-first: while Reverb is connected the SSE fallback stays off;
+    // if the socket drops, bring the fallback back.
+    const conn = window.Echo.connector && window.Echo.connector.pusher && window.Echo.connector.pusher.connection;
+    if(conn){
+      const wsUp = () => { _rtWsReady = true; if(_rtSse){ try{ _rtSse.close(); }catch(e){} _rtSse = null; } };
+      const wsDown = () => { if(_rtWsReady){ _rtWsReady = false; connectResidentSSE(); } };
+      if(conn.state === 'connected') wsUp();
+      conn.bind('connected', wsUp);
+      conn.bind('disconnected', wsDown);
+      conn.bind('unavailable', wsDown);
+    }
   } catch(e) {}
 })();
 
@@ -1037,69 +1130,6 @@ window.addEventListener('orientationchange', function(){ setTimeout(function(){ 
 
 /* Allows the shared global search to navigate panels by name */
 window.PortalNav = { go: function (name) { switchTab(name); } };
-/* ── REPORTS ── */
-let myReports=[];
-let reportTemplates=[];
-function loadReportTemplates(){
-  return fetch('/api/report-templates',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(data=>{
-    reportTemplates=Array.isArray(data)?data:[];
-    const sel=document.getElementById('reportTemplateSelect');
-    if(!sel) return;
-    sel.innerHTML='<option value="">Select a report type...</option>'+reportTemplates.map(t=>`<option value="${t.id}">${escHtml(t.name)}</option>`).join('');
-    renderReportVars();
-  }).catch(()=>{});
-}
-function renderReportVars(){
-  const sel=document.getElementById('reportTemplateSelect');
-  const box=document.getElementById('reportVarsContainer');
-  if(!sel||!box) return;
-  const t=reportTemplates.find(x=>String(x.id)===String(sel.value));
-  const vars=(t&&Array.isArray(t.variables))?t.variables:[];
-  box.innerHTML=vars.map(v=>`<div class="f-field" style="margin-top:10px;"><span class="f-label">${escHtml(String(v).replace(/_/g,' '))}</span><input type="text" data-var="${escHtml(v)}" placeholder="Enter ${escHtml(String(v).replace(/_/g,' '))}"></div>`).join('');
-}
-async function generateReport(){
-  const sel=document.getElementById('reportTemplateSelect');
-  if(!sel||!sel.value){ showToast('Please select a report type.'); return; }
-  const variables={};
-  document.querySelectorAll('#reportVarsContainer [data-var]').forEach(i=>{ variables[i.dataset.var]=i.value; });
-  const res=await fetch('/api/reports/generate/'+sel.value,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:JSON.stringify({variables})}).then(r=>r.json()).catch(()=>({success:false}));
-  if(res&&res.success){
-    showToast('Report generated.');
-    sel.value=''; renderReportVars(); loadMyReports();
-    if(res.report) showReportPreview(res.report.subject,res.report.content,res.report.id);
-  } else {
-    showToast((res&&(res.error||res.message))||'Could not generate the report.');
-  }
-}
-async function loadMyReports(){
-  const box=document.getElementById('myReportsList');
-  if(!box) return;
-  const data=await fetch('/api/reports/my',{headers:{'Accept':'application/json'}}).then(r=>r.json()).catch(()=>[]);
-  myReports=Array.isArray(data)?data:[];
-  if(!myReports.length){ box.innerHTML='<div class="empty-state"><div class="empty-icon">&#128196;</div>No reports yet.</div>'; return; }
-  box.innerHTML=myReports.map(r=>`<div class="issue-item" style="cursor:pointer;" onclick="openMyReport(${r.id})" title="View report">
-      <div class="issue-title" style="font-size:15px;">${escHtml(r.subject||r.template_name||'Report')}</div>
-      <div style="font-size:12px;color:var(--text-dim);margin-top:3px;">${escHtml(r.reference_no||'')} &middot; ${escHtml(r.template_name||'')} &middot; ${escHtml(r.created_at||'')} &middot; ${escHtml(r.status||'')}</div>
-    </div>`).join('');
-}
-function openMyReport(id){
-  const r=myReports.find(x=>String(x.id)===String(id));
-  if(r) showReportPreview(r.subject,r.content,r.id);
-}
-function showReportPreview(subject,content,id){
-  const card=document.getElementById('reportPreviewCard');
-  if(!card) return;
-  document.getElementById('reportPreviewSubject').textContent=subject||'Report';
-  document.getElementById('reportPreviewBody').textContent=content||'';
-  const p=document.getElementById('reportPreviewPrint'); if(p){ if(id){ p.style.display=''; p.href='/reports/'+id+'/print?portal=resident'; } else { p.style.display='none'; } }
-  card.style.display='block';
-  card.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-function hideReportPreview(){
-  const card=document.getElementById('reportPreviewCard');
-  if(card) card.style.display='none';
-}
-
 /* ── CALENDAR / EVENTS ── */
 let communityEvents=[];
 async function loadEvents(){
@@ -1112,7 +1142,7 @@ async function loadEvents(){
 function renderEvents(){
   const box=document.getElementById('eventsList');
   if(!box) return;
-  if(!communityEvents.length){ box.innerHTML='<div class="empty-state"><div class="empty-icon">&#128197;</div>No upcoming events.</div>'; return; }
+  if(!communityEvents.length){ box.innerHTML='<div class="empty-state">' + SubUI.icon('calendar', 28) + 'No upcoming events.</div>'; return; }
   box.innerHTML=communityEvents.map(e=>{
     const mine=e.my_status||'';
     const btn=(label,val)=>`<button class="btn btn-sm" style="margin-right:6px;${mine===val?'background:var(--accent);border-color:var(--accent);color:#fff;':''}" onclick="rsvpEvent(${e.id},'${val}')">${label}</button>`;

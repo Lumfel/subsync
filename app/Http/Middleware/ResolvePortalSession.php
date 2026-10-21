@@ -20,6 +20,12 @@ use Symfony\Component\HttpFoundation\Response;
  *   4. role input on /login + /register
  *   5. the request path (navigations)
  *   6. the Referer header (XHR/EventSource from a portal page)
+ *
+ * NOTE: this middleware is prepended globally and therefore runs BEFORE
+ * EncryptCookies — any cookie read here must be excluded from encryption
+ * (`subsync_portal_hint` is; see bootstrap/app.php). Encrypted values would
+ * never match the whitelist and would silently fall back to "resident",
+ * breaking the officer Google login.
  */
 class ResolvePortalSession
 {
@@ -61,7 +67,7 @@ class ResolvePortalSession
             return in_array($hint, ['resident', 'officer'], true) ? $hint : 'resident';
         }
 
-        if ($request->is('admin-access') || $request->is('dashboard')) {
+        if ($request->is('admin-access') || $request->is('dashboard') || $request->is('design-system')) {
             return 'admin';
         }
         if ($request->is('officer-portal')) {

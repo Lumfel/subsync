@@ -16,3 +16,6 @@ Schedule::command('assessments:generate-dues')->monthlyOn(1, '00:05');
 
 // Archive issues that have been resolved for more than 30 days (never deletes).
 Schedule::command('issues:purge-resolved')->daily();
+
+// Nightly database backup (storage/app/backups, keeps the last 14).
+Schedule::command('subsync:backup-database')->dailyAt('02:00');

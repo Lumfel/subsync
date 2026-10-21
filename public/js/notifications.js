@@ -69,6 +69,12 @@
     else if (typeof switchTab === 'function') switchTab(tab);
   });
 
+  // Portal realtime handlers dispatch this on every bus event, so the bell
+  // updates instantly; the interval below stays only as a fallback.
+  document.addEventListener('subsync:refresh-alerts', function () {
+    if (!document.hidden) load();
+  });
+
   load();
   setInterval(load, 60000);
 })();

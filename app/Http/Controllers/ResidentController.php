@@ -47,7 +47,7 @@ class ResidentController extends Controller
             return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
         }
 
-        $request->validate(['avatar' => 'required|image|max:4096']);
+        $request->validate(['avatar' => 'required|image|max:8192']);
 
         $path = $request->file('avatar')->store('avatars', 'public');
         $url = Storage::url($path);

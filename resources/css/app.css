@@ -1,11 +1,69 @@
-@import 'tailwindcss';
+/*
+ * SubSync design kit — Tailwind v4 + daisyUI, deliberately namespaced.
+ *
+ * - No Preflight: the portals ship their own hand-written base styles, so only
+ *   theme + utilities are imported. Global resets would fight ui-polish.css.
+ * - daisyUI components are prefixed "d-" and utilities "tw-" so kit classes can
+ *   never collide with the app's own .btn / .card / .input classes.
+ * - The "subsync" theme mirrors the app palette (cream / ink / brown) and the
+ *   shared radius scale defined in public/css/ui-polish.css.
+ *
+ * Usage guide: /design-system (admin only) + AGENTS.md.
+ */
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
+@layer theme, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) prefix(tw);
+
+@source '../../resources/views/**/*.blade.php';
+@source '../../resources/js/**/*.js';
+@source '../../public/js/**/*.js';
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+@plugin "daisyui" {
+    themes: false;
+    prefix: "d-";
+    include: "button,card,badge,alert,input,select,textarea,modal,tab,dropdown,tooltip,table,loading,stat,checkbox,toggle,progress,divider,avatar,kbd,link,menu,join,indicator";
+}
+
+@plugin "daisyui/theme" {
+    name: "subsync";
+    default: true;
+    color-scheme: light;
+
+    --color-base-100: #ffffff;
+    --color-base-200: #faf6f0;
+    --color-base-300: #ede7dd;
+    --color-base-content: #26231f;
+
+    --color-primary: #86653d;
+    --color-primary-content: #ffffff;
+    --color-secondary: #2b2927;
+    --color-secondary-content: #ffffff;
+    --color-accent: #a07d53;
+    --color-accent-content: #ffffff;
+    --color-neutral: #45413c;
+    --color-neutral-content: #ffffff;
+
+    --color-info: #3e6a8f;
+    --color-info-content: #ffffff;
+    --color-success: #4f7a57;
+    --color-success-content: #ffffff;
+    --color-warning: #946e1e;
+    --color-warning-content: #ffffff;
+    --color-error: #a84545;
+    --color-error-content: #ffffff;
+
+    /* Match the canonical scale from ui-polish.css. */
+    --radius-selector: 999px;
+    --radius-field: 8px;
+    --radius-box: 12px;
+}
+
+
+
+

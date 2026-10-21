@@ -24,6 +24,18 @@
     RewriteRule ^ index.php [L]
 </IfModule>
 
+# ── Defense-in-depth ────────────────────────────────────────────────────
+# Authentication/authorization lives in Laravel middleware (admin.auth /
+# officer.auth / portal.role). These rules only stop files that must never
+# be served from the web root, even if a deploy accidentally drops them here.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(env|sql|log|bak|old|orig|save|swp|ini|yml|yaml|conf|sh|ps1|cmd|bat)$">
+    Require all denied
+</FilesMatch>
+
 <IfModule mod_brotli.c>
     # Prefer Brotli (~20% smaller than gzip) when the client advertises it
     <If "%{req:Accept-Encoding} =~ /br/">
@@ -84,4 +96,6 @@
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
     Header set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
 </IfModule>

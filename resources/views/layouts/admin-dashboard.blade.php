@@ -5,23 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Admin Dashboard</title>
-<script>
-window.APP_BASE = '{{ request()->getBaseUrl() }}';
-(function () {
-    var base = window.APP_BASE || '';
-    if (!base) return;
-    var prefix = function (url) {
-        if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
-        return url;
-    };
-    var origFetch = window.fetch;
-    window.fetch = function (url, opts) { opts = opts || {}; var h = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' }); if (window.__PORTAL) h['X-Portal'] = window.__PORTAL; opts.headers = h; return origFetch.call(this, prefix(url), opts); };
-    var OrigES = window.EventSource;
-    window.EventSource = function (url, cfg) { var u = prefix(url); if (window.__PORTAL) u += (u.indexOf('?') < 0 ? '?' : '&') + 'portal=' + window.__PORTAL; return new OrigES(u, cfg); };
-    window.EventSource.prototype = OrigES.prototype;
-    window.EventSource.CONNECTING = 0; window.EventSource.OPEN = 1; window.EventSource.CLOSED = 2;
-})();
-</script>
+<script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
+<script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -53,34 +38,34 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   </div>
   <div style="padding:10px 14px 2px;">
     <button class="qa-btn" style="width:100%;justify-content:flex-start;background:#FAF6F0;" onclick="SubUI.openSearch()">
-      <span class="qa-icon">🔍</span> Search… <kbd style="margin-left:auto;background:#E6DFD5;border-radius:4px;padding:1px 6px;font-size:11px;">Ctrl K</kbd>
+      <span class="qa-icon"><x-icon name="search" size="16"/></span> Search… <kbd style="margin-left:auto;background:#E6DFD5;border-radius:4px;padding:1px 6px;font-size:11px;">Ctrl K</kbd>
     </button>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Overview</div>
-    <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</div>
-    <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon">📈</span> Analytics</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon"><x-icon name="chart-bar" size="17"/></span> Dashboard</div>
+    <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon"><x-icon name="chart-line" size="17"/></span> Analytics</div>
 
     <div class="nav-section-label">Community</div>
-    <div class="nav-item" onclick="nav('residents',this)"><span class="nav-icon">👥</span> Residents <span class="nav-badge" id="pendingBadge" style="display:none;background:#f59e0b;">0</span></div>
-    <div class="nav-item" onclick="nav('members',this)"><span class="nav-icon">👤</span> Household Members</div>
-    <div class="nav-item" onclick="nav('officers',this)"><span class="nav-icon">🛡️</span> Officers</div>
+    <div class="nav-item" onclick="nav('residents',this)"><span class="nav-icon"><x-icon name="users" size="17"/></span> Residents <span class="nav-badge" id="pendingBadge" style="display:none;background:#f59e0b;">0</span></div>
+    <div class="nav-item" onclick="nav('members',this)"><span class="nav-icon"><x-icon name="user" size="17"/></span> Household Members</div>
+    <div class="nav-item" onclick="nav('officers',this)"><span class="nav-icon"><x-icon name="shield" size="17"/></span> Officers</div>
 
     <div class="nav-section-label">Operations</div>
-    <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon">🔧</span> Issues <span class="nav-badge" id="issueBadge">0</span></div>
-    <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon">🗺️</span> Map</div>
-    <div class="nav-item" onclick="nav('announcements',this)"><span class="nav-icon">📢</span> Announcements</div>
-    <div class="nav-item" onclick="nav('policies',this)"><span class="nav-icon">📜</span> Policies</div>
+    <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon"><x-icon name="wrench" size="17"/></span> Issues <span class="nav-badge" id="issueBadge">0</span></div>
+    <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon"><x-icon name="map" size="17"/></span> Map</div>
+    <div class="nav-item" onclick="nav('announcements',this)"><span class="nav-icon"><x-icon name="megaphone" size="17"/></span> Announcements</div>
+    <div class="nav-item" onclick="nav('policies',this)"><span class="nav-icon"><x-icon name="scroll" size="17"/></span> Policies</div>
 
-    <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon">📁</span> Documents <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
-    <div class="nav-item" onclick="nav('archives',this)"><span class="nav-icon">📦</span> Archives</div>
-    <div class="nav-item" onclick="nav('gcash',this)"><span class="nav-icon">💳</span> Finance</div>
+    <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon"><x-icon name="folder" size="17"/></span> Documents <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
+    <div class="nav-item" onclick="nav('archives',this)"><span class="nav-icon"><x-icon name="archive" size="17"/></span> Archives</div>
+    <div class="nav-item" onclick="nav('gcash',this)"><span class="nav-icon"><x-icon name="credit-card" size="17"/></span> Finance</div>
 
     <div class="nav-section-label">Communication &amp; System</div>
-    <div class="nav-item" onclick="nav('messages',this)"><span class="nav-icon">💬</span> Messages <span class="nav-badge" id="msgBadge">5</span></div>
-    <div class="nav-item" onclick="nav('recommendations',this)"><span class="nav-icon">💡</span> Suggestions</div>
-    <div class="nav-item" onclick="nav('manageusers',this)"><span class="nav-icon">⚙️</span> Households &amp; Users</div>
-    <div class="nav-item" id="navSettings" onclick="window.location='{{ url('settings') }}?portal={{ $role ?? 'admin' }}'"><span class="nav-icon">🎚️</span> Settings</div>
+    <div class="nav-item" onclick="nav('messages',this)"><span class="nav-icon"><x-icon name="message" size="17"/></span> Messages <span class="nav-badge" id="msgBadge">5</span></div>
+    <div class="nav-item" onclick="nav('recommendations',this)"><span class="nav-icon"><x-icon name="lightbulb" size="17"/></span> Suggestions</div>
+    <div class="nav-item" onclick="nav('manageusers',this)"><span class="nav-icon"><x-icon name="gear" size="17"/></span> Households &amp; Users</div>
+    <div class="nav-item" id="navSettings" onclick="window.location='{{ url('settings') }}?portal={{ $role ?? 'admin' }}'"><span class="nav-icon"><x-icon name="sliders" size="17"/></span> Settings</div>
   </nav>
   <div class="sidebar-footer">
     <div class="admin-profile">
@@ -97,13 +82,13 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 <main class="main">
   <!-- Emergency alert banner (shown on critical issues) -->
   <div id="emergencyAlert">
-    🚨 <span id="emergencyAlertText">CRITICAL ISSUE REPORTED</span>
+    <x-icon name="alert" size="16"/> <span id="emergencyAlertText">CRITICAL ISSUE REPORTED</span>
     &nbsp;&nbsp;<button onclick="nav('issues');dismissEmergency()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:3px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;">View Issue</button>
     &nbsp;<button aria-label="Dismiss" onclick="dismissEmergency()" style="background:transparent;border:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;line-height:1;">✕</button>
   </div>
   <!-- Floating announcement notification banner -->
   <div id="annNotif">
-    <span style="font-size:18px;">📢</span>
+    <span style="font-size:18px;"><x-icon name="megaphone" size="18"/></span>
     <div style="flex:1;min-width:0;">
       <div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;">New Announcement</div>
       <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="annNotifTitle">—</div>
@@ -124,12 +109,12 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;">
-      <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()">☰</button>
+      <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()"><x-icon name="menu" size="18"/></button>
       <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
     </div>
     <div class="topbar-actions">
       <div class="alerts-wrap">
-        <button class="topbar-btn keep-mobile" id="alertsButton" aria-expanded="false" aria-controls="alertsPopover" onclick="toggleAlerts()">🔔 Alerts <span class="alerts-badge" id="alertsBadge">0</span></button>
+        <button class="topbar-btn keep-mobile" id="alertsButton" aria-expanded="false" aria-controls="alertsPopover" onclick="toggleAlerts()"><x-icon name="bell" size="15"/> Alerts <span class="alerts-badge" id="alertsBadge">0</span></button>
         <section class="alerts-popover" id="alertsPopover" aria-label="System alerts">
           <div class="alerts-popover-head"><strong>System alerts</strong><button class="alerts-refresh" onclick="loadAlerts(true)">Refresh</button></div>
           <div id="alertsList"><div class="alerts-empty">Loading alerts…</div></div>
@@ -159,10 +144,10 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
       <div class="card" style="margin-bottom:16px;padding:18px 20px;">
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);margin-bottom:12px;">Quick Actions</div>
         <div class="quick-actions">
-          <button class="qa-btn" onclick="nav('announcements',null)"><span class="qa-icon">📢</span> Post Announcement</button>
-          <button class="qa-btn" onclick="nav('residents',null)"><span class="qa-icon">👥</span> Approve Residents</button>
-          <button class="qa-btn" onclick="nav('issues',null)"><span class="qa-icon">🔧</span> Respond to Issues</button>
-          <button class="qa-btn" onclick="SubUI.openSearch()"><span class="qa-icon">🔍</span> Quick Search</button>
+          <button class="qa-btn" onclick="nav('announcements',null)"><span class="qa-icon"><x-icon name="megaphone" size="16"/></span> Post Announcement</button>
+          <button class="qa-btn" onclick="nav('residents',null)"><span class="qa-icon"><x-icon name="users" size="16"/></span> Approve Residents</button>
+          <button class="qa-btn" onclick="nav('issues',null)"><span class="qa-icon"><x-icon name="wrench" size="16"/></span> Respond to Issues</button>
+          <button class="qa-btn" onclick="SubUI.openSearch()"><span class="qa-icon"><x-icon name="search" size="16"/></span> Quick Search</button>
         </div>
       </div>
 
@@ -175,8 +160,8 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
             <p style="font-size:13px; color:#7D7975;">Manage residents, resolve issues, monitor finances, and communicate with your community — all in one place.</p>
           </div>
           <div style="display: flex; gap: 10px;">
-            <button class="btn" onclick="openModal('ann')">📣 Post Notice</button>
-            <button class="btn" style="background:#2B2927; color:#fff; border-color:#2B2927;" onclick="nav('residents',null)">👥 Verify Residents</button>
+            <button class="btn" onclick="openModal('ann')"><x-icon name="megaphone" size="16"/> Post Notice</button>
+            <button class="btn" style="background:#2B2927; color:#fff; border-color:#2B2927;" onclick="nav('residents',null)"><x-icon name="users" size="16"/> Verify Residents</button>
           </div>
         </div>
 
@@ -235,8 +220,8 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
             <label style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px;cursor:pointer;">
               <input type="checkbox" id="pendingSelectAll" onclick="toggleAllPending(this)"> Select all
             </label>
-            <button class="btn btn-sm" style="background:#22c55e;border-color:#22c55e;color:#062b12;" onclick="bulkPending('approve')">✓ Approve selected</button>
-            <button class="btn btn-sm btn-danger" onclick="bulkPending('reject')">✕ Reject selected</button>
+            <button class="btn btn-sm" style="background:#22c55e;border-color:#22c55e;color:#062b12;" onclick="bulkPending('approve')"><x-icon name="check" size="14"/> Approve selected</button>
+            <button class="btn btn-sm btn-danger" onclick="bulkPending('reject')"><x-icon name="x" size="14"/> Reject selected</button>
           </div>
           <div id="pendingGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;"></div>
         </div>
@@ -317,7 +302,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           <div class="msg-compose">
             <textarea id="msgInput" placeholder="Type a reply…" rows="1"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();adminSend();}"></textarea>
-            <button class="send-btn" onclick="adminSend()">➤</button>
+            <button class="send-btn" onclick="adminSend()"><x-icon name="send" size="16"/></button>
           </div>
         </div>
       </div>
@@ -392,17 +377,17 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     <div class="panel" id="panel-manageusers">
       <div class="manage-grid">
         <div class="manage-card" onclick="openModal('muAddHousehold')">
-          <div class="manage-card-icon">🏠</div>
+          <div class="manage-card-icon"><x-icon name="home" size="22"/></div>
           <h3>Add Household</h3>
           <p>Create new household records</p>
         </div>
         <div class="manage-card" onclick="openAddUserModal()">
-          <div class="manage-card-icon">➕</div>
+          <div class="manage-card-icon"><x-icon name="plus" size="22"/></div>
           <h3>Add User</h3>
           <p>Create new system user account</p>
         </div>
         <div class="manage-card" onclick="openModal('addResident')">
-          <div class="manage-card-icon">👤</div>
+          <div class="manage-card-icon"><x-icon name="user" size="22"/></div>
           <h3>Add Resident</h3>
           <p>Register a new resident</p>
         </div>
@@ -412,12 +397,12 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           <p>Add a household member</p>
         </div>
         <div class="manage-card" onclick="nav('manageusers',null);showToast('ℹ️ Click Status on a household row to change its status.')">
-          <div class="manage-card-icon">⚠️</div>
+          <div class="manage-card-icon"><x-icon name="alert" size="22"/></div>
           <h3>Change Status</h3>
           <p>Update household condition</p>
         </div>
         <div class="manage-card" onclick="nav('officers',null)">
-          <div class="manage-card-icon">🛡️</div>
+          <div class="manage-card-icon"><x-icon name="shield" size="22"/></div>
           <h3>Manage Officers</h3>
           <p>Assign admin roles</p>
         </div>
@@ -463,25 +448,46 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     </div>
 
     <!-- ══════════ OFFICERS ══════════ -->
-    <div class="panel" id="panel-officers">
-      <div class="card" style="margin-bottom:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div style="font-size:13px;color:var(--text-mid);">Manage subdivision officers and their roles.</div>
-          <button class="btn btn-sm" onclick="openModal('addOfficer')">+ Add Officer</button>
+      <div class="panel" id="panel-officers">
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-label">Officers</div>
+            <div class="stat-value" id="officerStatTotal">0</div>
+            <div class="stat-sub">Accounts on record</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Active</div>
+            <div class="stat-value stat-green" id="officerStatActive">0</div>
+            <div class="stat-sub">Can sign in to the officer portal</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Pending</div>
+            <div class="stat-value stat-yellow" id="officerStatPending">0</div>
+            <div class="stat-sub">Awaiting your approval</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span>Officer accounts</span>
+            <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input id="officerSearch" type="search" placeholder="Search name or email" oninput="renderOfficers()" style="min-width:220px;">
+              <button class="btn btn-sm" onclick="openModal('addOfficer')">+ Add Officer</button>
+            </span>
+          </div>
+          <div class="card-subtitle" style="margin-bottom:12px;">Manage subdivision officers and their roles. Pending applications can be approved right here.</div>
+          <table class="data-table">
+            <thead><tr><th>Name</th><th>Email</th><th>Contact</th><th>Joined</th><th>Status</th><th style="text-align:right;">Actions</th></tr></thead>
+            <tbody id="officerTable"></tbody>
+          </table>
         </div>
       </div>
-      <table class="data-table">
-        <thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="officerTable"></tbody>
-      </table>
-    </div>
 
     <!-- ══════════ RECOMMENDATIONS ══════════ -->
     <div class="panel" id="panel-recommendations">
       <div class="card" style="margin-bottom:16px;">
         <div style="font-size:13px;color:var(--text-mid);">Resident suggestions and feedback submitted for review.</div>
       </div>
-      <div id="recsAdminList"><div class="empty-state"><div class="empty-icon">💡</div>Loading…</div></div>
+      <div id="recsAdminList"><div class="empty-state"><div class="empty-icon"><x-icon name="lightbulb" size="28"/></div>Loading…</div></div>
     </div>
 
     <!-- ══════════ ANALYTICS ══════════ -->
@@ -525,7 +531,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
         </div>
         <div class="card">
           <div class="card-title">Security Logs</div>
-          <div class="graph-placeholder"><div class="g-icon">🔒</div><div>Security Events</div></div>
+          <div class="graph-placeholder"><div class="g-icon"><x-icon name="lock" size="22"/></div><div>Security Events</div></div>
         </div>
       </div>
     </div>
@@ -559,16 +565,16 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#e05555;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">1</span>Issue (Pending)</span>
           <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#f5a623;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">2</span>Issue (In Progress)</span>
           <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#888;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">3</span>Issue (Resolved)</span>
-          <span style="margin-left:auto;font-size:11px;color:var(--text-dim);">📍 Numbers = Report sequence</span>
+          <span style="margin-left:auto;font-size:11px;color:var(--text-dim);"><x-icon name="map-pin" size="12"/> Numbers = Report sequence</span>
         </div>
       </div>
 
       <!-- Map -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-        <button class="btn btn-sm" onclick="enterCustomizeArea()" id="btn-customize-area">✏️ Customize Area</button>
+        <button class="btn btn-sm" onclick="enterCustomizeArea()" id="btn-customize-area"><x-icon name="pencil" size="14"/> Customize Area</button>
         <span id="map-customize-hint" style="display:none;font-size:12px;color:var(--accent);">Pan &amp; zoom to frame the subdivision area, then click <strong>Save Area</strong>.</span>
         <span style="margin-left:auto;display:none;gap:8px;align-items:center;" id="map-area-toolbar">
-          <button class="btn btn-sm btn-green" onclick="saveMapArea()" id="btn-save-area">💾 Save Area</button>
+          <button class="btn btn-sm btn-green" onclick="saveMapArea()" id="btn-save-area"><x-icon name="save" size="14"/> Save Area</button>
           <button class="btn btn-sm" onclick="resetMapArea()" id="btn-reset-area">↺ Reset</button>
         </span>
       </div>
@@ -576,13 +582,13 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 
       <!-- Add-facility mode banner -->
       <div id="map-add-banner">
-        <span>📍 Click anywhere within the Terra Nova boundary to place the facility pin</span>
+        <span><x-icon name="map-pin" size="14"/> Click anywhere within the Terra Nova boundary to place the facility pin</span>
         <button class="btn btn-sm" style="margin-left:auto;" onclick="cancelAddFacilityMode()">Cancel</button>
       </div>
 
       <!-- Map Disclaimer -->
       <div style="margin-top:10px;padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-dim);">
-        ℹ️ <strong>Map Scope:</strong> This map is focused on Terra Nova Subdivision. Reported issues are represented by numbered pins indicating report sequence. The geofence boundary is approximate. For precise location data, please consult official subdivision plans.
+        <x-icon name="info" size="14"/> <strong>Map Scope:</strong> This map is focused on Terra Nova Subdivision. Reported issues are represented by numbered pins indicating report sequence. The geofence boundary is approximate. For precise location data, please consult official subdivision plans.
       </div>
 
     </div>
@@ -648,8 +654,8 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           <div class="card-title">Generate Reports</div>
           <div class="card-subtitle">Download filtered records as CSV. Use the date range above to narrow results.</div>
           <div style="display:flex;flex-direction:column;gap:10px;">
-            <button class="btn btn-green" onclick="reportIssues()">🔧 Issue Report</button>
-            <button class="btn" style="background:var(--purple-dim);border-color:rgba(185,154,245,0.25);color:var(--purple);" onclick="reportResidentDirectory()">👥 Resident Directory</button>
+            <button class="btn btn-green" onclick="reportIssues()"><x-icon name="wrench" size="15"/> Issue Report</button>
+            <button class="btn" style="background:var(--purple-dim);border-color:rgba(185,154,245,0.25);color:var(--purple);" onclick="reportResidentDirectory()"><x-icon name="users" size="15"/> Resident Directory</button>
           </div>
         </div>
       </div>
@@ -659,7 +665,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     <div class="panel" id="panel-policies">
       <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#FAF4E7,#FAF6F0);border-left:4px solid var(--accent);">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div style="font-size:32px;">📜</div>
+          <div style="font-size:32px;"><x-icon name="scroll" size="32"/></div>
           <div>
             <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#2B2927;margin-bottom:4px;">Terra Nova Homeowners Association</div>
             <div style="font-size:13px;color:var(--text-dim);">Community Rules, Regulations &amp; Policies — Effective Current Term</div>
@@ -818,7 +824,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
       <div class="fin-section" data-fin="settings">
       <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#FAF4E7,#FAF6F0);border-left:4px solid var(--accent);">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div style="font-size:32px;">💳</div>
+          <div style="font-size:32px;"><x-icon name="credit-card" size="32"/></div>
           <div>
             <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#2B2927;margin-bottom:4px;">GCash Receiving Account</div>
             <div style="font-size:13px;color:var(--text-dim);">Manage the QR code and account residents use to send payments.</div>
@@ -1012,9 +1018,9 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     <!-- Template quick-fill -->
     <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;" id="annTemplateRow">
       <span style="font-size:11px;color:var(--text-dim);align-self:center;white-space:nowrap;">Template:</span>
-      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('notice')">📋 Notice</button>
-      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('announcement')">📢 Announcement</button>
-      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('event')">📅 Event</button>
+      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('notice')"><x-icon name="clipboard" size="13"/> Notice</button>
+      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('announcement')"><x-icon name="megaphone" size="13"/> Announcement</button>
+      <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('event')"><x-icon name="calendar" size="13"/> Event</button>
     </div>
     <div class="f-row">
       <div class="f-field"><span class="f-label">Type</span>
@@ -1260,7 +1266,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
       <div class="f-field"><span class="f-label">Temporary Password</span><input type="password" id="muUPass" placeholder="Set a temporary password"></div>
       <div class="f-field"><span class="f-label">Confirm Password</span><input type="password" id="muUPass2" placeholder="Repeat password"></div>
     </div>
-    <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">⚠️ User will be prompted to change password on first login.</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;"><x-icon name="alert" size="13"/> User will be prompted to change password on first login.</div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('muAddUser')">Cancel</button>
       <button class="btn btn-sm" onclick="saveAddUser()">Create User</button>
@@ -1485,12 +1491,12 @@ function loadLeaflet(){
   const isOpen = sb.classList.contains('open');
   sb.classList.toggle('open');
   ov.classList.toggle('show');
-  btn.textContent = isOpen ? '☰' : '✕';
+  btn.innerHTML = isOpen ? '<x-icon name="menu" size="18"/>' : '<x-icon name="x" size="18"/>';
 }
 function closeSidebar(){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('show');
-  document.getElementById('menuToggle').textContent = '☰';
+  document.getElementById('menuToggle').innerHTML = '<x-icon name="menu" size="18"/>';
 }
 /* ══════════════ LEAFLET MAP ══════════════ */
 let mapInst = null, layerHouseholds, layerFacilities, layerIssues;
@@ -2053,7 +2059,7 @@ function loadMapData() {
         const { lat, lng } = ev.target.getLatLng();
         const res = await apiPut('/api/map/household/' + h.id + '/location', { latitude: lat, longitude: lng });
         if (res && res.success) {
-          showToast('📍 ' + h.block_lot_number + ' location updated.');
+          showToast(h.block_lot_number + ' location updated.');
         } else {
           showToast('⚠ Failed to save location.');
           ev.target.setLatLng([parseFloat(h.latitude), parseFloat(h.longitude)]); // revert
@@ -2219,17 +2225,17 @@ async function deleteFacilityById(id) {
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
       <div style="display:flex;gap:10px;align-items:center;font-size:13px;">
-        <span style="color:var(--text-dim);min-width:60px;">📧 Email</span>
+        <span style="color:var(--text-dim);min-width:60px;"><x-icon name="mail" size="13"/> Email</span>
         <span id="resD-email">—</span>
       </div>
       <div style="display:flex;gap:10px;align-items:center;font-size:13px;">
-        <span style="color:var(--text-dim);min-width:60px;">📞 Phone</span>
+        <span style="color:var(--text-dim);min-width:60px;"><x-icon name="phone" size="13"/> Phone</span>
         <span id="resD-phone">—</span>
       </div>
     </div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="document.getElementById('modal-residentDetail').classList.remove('open')">Close</button>
-      <button class="btn btn-sm" id="resD-msgBtn">✉️ Message Resident</button>
+      <button class="btn btn-sm" id="resD-msgBtn"><x-icon name="message" size="14"/> Message Resident</button>
     </div>
   </div>
 </div>
@@ -2311,8 +2317,8 @@ async function deleteFacilityById(id) {
       <div id="annV-content" style="font-size:14px;line-height:1.7;white-space:pre-wrap;color:var(--text-mid);"></div>
     </div>
     <div class="modal-actions">
-      <button class="modal-close-btn" id="annV-delBtn" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
-      <button class="btn btn-sm" id="annV-archBtn" style="background:var(--yellow-dim);border-color:rgba(196,150,70,0.3);color:var(--yellow);" onclick="toggleAnnArchive()">📦 Archive</button>
+      <button class="modal-close-btn" id="annV-delBtn" style="color:#f08080;border-color:rgba(240,128,128,0.3);"><x-icon name="trash" size="14"/> Delete</button>
+      <button class="btn btn-sm" id="annV-archBtn" style="background:var(--yellow-dim);border-color:rgba(196,150,70,0.3);color:var(--yellow);" onclick="toggleAnnArchive()"><x-icon name="archive" size="14"/> Archive</button>
       <button class="btn btn-sm" onclick="document.getElementById('modal-annView').classList.remove('open')">Close</button>
     </div>
   </div>
@@ -2344,7 +2350,7 @@ async function deleteFacilityById(id) {
     </div>
     <div style="font-size:12px;color:#f08080;margin-top:-4px;margin-bottom:8px;" id="memDetailMsg"></div>
     <div class="modal-actions" style="justify-content:space-between;">
-      <button class="modal-close-btn" onclick="deleteMember()" style="color:#f08080;border-color:rgba(240,128,128,0.3);">🗑 Delete</button>
+      <button class="modal-close-btn" onclick="deleteMember()" style="color:#f08080;border-color:rgba(240,128,128,0.3);"><x-icon name="trash" size="14"/> Delete</button>
       <div style="display:flex;gap:8px;">
         <button class="modal-close-btn" onclick="document.getElementById('modal-memberDetail').classList.remove('open')">Cancel</button>
         <button class="btn btn-sm" onclick="saveMemberDetail()">Save Changes</button>

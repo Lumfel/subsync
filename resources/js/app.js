@@ -6,4 +6,5 @@
  * allow your team to quickly build robust real-time web applications.
  */
 
+import '../css/app.css';
 import './echo';

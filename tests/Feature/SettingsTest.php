@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Admin;
 use App\Models\Resident;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -142,7 +143,7 @@ class SettingsTest extends TestCase
     {
         // Dev runs with Model::shouldBeStrict(); tests do not. Reproduce the missing-attribute
         // guard here so accessing e.g. role_description on Admin/Resident fails the suite.
-        \Illuminate\Database\Eloquent\Model::preventAccessingMissingAttributes(true);
+        Model::preventAccessingMissingAttributes(true);
         try {
             $this->withSession(['admin_id' => $this->admin()->id])
                 ->withHeaders(['Accept' => 'application/json'])
@@ -158,7 +159,35 @@ class SettingsTest extends TestCase
                 ->assertOk()
                 ->assertJsonPath('user.type', 'resident');
         } finally {
-            \Illuminate\Database\Eloquent\Model::preventAccessingMissingAttributes(false);
+            Model::preventAccessingMissingAttributes(false);
+        }
+    }
+
+    public function test_admin_settings_are_strict_mode_safe(): void
+    {
+        // Local runs Model::shouldBeStrict(); the test env does not, which is how
+        // "admins have no contact_number column" slipped through as a 500.
+        Model::preventAccessingMissingAttributes(true);
+        Model::preventSilentlyDiscardingAttributes(true);
+
+        try {
+            $admin = $this->admin();
+
+            $this->withSession(['admin_id' => $admin->id])
+                ->withHeaders(['Accept' => 'application/json'])
+                ->getJson('/api/settings')
+                ->assertOk()
+                ->assertJsonPath('user.contact_number', null);
+
+            $this->withSession(['admin_id' => $admin->id])
+                ->withHeaders(['Accept' => 'application/json'])
+                ->putJson('/api/settings/profile', [
+                    'name' => 'Strict Admin', 'email' => 'admin@example.test', 'contact_number' => '0900',
+                ])
+                ->assertOk();
+        } finally {
+            Model::preventAccessingMissingAttributes(false);
+            Model::preventSilentlyDiscardingAttributes(false);
         }
     }
 

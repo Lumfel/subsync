@@ -1,10 +1,12 @@
 <?php
 
+use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\AnnouncementTemplateController;
 use App\Http\Controllers\AssessmentController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
@@ -106,10 +108,10 @@ Route::get('/residents', function () {
     ]);
 })->name('residents')->middleware(['auth:resident', 'cache.headers:no_store;private']);
 
-// Printable issued documents (owner resident or staff)
+// Printable issued documents (staff only)
 Route::get('/reports/{id}/print', [ReportController::class, 'printView'])
     ->name('reports.print')
-    ->middleware(['portal.role:admin,officer,resident', 'cache.headers:no_store;private']);
+    ->middleware(['portal.role:admin,officer', 'cache.headers:no_store;private']);
 
 // Logout
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -118,6 +120,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::get('/settings', [SettingsController::class, 'page'])
     ->name('settings')
     ->middleware(['portal.role:admin,officer,resident', 'cache.headers:no_store;private']);
+
+// Design system reference — canonical tokens + Tailwind/daisyUI kit (admin only).
+// Same guard as /dashboard: guests are redirected to the admin login, not 403'd.
+Route::get('/design-system', function () {
+    return view('layouts.design-system');
+})->name('design-system')->middleware(['admin.auth', 'cache.headers:no_store;private']);
 
 // ═══ API ROUTES ═══
 
@@ -129,6 +137,13 @@ Route::middleware('portal.role:admin,officer')->group(function () {
 // Server-Sent Events — instant push for announcements & issues (admin + officer + resident)
 Route::middleware('portal.role:admin,officer,resident')->group(function () {
     Route::get('/api/stream/updates', [StreamController::class, 'updates']);
+});
+
+// System tools (admin only) — database backups + activity trail
+Route::middleware('portal.role:admin')->group(function () {
+    Route::get('/api/backups', [BackupController::class, 'index']);
+    Route::post('/api/backups/run', [BackupController::class, 'run']);
+    Route::get('/api/activity-logs', [ActivityLogController::class, 'index']);
 });
 
 // Map API
@@ -239,22 +254,15 @@ Route::prefix('api')->group(function () {
         Route::delete('/announcement-templates/{id}', [AnnouncementTemplateController::class, 'destroy']);
     });
 
-    // Report Templates — all roles can list; only staff can manage.
-    Route::get('/report-templates', [ReportController::class, 'index'])
-        ->middleware('portal.role:admin,officer,resident');
+    // Report Templates & issued documents — staff only (residents have no reports).
     Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/report-templates', [ReportController::class, 'index']);
         Route::post('/report-templates', [ReportController::class, 'store']);
         Route::put('/report-templates/{id}', [ReportController::class, 'update']);
         Route::delete('/report-templates/{id}', [ReportController::class, 'destroy']);
-    });
-    // Issued documents — staff list + issue on behalf of a resident.
-    Route::middleware('portal.role:admin,officer')->group(function () {
+
         Route::get('/reports', [ReportController::class, 'staffIndex']);
         Route::post('/reports/issue', [ReportController::class, 'issue']);
-    });
-    Route::middleware('portal.role:resident')->group(function () {
-        Route::get('/reports/my', [ReportController::class, 'myReports']);
-        Route::post('/reports/generate/{templateId}', [ReportController::class, 'generate']);
     });
 
     // Issues

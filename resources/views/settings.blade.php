@@ -10,22 +10,8 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 window.__PORTAL = @json($actor['type']);
 window.__PREFS = @json($prefs);
 window.__ACTOR = @json($actor['type']);
-(function () {
-    var base = window.APP_BASE || '';
-    var prefix = function (url) {
-        if (base && typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
-        return url;
-    };
-    var origFetch = window.fetch;
-    window.fetch = function (url, opts) {
-        opts = opts || {};
-        var h = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' });
-        if (window.__PORTAL) h['X-Portal'] = window.__PORTAL;
-        opts.headers = h;
-        return origFetch.call(this, prefix(url), opts);
-    };
-})();
 </script>
+<script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,7 +22,7 @@ window.__ACTOR = @json($actor['type']);
 <body class="settings-body">
 
 <header class="set-header">
-  <a class="set-brand" href="{{ $portalUrl }}"><span class="set-brand-mark">🏡</span> SubSync</a>
+  <a class="set-brand" href="{{ $portalUrl }}"><span class="set-brand-mark"><x-icon name="home" size="18"/></span> SubSync</a>
   <a class="set-back" href="{{ $portalUrl }}">&larr; Back to portal</a>
 </header>
 
@@ -143,6 +129,31 @@ window.__ACTOR = @json($actor['type']);
       <label class="set-toggle"><span><strong>Email copies</strong><small>Also send notifications by email</small></span><input type="checkbox" data-notify="email_notifications"></label>
     </div>
   </section>
+
+  @if(($actor['type'] ?? null) === 'admin')
+  <!-- System (admin only) -->
+  <section class="card set-card" id="setSystem">
+    <div class="set-card-head">
+      <h2>System</h2>
+      <span class="set-role-chip">Admin only</span>
+    </div>
+
+    <div class="set-field">
+      <label>Database backups</label>
+      <p class="set-hint" style="margin:4px 0 8px;">A backup runs automatically every day at 2:00 AM. <span id="backupLatest">Loading…</span></p>
+      <div id="backupList" class="set-syslist"><div class="set-sysrow set-sysrow-empty">Loading…</div></div>
+      <div class="set-actions">
+        <button class="btn btn-primary" type="button" id="backupRunBtn">Back up now</button>
+      </div>
+    </div>
+
+    <div class="set-field" style="margin-top:16px;">
+      <label>Recent activity</label>
+      <p class="set-hint" style="margin:4px 0 8px;">Latest actions across the system (finance, announcements, documents, accounts).</p>
+      <div id="activityList" class="set-syslist"><div class="set-sysrow set-sysrow-empty">Loading…</div></div>
+    </div>
+  </section>
+  @endif
 
   <p class="set-foot">Signed in as <strong>{{ $actor['name'] }}</strong> · {{ $actor['user']->email }}</p>
 </main>

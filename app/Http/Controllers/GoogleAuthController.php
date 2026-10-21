@@ -22,6 +22,8 @@ class GoogleAuthController extends Controller
         // matching per-portal session cookie.
         Cookie::queue('subsync_portal_hint', $role, 10);
 
+        $this->useCurrentHostForRedirectUri();
+
         return Socialite::driver('google')->redirect();
     }
 
@@ -30,9 +32,13 @@ class GoogleAuthController extends Controller
     {
         $role = $request->session()->pull('google_role', 'resident');
 
+        $this->useCurrentHostForRedirectUri();
+
         try {
             $google = Socialite::driver('google')->user();
         } catch (\Throwable $e) {
+            report($e);
+
             return redirect(url('login'))->with('error', 'Google sign-in failed. Please try again.');
         }
 
@@ -145,6 +151,18 @@ class GoogleAuthController extends Controller
         }
 
         return $this->loginResident($request, $resident);
+    }
+
+    /**
+     * The OAuth round-trip must return to the host the user started from.
+     * A pinned redirect URI (e.g. only the ngrok domain) loses the portal
+     * session on the way back, so Socialite finds no "state" and throws
+     * InvalidStateException. Take the current request's host instead, so
+     * subsync.test and the tunnel both work.
+     */
+    private function useCurrentHostForRedirectUri(): void
+    {
+        config(['services.google.redirect' => route('google.callback')]);
     }
 
     private function pendingResident(Request $request): ?Resident

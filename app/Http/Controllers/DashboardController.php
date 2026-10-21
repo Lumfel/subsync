@@ -98,7 +98,7 @@ class DashboardController extends Controller
                 ])->all();
 
             // Officers
-            $officers = Officer::select('id', 'name', 'email', 'contact_number', 'status')
+            $officers = Officer::select('id', 'name', 'email', 'contact_number', 'status', 'created_at')
                 ->get()
                 ->map(fn ($o) => $o->toArray())
                 ->all();

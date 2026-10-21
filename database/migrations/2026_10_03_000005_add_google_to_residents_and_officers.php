@@ -25,6 +25,10 @@ return new class extends Migration
     {
         foreach (['residents', 'officers'] as $table) {
             Schema::table($table, function (Blueprint $t) {
+                $t->dropUnique(['google_id']);
+            });
+
+            Schema::table($table, function (Blueprint $t) {
                 $t->dropColumn(['google_id', 'avatar']);
             });
         }

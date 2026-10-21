@@ -41,7 +41,7 @@
   <main class="main full-map">
 
     <header class="topbar">
-        <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+        <button class="menu-toggle" onclick="toggleSidebar()"><x-icon name="menu" size="18"/></button>
      @auth
     <div class="admin-btn">
         {{ Auth::user()->name }}
@@ -112,8 +112,9 @@ map.on('click', function (e) {
         draggable: true
     }).addTo(map);
 
-    marker.bindPopup("📍 New Household").openPopup();
+    marker.bindPopup("New Household").openPopup();
 
     markers.push(marker);
 });
 </script>
+

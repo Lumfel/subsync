@@ -1,8 +1,9 @@
-# SubSync stop — Reverb + queue worker + scheduler + ngrok (Apache stays up by default).
+# SubSync stop — Reverb + queue worker + scheduler + ngrok (Apache and MySQL stay up by default).
 #   .\scripts\stop-subsync.ps1            stop SubSync background services
 #   .\scripts\stop-subsync.ps1 -Apache    also stop Laragon Apache (:80)
+#   .\scripts\stop-subsync.ps1 -MySQL     also stop MySQL (:3306) gracefully
 
-param([switch]$Apache)
+param([switch]$Apache, [switch]$MySQL)
 
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -23,6 +24,19 @@ Stop-PhpProc 'schedule:work'     'Scheduler'
 $ngrok = Get-Process ngrok -ErrorAction SilentlyContinue
 if ($ngrok) { $ngrok | Stop-Process -Force; Write-Host '  x ngrok stopped' }
 else { Write-Host '  - ngrok was not running' }
+
+if ($MySQL) {
+    if (Get-Process mysqld -ErrorAction SilentlyContinue) {
+        & 'C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysqladmin.exe' -u root shutdown
+        for ($i = 0; $i -lt 10; $i++) { Start-Sleep 1; if (-not (Get-Process mysqld -ErrorAction SilentlyContinue)) { break } }
+        Get-Process mysqld -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+        Write-Host '  x MySQL stopped'
+    } else {
+        Write-Host '  - MySQL was not running'
+    }
+} else {
+    Write-Host '  - MySQL left running (use -MySQL to stop it)'
+}
 
 if ($Apache) {
     $httpd = Get-Process httpd -ErrorAction SilentlyContinue

@@ -195,7 +195,9 @@ class MessageController extends Controller
             return [
                 'id' => $c->id,
                 'title' => $c->title,
-                'from' => $initiator?->resident?->name ?? $initiator?->officer?->name ?? '',
+                // Conversations started by an admin have no accepted participant row
+                // (admin is auto-accepted) — name the sender instead of "Someone".
+                'from' => $initiator?->resident?->name ?? $initiator?->officer?->name ?? 'HOA Admin',
                 'last_message' => $c->messages->first()?->content ?? '',
                 'last_time' => $c->messages->first()?->created_at ? Carbon::parse($c->messages->first()->created_at)->format('M d, g:i A') : '',
             ];

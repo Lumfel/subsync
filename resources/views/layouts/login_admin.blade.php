@@ -8,17 +8,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>
     window.APP_BASE = '{{ request()->getBaseUrl() }}';
-    (function () {
-        var base = window.APP_BASE || '';
-        if (!base) return;
-        var prefix = function (url) {
-            if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
-            return url;
-        };
-        var origFetch = window.fetch;
-        window.fetch = function (url, opts) { opts = opts || {}; opts.headers = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' }); return origFetch.call(this, prefix(url), opts); };
-    })();
     </script>
+    <script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
     <link rel="stylesheet" href="{{ asset('styles.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -181,6 +172,9 @@
             transition: color 0.2s;
         }
         .eye-btn:hover { color: #2B2927 !important; background: none !important; box-shadow: none !important; }
+    .eye-btn .eye-off { display: none; }
+    .eye-btn.is-visible .eye-off { display: inline-block; }
+    .eye-btn.is-visible .eye-on { display: none; }
 
         /* ── SUBMIT ── */
         .admin-btn {
@@ -282,16 +276,16 @@
 
     <!-- FORM -->
     <div class="input-group">
-        <span class="input-icon">✉️</span>
+        <span class="input-icon"><x-icon name="mail" size="16"/></span>
         <input type="email" id="admin-email" placeholder="Admin Gmail Address" autocomplete="email" autofocus
             onkeydown="if(event.key==='Enter')focusNext('admin-password')">
     </div>
 
     <div class="input-group">
-        <span class="input-icon">🔒</span>
+        <span class="input-icon"><x-icon name="lock" size="16"/></span>
         <input type="password" id="admin-password" placeholder="Password" autocomplete="current-password"
             onkeydown="if(event.key==='Enter')handleAdminLogin()">
-        <button class="eye-btn" onclick="togglePwd()" type="button" aria-label="Show or hide password">👁</button>
+        <button class="eye-btn" onclick="togglePwd()" type="button" aria-label="Show or hide password"><x-icon name="eye" size="16" class="eye-on" /><x-icon name="eye-off" size="16" class="eye-off" /></button>
     </div>
 
     <div style="text-align:right; margin:-6px 0 16px;">
@@ -324,7 +318,7 @@
         const btn = document.querySelector('.eye-btn');
         const show = inp.type === 'password';
         inp.type = show ? 'text' : 'password';
-        btn.textContent = show ? '🙈' : '👁';
+        btn.classList.toggle('is-visible', show);
     }
 
     function focusNext(id) {

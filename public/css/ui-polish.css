@@ -114,97 +114,96 @@ input:focus, textarea:focus, select:focus {
 .balance-val { letter-spacing: -0.01em; }
 
 /* ─────────────────────────────────────────────
-   SCALE UP — larger, easier-on-the-eyes UI
+   COMFORTABLE SCALE — slightly larger, kind to the eyes
    ───────────────────────────────────────────── */
-body { font-size: 18px !important; line-height: 1.65 !important; }
+body { font-size: 16px !important; line-height: 1.6 !important; }
 
-h1 { font-size: 32px !important; }
-h2 { font-size: 26px !important; }
-h3 { font-size: 22px !important; }
-h4 { font-size: 19px !important; }
+h1 { font-size: 28px !important; }
+h2 { font-size: 23px !important; }
+h3 { font-size: 20px !important; }
+h4 { font-size: 17px !important; }
 
 /* Buttons */
-.btn { font-size: 16px !important; padding: 11px 22px !important; }
-.btn-sm { font-size: 14.5px !important; padding: 8px 16px !important; }
+.btn { font-size: 15px !important; padding: 10px 18px !important; }
+.btn-sm { font-size: 13.5px !important; padding: 7px 13px !important; }
 
 /* Inputs & controls */
 input[type=text], input[type=email], input[type=password], input[type=number],
 input[type=date], input[type=file], textarea, select {
-  font-size: 17px !important;
-  padding: 12px 16px !important;
+  font-size: 15px !important;
+  padding: 10px 13px !important;
 }
 textarea { line-height: 1.6 !important; }
-.f-label { font-size: 14px !important; letter-spacing: 0.03em; }
-.f-row { margin-bottom: 14px !important; }
+.f-label { font-size: 13px !important; letter-spacing: 0.03em; }
+.f-row { margin-bottom: 13px !important; }
 
 /* Cards — balanced padding & consistent rhythm */
-.card { padding: 24px 26px !important; }
-.card-title { font-size: 18px !important; }
-.card-subtitle { font-size: 15px !important; line-height: 1.65 !important; }
-.card-divider { margin: 16px 0 !important; }
+.card { padding: 18px 20px !important; }
+.card-title { font-size: 16px !important; }
+.card-subtitle { font-size: 14px !important; line-height: 1.6 !important; }
+.card-divider { margin: 14px 0 !important; }
 
 /* Consistent card spacing between sections */
-.card { margin-top: 18px !important; }
+.card { margin-top: 16px !important; }
 
 /* Tables */
-th, td { padding: 13px 15px !important; font-size: 16px !important; }
-thead th { font-size: 13px !important; }
+th, td { padding: 11px 13px !important; font-size: 14px !important; }
+thead th { font-size: 12px !important; }
 
 /* Pills / badges */
-.pill, .tab-badge { font-size: 12.5px !important; padding: 4px 10px !important; }
+.pill, .tab-badge { font-size: 11.5px !important; padding: 4px 9px !important; }
 
 /* Navigation / sidebar */
-.sidebar li, .nav-item { font-size: 16px !important; padding: 13px 18px !important; }
-.nav-section-label { font-size: 12px !important; padding: 14px 18px 6px !important; }
-.sidebar-brand, .sidebar .logo { font-size: 26px !important; }
+.sidebar li, .nav-item { font-size: 14.5px !important; padding: 11px 16px !important; }
+.nav-section-label { font-size: 11px !important; padding: 12px 16px 6px !important; }
+.sidebar-brand, .sidebar .logo { font-size: 23px !important; }
 
 /* Announcements / issues / recs */
-.ann-title, .issue-title, .rec-title { font-size: 20px !important; }
-.ann-body, .issue-body, .rec-body { font-size: 18px !important; line-height: 1.7 !important; }
-.report-title { font-size: 20px !important; font-weight: 600 !important; }
-.report-meta { font-size: 15px !important; line-height: 1.7 !important; }
-.ann-date, .meta-txt { font-size: 13px !important; }
-.ann-item, .issue-item, .rec-item { margin-bottom: 12px !important; }
+.ann-title, .issue-title, .rec-title { font-size: 18px !important; }
+.ann-body, .issue-body, .rec-body { font-size: 16px !important; line-height: 1.7 !important; }
+.report-title { font-size: 18px !important; font-weight: 600 !important; }
+.report-meta { font-size: 14px !important; line-height: 1.6 !important; }
+.ann-date, .meta-txt { font-size: 12px !important; }
+.ann-item, .issue-item, .rec-item { margin-bottom: 11px !important; }
 
 /* Messages */
-.bubble { font-size: 16px !important; padding: 11px 15px !important; }
-.bubble-time { font-size: 12px !important; }
-.msg-thread-name { font-size: 15px !important; }
-.msg-thread-preview { font-size: 13px !important; }
-.msg-compose textarea { font-size: 16px !important; }
+.bubble { font-size: 14.5px !important; padding: 10px 14px !important; }
+.bubble-time { font-size: 11.5px !important; }
+.msg-thread-name { font-size: 14px !important; }
+.msg-thread-preview { font-size: 12.5px !important; }
+.msg-compose textarea { font-size: 15px !important; }
 
 /* Member cards */
-.member-name { font-size: 16px !important; }
-.member-role { font-size: 12px !important; }
-.member-avatar { width: 44px !important; height: 44px !important; font-size: 17px !important; }
+.member-name { font-size: 15px !important; }
+.member-role { font-size: 11.5px !important; }
+.member-avatar { width: 40px !important; height: 40px !important; font-size: 16px !important; }
 
 /* Stats / numbers */
-.balance-val, .stat-value { font-size: 26px !important; }
-.balance-label, .stat-label { font-size: 13px !important; }
+.balance-val, .stat-value { font-size: 24px !important; }
+.balance-label, .stat-label { font-size: 12.5px !important; }
 
 /* Empty states */
-.empty-state { font-size: 15px !important; padding: 40px 22px !important; }
-.empty-icon { font-size: 34px !important; }
+.empty-state { font-size: 14px !important; padding: 34px 20px !important; }
+.empty-icon { font-size: 30px !important; }
 
 /* Status / toggle rows */
-.map-toggle, .chart-toggles label, .layer-toggle { font-size: 14px !important; }
+.map-toggle, .chart-toggles label, .layer-toggle { font-size: 13px !important; }
 
 /* Grid & list rhythm — balanced gaps */
 .bento-grid, .stat-grid, .graph-grid, .graph-grid-wide, .finance-stats {
-  gap: 18px !important;
+  gap: 16px !important;
 }
-.member-grid { gap: 14px !important; }
-.quick-actions { gap: 12px !important; }
+.member-grid { gap: 13px !important; }
+.quick-actions { gap: 11px !important; }
 .tab-nav { gap: 6px !important; }
-.add-row, .f-row, .msg-compose { gap: 12px !important; }
-.msg-layout { gap: 16px !important; }
+.add-row, .f-row, .msg-compose { gap: 11px !important; }
+.msg-layout { gap: 14px !important; }
 
 /* Mobile readability */
 @media (max-width: 768px) {
-  body { font-size: 15px; line-height: 1.6; }
-  .card { padding: 18px 16px; }
-  .bento-grid, .stat-grid, .graph-grid, .graph-grid-wide, .finance-stats { gap: 14px; }
-  .card { margin-top: 14px; }
+  body { font-size: 14px !important; line-height: 1.6 !important; }
+  .card { padding: 15px 14px !important; margin-top: 13px !important; }
+  .bento-grid, .stat-grid, .graph-grid, .graph-grid-wide, .finance-stats { gap: 12px !important; }
 }
 /* ─────────────────────────────────────────────
    UI/UX ENHANCEMENTS — skeletons, empty states,
@@ -952,9 +951,9 @@ thead th { color: #5C5750 !important; }
    ───────────────────────────────────────────── */
 
 /* Text size (zoom keeps px-based layouts consistent across portals) */
-html[data-font="small"] body { zoom: .94; }
+html[data-font="small"] body { zoom: .92; }
 html[data-font="default"] body { zoom: 1; }
-html[data-font="large"] body { zoom: 1.08; }
+html[data-font="large"] body { zoom: 1.05; }
 
 /* Density */
 html[data-density="compact"] .card { padding: 12px !important; }
@@ -1674,3 +1673,121 @@ html:not([data-theme="dark"]) [style*="color:#f59e0b"] { color: #A9660A !importa
   justify-content: space-evenly;
 }
 .sidebar > ul > li { margin-bottom: 0 !important; }
+
+/* ─────────────────────────────────────────────
+   SIMPLE & CLEAR MODE — residents & officers
+   Bigger, easier tap targets and clearer helper text
+   for older users. Same type scale as the rest of the app.
+   ───────────────────────────────────────────── */
+.residents-body .btn, .officer-body .btn { padding-top: 13px !important; padding-bottom: 13px !important; }
+.residents-body .btn-sm, .officer-body .btn-sm { padding-top: 9px !important; padding-bottom: 9px !important; }
+.residents-body .sidebar li.tab-btn, .officer-body .sidebar li.tab-btn { padding-top: 14px !important; padding-bottom: 14px !important; }
+.residents-body .fin-tab, .officer-body .fin-tab { padding-top: 12px !important; padding-bottom: 12px !important; }
+.residents-body input[type=text], .residents-body input[type=email], .residents-body input[type=password],
+.residents-body input[type=number], .residents-body input[type=date], .residents-body textarea, .residents-body select,
+.officer-body input[type=text], .officer-body input[type=email], .officer-body input[type=password],
+.officer-body input[type=number], .officer-body input[type=date], .officer-body textarea,
+.officer-body select { padding-top: 12px !important; padding-bottom: 12px !important; }
+
+/* Slightly clearer helper text on these two portals */
+.residents-body .card-subtitle, .officer-body .card-subtitle { font-size: 14.5px !important; line-height: 1.6 !important; }
+.residents-body .meta-txt, .officer-body .meta-txt { font-size: 12.5px !important; }
+
+/* Quick actions stretch evenly instead of stacking narrowly */
+.residents-body .quick-actions .btn { flex: 1 1 190px; }
+
+/* ── Monochrome icon system (replaces emoji UI icons) ── */
+.ui-icon { display: inline-block; vertical-align: -0.15em; flex: 0 0 auto; }
+
+.ui-toast .ui-toast-ic { display: inline-flex; align-items: center; }
+
+/* ════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — canonical scale (industry-standard pass).
+   Appended last on purpose: at equal specificity these rules win over the
+   incremental polish passes above, so every portal shares one shape and
+   motion language (4px grid, one radius/elevation scale). Colors, spacing
+   and font sizes are intentionally untouched. Mirrored by the Tailwind +
+   daisyUI kit in resources/css/app.css; reference page: /design-system.
+   ════════════════════════════════════════════════════════════════════ */
+:root {
+  /* spacing — 4px grid */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+
+  /* radii */
+  --radius-xs: 6px; --radius-sm: 8px; --radius-md: 12px;
+  --radius-lg: 14px; --radius-xl: 18px; --radius-full: 999px;
+
+  /* elevation */
+  --shadow-1: 0 1px 2px rgba(43, 41, 39, 0.05);
+  --shadow-2: 0 1px 2px rgba(43, 41, 39, 0.04), 0 8px 24px rgba(43, 41, 39, 0.06);
+  --shadow-3: 0 2px 6px rgba(43, 41, 39, 0.06), 0 16px 42px rgba(43, 41, 39, 0.10);
+
+  /* motion */
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --t-fast: 0.15s var(--ease-standard);
+  --t-med: 0.22s var(--ease-standard);
+}
+
+/* Buttons — one shape, one elevation, tactile press */
+.btn.btn {
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-1) !important;
+  transition: transform var(--t-fast), box-shadow var(--t-fast), background var(--t-fast), border-color var(--t-fast), color var(--t-fast) !important;
+}
+.btn.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-2) !important; }
+.btn.btn:active { transform: translateY(0) scale(0.99); }
+.btn.btn:disabled, .btn.btn[disabled] { opacity: 0.55 !important; transform: none !important; cursor: not-allowed; }
+
+/* Cards — consistent radius + gentle lift on hover */
+.card.card {
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-2) !important;
+  transition: box-shadow var(--t-med), border-color var(--t-med), transform var(--t-med) !important;
+}
+.card.card:hover { box-shadow: var(--shadow-3) !important; }
+
+/* Form controls — uniform shape and accent focus ring */
+input[type="text"], input[type="email"], input[type="password"], input[type="tel"],
+input[type="number"], input[type="date"], input[type="time"], input[type="search"], input[type="url"],
+input[type="datetime-local"], select, textarea {
+  border-radius: var(--radius-sm) !important;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast) !important;
+}
+input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, input[type="tel"]:focus,
+input[type="number"]:focus, input[type="date"]:focus, input[type="time"]:focus, input[type="search"]:focus,
+input[type="url"]:focus, input[type="datetime-local"]:focus, select:focus, textarea:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px rgba(134, 101, 61, 0.14) !important;
+}
+
+/* Badges & pills — one silhouette */
+.pill.pill, .tab-badge.tab-badge, .nav-badge.nav-badge, .alerts-badge.alerts-badge {
+  border-radius: var(--radius-full) !important;
+}
+
+/* Overlay surfaces — consistent shell + depth */
+.modal-box, .ui-modal-box { border-radius: var(--radius-lg) !important; box-shadow: var(--shadow-3) !important; }
+.alerts-popover, .ui-toast, .nc-pop { border-radius: var(--radius-md) !important; box-shadow: var(--shadow-3) !important; }
+
+/* ── Sidebar shell: ONE coherent model (desktop) ──────────────────────
+   Three layers redefined .sidebar (base sheet, the "premium" fixed-250px
+   section, mobile drawer) with fragile ordering. This pins the desktop
+   behaviour regardless of source order: a full-height rail whose nav
+   scrolls and whose footer/profile anchors to the bottom — no dead strip
+   under the profile card. Mobile (<=991px) keeps its off-canvas drawer. */
+@media (min-width: 992px) {
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .sidebar .sidebar-brand { flex-shrink: 0; }
+  .sidebar .sidebar-nav { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; }
+  .sidebar .sidebar-footer,
+  .sidebar .sidebar-profile { margin-top: auto !important; flex-shrink: 0; }
+}

@@ -20,6 +20,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('conv_participants', function (Blueprint $table) {
+            $table->dropIndex(['status']);
+        });
+
+        Schema::table('conv_participants', function (Blueprint $table) {
             $table->dropColumn('status');
         });
     }

@@ -11,6 +11,8 @@
 | **PayHOA** | US HOA management | Financials, communications, violations, voting, owner portal, resale docs |
 | **HOA Express** | HOA website/community platform | Blast email/SMS, documents, calendars, forms, galleries, directories, surveys |
 | **FRONTSTEPS** | Community association suite | Accounting, payments, visitor/security, mobile apps, AI assistant |
+| **TownSq** | Resident engagement / HOA app | Community feed, requests, violations, accounting services, AI suggested replies, resale docs, mobile apps |
+| **RunHOA** | Self-managed HOA suite | Directory, accounting, dues, communications, requests/approvals, violations, documents & minutes, e-voting, budgets, vendor management |
 | **Capstone RRL systems** | PH barangay / local gov | e.g. Webyu, LOKAL Pilipinas, Barangay Blotter & Clearance, E-SITIO, CBMS (from `SubSync_Capstone_Full.md`) |
 
 ## Where SubSync already stands out
@@ -37,12 +39,12 @@
 | Autopay / recurring | ✗ | ✅ | ◐ | ✅ |
 | Ledger / dues / budgets | ✅ | ✅ | ◐ | ✅ |
 | Documents library (folders/permissions) | ◐ (flat officer files) | ✅ | ✅ | ✅ |
-| Calendars / events + RSVP | ✗ (event_date only) | ✅ | ✅ | ✅ |
+| Calendars / events + RSVP | ✅ | ✅ | ✅ | ✅ |
 | Voting / surveys / polls | ✗ (recommendations only) | ✅ | ✅ | ◐ |
 | Custom / request forms | ✗ (fixed forms) | ✅ | ✅ | ◐ |
 | Community directory (opt-in) | ✗ | ◐ | ✅ | ◐ |
 | Photo galleries | ✗ | ✗ | ✅ | ◐ |
-| Reports / templates / certificates | ✅ (templates + generate; UI added) | ✅ | ◐ | ✅ (AI) |
+| Reports / templates / certificates | ✅ staff-only (issue + print) | ✅ | ◐ | ✅ (AI) |
 | Visitor / gate access | ✗ | ✗ | ✗ | ✅ |
 | AI assistant / insights | ✗ | ✗ | ✗ | ✅ |
 | Mobile app | ◐ (PWA) | ✅ | ✅ | ✅ |
@@ -91,8 +93,38 @@ Legend: ✅ present · ◐ partial · ✗ absent
 - Improvement 2 ties SubSync to the **local RRL** (barangay clearance/blotter systems) and makes the Reports feature demonstrably useful, not just present.
 - Everything above is additive; none conflicts with the existing ISO 25010 evaluation criteria (it strengthens functional suitability and usability).
 
+## Round 2 review — 2026-10-17 (TownSq, RunHOA + capstone evaluation instrument)
+
+Re-checked against `SubSync_Capstone_Full.md` (hardware/software requirements + the ISO/IEC 25010 evaluation tool, incl. Reliability → *Recoverability* and Security → *Non-repudiation / Accountability* items) and two more systems.
+
+### Highest leverage before the defense — strengthen ISO 25010 ratings
+- **Automated backups + tested restore** ✅ **Done (2026-10-17)** — `subsync:backup-database` (mysqldump), daily 02:00 schedule, keeps last 14, admin Settings → System card ("Back up now" + list), restore drill executed (42/42 tables, all counts matched).
+- **Audit trail expansion** ✅ **Done (2026-10-17)** — `activity_logs` + observer for announcements, finance, templates, documents, accounts, facilities; admin Settings → System shows the recent activity feed.
+- **Email verification + optional 2FA for staff** — *Authenticity*. (Login throttling already exists: 5/min on admin login.)
+- **Accessibility pass (WCAG AA)** — *Accessibility* is explicitly rated: screen-reader labels, focus order, touch-target sizes, form error announcements (contrast/keyboard partly done already).
+- **Calendar iCal/ICS feed + directory CSV export** — *Interoperability*; cheap wins on top of the existing exports.
+
+### Capstone-document alignment
+- Objective 1.4 mentions **"emergency tracking"**: ✅ **Done (2026-10-17)** — one-tap "Report an Emergency" (auto-Critical + staff alerts; officer map already renders open issues red), plus **camera capture** (`capture="environment"`) and existing "Use My GPS"/map-pin tools for the Sensor requirements.
+- **Software requirements list MySQL 8.0+** — satisfied (switched to MySQL 8.4.3 on 2026-10-14); cite as a complied requirement.
+- Hardware section implies a **mobile app** (Android 8+/iOS 13+): the PWA covers installability — document that. Sensor requirements: "Use My GPS" + map pin already existed; **camera capture** added 2026-10-17 (`capture="environment"` on issue photos).
+- Use-case diagram says residents "view available reports", but the panel directed reports to be **admin/officer only** (implemented) — align the manuscript wording or note the revision.
+- Data dictionary lists officer `Role_Description`; officer designations were intentionally removed — note the deviation.
+
+### Feature ideas from the new benchmark systems
+- **Vendor management** (RunHOA): vendors, contracts, contacts, linked work orders.
+- **Meetings & minutes** (RunHOA/TownSq): schedules, agendas, minutes archive, attendance, annual-meeting tools.
+- **Late-fee / penalty automation + printable dunning notices** (PayHOA, TownSq print & mail) built on the existing aging buckets.
+- **Pet registry** (TownSq tracks pets at scale) — small, community-visible, low effort.
+- **Community feed / bulletin board** (TownSq) — moderated resident posts; optional, overlaps with announcements.
+- **AI suggested replies for staff** (TownSq AI) — already listed as P3 #13.
+
+> Panel-driven items still open (see `CAPSTONE_DEFENSE_REVISIONS.md`): S2 resident can append details/photos to an issue, S3 map pin accuracy, S5 officer announcement templates + date picker, S6 date-range validation, S8 document library, S11 CSV-not-Excel cleanup, S13 announcement statuses. Benchmark P1 #1 (email/SMS announcements) remains deferred.
+
 ## Sources
 - PayHOA features — https://www.payhoa.com/features/
 - HOA Express product page — https://www.hoa-express.com/
 - FRONTSTEPS product suite — https://www.frontsteps.com/
+- TownSq — https://www.townsq.io/
+- RunHOA — https://www.runhoa.com/
 - Local/contextual systems — `SubSync_Capstone_Full.md` (Chapter 2 RRL)

@@ -21,7 +21,7 @@ class GcashSettingController extends Controller
             'account_name' => 'nullable|string|max:120',
             'account_number' => 'nullable|string|max:40',
             'instructions' => 'nullable|string|max:1000',
-            'qr_image' => 'nullable|image|max:4096',
+            'qr_image' => 'nullable|image|max:8192',
             'remove_qr' => 'nullable|boolean',
         ]);
 

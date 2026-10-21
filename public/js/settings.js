@@ -110,4 +110,56 @@
   });
 
   syncSeg();
+
+  /* ── System tools (admin only) — backups + activity log ── */
+  var backupList = document.getElementById('backupList');
+  var activityList = document.getElementById('activityList');
+  if (backupList || activityList) {
+    var fmtSize = function (b) {
+      return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
+    };
+    var renderRows = function (el, rowsHtml, emptyText) {
+      if (!rowsHtml) { el.innerHTML = '<div class="set-sysrow set-sysrow-empty">' + emptyText + '</div>'; return; }
+      el.innerHTML = rowsHtml;
+    };
+    var loadBackups = function () {
+      if (!backupList) return;
+      api('GET', '/api/backups').then(function (res) {
+        if (!res.ok) { renderRows(backupList, '', 'Could not load backups.'); return; }
+        var list = (res.data && res.data.backups) || [];
+        var latest = document.getElementById('backupLatest');
+        if (latest) latest.textContent = list.length ? ('Latest: ' + list[0].name + ' · ' + list[0].date) : 'No backups yet.';
+        renderRows(backupList, list.map(function (b) {
+          return '<div class="set-sysrow"><span>' + b.name + '</span><small>' + fmtSize(b.size) + ' · ' + b.date + '</small></div>';
+        }).join(''), 'No backups yet.');
+      });
+    };
+    var loadActivity = function () {
+      if (!activityList) return;
+      api('GET', '/api/activity-logs').then(function (res) {
+        if (!res.ok) { renderRows(activityList, '', 'Could not load activity.'); return; }
+        var logs = (res.data && res.data.logs) || [];
+        renderRows(activityList, logs.map(function (l) {
+          return '<div class="set-sysrow"><span>' + l.description + '</span><small>' + l.actor + ' · ' + l.time + '</small></div>';
+        }).join(''), 'No activity yet.');
+      });
+    };
+    var runBtn = document.getElementById('backupRunBtn');
+    if (runBtn) runBtn.addEventListener('click', function () {
+      runBtn.disabled = true;
+      var old = runBtn.textContent;
+      runBtn.textContent = 'Backing up…';
+      api('POST', '/api/backups/run').then(function (res) {
+        toast((res.data && res.data.message) || 'Backup finished.', res.data && res.data.success ? 'success' : 'error');
+      }).catch(function () {
+        toast('Backup failed.', 'error');
+      }).then(function () {
+        runBtn.disabled = false;
+        runBtn.textContent = old;
+        loadBackups();
+      });
+    });
+    loadBackups();
+    loadActivity();
+  }
 })();

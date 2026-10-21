@@ -9,6 +9,7 @@ class IssuePriorityTest extends TestCase
 {
     public function test_priority_matches_resident_facing_categories(): void
     {
+        $this->assertSame('Critical', (new IssueReport(['category' => 'Emergency']))->autoSetPriority());
         $this->assertSame('Critical', (new IssueReport(['category' => 'Security Concern']))->autoSetPriority());
         $this->assertSame('High', (new IssueReport(['category' => 'Drainage / Flooding']))->autoSetPriority());
         $this->assertSame('High', (new IssueReport(['category' => 'Road / Pavement']))->autoSetPriority());

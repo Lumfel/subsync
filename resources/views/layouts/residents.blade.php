@@ -5,23 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Resident Portal</title>
-<script>
-window.APP_BASE = '{{ request()->getBaseUrl() }}';
-(function () {
-    var base = window.APP_BASE || '';
-    if (!base) return;
-    var prefix = function (url) {
-        if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
-        return url;
-    };
-    var origFetch = window.fetch;
-    window.fetch = function (url, opts) { opts = opts || {}; var h = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' }); if (window.__PORTAL) h['X-Portal'] = window.__PORTAL; opts.headers = h; return origFetch.call(this, prefix(url), opts); };
-    var OrigES = window.EventSource;
-    window.EventSource = function (url, cfg) { var u = prefix(url); if (window.__PORTAL) u += (u.indexOf('?') < 0 ? '?' : '&') + 'portal=' + window.__PORTAL; return new OrigES(u, cfg); };
-    window.EventSource.prototype = OrigES.prototype;
-    window.EventSource.CONNECTING = 0; window.EventSource.OPEN = 1; window.EventSource.CLOSED = 2;
-})();
-</script>
+<script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
+<script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -40,14 +25,14 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
   @vite('resources/js/app.js')
 </head>
-<body>
+<body class="residents-body">
 
 <!-- Mobile Responsive Header -->
 <div class="mobile-header">
   <div style="font-family:'DM Serif Display',serif; font-size:20px; color:#1C1A17; display:flex; align-items:center; gap:8px;">
-    <span style="font-size:24px;">🏡</span> SubSync
+    <span style="font-size:24px;"><x-icon name="home" size="24"/></span> SubSync
   </div>
-  <button class="btn" style="padding: 6px 12px; font-size: 13px;" onclick="toggleMobileSidebar()">☰ Menu</button>
+  <button class="btn" style="padding: 6px 12px; font-size: 13px;" onclick="toggleMobileSidebar()"><x-icon name="menu" size="16"/> Menu</button>
 </div>
 
 <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
@@ -56,20 +41,19 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 <aside class="sidebar">
   <div class="logo">
     <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#1C1A17; display:flex; align-items:center; gap:8px;">
-      <span style="font-size:28px;">🏡</span> SubSync
+      <span style="font-size:28px;"><x-icon name="home" size="28"/></span> SubSync
     </div>
   </div>
   <ul style="margin-top:20px;">
-    <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">🏠 Overview</li>
-    <li class="tab-btn" onclick="switchTab('issues')" id="tab-issues">📢 Issues</li>
-    <li class="tab-btn" onclick="switchTab('recs')" id="tab-recs">💡 Suggestions</li>
-    <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages">💬 Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
-    <li class="tab-btn" onclick="switchTab('map')" id="tab-map">🗺️ Map</li>
-    <li class="tab-btn" onclick="switchTab('expenses')" id="tab-expenses">💰 Expenses</li>
-    <li class="tab-btn" onclick="switchTab('payments')" id="tab-payments">💳 Payments</li>
-      <li class="tab-btn" onclick="switchTab('policies')" id="tab-policies">📜 Policies</li>
-    <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports">&#128196; Reports</li>
+    <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview"><x-icon name="home" size="15"/> Overview</li>
+    <li class="tab-btn" onclick="switchTab('payments')" id="tab-payments"><x-icon name="credit-card" size="15"/> Payments</li>
+    <li class="tab-btn" onclick="switchTab('issues')" id="tab-issues"><x-icon name="wrench" size="15"/> Issues</li>
+    <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages"><x-icon name="message" size="15"/> Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
     <li class="tab-btn" onclick="switchTab('calendar')" id="tab-calendar">&#128197; Calendar</li>
+    <li class="tab-btn" onclick="switchTab('expenses')" id="tab-expenses"><x-icon name="coins" size="15"/> Expenses</li>
+    <li class="tab-btn" onclick="switchTab('recs')" id="tab-recs"><x-icon name="lightbulb" size="15"/> Suggestions</li>
+    <li class="tab-btn" onclick="switchTab('policies')" id="tab-policies"><x-icon name="scroll" size="15"/> Policies</li>
+    <li class="tab-btn" onclick="switchTab('map')" id="tab-map"><x-icon name="map" size="15"/> Map</li>
   </ul>
 
   <!-- Sidebar tools: search + notifications -->
@@ -125,6 +109,18 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
         <button class="btn btn-sm" style="margin-top:12px; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.22); color:#fff;" onclick="switchTab('payments')">Pay via GCash</button>
       </div>
 
+      <!-- Quick Actions (Span 12) -->
+      <div class="card bento-col-12" id="residentQuickActions">
+        <div class="card-title">Quick Actions</div>
+        <div class="card-subtitle">The most common things you may need. Tap one to begin.</div>
+        <div class="quick-actions" style="margin-top:10px;">
+          <button class="btn" onclick="switchTab('payments')"><x-icon name="credit-card" size="15"/> Pay My Dues</button>
+          <button class="btn" onclick="switchTab('issues')"><x-icon name="megaphone" size="15"/> Report a Problem</button>
+          <button class="btn" style="background:#e05555;border-color:#e05555;color:#fff;" onclick="switchTab('issues'); setTimeout(startEmergency, 200);"><x-icon name="alert" size="15"/> Emergency</button>
+          <button class="btn" onclick="switchTab('messages')"><x-icon name="mail" size="15"/> Message the HOA</button>
+        </div>
+      </div>
+
       <!-- Announcements Box (Span 8 - Front & Center) -->
       <div class="card bento-col-8">
         <div class="card-title">Announcements</div>
@@ -149,7 +145,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
         <div class="card bento-col-12">
           <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>HOA Community Policies &amp; Regulations</span>
-            <button class="btn btn-sm" onclick="switchTab('policies')">View All Policies 📜</button>
+            <button class="btn btn-sm" onclick="switchTab('policies')"><x-icon name="scroll" size="14"/> View All Policies</button>
           </div>
           <div class="card-subtitle">Essential guidelines for property maintenance, sanitation, security, and peaceful community living.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px;">
@@ -178,6 +174,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <div class="tab-panel" id="panel-messages">
     <div class="card" style="padding:24px; margin-top:0;">
       <div class="card-title">Community Group Chat</div>
+      <div class="card-subtitle">Send a message to the HOA office or your neighbors. Replies appear here.</div>
       <div class="msg-layout">
         <!-- Sidebar threads -->
         <div class="msg-sidebar">
@@ -203,7 +200,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           </div>
           <div class="msg-compose">
             <textarea id="msgInput" placeholder="Type a message…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault(); sendMessage();}"></textarea>
-            <button class="send-btn" onclick="sendMessage()">➔</button>
+            <button class="send-btn" onclick="sendMessage()"><x-icon name="send" size="16"/></button>
           </div>
         </div>
       </div>
@@ -213,12 +210,19 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <!-- ═══════════ ISSUES ═══════════ -->
   <div class="tab-panel" id="panel-issues">
     <div class="card" style="margin-top:0;">
+      <button type="button" class="btn btn-full" id="emergencyBtn" onclick="startEmergency()"
+        style="background:#e05555;border-color:#e05555;color:#fff;margin-bottom:14px;"><x-icon name="alert" size="15"/> Report an Emergency</button>
+      <div id="issue-emergency-note" style="display:none;background:rgba(224,85,85,0.12);border:1px solid rgba(224,85,85,0.35);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:13px;color:#c94a4a;">
+        <x-icon name="alert" size="14"/> Emergency reports are marked <strong>Critical</strong> and alert HOA staff immediately. Use this only for urgent safety or security situations.
+      </div>
       <div class="card-title">Report a Concern or Complaint</div>
+      <div class="card-subtitle">Describe the problem below. Photos and the location help our team fix it faster.</div>
       <div class="f-row">
         <div class="f-field">
           <span class="f-label">Category</span>
-          <select id="issueCategory">
+          <select id="issueCategory" onchange="toggleEmergencyNote()">
             <option value="">Select category…</option>
+            <option>Emergency</option>
             <option>Road / Pavement</option>
             <option>Drainage / Flooding</option>
             <option>Street Lighting</option>
@@ -245,21 +249,26 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
       </div>
       <div class="f-row">
         <div class="f-field">
-          <span class="f-label">📸 Photos (optional, up to 5)</span>
+          <span class="f-label"><x-icon name="camera" size="14"/> Photos (optional, up to 5, max 8 MB each)</span>
           <input type="file" id="issueImages" accept="image/*" multiple style="font-size:13px;padding:6px 0;">
           <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Attach photos to help our team understand the issue.</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
+            <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="document.getElementById('issueCamera').click()"><x-icon name="camera" size="14"/> Take Photo</button>
+            <input type="file" id="issueCamera" accept="image/*" capture="environment" style="display:none">
+            <span id="issueCameraCount" style="font-size:11px;color:var(--text-dim);"></span>
+          </div>
         </div>
       </div>
       <div class="f-row">
         <div class="f-field">
-          <span class="f-label">📎 Supporting Documents (optional, up to 5)</span>
+          <span class="f-label"><x-icon name="paperclip" size="14"/> Supporting Documents (optional, up to 5)</span>
           <input type="file" id="issueDocuments" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple style="font-size:13px;padding:6px 0;">
           <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">PDF, Word, or Excel files (max 10 MB each).</div>
         </div>
       </div>
       <div class="f-row">
         <div class="f-field">
-          <span class="f-label">📍 Location (optional)</span>
+          <span class="f-label"><x-icon name="map-pin" size="14"/> Location (optional)</span>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;">
             <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="useMyLocation()">Use My GPS</button>
             <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="openIssuePicker()">Pin on Map</button>
@@ -295,6 +304,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <div class="tab-panel" id="panel-recs">
     <div class="card" style="margin-top:0;">
       <div class="card-title">Share a Suggestion or Initiative</div>
+      <div class="card-subtitle">Have an idea to improve the subdivision? Send it here and the HOA will review it.</div>
       <div class="f-row">
         <div class="f-field">
           <span class="f-label">Category</span>
@@ -357,6 +367,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <div class="tab-panel" id="panel-expenses">
     <div class="card">
       <div class="card-title">HOA Expenses &amp; Financials</div>
+      <div class="card-subtitle">See how your dues are spent. The HOA office updates this list.</div>
       <div id="expensesList"><div class="empty-state">Loading expenses...</div></div>
     </div>
   </div>
@@ -373,6 +384,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     <div class="fin-section active" data-pay="pay">
     <div class="card" style="margin-bottom:12px;">
       <div class="card-title" style="margin:0 0 12px;">Pay via GCash</div>
+      <div class="card-subtitle" style="margin:-6px 0 12px;">Scan the QR code or send to the number below, then submit the reference number for validation.</div>
       <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
         <div id="gcashQrBox" style="text-align:center;border:1px dashed var(--glass-border);border-radius:8px;padding:12px;min-height:180px;display:flex;align-items:center;justify-content:center;background:#fff;">
           <div style="font-size:12px;color:var(--text-dim);">Loading…</div>
@@ -391,7 +403,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
         <div class="f-field"><span class="f-label">Sender Name</span><input type="text" id="paySender" maxlength="150"></div>
         <div class="f-field"><span class="f-label">Date Paid</span><input type="date" id="payDate"></div>
       </div>
-      <div class="f-row"><div class="f-field"><span class="f-label">Receipt Screenshot</span><input type="file" id="payReceipt" accept="image/*"></div></div>
+      <div class="f-row"><div class="f-field"><span class="f-label">Receipt Screenshot (photo, max 8 MB)</span><input type="file" id="payReceipt" accept="image/*"></div></div>
       <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitPayment):submitPayment()">Submit Payment</button>
     </div>
     </div><!-- /pay -->
@@ -430,7 +442,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     <div class="tab-panel" id="panel-policies">
       <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#FAF4E7,#FAF6F0);border-left:4px solid var(--accent);">
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div style="font-size:32px;">📜</div>
+          <div style="font-size:32px;"><x-icon name="scroll" size="32"/></div>
           <div>
             <div style="font-family:'DM Serif Display',serif;font-size:22px;color:#2B2927;margin-bottom:4px;">Terra Nova Homeowners Association</div>
             <div style="font-size:13px;color:var(--text-dim);">Community Rules, Regulations &amp; Policies — Effective Current Term</div>
@@ -533,38 +545,6 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
         For inquiries, please contact the HOA Administration Office.
       </div>
     </div>
-
-  <!-- Reports -->
-  <div class="tab-panel" id="panel-reports">
-    <div class="card" style="margin-top:0;">
-      <div class="card-title">Generate a Report</div>
-      <div class="card-subtitle">Pick a report type, fill in the details, and a copy is saved to your reports below.</div>
-      <div class="f-field" style="margin-top:12px;">
-        <span class="f-label">Report Type</span>
-        <select id="reportTemplateSelect" onchange="renderReportVars()">
-          <option value="">Loading…</option>
-        </select>
-      </div>
-      <div id="reportVarsContainer"></div>
-      <button class="btn btn-full btn-resident" style="margin-top:8px;" onclick="generateReport()">Generate Report</button>
-    </div>
-
-    <div class="card" id="reportPreviewCard" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-        <div class="card-title" id="reportPreviewSubject" style="margin:0;">Report</div>
-        <div style="display:flex;gap:8px;">
-          <a class="btn btn-sm" id="reportPreviewPrint" href="#" target="_blank" rel="noopener" style="display:none;">Print</a>
-          <button class="btn btn-sm" onclick="hideReportPreview()">Close</button>
-        </div>
-      </div>
-      <div id="reportPreviewBody" style="white-space:pre-wrap;font-size:14px;line-height:1.7;margin-top:10px;"></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">My Reports</div>
-      <div id="myReportsList"><div class="empty-state"><div class="empty-icon">📄</div>No reports yet.</div></div>
-    </div>
-  </div>
 
   <!-- Calendar -->
   <div class="tab-panel" id="panel-calendar">
@@ -702,13 +682,54 @@ function initResidentMap() {
 
 let issuePickerMap = null, issuePickerPin = null;
 
+/* ── Emergency quick report ── */
+function startEmergency() {
+  const sel = document.getElementById('issueCategory');
+  if (!sel) return;
+  sel.value = 'Emergency';
+  toggleEmergencyNote();
+  const t = document.getElementById('issueTitle');
+  if (t) { t.focus(); }
+  sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function toggleEmergencyNote() {
+  const sel = document.getElementById('issueCategory');
+  const isEmergency = !!(sel && sel.value === 'Emergency');
+  const note = document.getElementById('issue-emergency-note');
+  if (note) note.style.display = isEmergency ? 'block' : 'none';
+  const t = document.getElementById('issueTitle');
+  if (t) t.placeholder = isEmergency ? 'Emergency — what is happening?' : 'Brief description of the issue';
+}
+
+/* ── Camera photos (merged into the photos on submit) ── */
+window._cameraIssueImages = [];
+(function () {
+  const cam = document.getElementById('issueCamera');
+  const count = document.getElementById('issueCameraCount');
+  if (!cam) return;
+  cam.addEventListener('change', function () {
+    const existing = (document.getElementById('issueImages') || {}).files;
+    let used = (existing ? existing.length : 0) + window._cameraIssueImages.length;
+    Array.from(cam.files || []).forEach(function (f) {
+      if (used >= 5) { showToast('⚠ Up to 5 photos total.'); return; }
+      window._cameraIssueImages.push(f);
+      used++;
+    });
+    cam.value = '';
+    if (count) {
+      const n = window._cameraIssueImages.length;
+      count.textContent = n ? (n + ' camera photo' + (n > 1 ? 's' : '') + ' added') : '';
+    }
+  });
+})();
+
 function useMyLocation() {
   if (!navigator.geolocation) { showToast('Geolocation not supported.'); return; }
   navigator.geolocation.getCurrentPosition(pos=>{
     const lat=pos.coords.latitude, lng=pos.coords.longitude;
     document.getElementById('issue-lat').value=lat;
     document.getElementById('issue-lng').value=lng;
-    document.getElementById('issue-loc-display').textContent='📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+    document.getElementById('issue-loc-display').textContent=lat.toFixed(5) + ', ' + lng.toFixed(5);
     if(issuePickerPin) issuePickerPin.setLatLng([lat,lng]);
     else if(issuePickerMap) issuePickerPin=L.marker([lat,lng]).addTo(issuePickerMap);
     if(issuePickerMap) issuePickerMap.setView([lat,lng], 18);
@@ -738,7 +759,7 @@ function openIssuePicker() {
         else issuePickerPin=L.marker([lat,lng]).addTo(issuePickerMap);
         document.getElementById('issue-lat').value=lat.toFixed(7);
         document.getElementById('issue-lng').value=lng.toFixed(7);
-        document.getElementById('issue-loc-display').textContent='📍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+        document.getElementById('issue-loc-display').textContent=lat.toFixed(5) + ', ' + lng.toFixed(5);
       });
     } else {
       setTimeout(()=>issuePickerMap.invalidateSize(),80);
@@ -819,7 +840,7 @@ function closeIssuePicker() {
 
 <!-- New-announcement banner (driven by residents.js / SubUI realtime) -->
 <div id="annNotif">
-  <span style="font-size:18px;">📢</span>
+  <span style="font-size:18px;"><x-icon name="megaphone" size="18"/></span>
   <div style="flex:1;min-width:0;">
     <div class="ann-meta">New Announcement</div>
     <div class="ann-notif-title" id="annNotifTitle">-</div>

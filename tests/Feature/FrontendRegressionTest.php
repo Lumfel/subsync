@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
 /**
@@ -40,6 +41,98 @@ class FrontendRegressionTest extends TestCase
         $this->get('/admin-access')->assertOk()
             ->assertSee('role="alert"', false)
             ->assertSee('autofocus', false);
+    }
+
+    public function test_ui_icons_are_monochrome_svgs_not_emoji(): void
+    {
+        // The component renders on a single line: it is also used inside
+        // inline JS strings (menu toggle), where newlines would break the script.
+        $svg = Blade::render('<x-icon name="home" size="16"/>');
+        $this->assertStringContainsString('<svg', $svg);
+        $this->assertStringNotContainsString("\n", $svg);
+
+        $this->get('/login')->assertOk()
+            ->assertSee('ui-icon', false)
+            ->assertDontSee('☰', false);
+
+        $this->get('/admin-access')->assertOk()
+            ->assertSee('ui-icon', false);
+
+        $dashboard = view('layouts.admin-dashboard', [
+            'adminName' => 'A', 'adminId' => 1, 'prefs' => [], 'role' => 'admin',
+        ])->render();
+        $this->assertStringContainsString('ui-icon', $dashboard);
+        $this->assertStringNotContainsString('☰', $dashboard);
+        // Nav/tab icons must be SVGs, not emoji.
+        $this->assertStringNotContainsString('📊', $dashboard);
+        $this->assertStringNotContainsString('💬', $dashboard);
+
+        // Script-rendered markup uses the JS mirror (SubUI.icon) instead of emoji.
+        $ui = $this->js('ui.js');
+        $this->assertStringContainsString('SubUI = { icon,', $ui);
+        $this->assertStringContainsString('ICON_PATHS', $ui);
+
+        foreach (['residents.js', 'officer-portal.js', 'admin-dashboard.js'] as $file) {
+            $js = $this->js($file);
+            $this->assertDoesNotMatchRegularExpression('/empty-icon">[^<]/', $js, "{$file} must not render emoji empty-state icons.");
+        }
+
+        // <option> content is text-only — SVG markup there would render as raw text.
+        $officer = file_get_contents(resource_path('views/layouts/officer-portal.blade.php'));
+        $this->assertDoesNotMatchRegularExpression('/<option[^>]*>[^<]*<x-icon/', $officer);
+    }
+
+    public function test_design_system_page_documents_tokens_and_kit(): void
+    {
+        // Admin-only, like the dashboard: guests are sent to the admin login.
+        $this->get('/design-system')->assertRedirect(route('admin.login'));
+
+        $html = view('layouts.design-system')->render();
+
+        $this->assertStringContainsString('Design System', $html);
+        $this->assertStringContainsString('d-btn d-btn-primary', $html);
+        $this->assertStringContainsString('ui-icon', $html);
+        $this->assertStringContainsString('--radius-md', $html);
+
+        // The canonical scale lives at the end of ui-polish.css (wins the cascade).
+        $ui = $this->css('ui-polish.css');
+        $this->assertStringContainsString('DESIGN SYSTEM — canonical scale', $ui);
+        $this->assertStringContainsString('--radius-full: 999px;', $ui);
+        $this->assertStringContainsString('.btn.btn {', $ui);
+        $this->assertStringContainsString('.card.card {', $ui);
+    }
+
+    public function test_officers_panel_shows_stats_search_and_richer_table(): void
+    {
+        $html = view('layouts.admin-dashboard', [
+            'adminName' => 'A', 'adminId' => 1, 'prefs' => [], 'role' => 'admin',
+        ])->render();
+
+        // Header stat chips + search live in the panel.
+        $this->assertStringContainsString('id="officerStatTotal"', $html);
+        $this->assertStringContainsString('id="officerStatActive"', $html);
+        $this->assertStringContainsString('id="officerStatPending"', $html);
+        $this->assertStringContainsString('id="officerSearch"', $html);
+
+        // The table is wrapped in the standard card and shows the added columns.
+        $this->assertStringContainsString('<th>Contact</th><th>Joined</th>', $html);
+
+        $js = $this->js('admin-dashboard.js');
+        $this->assertStringContainsString('officerStatPending', $js);
+        $this->assertStringContainsString('officerSearch', $js);
+        $this->assertStringContainsString("SubUI.icon('shield', 28)", $js, 'empty state uses the icon system');
+    }
+
+    public function test_hidden_register_role_fields_are_disabled(): void
+    {
+        $res = $this->get('/login')->assertOk();
+
+        // The officer/resident field groups toggled with display:none must also
+        // be disabled, otherwise their "required" inputs make the browser refuse
+        // to submit with "An invalid form control with name='' is not focusable".
+        $res->assertSee('toggleRegisterFields', false);
+        $res->assertSee('setGroupEnabled', false);
+        $res->assertSee('toggleRegisterFields(LOGIN_PORTAL', false);
     }
 
     public function test_resident_js_uses_correct_thread_function_and_badge_id(): void
@@ -293,6 +386,53 @@ class FrontendRegressionTest extends TestCase
         $this->assertStringNotContainsString('::-webkit-scrollbar { width: 6px; background: rgba(0,0,0,0.2); }', $admin);
     }
 
+    public function test_emergency_and_camera_reporting_are_wired(): void
+    {
+        $residents = file_get_contents(resource_path('views/layouts/residents.blade.php'));
+        $this->assertStringContainsString('startEmergency()', $residents);
+        $this->assertStringContainsString('<option>Emergency</option>', $residents);
+        $this->assertStringContainsString('id="issueCamera"', $residents);
+        $this->assertStringContainsString('capture="environment"', $residents);
+
+        $js = $this->js('residents.js');
+        $this->assertStringContainsString('_cameraIssueImages', $js);
+    }
+
+    public function test_admin_settings_system_tools_are_wired(): void
+    {
+        $settings = file_get_contents(resource_path('views/settings.blade.php'));
+        $this->assertStringContainsString('id="backupRunBtn"', $settings);
+        $this->assertStringContainsString('id="activityList"', $settings);
+        $this->assertStringContainsString("=== 'admin'", $settings);
+
+        $js = $this->js('settings.js');
+        $this->assertStringContainsString('/api/backups', $js);
+        $this->assertStringContainsString('/api/activity-logs', $js);
+    }
+
+    public function test_residents_and_officers_are_elder_friendly(): void
+    {
+        $residents = file_get_contents(resource_path('views/layouts/residents.blade.php'));
+        $this->assertStringContainsString('<body class="residents-body">', $residents);
+        $this->assertStringContainsString('id="residentQuickActions"', $residents);
+
+        // Most-used tabs come first for residents (Payments, then Issues, then Messages).
+        $this->assertLessThan(strpos($residents, 'id="tab-issues"'), strpos($residents, 'id="tab-payments"'));
+        $this->assertLessThan(strpos($residents, 'id="tab-messages"'), strpos($residents, 'id="tab-issues"'));
+
+        $officer = file_get_contents(resource_path('views/layouts/officer-portal.blade.php'));
+        $this->assertStringContainsString('<body class="officer-body">', $officer);
+
+        // Issues come first for officers.
+        $this->assertLessThan(strpos($officer, 'id="tab-announcements"'), strpos($officer, 'id="tab-reports"'));
+
+        // Shared clear-mode styles: bigger tap targets + clearer helper text.
+        $ui = $this->css('ui-polish.css');
+        $this->assertStringContainsString('.residents-body .btn, .officer-body .btn', $ui);
+        $this->assertStringContainsString('.residents-body .sidebar li.tab-btn, .officer-body .sidebar li.tab-btn', $ui);
+        $this->assertStringContainsString('.residents-body .card-subtitle, .officer-body .card-subtitle', $ui);
+    }
+
     public function test_sidebar_nav_rows_are_left_aligned(): void
     {
         $ui = $this->css('ui-polish.css');
@@ -301,20 +441,20 @@ class FrontendRegressionTest extends TestCase
         $this->assertStringContainsString('.sidebar .tab-btn .tab-badge { margin-left: auto; }', $ui);
     }
 
-    public function test_reports_ui_is_wired(): void
+    public function test_reports_are_staff_only(): void
     {
         $residents = file_get_contents(resource_path('views/layouts/residents.blade.php'));
-        $this->assertStringContainsString('id="panel-reports"', $residents);
-        $this->assertStringContainsString('id="reportTemplateSelect"', $residents);
-        $this->assertStringContainsString('id="myReportsList"', $residents);
+        $this->assertStringNotContainsString('id="panel-reports"', $residents);
+        $this->assertStringNotContainsString('id="tab-reports"', $residents);
+        $this->assertStringNotContainsString('reportTemplateSelect', $residents);
 
         $js = $this->js('residents.js');
-        $this->assertStringContainsString('function generateReport(', $js);
-        $this->assertStringContainsString('function loadMyReports(', $js);
-        $this->assertStringContainsString('/api/reports/my', $js);
+        $this->assertStringNotContainsString('/api/reports', $js);
+        $this->assertStringNotContainsString('/api/report-templates', $js);
 
         $admin = file_get_contents(resource_path('views/layouts/admin-dashboard.blade.php'));
         $this->assertStringContainsString('id="reportTemplateAdminList"', $admin);
+        $this->assertStringContainsString('id="issuedReportsList"', $admin);
         $this->assertStringContainsString('function saveReportTemplate(', $this->js('admin-dashboard.js'));
     }
 

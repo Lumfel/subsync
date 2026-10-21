@@ -18,6 +18,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reports', function (Blueprint $table) {
+            $table->dropUnique(['reference_no']);
+        });
+
+        Schema::table('reports', function (Blueprint $table) {
             $table->dropColumn(['reference_no', 'issued_by']);
         });
     }

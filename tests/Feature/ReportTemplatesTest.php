@@ -33,48 +33,39 @@ class ReportTemplatesTest extends TestCase
         ]);
     }
 
-    public function test_resident_can_list_report_templates(): void
+    public function test_residents_cannot_access_reports(): void
+    {
+        $this->template();
+        $resident = $this->resident();
+
+        // Templates are a staff tool.
+        $this->actingAs($resident, 'resident')
+            ->getJson('/api/report-templates')
+            ->assertStatus(401);
+
+        // Staff-only issued documents list.
+        $this->actingAs($resident, 'resident')
+            ->getJson('/api/reports')
+            ->assertStatus(401);
+
+        // Resident self-service report routes no longer exist.
+        $this->actingAs($resident, 'resident')
+            ->getJson('/api/reports/my')
+            ->assertStatus(404);
+
+        $this->actingAs($resident, 'resident')
+            ->postJson('/api/reports/generate/1', ['variables' => []])
+            ->assertStatus(404);
+    }
+
+    public function test_staff_can_list_report_templates(): void
     {
         $this->template();
 
-        $this->actingAs($this->resident(), 'resident')
+        $this->withSession(['admin_id' => $this->admin()->id, 'admin_name' => 'A'])
             ->getJson('/api/report-templates')
             ->assertOk()
             ->assertJsonFragment(['name' => 'Barangay Clearance']);
-    }
-
-    public function test_resident_can_generate_a_report_from_a_template(): void
-    {
-        $template = $this->template();
-        $resident = $this->resident();
-
-        $this->actingAs($resident, 'resident')
-            ->postJson('/api/reports/generate/'.$template->id, [
-                'variables' => ['resident_name' => 'Juan', 'block_lot' => 'Block 1 Lot 1'],
-            ])
-            ->assertOk()
-            ->assertJsonPath('report.subject', 'Clearance for Juan');
-
-        $this->assertDatabaseHas('reports', [
-            'resident_id' => $resident->id,
-            'template_id' => $template->id,
-            'subject' => 'Clearance for Juan',
-        ]);
-    }
-
-    public function test_resident_can_view_their_generated_reports(): void
-    {
-        $template = $this->template();
-        $resident = $this->resident();
-
-        $this->actingAs($resident, 'resident')
-            ->postJson('/api/reports/generate/'.$template->id, ['variables' => ['resident_name' => 'Juan', 'block_lot' => 'B1']])
-            ->assertOk();
-
-        $this->actingAs($resident, 'resident')
-            ->getJson('/api/reports/my')
-            ->assertOk()
-            ->assertJsonFragment(['subject' => 'Clearance for Juan']);
     }
 
     public function test_resident_cannot_manage_templates(): void
@@ -142,7 +133,7 @@ class ReportTemplatesTest extends TestCase
             ->assertJsonFragment(['resident' => 'Juan Dela Cruz']);
     }
 
-    public function test_report_print_view_is_owner_or_staff_only(): void
+    public function test_report_print_view_is_staff_only(): void
     {
         $template = $this->template();
         $resident = $this->resident();
@@ -156,19 +147,14 @@ class ReportTemplatesTest extends TestCase
         $id = $res->json('report.id');
         $ref = $res->json('report.reference_no');
 
-        // Owner resident can print.
+        // Residents cannot print documents, even their own.
         $this->as('resident', $resident);
-        $this->get('/reports/'.$id.'/print')->assertOk()->assertSee($ref);
-
-        // Another resident cannot.
-        $other = Resident::create(['name' => 'Other', 'email' => 'o@x.com', 'password' => 'Secret@12345', 'status' => 'Active']);
-        $this->as('resident', $other);
         $this->get('/reports/'.$id.'/print')->assertStatus(403);
 
         // Staff can print.
         $this->as('admin', $admin);
         $this->withSession(['admin_id' => $admin->id, 'admin_name' => 'Admin A']);
-        $this->get('/reports/'.$id.'/print')->assertOk();
+        $this->get('/reports/'.$id.'/print')->assertOk()->assertSee($ref);
     }
 
     public function test_issuing_requires_all_template_variables(): void

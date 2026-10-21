@@ -15,7 +15,7 @@ class ReportController extends Controller
         return (bool) session('admin_id') || Auth::guard('officer')->check();
     }
 
-    /** Name of the acting staff member (or null for resident self-service). */
+    /** Name of the acting staff member. */
     private function staffName(): ?string
     {
         if (session('admin_id')) {
@@ -39,7 +39,7 @@ class ReportController extends Controller
     }
 
     /**
-     * Get all report templates (all roles — residents need them to generate reports).
+     * Get all report templates (staff only).
      */
     public function index(Request $request)
     {
@@ -145,84 +145,6 @@ class ReportController extends Controller
     }
 
     /**
-     * Generate a report from a template (resident can request reports based on templates)
-     */
-    public function generate(Request $request, $templateId)
-    {
-        // Residents can generate reports from templates
-        $resident = Auth::guard('resident')->user();
-        if (! $resident) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
-        }
-
-        $template = ReportTemplate::findOrFail($templateId);
-
-        // Validate required variables are provided
-        $variables = json_decode($template->variables, true) ?? [];
-        $providedVariables = (array) $request->input('variables', []);
-
-        // Check if all required variables are provided
-        foreach ($variables as $var) {
-            if (! isset($providedVariables[$var])) {
-                return response()->json([
-                    'error' => "Missing required variable: {$var}",
-                ], 400);
-            }
-        }
-
-        // Render the template with provided variables
-        $rendered = $template->render($providedVariables);
-
-        // Store the generated report
-        $report = Report::create([
-            'reference_no' => $this->referenceNumber($template->type),
-            'resident_id' => $resident->id,
-            'template_id' => $template->id,
-            'subject' => $rendered['subject'],
-            'content' => $rendered['body'],
-            'status' => 'Generated',
-        ]);
-
-        return response()->json(['success' => true, 'report' => [
-            'id' => $report->id,
-            'reference_no' => $report->reference_no,
-            'subject' => $report->subject,
-            'content' => $report->content,
-            'status' => $report->status,
-            'created_at' => $report->created_at?->format('M d, Y'),
-        ]]);
-    }
-
-    /**
-     * Get user's generated reports
-     */
-    public function myReports(Request $request)
-    {
-        $resident = Auth::guard('resident')->user();
-        if (! $resident) {
-            return response()->json(['error' => 'Unauthenticated'], 401);
-        }
-
-        $reports = Report::where('resident_id', $resident->id)
-            ->with('template:id,name,type')
-            ->get()
-            ->map(fn ($r) => [
-                'id' => $r->id,
-                'reference_no' => $r->reference_no,
-                'template_id' => $r->template_id,
-                'template_name' => $r->template?->name,
-                'template_type' => $r->template?->type,
-                'subject' => $r->subject,
-                'content' => $r->content,
-                'status' => $r->status,
-                'issued_by' => $r->issued_by,
-                'created_at' => $r->created_at?->format('M d, Y'),
-            ]);
-
-        return response()->json($reports);
-    }
-
-    /**
      * POST /api/reports/issue — staff issues a certificate/report for a resident.
      */
     public function issue(Request $request)
@@ -298,16 +220,15 @@ class ReportController extends Controller
     }
 
     /**
-     * GET /reports/{id}/print — printable document (owner resident or staff).
+     * GET /reports/{id}/print — printable issued document (staff only).
      */
     public function printView(int $id)
     {
-        $report = Report::with(['resident:id,name,house_id', 'template:id,name,type'])->findOrFail($id);
-
-        $isOwner = Auth::guard('resident')->id() === $report->resident_id;
-        if (! $this->isStaff() && ! $isOwner) {
+        if (! $this->isStaff()) {
             abort(403);
         }
+
+        $report = Report::with(['resident:id,name,house_id', 'template:id,name,type'])->findOrFail($id);
 
         return view('reports.print', [
             'report' => $report,

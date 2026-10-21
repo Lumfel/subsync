@@ -144,7 +144,7 @@ class MapController extends Controller
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
             'status' => 'sometimes|in:Active,Inactive',
-            'image' => 'nullable|image|max:4096',
+            'image' => 'nullable|image|max:8192',
         ]);
 
         if (! self::withinArea($data['latitude'], $data['longitude'])) {
@@ -175,7 +175,7 @@ class MapController extends Controller
             'latitude' => 'sometimes|required|numeric|between:-90,90',
             'longitude' => 'sometimes|required|numeric|between:-180,180',
             'status' => 'sometimes|in:Active,Inactive',
-            'image' => 'nullable|image|max:4096',
+            'image' => 'nullable|image|max:8192',
             'remove_image' => 'nullable|boolean',
         ]);
 

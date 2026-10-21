@@ -297,15 +297,15 @@ function renderOverviewAnn(){
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
         <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
       </div>
-      <div class="ann-click-hint">🔍 Click to view full details</div>
-    </div>`).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements yet.</div>';
+      <div class="ann-click-hint">${SubUI.icon('search',12)} Click to view full details</div>
+    </div>`).join(''):'<div class="empty-state">' + SubUI.icon('megaphone', 28) + 'No announcements yet.</div>';
 }
 
 function renderMyAnn(){
   const el=document.getElementById('myAnnList');
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   if(!myAnnouncements.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">📢</div>No announcements posted yet.</div>';
+    el.innerHTML='<div class="empty-state">' + SubUI.icon('megaphone', 28) + 'No announcements posted yet.</div>';
     return;
   }
   el.innerHTML=myAnnouncements.map(a=>`
@@ -400,7 +400,7 @@ function renderOfficerIssues(){
       <div class="report-top">
         <div>
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${escHtml(i.resident)} · ${escHtml(i.block_lot)}</div>
-          <div class="report-title">${isCritical?'🚨 ':''}${escHtml(i.title)}</div>
+          <div class="report-title">${isCritical?SubUI.icon('alert',12)+' ':''}${escHtml(i.title)}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           ${statusPill[i.status]||''}
@@ -410,8 +410,8 @@ function renderOfficerIssues(){
       <div class="report-meta" style="font-size:13px;color:var(--text-mid);margin-bottom:10px;line-height:1.55;">${escHtml(i.description)}</div>
       <div class="report-meta">
         <span class="pill pill-notice">${escHtml(i.category)}</span>
-        ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">👤 ${escHtml(i.assigned_officer)}</span>`:''}
-        ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="SLA due date">${i.overdue?'⏰ Overdue ':'🗓 Due '}${escHtml(i.due_date)}</span>`:''}
+        ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">${SubUI.icon('user',12)} ${escHtml(i.assigned_officer)}</span>`:''}
+        ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="SLA due date">${i.overdue?SubUI.icon('clock',12)+' Overdue ':SubUI.icon('calendar',12)+' Due '}${escHtml(i.due_date)}</span>`:''}
         <span style="font-size:11px;color:var(--text-dim);">· #${i.id} · ${escHtml(i.created_at)}</span>
       </div>
       ${(i.responses&&i.responses.length)?`<div style="margin-top:12px;padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;">
@@ -421,10 +421,10 @@ function renderOfficerIssues(){
       <div class="report-actions" style="margin-top:10px;">
         ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="event.stopPropagation();openOfficerRespond(${i.id})">Respond</button>`:''}
         <button class="btn btn-sm" onclick="event.stopPropagation();openOfficerIssueMap(${i.id})">View on map</button>
-        <span style="font-size:10px;color:var(--text-dim);align-self:center;">🔍 Click anywhere to open</span>
+        <span style="font-size:10px;color:var(--text-dim);align-self:center;">${SubUI.icon('search',12)} Click anywhere to open</span>
       </div>
     </div>`;
-}).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues found.</div>';
+}).join(''):'<div class="empty-state">' + SubUI.icon('clipboard', 28) + 'No issues found.</div>';
   // Keep the monitoring map in sync when issue data refreshes
   if(officerMonitorMapInst && document.getElementById('panel-map')?.classList.contains('active')){
     renderOfficerMapPins();
@@ -589,7 +589,7 @@ async function sendFile(){
   fd.append('notes',    notes);
 
   const sendBtn = document.querySelector('[onclick="sendFile()"]');
-  if(sendBtn){ sendBtn.disabled=true; sendBtn.textContent='📤 Uploading…'; }
+  if(sendBtn){ sendBtn.disabled=true; sendBtn.textContent='Uploading…'; }
   try {
     const r   = await fetch('/api/officer-files', {
       method: 'POST',
@@ -614,18 +614,18 @@ async function sendFile(){
   } catch(e) {
     showToast('⚠ Upload error: ' + e.message);
   } finally {
-    if(sendBtn){ sendBtn.disabled=false; sendBtn.textContent='📤 Send to Admin'; }
+    if(sendBtn){ sendBtn.disabled=false; sendBtn.innerHTML=SubUI.icon('send',15)+' Send to Admin'; }
   }
 }
 
 function renderSentFiles(){
   const el=document.getElementById('sentFilesList');
   if(!sentFiles.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">📊</div>No files sent yet.</div>';
+    el.innerHTML='<div class="empty-state">' + SubUI.icon('folder', 28) + 'No files sent yet.</div>';
   } else {
     el.innerHTML=sentFiles.map((f,i)=>`
       <div class="file-item">
-        <span class="file-icon">📊</span>
+        <span class="file-icon">${SubUI.icon('folder',14)}</span>
         <div class="file-info">
           <div class="file-name">${f.name}</div>
           <div class="file-meta">${f.category} · ${f.period} · ${f.date} · ${f.size}</div>
@@ -699,8 +699,48 @@ function dismissEmergency(){ document.getElementById('emergencyAlert').style.dis
 let _sseAnnId   = 0;
 let _sseIssueId = 0;
 let _sseEventId = 0;
+let _rtWsReady = false;   // true while the Reverb socket is connected
+let _rtSse = null;        // the fallback EventSource (null when WS is primary)
+
+/* Re-fetch the open thread; used by the WS push and the 10s fallback poll. */
+async function refreshOfficerMessages(){
+  if(!currentThread) return;
+  try{
+    const msgs = await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json());
+    if(Array.isArray(msgs) && msgs.length !== (threads[currentThread]?.msgs||[]).length){
+      threads[currentThread].msgs = msgs;
+      renderMessages();
+    }
+  }catch(e){}
+}
+
+/* Refresh just the "Message Requests" block — who is trying to reach you. */
+async function refreshOfficerRequestBlock(){
+  const sidebar = document.querySelector('.msg-sidebar-threads');
+  if(!sidebar) return;
+  let reqs = [];
+  try{ reqs = await fetch('/api/messages/requests',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){}
+  reqs = Array.isArray(reqs) ? reqs : [];
+  const existing = sidebar.querySelector('.msg-req-block');
+  if(!reqs.length){ if(existing) existing.remove(); return; }
+  const html = `<div class="msg-req-block">
+    <div class="msg-req-title">Message Requests (${reqs.length})</div>
+    ${reqs.map(q=>`<div class="msg-req-item">
+      <div class="msg-thread-info">
+        <div class="msg-thread-name">${escHtml(q.from||q.title||'Someone')}</div>
+        <div class="msg-thread-preview">${escHtml(q.last_message||'No message')}</div>
+      </div>
+      <div class="msg-req-actions">
+        <button class="btn btn-sm" onclick="acceptOfficerRequest(${q.id})">Accept</button>
+        <button class="btn btn-sm btn-danger" onclick="rejectOfficerRequest(${q.id})">Reject</button>
+      </div>
+    </div>`).join('')}
+  </div>`;
+  if(existing) existing.outerHTML = html; else sidebar.insertAdjacentHTML('afterbegin', html);
+}
 
 function connectSSE(){
+  if(_rtWsReady) return; // WebSocket is live — SSE is only the fallback
   if(document.hidden) { setTimeout(connectSSE, 2000); return; }
 
   // Pick up latest IDs from current data (set by loadOfficerData)
@@ -709,6 +749,7 @@ function connectSSE(){
 
   const url = `/api/stream/updates?lastEventId=${_sseEventId}&lastAnnId=${_sseAnnId}&lastIssueId=${_sseIssueId}`;
   const es  = new EventSource(url);
+  _rtSse = es;
 
   // ── Fresh connection — load initial data once ─────────────
   es.addEventListener('sync', () => {
@@ -773,6 +814,8 @@ function connectSSE(){
     const evt = JSON.parse(e.data);
     if(evt.lastEventId) _sseEventId = evt.lastEventId;
     es.close();
+    _rtSse = null;
+    if(_rtWsReady) return; // WS came up while this cycle ran — stop the SSE loop
     // Refresh on every cycle so updates still land through buffering tunnels (e.g. ngrok)
     if(typeof loadOfficerData === 'function') loadOfficerData().catch(()=>{});
     setTimeout(connectSSE, 200);  // reconnect almost instantly
@@ -781,12 +824,13 @@ function connectSSE(){
   // ── Connection error — retry after 3 s ──────────────────
   es.onerror = () => {
     es.close();
-    setTimeout(connectSSE, 3000);
+    _rtSse = null;
+    if(!_rtWsReady) setTimeout(connectSSE, 3000);
   };
 
   // Resume SSE when tab becomes visible again
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden && es.readyState === EventSource.CLOSED){
+    if(!document.hidden && es.readyState === EventSource.CLOSED && !_rtWsReady){
       setTimeout(connectSSE, 500);
     }
   }, { once: true });
@@ -815,18 +859,10 @@ setInterval(async()=>{
   }catch(e){}
 }, 60000);
 
-// Poll active message thread every 10s when messages tab is open
-setInterval(async()=>{
-  if(document.hidden||!currentThread) return;
-  if(document.getElementById('panel-messages')?.classList.contains('active')){
-    try{
-      const msgs=await fetch('/api/messages/'+currentThread,{headers:{'Accept':'application/json'}}).then(r=>r.json());
-      if(msgs.length!==(threads[currentThread]?.msgs||[]).length){
-        threads[currentThread].msgs=msgs;
-        renderMessages();
-      }
-    }catch(e){}
-  }
+// Fallback poll for the active thread (WebSocket pushes are the instant path)
+setInterval(()=>{
+  if(document.hidden) return;
+  if(document.getElementById('panel-messages')?.classList.contains('active')) refreshOfficerMessages();
 },10000);
 
 // Load previously sent files from server
@@ -848,7 +884,7 @@ setInterval(async()=>{
   renderSentFiles();
 })();
 
-/* ══ REVERB (WebSocket) real-time — instant updates; SSE remains the fallback ══ */
+/* ══ REVERB (WebSocket) real-time — primary channel; SSE only as fallback ══ */
 (function initSubSyncRealtime(attempt){
   attempt = attempt || 0;
   if(!window.Echo){
@@ -857,8 +893,37 @@ setInterval(async()=>{
   }
   try {
     const ch = window.Echo.channel('subsync');
-    const refresh = () => { if(typeof loadOfficerData === 'function') loadOfficerData().catch(function(){}); };
+    const refresh = () => {
+      if(typeof loadOfficerData === 'function') loadOfficerData().catch(function(){});
+      document.dispatchEvent(new Event('subsync:refresh-alerts'));
+    };
     ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
+    ch.listen('.event', refresh).listen('.rsvp', refresh);
+    ch.listen('.message', (evt) => {
+      if(!evt || !evt.conversationId) return;
+      const isOpen = String(evt.conversationId) === String(currentThread);
+      const panelOpen = document.getElementById('panel-messages')?.classList.contains('active');
+      const mine = evt.senderType === 'officer' && Number(evt.senderId) === Number(OFFICER_ID);
+      if(mine){ if(isOpen) refreshOfficerMessages(); return; }
+      if(isOpen && panelOpen){ refreshOfficerMessages(); return; }
+      showToast('New message from ' + (evt.senderName || 'someone') + '.');
+      const badge = document.getElementById('badge-messages');
+      if(badge){ badge.textContent = (parseInt(badge.textContent,10)||0) + 1; badge.style.display = 'inline-flex'; }
+      refreshOfficerRequestBlock();
+      if(isOpen) refreshOfficerMessages();
+    });
+
+    // WebSocket-first: while Reverb is connected the SSE fallback stays off;
+    // if the socket drops, bring the fallback back.
+    const conn = window.Echo.connector && window.Echo.connector.pusher && window.Echo.connector.pusher.connection;
+    if(conn){
+      const wsUp = () => { _rtWsReady = true; if(_rtSse){ try{ _rtSse.close(); }catch(e){} _rtSse = null; } };
+      const wsDown = () => { if(_rtWsReady){ _rtWsReady = false; connectSSE(); } };
+      if(conn.state === 'connected') wsUp();
+      conn.bind('connected', wsUp);
+      conn.bind('disconnected', wsDown);
+      conn.bind('unavailable', wsDown);
+    }
   } catch(e) {}
 })();
 

@@ -157,7 +157,7 @@ class IssueController extends Controller
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'images' => 'nullable|array|max:5',
-            'images.*' => 'image|max:4096',
+            'images.*' => 'image|max:8192',
             'documents' => 'nullable|array|max:5',
             'documents.*' => 'file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
         ]);

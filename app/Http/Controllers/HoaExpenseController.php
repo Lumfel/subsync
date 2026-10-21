@@ -80,7 +80,7 @@ class HoaExpenseController extends Controller
             'category' => 'required|string|max:100',
             'status' => 'nullable|string|max:50',
             'fund' => 'nullable|in:Operating,Reserve',
-            'receipt' => 'nullable|image|max:4096',
+            'receipt' => 'nullable|image|max:8192',
         ]);
     }
 

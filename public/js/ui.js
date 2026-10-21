@@ -6,6 +6,43 @@
 (function () {
   const AB = window.APP_BASE || '';
 
+  /* ── Icons ────────────────────────────────────────────────
+     JS mirror of resources/views/components/icon.blade.php so script-rendered
+     markup (empty states, lists) uses the same monochrome line icons instead
+     of platform emoji. Usage: SubUI.icon('message', 16) returns SVG markup. */
+  const ICON_PATHS = {
+    home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/>',
+    megaphone: '<path d="m3 11 18-6v14L3 13v-2Z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+    message: '<path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10Z"/>',
+    clipboard: '<rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+    lightbulb: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.3h6c0-.9.4-1.8 1-2.3A7 7 0 0 0 12 2Z"/>',
+    folder: '<path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7l-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2Z"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    check: '<path d="m4 12.5 5 5L20 6.5"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M3 11h18"/>',
+    clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+    phone: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+    bell: '<path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>',
+    download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+    refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>',
+    trash: '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/>',
+    archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/>',
+    scroll: '<path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 0 2 2H8a2 2 0 0 1-2-2V3Z"/><path d="M10 7h6"/><path d="M10 11h6"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+    alert: '<path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/>',
+    coins: '<circle cx="8" cy="8" r="6"/><path d="M18.1 10.9a6 6 0 1 1-8.2 8.2"/>',
+    send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  };
+  function icon(name, size = 16) {
+    const p = ICON_PATHS[name];
+    if (!p) return '';
+    return '<svg class="ui-icon" width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">' + p + '</svg>';
+  }
+
   /* ── Toasts ── */
   function toast(msg, type = 'info', ms = 3200) {
     let wrap = document.querySelector('.ui-toast-wrap');
@@ -18,8 +55,8 @@
     }
     const el = document.createElement('div');
     el.className = 'ui-toast ' + type;
-    const icon = type === 'success' ? '?' : type === 'error' ? '??' : '??';
-    el.innerHTML = '<span>' + icon + '</span><span>' + msg + '</span>';
+    const toastIcon = type === 'success' ? 'check' : type === 'error' ? 'alert' : 'info';
+    el.innerHTML = '<span class="ui-toast-ic">' + icon(toastIcon, 16) + '</span><span>' + msg + '</span>';
     wrap.appendChild(el);
     requestAnimationFrame(() => el.classList.add('show'));
     setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, ms);
@@ -371,7 +408,7 @@
   }
 
   /* Expose */
-  window.SubUI = { toast, skeleton, showSkeleton, openSearch, closeSearch: close, confirm: confirmDialog, busy, busyClick, required, showFieldError, clearFieldError, money, dateFmt, avatarColor, applyPrefs, loadPrefs, exportCsv };
+  window.SubUI = { icon, toast, skeleton, showSkeleton, openSearch, closeSearch: close, confirm: confirmDialog, busy, busyClick, required, showFieldError, clearFieldError, money, dateFmt, avatarColor, applyPrefs, loadPrefs, exportCsv };
 
   /* Keyboard shortcut: Ctrl/Cmd+K or "/" */
   document.addEventListener('keydown', (e) => {

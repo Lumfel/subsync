@@ -64,9 +64,10 @@ class EndpointHealthTest extends TestCase
         '/api/export/issues', '/api/export/payments', '/api/export/hoa-expenses', '/api/map/all',
         '/api/map/settings', '/api/map/households', '/api/map/facilities', '/api/map/issues', '/api/alerts',
         '/api/search?q=a', '/api/hoa-expenses', '/api/hoa-policies', '/api/gcash-settings', '/api/settings',
-        '/api/resident/portal-data', '/api/residents/me', '/api/household-members', '/api/reports/my',
+        '/api/resident/portal-data', '/api/residents/me', '/api/household-members',
         '/api/issues/my', '/api/recommendations/my', '/api/payments/my', '/api/ledger/my',
         '/api/transparency/summary', '/api/stats', '/api/messages/threads', '/api/messages/officers',
+        '/api/backups', '/api/activity-logs',
     ];
 
     public function test_admin_matrix_has_no_server_errors(): void

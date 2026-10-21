@@ -5,23 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Officer Portal</title>
-<script>
-window.APP_BASE = '{{ request()->getBaseUrl() }}';
-(function () {
-    var base = window.APP_BASE || '';
-    if (!base) return;
-    var prefix = function (url) {
-        if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
-        return url;
-    };
-    var origFetch = window.fetch;
-    window.fetch = function (url, opts) { opts = opts || {}; var h = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' }); if (window.__PORTAL) h['X-Portal'] = window.__PORTAL; opts.headers = h; return origFetch.call(this, prefix(url), opts); };
-    var OrigES = window.EventSource;
-    window.EventSource = function (url, cfg) { var u = prefix(url); if (window.__PORTAL) u += (u.indexOf('?') < 0 ? '?' : '&') + 'portal=' + window.__PORTAL; return new OrigES(u, cfg); };
-    window.EventSource.prototype = OrigES.prototype;
-    window.EventSource.CONNECTING = 0; window.EventSource.OPEN = 1; window.EventSource.CLOSED = 2;
-})();
-</script>
+<script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
+<script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -39,14 +24,14 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
   @vite('resources/js/app.js')
 </head>
-<body>
+<body class="officer-body">
 
 <!-- Mobile Responsive Header -->
 <div class="mobile-header" style="position: sticky; top: 0; z-index: 999;">
   <div style="font-family:'DM Serif Display',serif; font-size:20px; color:#1C1A17; display:flex; align-items:center; gap:8px;">
-    <span style="font-size:24px;">🏡</span> SubSync
+    <span style="font-size:24px;"><x-icon name="home" size="24"/></span> SubSync
   </div>
-  <button class="btn" style="padding: 6px 12px; font-size: 13px;" onclick="toggleMobileSidebar()">☰ Menu</button>
+  <button class="btn" style="padding: 6px 12px; font-size: 13px;" onclick="toggleMobileSidebar()"><x-icon name="menu" size="16"/> Menu</button>
 </div>
 
 <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
@@ -57,16 +42,16 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 <aside class="sidebar">
   <div class="logo">
     <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#1C1A17; display:flex; align-items:center; gap:8px;">
-      <span style="font-size:28px;">👮</span> Officer
+      <span style="font-size:28px;"><x-icon name="shield" size="28"/></span> Officer
     </div>
   </div>
   <ul style="margin-top:20px;">
-    <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview">🏠 Overview</li>
-    <li class="tab-btn" onclick="switchTab('announcements')" id="tab-announcements">📢 Announcements</li>
-    <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports">📋 Issues</li>
-    <li class="tab-btn" onclick="switchTab('map')" id="tab-map">🗺️ Map</li>
-    <li class="tab-btn" onclick="switchTab('files')" id="tab-files">📊 Documents</li>
-    <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages">💬 Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
+    <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview"><x-icon name="home" size="15"/> Overview</li>
+    <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports"><x-icon name="clipboard" size="15"/> Issues</li>
+    <li class="tab-btn" onclick="switchTab('announcements')" id="tab-announcements"><x-icon name="megaphone" size="15"/> Announcements</li>
+    <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages"><x-icon name="message" size="15"/> Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
+    <li class="tab-btn" onclick="switchTab('files')" id="tab-files"><x-icon name="folder" size="15"/> Documents</li>
+    <li class="tab-btn" onclick="switchTab('map')" id="tab-map"><x-icon name="map" size="15"/> Map</li>
   </ul>
 
   <!-- Sidebar tools: search + notifications -->
@@ -133,9 +118,9 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
         <div class="card-title">Quick Actions</div>
         <div class="card-subtitle">Jump to the task you need to work on.</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('announcements')">📢 Post Announcement</button>
-          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('reports')">📋 Resolve Issues</button>
-          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('files')">📊 Send Report File</button>
+          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('announcements')"><x-icon name="megaphone" size="15"/> Post Announcement</button>
+          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('reports')"><x-icon name="clipboard" size="15"/> Resolve Issues</button>
+          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('files')"><x-icon name="upload" size="15"/> Send Report File</button>
         </div>
       </div>
     </div>
@@ -145,13 +130,14 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <div class="tab-panel" id="panel-announcements">
     <div class="card" style="margin-top:0;">
       <div class="card-title">Create Announcement</div>
+      <div class="card-subtitle">Write a notice, then choose who should see it and when.</div>
       <div class="f-row">
         <div class="f-field">
           <span class="f-label">Type</span>
           <select id="annType">
-            <option value="notice">📋 Notice</option>
-            <option value="urgent">🚨 Urgent</option>
-            <option value="event">🎉 Event</option>
+            <option value="notice">Notice</option>
+            <option value="urgent">Urgent</option>
+            <option value="event">Event</option>
           </select>
         </div>
         <div class="f-field">
@@ -191,7 +177,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           <textarea id="annBody" placeholder="Write the full announcement here…"></textarea>
         </div>
       </div>
-      <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,postAnnouncement):postAnnouncement()">📢 Post Announcement</button>
+      <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,postAnnouncement):postAnnouncement()"><x-icon name="megaphone" size="15"/> Post Announcement</button>
     </div>
 
     <div class="card">
@@ -204,6 +190,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <div class="tab-panel" id="panel-reports">
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;flex-wrap:wrap;gap:10px; margin-top:0;">
       <div class="card-title" style="margin:0;">Issues</div>
+      <div class="card-subtitle" style="margin-top:4px;">Reports submitted by residents. Tap one to respond and update its status.</div>
       <div style="display:flex;gap:8px;">
         <select id="officerIssueFilter" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
           <option value="">All Statuses</option>
@@ -275,6 +262,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     <div class="card" style="margin-top:0;">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
         <div class="card-title" style="margin:0;">Subdivision Issue Map</div>
+      <div class="card-subtitle" style="margin-top:4px;">Numbered pins show reported issues. Tap a pin to view and respond.</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <select id="officerMapStatus" onchange="renderOfficerMapPins()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
             <option value="">All Statuses</option>
@@ -308,24 +296,25 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
   <div class="tab-panel" id="panel-files">
     <div class="card" style="margin-top:0;">
       <div class="card-title">Send Excel File to Admin</div>
+      <div class="card-subtitle">Upload a file for the admin. The files you already sent are listed below.</div>
       <div class="upload-zone" id="uploadZone"
         onclick="document.getElementById('fileUploadInput').click()"
         ondragover="handleDragOver(event)"
         ondragleave="handleDragLeave(event)"
         ondrop="handleDrop(event)">
-        <div class="upload-icon">📊</div>
+        <div class="upload-icon"><x-icon name="upload" size="26"/></div>
         <div class="upload-label">Click to upload or drag &amp; drop</div>
         <div class="upload-sub">Supports .xlsx, .xls, .csv · Max 10 MB</div>
         <input type="file" id="fileUploadInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this)">
       </div>
 
       <div id="selectedFilePreview" style="display:none;" class="file-item">
-        <span class="file-icon">📊</span>
+        <span class="file-icon"><x-icon name="folder" size="16"/></span>
         <div class="file-info">
           <div class="file-name" id="selectedFileName">—</div>
           <div class="file-meta" id="selectedFileMeta">—</div>
         </div>
-        <button class="btn btn-sm" style="background:var(--glass);border-color:var(--glass-border);color:var(--text-dim);" onclick="clearFileSelection()">✕ Remove</button>
+        <button class="btn btn-sm" style="background:var(--glass);border-color:var(--glass-border);color:var(--text-dim);" onclick="clearFileSelection()"><x-icon name="x" size="13"/> Remove</button>
       </div>
 
       <div class="f-row" style="margin-top:10px;">
@@ -351,7 +340,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           <textarea id="fileNotes" placeholder="Any notes or context about this file…" style="min-height:64px;"></textarea>
         </div>
       </div>
-      <button class="btn btn-full btn-green" onclick="sendFile()">📤 Send to Admin</button>
+      <button class="btn btn-full btn-green" onclick="sendFile()"><x-icon name="send" size="15"/> Send to Admin</button>
     </div>
 
     <div class="card">
@@ -389,7 +378,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
           <div class="msg-compose">
             <textarea id="msgInput" placeholder="Type a message…" rows="1"
               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
-            <button class="send-btn" onclick="sendMessage()" title="Send">➤</button>
+            <button class="send-btn" onclick="sendMessage()" title="Send"><x-icon name="send" size="16"/></button>
           </div>
         </div>
       </div>
@@ -404,7 +393,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
     <div class="f-field" style="margin-bottom:12px;">
       <span class="f-label">To</span>
       <select id="officerConvRecipient" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:inherit;font-size:13px;box-sizing:border-box;">
-        <option value="admin|0">🏢 HOA Admin</option>
+        <option value="admin|0">HOA Admin</option>
       </select>
     </div>
     <div class="f-field" style="margin-bottom:16px;">
@@ -420,7 +409,7 @@ window.APP_BASE = '{{ request()->getBaseUrl() }}';
 
 <div id="toast"></div>
 <div id="annNotif">
-  <span style="font-size:18px;">📢</span>
+  <span style="font-size:18px;"><x-icon name="megaphone" size="18"/></span>
   <div style="flex:1;min-width:0;">
     <div class="ann-meta">New Announcement</div>
     <div class="ann-notif-title" id="annNotifTitle">—</div>

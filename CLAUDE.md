@@ -7,9 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Run the test suite after every change.** Execute `php artisan test` after any code
   edit and report the result. Do not consider a change complete until tests pass.
   If a change adds a feature, add/extend a test for it in the same change.
-- **NEVER run `php artisan config:cache` in this project.** Tests rely on the `phpunit.xml`
-  env overrides (`DB_DATABASE=:memory:`, `SESSION_DRIVER=array`, `CACHE_STORE=array`); a cached
-  config ignores them, so `RefreshDatabase` runs against the **real** SQLite file and wipes it.
+- **NEVER run `php artisan config:cache` in this project.** The app runs on MySQL, but tests
+  rely on the `phpunit.xml` env overrides (`DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`,
+  `SESSION_DRIVER=array`, `CACHE_STORE=array`, force-overridden); a cached config ignores them,
+  so `RefreshDatabase` would run against the **real** MySQL `subsync` database and wipe it.
   Keep config uncached (`php artisan config:clear`) before running tests.
 
 ## Development Commands
@@ -24,8 +25,8 @@ npm install
 cp .env.example .env
 php artisan key:generate
 
-# Create database and run migrations
-touch database/database.sqlite
+# Create the MySQL database and run migrations
+# mysql -u root -e "CREATE DATABASE subsync CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 php artisan migrate
 
 # Optional: Seed with sample data
@@ -34,15 +35,19 @@ php artisan db:seed
 
 ### Development Server
 ```bash
-# Start all services concurrently (recommended)
-composer run dev
-# This runs: Laravel dev server, queue worker, logs viewer, and Vite
+# Start everything that's missing (MySQL, Apache, ngrok, Reverb, queue, scheduler) —
+# idempotent; see also stop.cmd and: scripts/start-subsync.ps1 -Status
+start.cmd
 
-# Or start individually:
-php artisan serve              # HTTP server (http://localhost:8000)
-php artisan queue:listen       # Queue processor (database driver)
-php artisan pail               # Log viewer
+# Or start the background processes only:
+composer run dev
+# This runs: queue:work + schedule:work + reverb:start + Vite (NO web server)
+# The app is served by Laragon Apache at http://subsync.test (public via ngrok).
+
+# DO NOT run php artisan serve — the Windows built-in server crashes on the 2nd request.
+php artisan queue:work         # Queue processor (database driver)
 npm run dev                    # Vite dev server (Hot Module Replacement)
+# Logs: tail storage/logs/laravel.log — php artisan pail needs pcntl (unavailable on Windows).
 ```
 
 ### Testing
@@ -66,11 +71,10 @@ php artisan test --filter=test_method_name
 
 ### Code Quality
 ```bash
-# Run Laravel Pint (code formatter)
-composer run format
+# Run Laravel Pint (code formatter) — there is no composer script for it
+vendor/bin/pint --dirty
 
-# Run static analysis
-composer run analyse
+# No static-analysis tool is configured in this repo.
 
 # Generate IDE helper for better autocomplete
 php artisan ide-helper:generate
@@ -95,6 +99,20 @@ php artisan make:factory FactoryName --model=ModelName
 
 # Refresh database with seeders
 php artisan migrate:refresh --seed
+```
+
+### Backups
+```bash
+# Create a backup now (also scheduled daily at 02:00 via schedule:work; keeps the last 14)
+php artisan subsync:backup-database
+
+# Files land in storage/app/backups/backup-YYYYmmdd-HHMMSS.sql (MySQL) or .sqlite (SQLite)
+# Admin can also run/list backups from Settings → System (GET /api/backups, POST /api/backups/run)
+
+# Restore (MySQL) — the dump contains CREATE DATABASE/USE `subsync`, so import it with:
+#   mysql -u root < storage/app/backups/backup-YYYYmmdd-HHMMSS.sql
+# To restore under a different name (e.g. drill/testing), strip the CREATE DATABASE/USE lines:
+#   Get-Content dump.sql | Where-Object { $_ -notmatch '^(CREATE DATABASE|USE )' } | mysql -u root scratch_db
 ```
 
 ### Queue & Workers
@@ -183,8 +201,11 @@ Authentication logic resides in `App\Http\Controllers\AuthController.php` with s
 10. **Household Management**: Family and resident relationship tracking
 11. **HOA Expenses Transparency**: Residents can view how HOA fees are being utilized
 12. **Alert System**: Notification system for admins, officers, and residents
-13. **Report Generation**: Template-based report generation for residents
+13. **Document Issuance**: Staff issue template-based certificates/reports for residents
 14. **Event Broadcasting**: Real-time updates for HOA expenses via WebSocket
+15. **Database Backups**: nightly `subsync:backup-database` (mysqldump, keeps last 14) + admin "Back up now"/list in Settings
+16. **Activity Log**: append-only audit trail (announcements, finance, templates, documents, accounts) — admin-only in Settings
+17. **Emergency Reports**: one-tap resident emergency issue → Critical priority + instant staff alert; camera capture on issue photos
 
 ### Common Patterns
 
@@ -199,13 +220,30 @@ Authentication logic resides in `App\Http\Controllers\AuthController.php` with s
 - **Template System**: Report templates with variable substitution for dynamic content generation
 
 ### Environment
-- Uses SQLite for development (`database/database.sqlite`)
+- Uses MySQL 8 for development (Laragon; database `subsync`, user `root`, blank password).
+  SQLite remains as a fallback at `database/database.sqlite` (switch `.env` back to
+  `DB_CONNECTION=sqlite`).
+- Tests always run on SQLite `:memory:` via `phpunit.xml` (force-overridden), regardless of the app DB.
+- **Keep the whole PHP stack on the same version (currently 8.4.25)** — CLI, background services
+  (`scripts/start-subsync.ps1`), and Apache. Apache loads PHP via `C:\laragon\etc\apache2\mod_php.conf`.
+  When changing PHP versions you must:
+  1. Copy the matching `php8ts.dll` **and all PHP runtime DLLs** (`libcurl` deps, `icu*.dll`, `libsodium`,
+     `nghttp2`, `libssh2`, …) from the PHP folder into `C:\laragon\bin\apache\httpd-*\bin\`.
+     Stale copies cause "Entry Point Not Found" dialogs, `curl`/`intl` load failures, and
+     `0xC0000005` access-violation crashes of the Apache child process.
+  2. Enable `extension=pdo_mysql` in the new php.ini.
+  3. Keep **JIT disabled** (`opcache.jit=disable`, `opcache.jit_buffer_size=0`) — PHP 8.4 JIT under
+     mod_php on Windows crashes the Apache child roughly every 3rd request.
+  4. Restore sane upload limits — the 8.4.25 defaults are tiny (`upload_max_filesize=2M`,
+     `post_max_size=8M`, `memory_limit=128M`). Keep `64M` / `128M` / `512M` respectively.
+  Symfony 8 vendor packages require PHP >= 8.4 — a PHP 8.3 web server breaks error rendering and some endpoints.
+  Apache crash history is logged at `C:\laragon\bin\apache\httpd-*\logs\error_log` (watch for `AH00428 … 3221225477`).
 - Environment variables managed through `.env` file (see `.env.example`)
 - Queue system configured for database jobs (`QUEUE_CONNECTION=database`)
-- Broadcasting configured for real-time features (currently using log driver, configurable to Pusher/Redis)
+- Broadcasting: Laravel Reverb (`BROADCAST_CONNECTION=reverb`) with SSE fallback at `/api/stream/updates`
 - Filesystem storage: local (public/storage)
-- Cache: database driver (`CACHE_STORE=database`)
-- Session: database driver (`SESSION_DRIVER=database`)
+- Cache: file driver (`CACHE_STORE=file`)
+- Session: file driver (`SESSION_DRIVER=file`)
 
 ### API Design
 The application follows a RESTful API design pattern:
@@ -256,7 +294,7 @@ This repository has Laravel Boost installed for AI-assisted development:
 
 ## Troubleshooting
 - **Login issues**: Check that users have correct status ('Active' not 'Pending') in seeders
-- **Migration errors**: Ensure `database/database.sqlite` exists and is writable
+- **Migration errors**: Ensure the MySQL server is running (Laragon) and the `subsync` database exists; SQLite fallback is `database/database.sqlite`
 - **Queue not processing**: Verify `QUEUE_CONNECTION=database` in .env and run `php artisan queue:work`
 - **Assets not updating**: Clear Vite cache with `rm -rf node_modules/.vite` or check vite.config.js
 - **Authentication guard errors**: Verify guards are properly defined in config/auth.php
@@ -286,11 +324,47 @@ Officer and resident file management follows this pattern:
 - Files are linked via `php artisan storage:link`
 
 ### Real-time Features
-While currently using log driver for broadcasting, the structure supports:
-- Pusher or Redis for real-time updates
-- Event broadcasting for notifications and live features
-- Private channels for user-specific communications
-- HOA expenses updates broadcast on `hoa-expenses` channel with event name `hoa-expenses-updated`
+Real-time runs on Laravel Reverb (WebSocket, `BROADCAST_CONNECTION=reverb`) with an SSE
+fallback. Model observers write compact events to `sse_events` AND broadcast
+`App\Events\SubSyncEvent` on the public `subsync` channel (announcement, issue, policy,
+hoa-expense, message). Portal JS treats the socket as primary and only starts SSE
+(`/api/stream/updates`) when Reverb is unavailable. Keep staff-only data off the public
+channel unless you move to private channels + broadcasting auth.
+
+## Hardening session — 2026-10-20 (autonomous)
+
+Status board for the 13-item backlog lives in `PLANNED_CHANGES.md`. Headlines:
+- Shared `public/js/portal-context.js` now always sends `X-Portal` + ngrok header
+  (the old per-layout inline patch silently no-oped when `APP_BASE` was empty);
+  `tests/Feature/RouteAuthAuditTest.php` guards route auth + that script.
+- Icons: `<x-icon>` Blade component (40 monochrome line icons); 128 emoji UI icons
+  replaced across 7 views; the template renders on ONE line because it is compiled
+  into inline JS strings.
+- Realtime: `Message` events added to the bus; WS-first with SSE fallback in all
+  three portals; verified end-to-end (node ws client) and load-tested —
+  `scripts/reverb-loadtest.cjs` (200 connections → 100% delivery, ~10 ms).
+- Google OAuth: host-aware redirect URI (`route('google.callback')`), failures are
+  logged (`report($e)`), and `App\Support\Tls::caBundle()` gives Guzzle a CA bundle
+  (Laragon ships none — every outbound HTTPS call used to fail with SSL error 60).
+- Login/registration page: hidden role fields are disabled (they blocked form
+  submission with "An invalid form control … is not focusable").
+- Migrations: 4 `down()` methods fixed to drop indexes/uniques before columns
+  (SQLite rollback smoke: migrate → rollback → migrate is clean).
+- `public/.htaccess`: dotfiles + dangerous extensions denied, X-Frame-Options and
+  Referrer-Policy added (auth itself stays in middleware).
+
+### UI/UX design system (same session, later pass)
+
+- **Tokens + canonical component scale** appended to the end of `public/css/ui-polish.css`
+  (`--space-*`, `--radius-*`, `--shadow-*`, `--t-fast/--t-med`; normalized `.btn`/`.card`/
+  inputs/pills/modals/popovers via doubled selectors so they win the cascade). Colors and
+  font sizes intentionally untouched.
+- **Tailwind v4 + daisyUI kit activated**: `resources/css/app.css` imports theme + utilities
+  only (NO Preflight), daisyUI is prefixed `d-`, utilities `tw-`, themed to the SubSync
+  palette; emission is usage-based (a page pays only for kit classes it uses). Wired via
+  `resources/js/app.js` → `npm run build` and the portal layouts pick it up through @vite.
+- **`/design-system`** (admin only) documents tokens, components and the icon set; guarded
+  by `RouteAuthAuditTest` and covered by a FrontendRegression assertion.
 
 ### Database Relationships
 Key relationships to understand:
@@ -305,10 +379,11 @@ Key relationships to understand:
 - Report belongsTo Resident and ReportTemplate
 
 ### Working with Reports and Templates
+- Reports/Documents are a **staff-only** feature (admin + officer); residents have no reports UI or API access
 - Report templates are managed via `/api/report-templates` (admin/officer only)
-- Residents can generate reports from templates via `/api/reports/generate/{templateId}`
+- Staff issue certificates/documents for a resident via `/api/reports/issue`; issued documents are listed via `/api/reports` (staff only)
+- Printable issued document: `/reports/{id}/print` (staff only)
 - Templates use `{{{variable_name}}}` syntax for variable substitution
-- Generated reports are stored and accessible via `/api/reports/my` (resident only)
 
 ### HOA Expenses Transparency
 - New feature allowing residents to view how HOA fees are utilized

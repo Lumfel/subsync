@@ -16,11 +16,6 @@ return new class extends Migration
             $table->date('date_flagged')->nullable();
 
             $table->timestamps();
-
-            $table->foreign('house_id')
-                ->references('id')
-                ->on('households')
-                ->onDelete('cascade');
         });
     }
 

@@ -7,6 +7,7 @@ use App\Models\Budget;
 use App\Models\FinancialRecord;
 use App\Models\HoaExpense;
 use App\Models\PaymentSubmission;
+use App\Support\Ledger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -40,7 +41,7 @@ class PaymentController extends Controller
             'gcash_sender_name' => 'nullable|string|max:150',
             'gcash_number' => 'nullable|string|max:40',
             'paid_at' => 'nullable|date',
-            'receipt' => 'required|image|max:4096',
+            'receipt' => 'required|image|max:8192',
         ]);
 
         $path = $request->file('receipt')->store('payment-receipts', 'local');
@@ -99,7 +100,7 @@ class PaymentController extends Controller
             'action' => 'required|in:approve,reject,needs_info',
             'admin_response' => 'nullable|string|max:1000',
             'rejection_reason' => 'nullable|string|max:500',
-            'official_receipt' => 'nullable|image|max:4096',
+            'official_receipt' => 'nullable|image|max:8192',
         ]);
 
         if ($data['action'] === 'approve') {
@@ -127,7 +128,7 @@ class PaymentController extends Controller
                 $payment->financial_record_id = $record->id;
 
                 // Derive the balance from the ledger (overpayments become a credit).
-                \App\Support\Ledger::reconcile((int) $payment->resident_id);
+                Ledger::reconcile((int) $payment->resident_id);
             }
 
             $payment->status = 'Validated';

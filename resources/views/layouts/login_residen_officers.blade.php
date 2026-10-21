@@ -5,19 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SubSync — Access Portal</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <script>
-    window.APP_BASE = '{{ request()->getBaseUrl() }}';
-    (function () {
-        var base = window.APP_BASE || '';
-        if (!base) return;
-        var prefix = function (url) {
-            if (typeof url === 'string' && url.charAt(0) === '/' && url.charAt(1) !== '/') return base + url;
-            return url;
-        };
-        var origFetch = window.fetch;
-        window.fetch = function (url, opts) { opts = opts || {}; opts.headers = Object.assign({}, opts.headers || {}, { 'ngrok-skip-browser-warning': '1' }); return origFetch.call(this, prefix(url), opts); };
-    })();
-    </script>
+    <script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
+    <script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
     <link rel="stylesheet" href="{{ asset('styles.css') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -349,6 +338,9 @@
             width: auto;
         }
         .input-group .eye-btn:hover { color: #2B2927; background: none; box-shadow: none; }
+        .eye-btn .eye-off { display: none; }
+        .eye-btn.is-visible .eye-off { display: inline-block; }
+        .eye-btn.is-visible .eye-on { display: none; }
 
         /* ── STRENGTH BAR ── */
         .strength-bar {
@@ -393,16 +385,16 @@
     <!-- ROLE SELECTOR -->
     <div class="role-tabs">
         <button class="role-tab active" id="tab-resident" onclick="switchRole('resident')">
-            🏠 Resident
+            <x-icon name="home" size="15"/> Resident
         </button>
         <button class="role-tab" id="tab-officer" onclick="switchRole('officer')">
-            🛡️ Officer
+            <x-icon name="shield" size="15"/> Officer
         </button>
     </div>
 
     <!-- ROLE BADGE (changes per role) -->
     <div class="role-badge role-badge-resident" id="roleBadge">
-        <span class="role-badge-icon">🏠</span>
+        <span class="role-badge-icon"><x-icon name="home" size="20"/></span>
         <div>
             <div class="role-badge-text">Resident Access</div>
             <div class="role-badge-sub">Login or register your household account</div>
@@ -421,13 +413,13 @@
     <!-- ══ LOGIN FORM ══ -->
     <form class="form-panel active" id="loginPanel" onsubmit="event.preventDefault();handleLogin();return false;">
         <div class="input-group">
-            <span class="input-icon">✉️</span>
+            <span class="input-icon"><x-icon name="mail" size="16"/></span>
             <input type="email" id="login-email" placeholder="Gmail Address" autocomplete="email" autofocus required>
         </div>
         <div class="input-group">
-            <span class="input-icon">🔒</span>
+            <span class="input-icon"><x-icon name="lock" size="16"/></span>
             <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
-            <button class="eye-btn" onclick="togglePwd('login-password',this)" type="button" aria-label="Show or hide password">👁</button>
+            <button class="eye-btn" onclick="togglePwd('login-password',this)" type="button" aria-label="Show or hide password"><x-icon name="eye" size="16" class="eye-on" /><x-icon name="eye-off" size="16" class="eye-off" /></button>
         </div>
 
         <div style="text-align:right;margin:-4px 0 14px;">
@@ -459,12 +451,12 @@
         <!-- RESIDENT FIELDS -->
         <div id="resident-fields">
             <div class="input-group">
-                <span class="input-icon">🏡</span>
+                <span class="input-icon"><x-icon name="home" size="16"/></span>
                 <input type="text" id="reg-family-name" placeholder="Full Name" required>
             </div>
             <div class="input-row">
                 <div class="input-group" style="flex:1;margin-bottom:0;">
-                    <span class="input-icon">📍</span>
+                    <span class="input-icon"><x-icon name="map-pin" size="16"/></span>
                     <input type="text" id="reg-block" placeholder="Block" style="padding-left:42px !important;">
                 </div>
                 <div class="input-group" style="flex:1;margin-bottom:0;">
@@ -474,15 +466,15 @@
             </div>
             <div style="margin-bottom:11px;"></div>
             <div class="input-group">
-                <span class="input-icon">✉️</span>
+                <span class="input-icon"><x-icon name="mail" size="16"/></span>
                 <input type="email" id="reg-email" placeholder="Gmail Address" required>
             </div>
             <div class="input-group">
-                <span class="input-icon">📱</span>
+                <span class="input-icon"><x-icon name="phone" size="16"/></span>
                 <input type="tel" id="reg-contact" placeholder="Contact Number" required>
             </div>
             <div class="input-group">
-                <span class="input-icon">👤</span>
+                <span class="input-icon"><x-icon name="user" size="16"/></span>
                 <select id="reg-member-type" required>
                     <option value="" disabled selected>Member Type</option>
                     <option value="head">Head of Household</option>
@@ -492,13 +484,13 @@
                 </select>
             </div>
             <div class="input-group">
-                <span class="input-icon">🔒</span>
+                <span class="input-icon"><x-icon name="lock" size="16"/></span>
                 <input type="password" id="reg-password" placeholder="Create Password" oninput="updateStrength(this.value)" autocomplete="new-password">
-                <button class="eye-btn" onclick="togglePwd('reg-password',this)" type="button">👁</button>
+                <button class="eye-btn" onclick="togglePwd('reg-password',this)" type="button"><x-icon name="eye" size="16" class="eye-on" /><x-icon name="eye-off" size="16" class="eye-off" /></button>
             </div>
             <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
             <div class="input-group">
-                <span class="input-icon">🔑</span>
+                <span class="input-icon"><x-icon name="key" size="16"/></span>
                 <input type="password" id="reg-confirm" placeholder="Confirm Password" autocomplete="new-password">
             </div>
         </div>
@@ -506,21 +498,21 @@
         <!-- OFFICER FIELDS (hidden by default) -->
         <div id="officer-fields" style="display:none;">
             <div class="input-group">
-                <span class="input-icon">👤</span>
+                <span class="input-icon"><x-icon name="user" size="16"/></span>
                 <input type="text" id="off-name" placeholder="Full Name" required>
             </div>
             <div class="input-group">
-                <span class="input-icon">✉️</span>
+                <span class="input-icon"><x-icon name="mail" size="16"/></span>
                 <input type="email" id="off-email" placeholder="Gmail Address" required>
             </div>
             <div class="input-group">
-                <span class="input-icon">🔒</span>
+                <span class="input-icon"><x-icon name="lock" size="16"/></span>
                 <input type="password" id="off-password" placeholder="Create Password" oninput="updateStrength(this.value)" autocomplete="new-password">
-                <button class="eye-btn" onclick="togglePwd('off-password',this)" type="button">👁</button>
+                <button class="eye-btn" onclick="togglePwd('off-password',this)" type="button"><x-icon name="eye" size="16" class="eye-on" /><x-icon name="eye-off" size="16" class="eye-off" /></button>
             </div>
             <div class="strength-bar"><div class="strength-fill" id="strengthFill2"></div></div>
             <div class="input-group">
-                <span class="input-icon">🔑</span>
+                <span class="input-icon"><x-icon name="key" size="16"/></span>
                 <input type="password" id="off-confirm" placeholder="Confirm Password" autocomplete="new-password">
             </div>
             <p style="font-size:11px;opacity:0.45;margin:-6px 0 12px;text-align:center;">Registration requires admin approval before access is granted.</p>
@@ -560,8 +552,8 @@
         const badge = document.getElementById('roleBadge');
         badge.className = 'role-badge ' + (isOfficer ? 'role-badge-officer' : 'role-badge-resident');
         badge.innerHTML = isOfficer
-            ? `<span class="role-badge-icon">🛡️</span><div><div class="role-badge-text">Officer Access</div><div class="role-badge-sub">HOA officer portal — credentials required</div></div>`
-            : `<span class="role-badge-icon">🏠</span><div><div class="role-badge-text">Resident Access</div><div class="role-badge-sub">Login or register your household account</div></div>`;
+            ? `<span class="role-badge-icon"><x-icon name="shield" size="20"/></span><div><div class="role-badge-text">Officer Access</div><div class="role-badge-sub">HOA officer portal — credentials required</div></div>`
+            : `<span class="role-badge-icon"><x-icon name="home" size="20"/></span><div><div class="role-badge-text">Resident Access</div><div class="role-badge-sub">Login or register your household account</div></div>`;
 
         // Update button colors
         document.getElementById('loginBtn').className    = 'portal-btn ' + (isOfficer ? 'btn-officer' : 'btn-resident');
@@ -571,10 +563,7 @@
         document.getElementById('officerNote').style.display = isOfficer ? 'block' : 'none';
 
         // Toggle register fields
-        if (currentForm === 'register') {
-            document.getElementById('resident-fields').style.display = isOfficer ? 'none' : 'block';
-            document.getElementById('officer-fields').style.display  = isOfficer ? 'block' : 'none';
-        }
+        toggleRegisterFields(isOfficer);
 
         clearMsg();
 
@@ -595,12 +584,29 @@
         document.getElementById('loginPanel').classList.toggle('active', !isRegister);
         document.getElementById('registerPanel').classList.toggle('active', isRegister);
 
-        if (isRegister) {
-            const isOfficer = currentRole === 'officer';
-            document.getElementById('resident-fields').style.display = isOfficer ? 'none' : 'block';
-            document.getElementById('officer-fields').style.display  = isOfficer ? 'block' : 'none';
-        }
+        toggleRegisterFields(currentRole === 'officer');
         clearMsg();
+    }
+
+    /* ── ROLE FIELD GROUPS ──
+       Hidden groups must be disabled too: a hidden "required" input makes the
+       browser refuse to submit with "An invalid form control with name='' is
+       not focusable" (this silently broke registration). */
+    function toggleRegisterFields(isOfficer) {
+        const residentGroup = document.getElementById('resident-fields');
+        const officerGroup  = document.getElementById('officer-fields');
+
+        residentGroup.style.display = isOfficer ? 'none' : 'block';
+        officerGroup.style.display  = isOfficer ? 'block' : 'none';
+
+        setGroupEnabled(residentGroup, !isOfficer);
+        setGroupEnabled(officerGroup, isOfficer);
+    }
+
+    function setGroupEnabled(group, enabled) {
+        group.querySelectorAll('input, select, textarea').forEach(function (el) {
+            el.disabled = !enabled;
+        });
     }
 
     /* ── HANDLERS ── */
@@ -711,7 +717,7 @@
         if (!inp) return;
         const show = inp.type === 'password';
         inp.type = show ? 'text' : 'password';
-        btn.textContent = show ? '🙈' : '👁';
+        btn.classList.toggle('is-visible', show);
     }
 
     /* ── STRENGTH BAR ── */
@@ -740,6 +746,7 @@
 
     /* Initialise the UI for the role the page was loaded with (?portal=) */
     if (LOGIN_PORTAL === 'officer') switchRole('officer', true);
+    toggleRegisterFields(LOGIN_PORTAL === 'officer');
 </script>
 
 @if(session('error') || session('message'))

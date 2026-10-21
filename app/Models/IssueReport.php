@@ -99,6 +99,7 @@ class IssueReport extends Model
     {
         $categoryPriorityMap = [
             // Resident-facing categories (see the resident issue form)
+            'Emergency' => 'Critical',
             'Security Concern' => 'Critical',
             'Drainage / Flooding' => 'High',
             'Road / Pavement' => 'High',

@@ -108,13 +108,9 @@ function nav(name, el){
     document.getElementById('msgHeaderTitle').textContent = 'Community Chat';
     // Start real-time polling for new messages (every 10 seconds)
     if(!window.messagePollInterval){
-      window.messagePollInterval = setInterval(async () => {
-        if(currentThread && document.getElementById('panel-messages').classList.contains('active')){
-          // Only refresh if we're viewing the messages panel and have a thread selected
-          const msgs = await apiGet('/api/messages/'+currentThread);
-          threads[currentThread].msgs = msgs;
-          renderChat();
-        }
+      window.messagePollInterval = setInterval(() => {
+        // Only refresh if we're viewing the messages panel and have a thread selected
+        if(document.getElementById('panel-messages').classList.contains('active')) refreshAdminMessages();
       }, 10000);
     }
   }
@@ -235,13 +231,13 @@ function renderDashboard(){
 
   document.getElementById('activityFeed').innerHTML=(()=>{
     const events=[];
-    issues.slice(0,3).forEach(i=>events.push({ts:i.created_at||'',icon:'🚨',color:'var(--yellow)',text:`<b>${i.resident||'A resident'}</b> filed an issue: <i>${i.title}</i>`,pill:i.status==='Resolved'?'<span class="pill pill-resolved">Resolved</span>':i.status==='In Progress'?'<span class="pill pill-progress">In Progress</span>':'<span class="pill pill-pending">Pending</span>'  }));
-    announcements.slice(0,2).forEach(a=>events.push({ts:a.created_at||'',icon:'📢',color:'var(--accent)',text:`Announcement posted: <b>${a.title||a.message?.substring(0,50)+'...'}</b>`,pill:''}));
-    finRecs.slice(0,3).forEach(f=>events.push({ts:f.record_date||'',icon:f.record_type==='Payment'?'💰':'📄',color:f.record_type==='Payment'?'var(--green)':'#f08080',text:`<b>${f.resident||'Resident'}</b> — ${f.record_type}: ₱${Number(f.amount).toLocaleString()}`,pill:''}));
+    issues.slice(0,3).forEach(i=>events.push({ts:i.created_at||'',icon:'alert',color:'var(--yellow)',text:`<b>${i.resident||'A resident'}</b> filed an issue: <i>${i.title}</i>`,pill:i.status==='Resolved'?'<span class="pill pill-resolved">Resolved</span>':i.status==='In Progress'?'<span class="pill pill-progress">In Progress</span>':'<span class="pill pill-pending">Pending</span>'  }));
+    announcements.slice(0,2).forEach(a=>events.push({ts:a.created_at||'',icon:'megaphone',color:'var(--accent)',text:`Announcement posted: <b>${a.title||a.message?.substring(0,50)+'...'}</b>`,pill:''}));
+    finRecs.slice(0,3).forEach(f=>events.push({ts:f.record_date||'',icon:f.record_type==='Payment'?'coins':'file',color:f.record_type==='Payment'?'var(--green)':'#f08080',text:`<b>${f.resident||'Resident'}</b> — ${f.record_type}: ₱${Number(f.amount).toLocaleString()}`,pill:''}));
     if(!events.length) return '<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">No recent activity.</div>';
     return events.slice(0,6).map(e=>`
       <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="font-size:18px;flex-shrink:0;">${e.icon}</span>
+        <span style="flex-shrink:0;color:${e.color};">${SubUI.icon(e.icon,17)}</span>
         <div style="flex:1;font-size:12px;color:var(--text-mid);line-height:1.5;">${e.text}</div>
         ${e.pill}
       </div>`).join('');
@@ -272,10 +268,10 @@ function renderResidents(){
             <div style="font-size:11px;color:var(--text-dim);">${r.email||'—'}</div>
           </div>
         </div>
-        ${r.contact_number?`<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">📞 ${r.contact_number}</div>`:''}
+        ${r.contact_number?`<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">${SubUI.icon('phone',12)} ${r.contact_number}</div>`:''}
         <div style="display:flex;gap:8px;">
-          <button class="btn btn-sm" style="background:#22c55e;border-color:#22c55e;color:#062b12;flex:1;" onclick="approveRegistration(${r.id})">✓ Approve</button>
-          <button class="btn btn-sm btn-danger" style="flex:1;" onclick="rejectRegistration(${r.id})">✕ Reject</button>
+          <button class="btn btn-sm" style="background:#22c55e;border-color:#22c55e;color:#062b12;flex:1;" onclick="approveRegistration(${r.id})">${SubUI.icon('check',13)} Approve</button>
+          <button class="btn btn-sm btn-danger" style="flex:1;" onclick="rejectRegistration(${r.id})">${SubUI.icon('x',13)} Reject</button>
         </div>
       </div>`).join('');
   }
@@ -304,10 +300,10 @@ function renderResidents(){
       </div>
       <div style="margin-top:10px;font-size:12px;color:var(--text-dim);">Balance: ${SubUI.money(r.current_balance)}</div>
       <div style="margin-top:10px;display:flex;gap:8px;">
-        <button class="btn btn-sm" onclick="event.stopPropagation();SubUI.exportCsv('/api/residents/${r.id}/statement')">⬇ Statement</button>
-        <button class="btn btn-sm" onclick="event.stopPropagation();remindResident(${r.id})">🔔 Remind</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();SubUI.exportCsv('/api/residents/${r.id}/statement')">${SubUI.icon('download',13)} Statement</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();remindResident(${r.id})">${SubUI.icon('bell',13)} Remind</button>
       </div>
-    </div>`).join(''):'<div class="empty-state"><div class="empty-icon">🏠</div>No residents found.</div>';
+    </div>`).join(''):'<div class="empty-state">' + SubUI.icon('home', 28) + 'No residents found.</div>';
   if(_more>0){ document.getElementById('residentGrid').insertAdjacentHTML('beforeend', `<div style="grid-column:1/-1;text-align:center;padding:12px;"><button class="btn btn-sm" onclick="residentCap+=24;renderResidents();">Show ${Math.min(_more,24)} more (${_more} remaining)</button></div>`); }
 }
 function filterResidents(){ residentCap=24; renderResidents(); }
@@ -345,7 +341,7 @@ function renderMembers(){
   if(document.getElementById('statTotalMembers')) document.getElementById('statTotalMembers').textContent=hhMembers.length;
   if(document.getElementById('statTotalHouses')) document.getElementById('statTotalHouses').textContent=new Set(hhMembers.map(m=>m.house_id)).size;
   if(!filtered.length){
-    document.getElementById('membersGrid').innerHTML='<div class="empty-state"><div class="empty-icon">👥</div>'+(hhMembers.length?'No members match the filter.':'No household members yet.')+'</div>';
+    document.getElementById('membersGrid').innerHTML='<div class="empty-state">' + SubUI.icon('users', 28) + ''+(hhMembers.length?'No members match the filter.':'No household members yet.')+'</div>';
     return;
   }
   document.getElementById('membersGrid').innerHTML=filtered.map(m=>{
@@ -360,7 +356,7 @@ function renderMembers(){
         <h4>${m.name||'—'}</h4>
         <p>${m.block_lot||'—'}</p>
         <div class="m-type" style="${relStyle}">${rel}</div>
-        ${m.contact_number?`<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">📞 ${m.contact_number}</div>`:''}
+        ${m.contact_number?`<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${SubUI.icon('phone',12)} ${m.contact_number}</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -448,7 +444,7 @@ function renderPaymentStatuses(){
     return `
     <div class="res-card" onclick="openPaymentStatusDetail('${encoded}')" title="Click for details">
       <div class="res-thumb">
-        <div style="width:100%;height:100%;background:rgba(240,100,100,0.1);display:flex;align-items:center;justify-content:center;font-size:36px;">🏠</div>
+        <div style="width:100%;height:100%;background:rgba(240,100,100,0.1);display:flex;align-items:center;justify-content:center;font-size:36px;">${SubUI.icon('home',36)}</div>
       </div>
       <div class="res-info">
         <h4>${d.block_lot}</h4>
@@ -457,7 +453,7 @@ function renderPaymentStatuses(){
         <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Outstanding: ₱${Number(totalBal).toLocaleString()} · Flagged: ${d.date_flagged||'—'}</div>
       </div>
     </div>`;
-  }).join(''):'<div class="empty-state"><div class="empty-icon">✅</div>All households are in good standing.</div>';
+  }).join(''):'<div class="empty-state">' + SubUI.icon('check', 28) + 'All households are in good standing.</div>';
 }
 
 function openPaymentStatusDetail(encoded){
@@ -468,7 +464,7 @@ function openPaymentStatusDetail(encoded){
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:8px;">
         <div>
           <div style="font-weight:600;font-size:13px;">${r.name}</div>
-          ${r.contact_number?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📞 ${r.contact_number}</div>`:''}
+          ${r.contact_number?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${SubUI.icon('phone',12)} ${r.contact_number}</div>`:''}
         </div>
         <div style="text-align:right;">
           <div style="font-size:12px;color:${r.current_balance>0?'#f08080':'var(--green)'}; font-weight:700;">
@@ -517,7 +513,7 @@ function renderThreads(){
         <div class="thread-preview">${t.last_message||'No messages yet'}</div>
         ${t.last_time?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${t.last_time}</div>`:''}
       </div>
-      <button class="thread-del-btn" onclick="event.stopPropagation();deleteConversation(${id})" title="Delete conversation">🗑</button>
+      <button class="thread-del-btn" onclick="event.stopPropagation();deleteConversation(${id})" title="Delete conversation">${SubUI.icon('trash',13)}</button>
     </div>`;
   }).join('');
 }
@@ -566,16 +562,12 @@ async function loadThreads(){
   renderThreads();
   if(currentThread) openThread(currentThread);
 
-  // Set up real-time polling for new messages (every 10 seconds)
+  // Fallback poll for the open thread (WebSocket pushes are the instant path)
   if(!window.messagePollInterval){
-    window.messagePollInterval = setInterval(async () => {
-      // Only poll if messages panel is visible and active
+    window.messagePollInterval = setInterval(() => {
       const messagesPanel = document.getElementById('panel-messages');
       if(currentThread && messagesPanel && messagesPanel.classList.contains('active')){
-        // Only refresh if we're viewing the messages panel and have a thread selected
-        const msgs = await apiGet('/api/messages/'+currentThread);
-        threads[currentThread].msgs = msgs;
-        renderChat();
+        refreshAdminMessages();
       }
     }, 10000);
   }
@@ -627,10 +619,10 @@ function renderAnnouncements(){
       <div class="ann-body" style="font-size:13px;color:var(--text-mid);white-space:pre-line;line-height:1.65;text-align:center;">${a.content}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:6px;border-top:1px solid var(--glass-border);padding-top:6px;">Issued by: ${a.posted_by} &nbsp;·&nbsp; Audience: ${a.target||'All Residents'}</div>
       <div class="ann-actions">
-        <button class="btn btn-sm" onclick="event.stopPropagation();archiveAnn(${a.id})">${isArchived?'♻ Restore':'📦 Archive'}</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();archiveAnn(${a.id})">${isArchived?SubUI.icon('refresh',13)+' Restore':SubUI.icon('archive',13)+' Archive'}</button>
         <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteAnn(${a.id})">Delete</button>
       </div>
-    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📢</div>No announcements found.</div>';
+    </div>`}).join(''):'<div class="empty-state">' + SubUI.icon('megaphone', 28) + 'No announcements found.</div>';
 }
 async function archiveAnn(id){
   const res=await apiPatch('/api/announcements/'+id+'/archive');
@@ -662,7 +654,7 @@ function openAnnView(id){
   document.getElementById('annV-delBtn').onclick=()=>{ deleteAnn(a.id); document.getElementById('modal-annView').classList.remove('open'); };
   const archBtn=document.getElementById('annV-archBtn');
   if(archBtn){
-    archBtn.textContent=(a.status||'Active')==='Archived'?'♻ Unarchive':'📦 Archive';
+    archBtn.innerHTML=(a.status||'Active')==='Archived'?SubUI.icon('refresh',12)+' Unarchive':SubUI.icon('archive',12)+' Archive';
   }
   document.getElementById('modal-annView').classList.add('open');
 }
@@ -757,7 +749,7 @@ function deleteInBadge(i){
   if(isNaN(d.getTime())) return '';
   const daysLeft = Math.max(0, Math.ceil(30 - (Date.now()-d.getTime())/86400000));
   if(daysLeft<=0) return '';
-  return `<span style="font-size:10px;font-weight:600;color:var(--text-dim);" title="Auto-archives after 30 days">🗄 archives in ${daysLeft}d</span>`;
+  return `<span style="font-size:10px;font-weight:600;color:var(--text-dim);" title="Auto-archives after 30 days">${SubUI.icon('archive',11)} archives in ${daysLeft}d</span>`;
 }
 function renderIssues(){
   const sf=(document.getElementById('issueFilter')||{}).value||'';
@@ -793,7 +785,7 @@ function renderIssues(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px;">
         <div style="flex:1;min-width:0;">
           <div style="font-size:11px;color:var(--text-dim);margin-bottom:3px;letter-spacing:.03em;">Report #${i.id} &nbsp;·&nbsp; Filed: ${filedDate}</div>
-          <div class="issue-title" style="font-size:15px;">${isCritical?'🚨 ':''}${i.title}</div>
+          <div class="issue-title" style="font-size:15px;">${isCritical?SubUI.icon('alert',12)+' ':''}${i.title}</div>
           <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">By: ${i.resident} &nbsp;·&nbsp; ${i.block_lot}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0;">
@@ -804,8 +796,8 @@ function renderIssues(){
       <div class="issue-body" style="font-size:13px;">${i.description}</div>
       <div class="issue-meta" style="margin-top:8px;">
         <span class="pill pill-notice">${i.category}</span>
-        ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">👤 ${escHtml(i.assigned_officer)}</span>`:''}
-        ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="SLA due date">${i.overdue?'⏰ Overdue ':'🗓 Due '}${escHtml(i.due_date)}</span>`:''}
+        ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">${SubUI.icon('user',12)} ${escHtml(i.assigned_officer)}</span>`:''}
+        ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="SLA due date">${i.overdue?SubUI.icon('clock',12)+' Overdue ':SubUI.icon('calendar',12)+' Due '}${escHtml(i.due_date)}</span>`:''}
       </div>
       ${(i.responses&&i.responses.length)?`<div style="margin-top:10px;padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;">
         <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Admin Response</div>
@@ -819,7 +811,7 @@ function renderIssues(){
           <input type="checkbox" class="issue-check" value="${i.id}"> select
         </label>
       </div>
-    </div>`}).join(''):'<div class="empty-state"><div class="empty-icon">📋</div>No issues match the selected filters.</div>';
+    </div>`}).join(''):'<div class="empty-state">' + SubUI.icon('clipboard', 28) + 'No issues match the selected filters.</div>';
   if(_more>0){ document.getElementById('issueList').insertAdjacentHTML('beforeend', `<div style="text-align:center;padding:12px;"><button class="btn btn-sm" onclick="issueCap+=30;renderIssues();">Show ${Math.min(_more,30)} more (${_more} remaining)</button></div>`); }
 }
 async function bulkArchiveSelected(){
@@ -910,14 +902,35 @@ async function submitResponse(){
 }
 
 function renderOfficers(){
+  const tb=document.getElementById('officerTable');
+  if(!tb) return;
+
+  // Header stat chips stay in sync with the table.
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('officerStatTotal', officers.length);
+  set('officerStatActive', officers.filter(o=>o.status==='Active').length);
+  set('officerStatPending', officers.filter(o=>o.status==='Pending').length);
+
+  const qEl=document.getElementById('officerSearch');
+  const q=(qEl?(qEl.value||''):'').trim().toLowerCase();
+  const list=q?officers.filter(o=>(o.name||'').toLowerCase().includes(q)||(o.email||'').toLowerCase().includes(q)):officers;
+
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="6"><div class="empty-state">${SubUI.icon('shield', 28)}<div class="empty-title">${q?'No matches':'No officers yet'}</div><div class="empty-hint">${q?'Try a different name or email.':'Use "+ Add Officer" to create the first account.'}</div></div></td></tr>`;
+    return;
+  }
+
   const pill=s=>s==='Active'?'pill-active':(s==='Pending'?'pill-pending':'pill-inactive');
-  document.getElementById('officerTable').innerHTML=officers.map(o=>`
+  const joined=o=>{ try{ return o.created_at?new Date(o.created_at).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'—'; }catch(e){ return '—'; } };
+  tb.innerHTML=list.map(o=>`
     <tr>
       <td>${escHtml(o.name)}</td>
-      <td style="color:var(--text-mid);">${escHtml(o.email||'—')}</td>
+      <td style="color:var(--text-mid);">${escHtml(o.email||'-')}</td>
+      <td style="color:var(--text-mid);">${escHtml(o.contact_number||'—')}</td>
+      <td style="color:var(--text-mid);">${escHtml(joined(o))}</td>
       <td><span class="pill ${pill(o.status)}">${escHtml(o.status||'Active')}</span></td>
       <td>
-        <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:6px;justify-content:flex-end;">
             ${o.status==='Pending'?`<button class="btn btn-sm btn-green" onclick="approveOfficer(${o.id})">Approve</button>`:''}
             <button class="btn btn-sm btn-blue" onclick="openEditOfficer(${o.id})">Edit</button>
             <button class="btn btn-sm btn-danger" onclick="removeOfficer(${o.id})">Remove</button>
@@ -1111,7 +1124,7 @@ function filterThreads(q){
 function renderRecommendations(){
   const el=document.getElementById('recsAdminList');
   if(!recommendations.length){
-    el.innerHTML='<div class="empty-state"><div class="empty-icon">💡</div>No recommendations yet.</div>';
+    el.innerHTML='<div class="empty-state">' + SubUI.icon('lightbulb', 28) + 'No recommendations yet.</div>';
     return;
   }
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>',Reviewed:'<span class="pill pill-notice">Reviewed</span>',Approved:'<span class="pill pill-event">Approved</span>',Rejected:'<span class="pill pill-urgent">Rejected</span>'};
@@ -2343,7 +2356,8 @@ window.nav = function(name, el){
   }
 };
 
-setInterval(function(){ if(!document.hidden) pollOfficerFiles(); }, 30000);
+// Fallback only — the .officer-file socket event refreshes instantly.
+setInterval(function(){ if(!document.hidden && !_rtWsReady) pollOfficerFiles(); }, 30000);
 
 /* ══════════════════════════════════════════════════════════
    REAL-TIME: Server-Sent Events (SSE)
@@ -2381,17 +2395,53 @@ document.getElementById('issueNotifViewBtn').onclick = ()=>{
   nav('issues');
 };
 
-// ── SSE connection ────────────────────────────────────────
+// ── SSE connection (fallback — Reverb WebSocket is the primary channel) ──
 let _adminSseAnnId   = 0;
 let _adminSseIssueId = 0;
 let _adminSsePolicyId = 0;
 let _adminSseEventId  = 0;
+let _rtWsReady = false;   // true while the Reverb socket is connected
+let _rtSse = null;        // the fallback EventSource (null when WS is primary)
+
+/* Re-fetch the open thread; used by the WS push and the fallback polls. */
+async function refreshAdminMessages(){
+  if(!currentThread) return;
+  try{
+    const msgs = await apiGet('/api/messages/'+currentThread);
+    if(Array.isArray(msgs) && msgs.length !== (threads[currentThread]?.msgs||[]).length){
+      threads[currentThread].msgs = msgs;
+      renderChat();
+    }
+  }catch(e){}
+}
+
+/* Refresh the conversation list (new senders appear named) without switching
+   the open thread — used when a message arrives for a conversation we're not
+   currently viewing. */
+async function refreshAdminThreadList(){
+  const data = await apiGet('/api/messages/threads');
+  if(!Array.isArray(data)) return;
+  const seen = {};
+  data.forEach((t,i)=>{
+    seen[t.id] = 1;
+    const prev = threads[t.id];
+    threads[t.id] = {...t, idx:i, msgs: prev ? prev.msgs : []};
+  });
+  Object.keys(threads).forEach(id=>{ if(!seen[id]) delete threads[id]; });
+  if(!currentThread && data.length){
+    const cc = data.find(t => t.title && t.title.includes('Community Chat'));
+    currentThread = cc ? cc.id : data[0].id;
+  }
+  renderThreads();
+}
 
 function connectAdminSSE(){
+  if(_rtWsReady) return; // WebSocket is live — SSE is only the fallback
   if(document.hidden){ setTimeout(connectAdminSSE, 2000); return; }
 
   const url = `/api/stream/updates?lastEventId=${_adminSseEventId}&lastAnnId=${_adminSseAnnId}&lastIssueId=${_adminSseIssueId}&lastPolicyId=${_adminSsePolicyId}`;
   const es  = new EventSource(url);
+  _rtSse = es;
 
   // ── Fresh connection — load initial data once ─────────────
   es.addEventListener('sync', () => {
@@ -2468,6 +2518,8 @@ function connectAdminSSE(){
     const evt = JSON.parse(e.data);
     if(evt.lastEventId) _adminSseEventId = evt.lastEventId;
     es.close();
+    _rtSse = null;
+    if(_rtWsReady) return; // WS came up while this cycle ran — stop the SSE loop
     // Refresh on every cycle so updates still land through buffering tunnels (e.g. ngrok)
     loadAllData().catch(()=>{});
     setTimeout(connectAdminSSE, 200);
@@ -2476,27 +2528,22 @@ function connectAdminSSE(){
   // ── Error — retry after 3 s ──────────────────────────────
   es.onerror = () => {
     es.close();
-    setTimeout(connectAdminSSE, 3000);
+    _rtSse = null;
+    if(!_rtWsReady) setTimeout(connectAdminSSE, 3000);
   };
 
   document.addEventListener('visibilitychange', () => {
-    if(!document.hidden && es.readyState === EventSource.CLOSED){
+    if(!document.hidden && es.readyState === EventSource.CLOSED && !_rtWsReady){
       setTimeout(connectAdminSSE, 500);
     }
   }, { once: true });
 }
 
-// ── Message thread poll (still needed — SSE doesn't cover messages) ──
-setInterval(async ()=>{
-  if(document.hidden || !currentThread) return;
+// ── Message thread fallback poll (WS pushes are the instant path) ──
+setInterval(()=>{
+  if(document.hidden) return;
   if(!document.getElementById('panel-messages')?.classList.contains('active')) return;
-  try{
-    const msgs = await apiGet('/api/messages/'+currentThread);
-    if(msgs.length !== (threads[currentThread]?.msgs||[]).length){
-      threads[currentThread].msgs = msgs;
-      openThread(currentThread);
-    }
-  }catch(e){}
+  refreshAdminMessages();
 }, 10000);
 
 // ── Safety-net: 60s fallback poll in case SSE is blocked ──
@@ -2535,7 +2582,7 @@ loadAllData().then(() => {
 loadAlerts();
 setInterval(function(){ if(!document.hidden) loadAlerts(); }, 30000);
 
-/* ══ REVERB (WebSocket) real-time — instant updates; SSE remains the fallback ══ */
+/* ══ REVERB (WebSocket) real-time — primary channel; SSE only as fallback ══ */
 (function initSubSyncRealtime(attempt){
   attempt = attempt || 0;
   if(!window.Echo){
@@ -2546,6 +2593,55 @@ setInterval(function(){ if(!document.hidden) loadAlerts(); }, 30000);
     const ch = window.Echo.channel('subsync');
     const refresh = () => { if(typeof loadAllData === 'function') loadAllData().catch(function(){}); };
     ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
+    ch.listen('.message', (evt) => {
+      if(!evt || !evt.conversationId) return;
+      const isOpen = String(evt.conversationId) === String(currentThread);
+      const panelOpen = document.getElementById('panel-messages')?.classList.contains('active');
+      if(evt.senderType === 'admin'){ if(isOpen) refreshAdminMessages(); return; }
+      if(isOpen && panelOpen){ refreshAdminMessages(); return; }
+      showToast('New message from ' + (evt.senderName || 'someone') + '.');
+      const badge = document.getElementById('msgBadge');
+      if(badge){ badge.textContent = (parseInt(badge.textContent,10)||0) + 1; badge.style.display = 'inline-flex'; }
+      refreshAdminThreadList();
+      if(isOpen) refreshAdminMessages();
+    });
+
+    // Approvals & membership: the pending queue, badges and stat cards update live.
+    const refreshStaffData = () => {
+      loadAlerts();
+      const ids = ['residents','manageusers','officers','dashboard','recommendations'];
+      if(ids.some(id => document.getElementById('panel-'+id)?.classList.contains('active'))){
+        loadAllData().catch(function(){});
+      } else {
+        const b = document.getElementById('pendingBadge');
+        if(b) loadAlerts();
+      }
+    };
+    ch.listen('.resident', refreshStaffData).listen('.officer', refreshStaffData).listen('.recommendation', refreshStaffData);
+
+    // GCash payments: the validation queue updates live; the bell refreshes either way.
+    ch.listen('.payment', () => {
+      loadAlerts();
+      if(document.getElementById('panel-gcash')?.classList.contains('active')){
+        loadPaymentsQueue();
+        loadFinanceOverview();
+      }
+    });
+
+    // Documents officers send up: replaces the fallback poll while the socket is live.
+    ch.listen('.officer-file', () => { if(!document.hidden && typeof pollOfficerFiles === 'function') pollOfficerFiles(); });
+
+    // WebSocket-first: while Reverb is connected the SSE fallback stays off;
+    // if the socket drops, bring the fallback back.
+    const conn = window.Echo.connector && window.Echo.connector.pusher && window.Echo.connector.pusher.connection;
+    if(conn){
+      const wsUp = () => { _rtWsReady = true; if(_rtSse){ try{ _rtSse.close(); }catch(e){} _rtSse = null; } };
+      const wsDown = () => { if(_rtWsReady){ _rtWsReady = false; connectAdminSSE(); } };
+      if(conn.state === 'connected') wsUp();
+      conn.bind('connected', wsUp);
+      conn.bind('disconnected', wsDown);
+      conn.bind('unavailable', wsDown);
+    }
   } catch(e) {}
 })();
 

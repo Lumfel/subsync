@@ -65,11 +65,18 @@ class SettingsController extends Controller
             'contact_number' => 'nullable|string|max:20',
         ]);
 
-        $actor['user']->update([
+        $fields = [
             'name' => $data['name'],
             'email' => $data['email'],
-            'contact_number' => $data['contact_number'] ?? null,
-        ]);
+        ];
+
+        // The admins table has no contact_number column — writing it would be
+        // silently discarded, which strict mode turns into a 500.
+        if ($actor['type'] !== 'admin') {
+            $fields['contact_number'] = $data['contact_number'] ?? null;
+        }
+
+        $actor['user']->update($fields);
 
         // Keep the admin display name in sync with the session.
         if ($actor['type'] === 'admin') {
@@ -120,7 +127,7 @@ class SettingsController extends Controller
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
 
-        $request->validate(['photo' => 'required|image|max:4096']);
+        $request->validate(['photo' => 'required|image|max:8192']);
 
         $path = $request->file('photo')->store('avatars', 'public');
         $url = Storage::url($path);
@@ -164,7 +171,9 @@ class SettingsController extends Controller
             'id' => $u?->id,
             'name' => $u?->name,
             'email' => $u?->email,
-            'contact_number' => $u?->contact_number,
+            // Only residents/officers have a contact number; reading it from the
+            // admin model violates strict mode (missing attribute) → 500.
+            'contact_number' => $actor['type'] === 'admin' ? null : $u?->contact_number,
             'avatar' => $u?->avatar,
         ];
     }

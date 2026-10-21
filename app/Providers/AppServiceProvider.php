@@ -3,6 +3,10 @@
 namespace App\Providers;
 
 use App\Models\Announcement;
+use App\Models\Assessment;
+use App\Models\Budget;
+use App\Models\Event;
+use App\Models\EventRsvp;
 use App\Models\Facility;
 use App\Models\FinancialRecord;
 use App\Models\HoaExpense;
@@ -11,9 +15,15 @@ use App\Models\Household;
 use App\Models\HouseholdMember;
 use App\Models\IssueReport;
 use App\Models\Media;
+use App\Models\Message;
 use App\Models\Officer;
+use App\Models\OfficerFile;
+use App\Models\PaymentSubmission;
 use App\Models\Recommendation;
+use App\Models\Report;
+use App\Models\ReportTemplate;
 use App\Models\Resident;
+use App\Observers\ActivityLogObserver;
 use App\Observers\DashboardCacheObserver;
 use App\Observers\SsePublishingObserver;
 use Illuminate\Database\Eloquent\Model;
@@ -75,16 +85,45 @@ class AppServiceProvider extends ServiceProvider
             $model::observe(DashboardCacheObserver::class);
         }
 
-        // Publish real-time SSE events for the hot tables the frontends listen to.
+        // Publish real-time SSE/WebSocket events for the hot tables the frontends listen to.
         $sseModels = [
             Announcement::class,
             IssueReport::class,
             HoaPolicy::class,
             HoaExpense::class,
+            Message::class,
+            Resident::class,
+            Officer::class,
+            PaymentSubmission::class,
+            Recommendation::class,
+            Event::class,
+            EventRsvp::class,
+            OfficerFile::class,
         ];
 
         foreach ($sseModels as $model) {
             $model::observe(SsePublishingObserver::class);
+        }
+
+        // Append-only activity trail (admin-visible). IssueReport keeps its own
+        // dedicated audit log, so it is intentionally not listed here.
+        $auditedModels = [
+            Announcement::class,
+            HoaPolicy::class,
+            HoaExpense::class,
+            FinancialRecord::class,
+            ReportTemplate::class,
+            Report::class,
+            Assessment::class,
+            Budget::class,
+            Resident::class,
+            Officer::class,
+            OfficerFile::class,
+            Facility::class,
+        ];
+
+        foreach ($auditedModels as $model) {
+            $model::observe(ActivityLogObserver::class);
         }
     }
 }
