@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
 {
@@ -416,62 +417,68 @@ class MessageController extends Controller
             return response()->json(['success' => false, 'message' => 'Session expired. Please log in again.'], 401);
         }
 
-        $conv = Conversation::create(['title' => trim($request->title)]);
+        // Conversation + participants are created atomically so a failure halfway
+        // can never leave an orphan conversation behind.
+        $conv = DB::transaction(function () use ($request, $actor) {
+            $conv = Conversation::create(['title' => trim($request->title)]);
 
-        if ($actor['type'] === 'resident') {
-            ConvParticipant::create([
-                'conversation_id' => $conv->id,
-                'resident_id' => $actor['id'],
-                'participant_type' => 'resident',
-                'status' => 'accepted',
-            ]);
-        } elseif ($actor['type'] === 'officer') {
-            ConvParticipant::create([
-                'conversation_id' => $conv->id,
-                'officer_id' => $actor['id'],
-                'participant_type' => 'officer',
-                'status' => 'accepted',
-            ]);
-        } elseif ($actor['type'] === 'admin') {
-            // Admin starts a conversation — the recipient gets a message request.
-            if ($request->filled('resident_id')) {
+            if ($actor['type'] === 'resident') {
                 ConvParticipant::create([
                     'conversation_id' => $conv->id,
-                    'resident_id' => $request->resident_id,
+                    'resident_id' => $actor['id'],
                     'participant_type' => 'resident',
-                    'status' => 'pending',
+                    'status' => 'accepted',
                 ]);
-            }
-            if ($request->filled('officer_id')) {
+            } elseif ($actor['type'] === 'officer') {
                 ConvParticipant::create([
                     'conversation_id' => $conv->id,
-                    'officer_id' => $request->officer_id,
+                    'officer_id' => $actor['id'],
                     'participant_type' => 'officer',
-                    'status' => 'pending',
+                    'status' => 'accepted',
                 ]);
+            } elseif ($actor['type'] === 'admin') {
+                // Admin starts a conversation — the recipient gets a message request.
+                if ($request->filled('resident_id')) {
+                    ConvParticipant::create([
+                        'conversation_id' => $conv->id,
+                        'resident_id' => $request->resident_id,
+                        'participant_type' => 'resident',
+                        'status' => 'pending',
+                    ]);
+                }
+                if ($request->filled('officer_id')) {
+                    ConvParticipant::create([
+                        'conversation_id' => $conv->id,
+                        'officer_id' => $request->officer_id,
+                        'participant_type' => 'officer',
+                        'status' => 'pending',
+                    ]);
+                }
             }
-        }
 
-        // Also add the selected recipient (for resident→officer or officer→resident conversations)
-        if ($request->filled('recipient_type') && $request->filled('recipient_id')) {
-            if ($request->recipient_type === 'officer' && $actor['type'] !== 'officer') {
-                abort_unless(Officer::whereKey($request->recipient_id)->exists(), 422);
-                ConvParticipant::create([
-                    'conversation_id' => $conv->id,
-                    'officer_id' => $request->recipient_id,
-                    'participant_type' => 'officer',
-                    'status' => 'pending',
-                ]);
-            } elseif ($request->recipient_type === 'resident' && $actor['type'] !== 'resident') {
-                abort_unless(Resident::whereKey($request->recipient_id)->exists(), 422);
-                ConvParticipant::create([
-                    'conversation_id' => $conv->id,
-                    'resident_id' => $request->recipient_id,
-                    'participant_type' => 'resident',
-                    'status' => 'pending',
-                ]);
+            // Also add the selected recipient (for resident→officer or officer→resident conversations)
+            if ($request->filled('recipient_type') && $request->filled('recipient_id')) {
+                if ($request->recipient_type === 'officer' && $actor['type'] !== 'officer') {
+                    abort_unless(Officer::whereKey($request->recipient_id)->exists(), 422);
+                    ConvParticipant::create([
+                        'conversation_id' => $conv->id,
+                        'officer_id' => $request->recipient_id,
+                        'participant_type' => 'officer',
+                        'status' => 'pending',
+                    ]);
+                } elseif ($request->recipient_type === 'resident' && $actor['type'] !== 'resident') {
+                    abort_unless(Resident::whereKey($request->recipient_id)->exists(), 422);
+                    ConvParticipant::create([
+                        'conversation_id' => $conv->id,
+                        'resident_id' => $request->recipient_id,
+                        'participant_type' => 'resident',
+                        'status' => 'pending',
+                    ]);
+                }
             }
-        }
+
+            return $conv;
+        });
 
         return response()->json(['success' => true, 'conversation' => [
             'id' => $conv->id,

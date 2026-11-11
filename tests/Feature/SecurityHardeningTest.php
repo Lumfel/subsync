@@ -5,10 +5,14 @@ namespace Tests\Feature;
 use App\Models\Admin;
 use App\Models\Announcement;
 use App\Models\Household;
+use App\Models\HouseholdMember;
 use App\Models\Officer;
+use App\Models\OfficerFile;
 use App\Models\Resident;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class SecurityHardeningTest extends TestCase
@@ -25,6 +29,15 @@ class SecurityHardeningTest extends TestCase
         return Officer::create(['name' => 'Officer', 'email' => 'o@x.com', 'password' => 'Secret@12345', 'status' => 'Active']);
     }
 
+    private function pngUpload(string $name): UploadedFile
+    {
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+        $tmp = tempnam(sys_get_temp_dir(), 'av').'.png';
+        file_put_contents($tmp, $png);
+
+        return new UploadedFile($tmp, $name, 'image/png', null, true);
+    }
+
     private function resident(array $attrs = []): Resident
     {
         $house = Household::create(['block_lot_number' => 'Block 1 Lot 1']);
@@ -36,24 +49,73 @@ class SecurityHardeningTest extends TestCase
     }
 
     // ── 1. Officer account management is admin-only ──
+    public function test_household_members_are_scoped_to_the_owner_resident(): void
+    {
+        $houseA = Household::create(['block_lot_number' => 'Block 9 Lot 9']);
+        $houseB = Household::create(['block_lot_number' => 'Block 8 Lot 8']);
+        $alice = Resident::create(['name' => 'Alice', 'email' => 'alice@x.com', 'password' => 'Secret@12345', 'status' => 'Active', 'house_id' => $houseA->id]);
+        Resident::create(['name' => 'Bob', 'email' => 'bob@x.com', 'password' => 'Secret@12345', 'status' => 'Active', 'house_id' => $houseB->id]);
+
+        $member = HouseholdMember::create(['house_id' => $houseB->id, 'name' => 'Bob Jr', 'relationship' => 'Family Member']);
+
+        // Alice cannot see, edit, or delete Bob's household members.
+        $this->actingAs($alice, 'resident')->getJson('/api/household-members?house_id='.$houseB->id)
+            ->assertOk()->assertJsonCount(0);
+        $this->actingAs($alice, 'resident')->putJson('/api/household-members/'.$member->id, ['name' => 'Hacked'])
+            ->assertStatus(403);
+        $this->actingAs($alice, 'resident')->deleteJson('/api/household-members/'.$member->id)
+            ->assertStatus(403);
+
+        // A spoofed house_id on create is ignored — it lands in Alice's household.
+        $this->actingAs($alice, 'resident')->postJson('/api/household-members', ['house_id' => $houseB->id, 'name' => 'Cousin'])
+            ->assertOk();
+        $this->assertDatabaseHas('household_members', ['name' => 'Cousin', 'house_id' => $houseA->id]);
+
+        // Staff may manage any household's members (admin dashboard feature).
+        $admin = $this->admin();
+        $this->withSession(['admin_id' => $admin->id])
+            ->putJson('/api/household-members/'.$member->id, ['name' => 'Bob Jr II'])
+            ->assertOk();
+    }
+
+    public function test_officer_can_rename_themselves_but_not_change_their_own_status(): void
+    {
+        $officer = $this->officer();
+
+        $this->actingAs($officer, 'officer')
+            ->putJson('/api/officers/'.$officer->id, ['name' => 'Renamed Officer'])
+            ->assertOk();
+
+        $this->assertSame('Renamed Officer', $officer->fresh()->name);
+
+        // Self-update must ignore status (approval stays admin-only).
+        $this->actingAs($officer, 'officer')
+            ->putJson('/api/officers/'.$officer->id, ['status' => 'Inactive'])
+            ->assertOk();
+
+        $this->assertSame('Active', $officer->fresh()->status);
+    }
+
     public function test_officer_cannot_manage_officer_accounts(): void
     {
         $officer = $this->officer();
+        $other = Officer::create(['name' => 'Other', 'email' => 'other@x.com', 'password' => 'Secret@12345', 'status' => 'Active']);
 
         $this->actingAs($officer, 'officer')
             ->postJson('/api/officers', ['name' => 'Evil', 'email' => 'evil@x.com', 'password' => 'Secret@12345'])
             ->assertForbidden();
 
+        // Cannot modify or delete OTHER officers (renaming themselves is allowed).
         $this->actingAs($officer, 'officer')
-            ->putJson("/api/officers/{$officer->id}", ['role_description' => 'HOA President'])
+            ->putJson("/api/officers/{$other->id}", ['name' => 'Hacked'])
             ->assertForbidden();
 
         $this->actingAs($officer, 'officer')
-            ->deleteJson("/api/officers/{$officer->id}")
+            ->deleteJson("/api/officers/{$other->id}")
             ->assertForbidden();
 
         $this->assertDatabaseMissing('officers', ['email' => 'evil@x.com']);
-        $this->assertSame('Active', $officer->fresh()->status);
+        $this->assertSame('Other', $other->fresh()->name);
     }
 
     public function test_admin_can_manage_officer_accounts(): void
@@ -243,5 +305,66 @@ class SecurityHardeningTest extends TestCase
         foreach ($list as $officer) {
             $this->assertArrayNotHasKey('role_description', $officer);
         }
+    }
+
+    // ── 12. Officer files are scoped to their sender ──
+    public function test_officers_can_only_manage_their_own_files(): void
+    {
+        Storage::fake('public');
+
+        $alice = $this->officer();
+        $bob = Officer::create(['name' => 'Bob Officer', 'email' => 'bob.o@x.com', 'password' => 'Secret@12345', 'status' => 'Active']);
+
+        $file = OfficerFile::create([
+            'officer_id' => $bob->id, 'officer_name' => 'Bob Officer',
+            'original_name' => 'bob-report.xlsx', 'category' => 'Report',
+            'size_bytes' => 100, 'file_path' => 'officer-files/bob.xlsx', 'archived' => false,
+        ]);
+
+        // Another officer cannot delete or archive it.
+        $this->actingAs($alice, 'officer')->deleteJson('/api/officer-files/'.$file->id)->assertStatus(403);
+        $this->actingAs($alice, 'officer')->patchJson('/api/officer-files/'.$file->id.'/archive')->assertStatus(403);
+
+        // The uploader can.
+        $this->actingAs($bob, 'officer')->patchJson('/api/officer-files/'.$file->id.'/archive')->assertOk();
+        $this->actingAs($bob, 'officer')->deleteJson('/api/officer-files/'.$file->id)->assertOk();
+    }
+
+    public function test_officer_file_index_is_scoped_to_the_sender(): void
+    {
+        $alice = $this->officer();
+        $bob = Officer::create(['name' => 'Bob Officer', 'email' => 'bob.o@x.com', 'password' => 'Secret@12345', 'status' => 'Active']);
+
+        foreach ([['alice', $alice], ['bob', $bob]] as [$by, $owner]) {
+            OfficerFile::create([
+                'officer_id' => $owner->id, 'officer_name' => $owner->name,
+                'original_name' => $by.'-report.xlsx', 'category' => 'Report',
+                'size_bytes' => 100, 'file_path' => 'officer-files/'.$by.'.xlsx', 'archived' => false,
+            ]);
+        }
+
+        // Each officer only sees their own file; the admin sees both.
+        $this->actingAs($alice, 'officer')->getJson('/api/officer-files')->assertOk()->assertJsonCount(1);
+        $this->actingAs($bob, 'officer')->getJson('/api/officer-files')->assertOk()->assertJsonCount(1);
+
+        $admin = $this->admin();
+        $this->withSession(['admin_id' => $admin->id, 'admin_name' => 'Admin'])
+            ->getJson('/api/officer-files')->assertOk()->assertJsonCount(2);
+    }
+
+    // ── 13. Officer avatar upload ──
+    public function test_officer_can_update_own_avatar(): void
+    {
+        Storage::fake('public');
+
+        $officer = $this->officer();
+
+        $this->actingAs($officer, 'officer')
+            ->withHeaders(['Accept' => 'application/json'])
+            ->post('/api/officers/avatar', ['avatar' => $this->pngUpload('me.png')])
+            ->assertOk()
+            ->assertJson(['success' => true]);
+
+        $this->assertNotNull($officer->fresh()->avatar);
     }
 }

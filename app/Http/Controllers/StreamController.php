@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\IssueReport;
 use App\Models\SseEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class StreamController extends Controller
 {
@@ -29,6 +31,16 @@ class StreamController extends Controller
         // it will get a "sync" event telling it to load fresh data once.
         $freshConnect = $lastEventId === 0;
 
+        // Role-aware visibility (same rules as the private WebSocket channel):
+        // residents receive community events plus their own records only.
+        $me = [
+            'role' => session('admin_id') ? 'admin' : (Auth::guard('officer')->check() ? 'officer' : (Auth::guard('resident')->check() ? 'resident' : 'guest')),
+            'id' => (int) (Auth::guard('officer')->id() ?? Auth::guard('resident')->id() ?? 0),
+        ];
+
+        // Tests (and flaky clients) may shorten the hold window: ?max=1
+        $maxSeconds = min(5, max(1, (int) $request->query('max', 5)));
+
         // CRITICAL: Save and release the Laravel session lock immediately!
         // If we don't do this, the session driver will lock the session for the
         // entire duration of this SSE connection, blocking the user from loading
@@ -39,24 +51,33 @@ class StreamController extends Controller
         }
 
         return response()->stream(
-            function () use ($lastEventId, $freshConnect) {
+            function () use ($lastEventId, $freshConnect, $me, $maxSeconds) {
                 set_time_limit(0);
                 ignore_user_abort(false);
 
                 while (ob_get_level() > 0) {
+                    $status = ob_get_status();
+
+                    // Only drain PHP's own SAPI buffering (ini output_buffering,
+                    // handler name "default output handler"). Never pop callback
+                    // buffers — the test harness wraps the stream in one and
+                    // expects to collect it afterwards.
+                    if (! $status || ($status['name'] ?? '') !== 'default output handler') {
+                        break;
+                    }
+
                     ob_end_clean();
                 }
 
                 // Send an immediate sync so brand-new tabs load fresh data right away.
                 if ($freshConnect) {
                     echo "event: sync\n";
-                    echo "data: " . json_encode(['reason' => 'fresh']) . "\n\n";
+                    echo 'data: '.json_encode(['reason' => 'fresh'])."\n\n";
                     flush();
                 }
 
-                $maxSeconds = 5;
-                $elapsed    = 0;
-                $lastId     = $lastEventId;
+                $elapsed = 0;
+                $lastId = $lastEventId;
 
                 while ($elapsed < $maxSeconds) {
                     if (connection_aborted()) {
@@ -73,6 +94,13 @@ class StreamController extends Controller
                         foreach ($events as $evt) {
                             $payload = $evt->data ?? [];
 
+                            // Skip events this role must not see (still advance the cursor).
+                            if (! $this->deliverable($evt->event, is_array($payload) ? $payload : [], $me)) {
+                                $lastId = $evt->id;
+
+                                continue;
+                            }
+
                             if ($evt->channel === 'issue_reports' && $evt->event === 'issue') {
                                 // Include urgent flag without a 4th query: recompute only
                                 // on issue events, and only for unresolved high/critical.
@@ -80,7 +108,7 @@ class StreamController extends Controller
                             }
 
                             echo "event: {$evt->event}\n";
-                            echo 'data: ' . json_encode($payload) . "\n\n";
+                            echo 'data: '.json_encode($payload)."\n\n";
 
                             $lastId = $evt->id;
                         }
@@ -97,17 +125,40 @@ class StreamController extends Controller
 
                 // Tell the client to reconnect immediately (passing the last event ID).
                 echo "event: reconnect\n";
-                echo 'data: ' . json_encode(['lastEventId' => $lastId]) . "\n\n";
+                echo 'data: '.json_encode(['lastEventId' => $lastId])."\n\n";
                 flush();
             },
             200,
             [
-                'Content-Type'      => 'text/event-stream',
-                'Cache-Control'     => 'no-cache, no-store, must-revalidate',
+                'Content-Type' => 'text/event-stream',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
                 'X-Accel-Buffering' => 'no',
-                'Connection'        => 'keep-alive',
+                'Connection' => 'keep-alive',
             ]
         );
+    }
+
+    /**
+     * Role-aware visibility for bus events (mirrors the private WS channel).
+     * Residents get community events plus their OWN records; staff get all;
+     * connections without a session get nothing.
+     */
+    protected function deliverable(string $event, array $payload, array $me): bool
+    {
+        if ($me['role'] === 'admin' || $me['role'] === 'officer') {
+            return true;
+        }
+
+        if ($me['role'] !== 'resident') {
+            return false;
+        }
+
+        return match ($event) {
+            'officer', 'officer-file' => false,
+            'payment', 'recommendation' => (int) ($payload['residentId'] ?? 0) === $me['id'],
+            'resident' => (int) ($payload['latestId'] ?? 0) === $me['id'],
+            default => true,
+        };
     }
 
     /**
@@ -120,7 +171,7 @@ class StreamController extends Controller
             return false;
         }
 
-        return \App\Models\IssueReport::where('id', $issueId)
+        return IssueReport::where('id', $issueId)
             ->whereIn('priority', ['Critical', 'High'])
             ->where('status', '!=', 'Resolved')
             ->exists();

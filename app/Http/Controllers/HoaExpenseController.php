@@ -20,12 +20,24 @@ class HoaExpenseController extends Controller
         });
     }
 
+    /** GET /api/hoa-expenses/{id}/receipt — stream the stored receipt (all signed-in portals). */
+    public function receipt(int $id)
+    {
+        $expense = HoaExpense::findOrFail($id);
+        abort_unless($expense->receipt_path, 404);
+
+        $disk = Storage::disk('local')->exists($expense->receipt_path) ? 'local' : 'public';
+        abort_unless(Storage::disk($disk)->exists($expense->receipt_path), 404);
+
+        return response()->file(Storage::disk($disk)->path($expense->receipt_path));
+    }
+
     /** POST /api/hoa-expenses — admin records an expense. */
     public function store(Request $request)
     {
         $data = $this->validateData($request);
         if ($request->hasFile('receipt')) {
-            $data['receipt_path'] = $request->file('receipt')->store('hoa-expenses', 'public');
+            $data['receipt_path'] = $request->file('receipt')->store('hoa-expenses', 'local');
         }
         unset($data['receipt']);
         $data['status'] = $data['status'] ?? 'Approved';
@@ -45,9 +57,9 @@ class HoaExpenseController extends Controller
 
         if ($request->hasFile('receipt')) {
             if ($expense->receipt_path) {
-                Storage::disk('public')->delete($expense->receipt_path);
+                $this->deleteStoredReceipt($expense->receipt_path);
             }
-            $data['receipt_path'] = $request->file('receipt')->store('hoa-expenses', 'public');
+            $data['receipt_path'] = $request->file('receipt')->store('hoa-expenses', 'local');
         }
         unset($data['receipt']);
 
@@ -62,12 +74,22 @@ class HoaExpenseController extends Controller
     {
         $expense = HoaExpense::findOrFail($id);
         if ($expense->receipt_path) {
-            Storage::disk('public')->delete($expense->receipt_path);
+            $this->deleteStoredReceipt($expense->receipt_path);
         }
         $expense->delete();
         Cache::forget('hoa.expenses');
 
         return response()->json(['success' => true]);
+    }
+
+    /** Remove a stored receipt from whichever disk holds it (private or legacy public). */
+    private function deleteStoredReceipt(string $path): void
+    {
+        foreach (['local', 'public'] as $disk) {
+            if (Storage::disk($disk)->exists($path)) {
+                Storage::disk($disk)->delete($path);
+            }
+        }
     }
 
     private function validateData(Request $request): array
@@ -77,8 +99,8 @@ class HoaExpenseController extends Controller
             'description' => 'required|string',
             'amount' => 'required|numeric|min:0.01|max:100000000',
             'expense_date' => 'required|date',
-            'category' => 'required|string|max:100',
-            'status' => 'nullable|string|max:50',
+            'category' => 'required|in:Maintenance,Utilities,Security,Landscaping,Amenities,Insurance,Administrative,Events,Other',
+            'status' => 'nullable|in:Approved,Pending,Paid',
             'fund' => 'nullable|in:Operating,Reserve',
             'receipt' => 'nullable|image|max:8192',
         ]);
@@ -96,7 +118,7 @@ class HoaExpenseController extends Controller
             'status' => $e->status,
             'fund' => $e->fund ?: 'Operating',
             'has_receipt' => (bool) $e->receipt_path,
-            'receipt_url' => $e->receipt_path ? Storage::url($e->receipt_path) : null,
+            'receipt_url' => $e->receipt_path ? '/api/hoa-expenses/'.$e->id.'/receipt' : null,
             'created_at' => $e->created_at?->format('M d, Y'),
         ];
     }

@@ -20,7 +20,7 @@
 <meta name="theme-color" content="#86653D">
   <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
   <script src="{{ asset('js/pwa.js') . '?v=' . filemtime(public_path('js/pwa.js')) }}" defer></script>
-  <script>window.__PORTAL = @json($role ?? ''); window.__PREFS = @json($prefs ?? []); window.__ACTOR = @json($role ?? '');</script>
+  <script>window.__PORTAL = @json($role ?? ''); window.__PREFS = @json($prefs ?? []); window.__ACTOR = @json($role ?? ''); window.__OFFICER_ID = {{ (int) ($officerId ?? 0) }}; window.__OFFICER_NAME = @json($officerName ?? 'Officer');</script>
   <script src="{{ asset('js/ui.js') . '?v=' . filemtime(public_path('js/ui.js')) }}"></script>
   @vite('resources/js/app.js')
 </head>
@@ -49,6 +49,7 @@
     <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview"><x-icon name="home" size="15"/> Overview</li>
     <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports"><x-icon name="clipboard" size="15"/> Issues</li>
     <li class="tab-btn" onclick="switchTab('announcements')" id="tab-announcements"><x-icon name="megaphone" size="15"/> Announcements</li>
+    <li class="tab-btn" onclick="switchTab('calendar')" id="tab-calendar"><x-icon name="calendar" size="15"/> Calendar</li>
     <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages"><x-icon name="message" size="15"/> Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
     <li class="tab-btn" onclick="switchTab('files')" id="tab-files"><x-icon name="folder" size="15"/> Documents</li>
     <li class="tab-btn" onclick="switchTab('map')" id="tab-map"><x-icon name="map" size="15"/> Map</li>
@@ -56,27 +57,33 @@
 
   <!-- Sidebar tools: search + notifications -->
   <div class="sidebar-tools">
-    <button type="button" class="nc-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)" aria-label="Search">&#128269;</button>
+    <button type="button" class="nc-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)" aria-label="Search"><x-icon name="search" size="14"/></button>
     @include('partials.notification-center')
   </div>
 
   <!-- Sidebar Profile Card -->
   <div class="sidebar-profile" style="text-align:center;">
     <div class="avatar-wrap" onclick="document.getElementById('avatarInput').click()" style="margin: 0 auto 12px; width:64px;">
-      <img id="avatarPreview" src="https://ui-avatars.com/api/?name={{ urlencode($officerName) }}&amp;background=2a6acc&amp;color=fff&amp;size=120" alt="Officer" style="width:64px; height:64px; border-radius:50%; border: 2px solid var(--glass-border);">
+      <img id="avatarPreview" src="{{ $avatar ?: 'https://ui-avatars.com/api/?name='.urlencode($officerName).'&background=2a6acc&color=fff&size=120' }}" alt="Officer" style="width:64px; height:64px; border-radius:50%; border: 2px solid var(--glass-border); object-fit:cover;">
       <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)" style="display:none;">
     </div>
     <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="officerName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $officerName }}</div>
     <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Officer</div>
     
     <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'officer' }}"></form>
-    <a href="{{ url('settings') }}?portal={{ $role ?? 'officer' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;">&#9881; Settings</a>
+    <a href="{{ url('settings') }}?portal={{ $role ?? 'officer' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;"><x-icon name="gear" size="13"/> Settings</a>
     <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:8px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
 </aside>
 
 <!-- Right Main Workspace -->
 <main class="main">
+  <!-- Emergency alert banner (shown on critical issues) -->
+  <div id="emergencyAlert" style="display:none;">
+    <x-icon name="alert" size="16"/> <span id="emergencyAlertText">CRITICAL ISSUE REPORTED</span>
+    &nbsp;&nbsp;<button onclick="switchTab('reports');dismissEmergency()" style="background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.4);color:#fff;padding:3px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-weight:600;">View Issue</button>
+    &nbsp;<button aria-label="Dismiss" onclick="dismissEmergency()" style="background:transparent;border:none;color:rgba(255,255,255,0.7);font-size:16px;cursor:pointer;line-height:1;">✕</button>
+  </div>
   <!-- ═══════════ OVERVIEW ═══════════ -->
   <div class="tab-panel active" id="panel-overview">
     <div class="bento-grid">
@@ -117,10 +124,10 @@
       <div class="card bento-col-4">
         <div class="card-title">Quick Actions</div>
         <div class="card-subtitle">Jump to the task you need to work on.</div>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('announcements')"><x-icon name="megaphone" size="15"/> Post Announcement</button>
-          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('reports')"><x-icon name="clipboard" size="15"/> Resolve Issues</button>
-          <button class="btn btn-full" style="text-align:left;" onclick="switchTab('files')"><x-icon name="upload" size="15"/> Send Report File</button>
+        <div class="quick-stack">
+          <button class="btn btn-full" onclick="switchTab('announcements')"><x-icon name="megaphone" size="15"/> Post Announcement</button>
+          <button class="btn btn-full" onclick="switchTab('reports')"><x-icon name="clipboard" size="15"/> Resolve Issues</button>
+          <button class="btn btn-full" onclick="switchTab('files')"><x-icon name="upload" size="15"/> Send Report File</button>
         </div>
       </div>
     </div>
@@ -131,6 +138,13 @@
     <div class="card" style="margin-top:0;">
       <div class="card-title">Create Announcement</div>
       <div class="card-subtitle">Write a notice, then choose who should see it and when.</div>
+      <!-- Template quick-fill (built-in presets, replaced by DB templates when seeded) -->
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;" id="officerAnnTemplateRow">
+        <span style="font-size:11px;color:var(--text-dim);align-self:center;white-space:nowrap;">Template:</span>
+        <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('notice')"><x-icon name="clipboard" size="13"/> Notice</button>
+        <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('urgent')"><x-icon name="alert" size="13"/> Urgent</button>
+        <button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplate('event')"><x-icon name="calendar" size="13"/> Event</button>
+      </div>
       <div class="f-row">
         <div class="f-field">
           <span class="f-label">Type</span>
@@ -177,7 +191,10 @@
           <textarea id="annBody" placeholder="Write the full announcement here…"></textarea>
         </div>
       </div>
-      <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,postAnnouncement):postAnnouncement()"><x-icon name="megaphone" size="15"/> Post Announcement</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-full" style="flex:1;" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,postAnnouncement):postAnnouncement()"><x-icon name="megaphone" size="15"/> Post Announcement</button>
+        <button class="btn btn-full" style="flex:1;background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);" onclick="saveAnnDraft()"><x-icon name="file" size="15"/> Save as Draft</button>
+      </div>
     </div>
 
     <div class="card">
@@ -186,12 +203,26 @@
     </div>
   </div>
 
+  <!-- ═══════════ CALENDAR ═══════════ -->
+  <div class="tab-panel" id="panel-calendar">
+    <div class="card" style="margin-top:0;">
+      <div class="card-title">Community Calendar</div>
+      <div class="card-subtitle">Upcoming HOA events and meetings. Residents RSVP from their portal.</div>
+      <div id="officerEventList" style="margin-top:12px;"><div class="empty-state">Loading…</div></div>
+    </div>
+  </div>
+
   <!-- ═══════════ REPORTS ═══════════ -->
   <div class="tab-panel" id="panel-reports">
     <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;flex-wrap:wrap;gap:10px; margin-top:0;">
       <div class="card-title" style="margin:0;">Issues</div>
       <div class="card-subtitle" style="margin-top:4px;">Reports submitted by residents. Tap one to respond and update its status.</div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <select id="officerIssueAssigneeFilter" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
+          <option value="">All Assignments</option>
+          <option value="mine">Assigned to Me</option>
+          <option value="unassigned">Unassigned</option>
+        </select>
         <select id="officerIssueFilter" onchange="renderOfficerIssues()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
           <option value="">All Statuses</option>
           <option value="Pending">Pending</option>
@@ -216,6 +247,7 @@
       <div class="modal-box">
         <div class="modal-title">Respond to Issue</div>
         <div id="officerRespondTitle" style="font-size:14px;color:var(--text-mid);margin-bottom:12px;"></div>
+        <div id="officerRespondMedia" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px;"></div>
         <div class="f-field" style="margin-bottom:12px;">
           <span class="f-label">Update Status</span>
           <select id="officerRespondStatus" style="background:rgba(255,255,255,0.07);border:1px solid var(--glass-border);color:var(--text);padding:8px;border-radius:6px;width:100%;">
@@ -233,6 +265,17 @@
             <option value="Critical">Critical</option>
           </select>
         </div>
+        <div class="f-field" style="margin-bottom:12px;">
+          <span class="f-label">Assign To</span>
+          <select id="officerRespondAssignee" style="background:rgba(255,255,255,0.07);border:1px solid var(--glass-border);color:var(--text);padding:8px;border-radius:6px;width:100%;">
+            <option value="">Unassigned</option>
+          </select>
+        </div>
+        <div class="f-field" style="margin-bottom:12px;">
+          <span class="f-label">Due Date (SLA)</span>
+          <input type="date" id="officerRespondDue">
+        </div>
+        <div id="officerRespondHistory" style="display:none;margin-bottom:12px;max-height:150px;overflow-y:auto;background:rgba(43,41,39,0.03);border:1px solid var(--glass-border);border-radius:8px;padding:10px 12px;font-size:12px;"></div>
         <div class="f-field">
           <span class="f-label">Response / Notes</span>
           <textarea id="officerRespondText" placeholder="Enter your response…" style="min-height:100px;"></textarea>
@@ -295,7 +338,7 @@
   <!-- ═══════════ FILES ═══════════ -->
   <div class="tab-panel" id="panel-files">
     <div class="card" style="margin-top:0;">
-      <div class="card-title">Send Excel File to Admin</div>
+      <div class="card-title">Send Report File to Admin</div>
       <div class="card-subtitle">Upload a file for the admin. The files you already sent are listed below.</div>
       <div class="upload-zone" id="uploadZone"
         onclick="document.getElementById('fileUploadInput').click()"
@@ -304,8 +347,8 @@
         ondrop="handleDrop(event)">
         <div class="upload-icon"><x-icon name="upload" size="26"/></div>
         <div class="upload-label">Click to upload or drag &amp; drop</div>
-        <div class="upload-sub">Supports .xlsx, .xls, .csv · Max 10 MB</div>
-        <input type="file" id="fileUploadInput" accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this)">
+        <div class="upload-sub">Supports Excel, CSV, PDF, Word, or images · Max 10 MB</div>
+        <input type="file" id="fileUploadInput" accept=".xlsx,.xls,.csv,.pdf,.doc,.docx,.png,.jpg,.jpeg,.gif,.webp" onchange="handleFileSelect(this)">
       </div>
 
       <div id="selectedFilePreview" style="display:none;" class="file-item">
@@ -326,6 +369,7 @@
             <option>Maintenance Log</option>
             <option>Community Survey Results</option>
             <option>Budget Report</option>
+            <option>Subdivision Project Documents</option>
             <option>Other</option>
           </select>
         </div>

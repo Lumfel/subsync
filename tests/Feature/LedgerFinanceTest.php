@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Mail\PaymentReminderMail;
 use App\Models\Admin;
 use App\Models\Assessment;
 use App\Models\Budget;
@@ -9,13 +10,73 @@ use App\Models\FinancialRecord;
 use App\Models\HoaExpense;
 use App\Models\PaymentSubmission;
 use App\Models\Resident;
+use App\Models\UserSetting;
 use App\Support\Ledger;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 class LedgerFinanceTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_monthly_balance_reminder_emails_only_residents_who_owe(): void
+    {
+        Mail::fake();
+
+        $owing = $this->resident();
+        $this->due($owing->id, 500);
+        Ledger::reconcile($owing->id);
+
+        $settled = $this->resident();
+        $this->due($settled->id, 300);
+        FinancialRecord::create([
+            'resident_id' => $settled->id, 'record_type' => 'Payment', 'description' => 'GCash payment',
+            'amount' => 300, 'record_date' => now()->toDateString(),
+        ]);
+        Ledger::reconcile($settled->id);
+
+        Resident::create([
+            'name' => 'Pending P', 'email' => 'pending@example.test',
+            'password' => 'Secret@12345', 'status' => 'Pending', 'current_balance' => 100,
+        ]);
+
+        $this->artisan('subsync:remind-balances')->assertSuccessful();
+
+        Mail::assertSentCount(1);
+        Mail::assertSent(
+            PaymentReminderMail::class,
+            fn ($m) => $m->hasTo($owing->email) && $m->balance === 500.0
+        );
+    }
+
+    public function test_balance_reminders_respect_the_email_opt_out(): void
+    {
+        Mail::fake();
+
+        $resident = $this->resident();
+        $this->due($resident->id, 500);
+        Ledger::reconcile($resident->id);
+
+        // The resident turned "Email copies" off in Settings.
+        UserSetting::resolve('resident', $resident->id)->update(['email_notifications' => false]);
+
+        $this->artisan('subsync:remind-balances')->assertSuccessful();
+
+        Mail::assertNothingSent();
+    }
+
+    public function test_balance_reminder_is_a_clean_no_op_when_everyone_is_paid_up(): void
+    {
+        Mail::fake();
+
+        $this->resident(); // balance 0
+
+        $this->artisan('subsync:remind-balances')->assertSuccessful();
+
+        Mail::assertNothingSent();
+    }
 
     private function admin(): Admin
     {
@@ -161,7 +222,7 @@ class LedgerFinanceTest extends TestCase
     public function test_finance_endpoints_are_strict_model_safe(): void
     {
         // Dev runs Model::shouldBeStrict(); reproduce the missing-attribute guard.
-        \Illuminate\Database\Eloquent\Model::preventAccessingMissingAttributes(true);
+        Model::preventAccessingMissingAttributes(true);
         try {
             $admin = $this->admin();
             $r = $this->resident();
@@ -178,7 +239,7 @@ class LedgerFinanceTest extends TestCase
                     ->assertOk();
             }
         } finally {
-            \Illuminate\Database\Eloquent\Model::preventAccessingMissingAttributes(false);
+            Model::preventAccessingMissingAttributes(false);
         }
     }
 }

@@ -110,7 +110,9 @@ return [
     */
 
     'passwords' => [
-        'users' => [
+        // Keyed "residents" to match defaults.passwords (AUTH_PASSWORD_BROKER);
+        // a "users" key here made Password::broker() throw.
+        'residents' => [
             'provider' => 'residents',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,

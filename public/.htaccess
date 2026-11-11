@@ -1,8 +1,13 @@
-<IfModule mod_rewrite.c>
-    <IfModule mod_negotiation.c>
-        Options -MultiViews -Indexes
-    </IfModule>
+# Directory listings stay off even if mod_negotiation is unavailable
+# (the original nested it under mod_negotiation, so it silently vanished).
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+<IfModule mod_negotiation.c>
+    Options -MultiViews
+</IfModule>
 
+<IfModule mod_rewrite.c>
     RewriteEngine On
 
     # Handle Authorization Header
@@ -98,4 +103,14 @@
     Header set X-Content-Type-Options "nosniff"
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "geolocation=(self), camera=(self), microphone=(), payment=()"
+    Header always set Strict-Transport-Security "max-age=31536000"
+
+    # Content Security Policy. The Blade app ships inline bootstrap scripts and
+    # inline style attributes, so 'unsafe-inline' is required for script/style;
+    # every external origin the app actually uses is named explicitly, so no
+    # arbitrary third-party script/image host can be injected.
+    # The localhost:5173 allowances are for the Vite dev server used by `composer run dev`;
+    # they can be dropped from the production header.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' http://localhost:5173 http://127.0.0.1:5173; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://ui-avatars.com https://*.googleusercontent.com https://*.tile.openstreetmap.org; connect-src 'self' ws: wss: http://localhost:5173 ws://localhost:5173; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'"
 </IfModule>

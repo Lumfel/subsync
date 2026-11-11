@@ -11,7 +11,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"></noscript>
-<link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') . '?v=' . filemtime(public_path('css/admin-dashboard.css')) }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -130,76 +129,103 @@
 
     <!-- ══════════ DASHBOARD ══════════ -->
     <div class="panel active" id="panel-dashboard">
-      <!-- Pending registration notice (shown only when count > 0) -->
-      <div id="pendingNotice" style="display:none;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.35);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:none;align-items:center;gap:14px;flex-wrap:wrap;">
-        <span style="font-size:20px;">⏳</span>
-        <div style="flex:1;min-width:160px;">
-          <div style="font-weight:600;font-size:14px;color:#f59e0b;">Pending Account Registrations</div>
-          <div style="font-size:12px;color:var(--text-dim);margin-top:2px;"><span id="pendingNoticeCount">0</span> resident(s) have submitted registration requests and are waiting for your approval.</div>
-        </div>
-        <button class="btn btn-sm" style="background:#f59e0b;border-color:#f59e0b;color:#1a100a;" onclick="nav('residents',null)">Review Now →</button>
-      </div>
-
-      <!-- Quick actions -->
-      <div class="card" style="margin-bottom:16px;padding:18px 20px;">
-        <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-dim);margin-bottom:12px;">Quick Actions</div>
-        <div class="quick-actions">
-          <button class="qa-btn" onclick="nav('announcements',null)"><span class="qa-icon"><x-icon name="megaphone" size="16"/></span> Post Announcement</button>
-          <button class="qa-btn" onclick="nav('residents',null)"><span class="qa-icon"><x-icon name="users" size="16"/></span> Approve Residents</button>
-          <button class="qa-btn" onclick="nav('issues',null)"><span class="qa-icon"><x-icon name="wrench" size="16"/></span> Respond to Issues</button>
-          <button class="qa-btn" onclick="SubUI.openSearch()"><span class="qa-icon"><x-icon name="search" size="16"/></span> Quick Search</button>
-        </div>
-      </div>
-
-      <!-- BENTO GRID -->
-      <div class="bento-grid">
-        <!-- Bento A: Greeting Banner (Span 12) -->
-        <div class="card bento-col-12" style="background: linear-gradient(135deg, #FAF4E7, #FAF6F0); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
-          <div>
-            <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:6px;">SubSync Administration Portal</h1>
-            <p style="font-size:13px; color:#7D7975;">Manage residents, resolve issues, monitor finances, and communicate with your community — all in one place.</p>
+      <!-- Daily Action Center (displays when registrations, payments, or critical issues need triage) -->
+      <div id="adminActionCenter" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(134,101,61,0.08));border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:14px 18px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);">
+            <x-icon name="bell" size="16"/> Action Center · Items Requiring Attention
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button class="btn" onclick="openModal('ann')"><x-icon name="megaphone" size="16"/> Post Notice</button>
-            <button class="btn" style="background:#2B2927; color:#fff; border-color:#2B2927;" onclick="nav('residents',null)"><x-icon name="users" size="16"/> Verify Residents</button>
-          </div>
+          <span style="font-size:11px;color:var(--text-dim);" id="actionCenterSummary">—</span>
         </div>
-
-        <!-- Bento B: Metrics Sub-Grid (Span 8) -->
-        <div class="bento-col-8 bento-metrics-grid">
-          <div class="card" onclick="nav('residents',null)" style="cursor:pointer; text-align: center;">
-            <div class="card-title" style="justify-content:center;">Total Residents</div>
-            <div style="font-size:36px; font-weight:700; color:#2B2927; margin: 10px 0 6px;" id="statResidents">—</div>
-            <div style="font-size:11px; color:#7D7975;"><span id="statActive">0</span> verified accounts</div>
-          </div>
-
-          <div class="card" onclick="nav('issues',null)" style="cursor:pointer; text-align: center;">
-            <div class="card-title" style="justify-content:center;">Open Issues</div>
-            <div style="font-size:36px; font-weight:700; color:#f08080; margin: 10px 0 6px;" id="statIssues">—</div>
-            <div style="font-size:11px; color:#7D7975;">requires resolution</div>
-          </div>
-        </div>
-
-        <!-- Bento C: Approvals (Span 4) -->
-        <div class="bento-col-4" style="display: flex; flex-direction: column; gap: 24px;">
-          <div class="card" onclick="nav('residents',null)" id="pendingStatCard" style="cursor:pointer; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-left: 3px solid #f59e0b;">
-            <div>
-              <div class="card-title" style="margin-bottom:4px; color:#f59e0b;">Pending Accounts</div>
-              <div style="font-size:22px; font-weight:700; color:#f59e0b;" id="statPending">0</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:10px;" id="actionCenterItems">
+          <!-- Pending Registrations Item -->
+          <div id="actionItemRegistrations" style="display:none;background:#fff;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:10px 14px;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="color:#f59e0b;"><x-icon name="users" size="18"/></span>
+              <div>
+                <div style="font-weight:600;font-size:13px;"><span id="actionPendingResCount">0</span> Registration(s)</div>
+                <div style="font-size:11px;color:var(--text-dim);">Awaiting account approval</div>
+              </div>
             </div>
-            <span style="font-size:24px;">⏳</span>
+            <button class="btn btn-sm" onclick="nav('residents',null)" style="background:#f59e0b;color:#1a100a;border:none;">Review</button>
+          </div>
+          <!-- Pending GCash Payments Item -->
+          <div id="actionItemPayments" style="display:none;background:#fff;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:10px 14px;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="color:var(--green);"><x-icon name="coins" size="18"/></span>
+              <div>
+                <div style="font-weight:600;font-size:13px;"><span id="actionPendingPayCount">0</span> Payment(s)</div>
+                <div style="font-size:11px;color:var(--text-dim);">In GCash validation queue</div>
+              </div>
+            </div>
+            <button class="btn btn-sm" onclick="nav('gcash',null);setTimeout(()=>{financeTab('settings');},150);" style="background:var(--green);color:#fff;border:none;">Validate</button>
+          </div>
+          <!-- Critical / Overdue Issues Item -->
+          <div id="actionItemIssues" style="display:none;background:#fff;border:1px solid rgba(0,0,0,0.06);border-radius:8px;padding:10px 14px;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="color:#ff5555;"><x-icon name="alert" size="18"/></span>
+              <div>
+                <div style="font-weight:600;font-size:13px;"><span id="actionUrgentIssueCount">0</span> Urgent/Overdue</div>
+                <div style="font-size:11px;color:var(--text-dim);">Issues needing assignment</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="nav('issues',null)" style="border:none;">Triage</button>
+          </div>
+        </div>
+      </div>
+      <div id="pendingNotice" style="display:none;"><span id="pendingNoticeCount">0</span></div>
+
+      <!-- BENTO GRID (officer-portal rhythm) -->
+      <div class="bento-grid">
+        <!-- Greeting (Span 8) -->
+        <div class="card bento-col-8" style="display:flex; flex-direction:column; justify-content:center;">
+          <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:8px;">Hello, {{ explode(' ', $adminName)[0] }} 👋</h1>
+          <p style="font-size:13px; color:var(--text-dim); line-height:1.6;">Manage residents, resolve issues, monitor finances, and communicate with your community.</p>
+        </div>
+
+        <!-- Quick stats (Span 4, 2x2 like the officer portal) -->
+        <div class="bento-col-4" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;">
+          <div class="card" onclick="nav('residents',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Residents</div>
+            <div style="font-size:22px;font-weight:700;color:var(--blue);" id="statResidents">—</div>
+          </div>
+          <div class="card" onclick="nav('residents',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Verified</div>
+            <div style="font-size:22px;font-weight:700;color:var(--green);" id="statActive">—</div>
+          </div>
+          <div class="card" onclick="nav('issues',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Open Issues</div>
+            <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="statIssues">—</div>
+          </div>
+          <div class="card" onclick="nav('residents',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
+            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Pending</div>
+            <div style="font-size:22px;font-weight:700;color:var(--accent);" id="statPending">0</div>
           </div>
         </div>
 
-        <!-- Bento D: Live Feed (Span 8) -->
+        <!-- Recent Activity Feed (Span 8) -->
         <div class="card bento-col-8">
           <div class="card-title">Recent Activity Feed</div>
+          <div class="card-subtitle">The latest actions across the subdivision.</div>
           <div id="activityFeed"></div>
         </div>
 
-        <!-- Bento F: Issue Reports (Span 12) -->
+        <!-- Quick Actions (Span 4) -->
+        <div class="card bento-col-4">
+          <div class="card-title">Quick Actions</div>
+          <div class="card-subtitle">Jump to the task you need to work on.</div>
+          <div class="quick-stack">
+            <button class="btn btn-full" onclick="nav('announcements',null)"><x-icon name="megaphone" size="15"/> Post Announcement</button>
+            <button class="btn btn-full" onclick="nav('residents',null)"><x-icon name="users" size="15"/> Approve Residents</button>
+            <button class="btn btn-full" onclick="nav('issues',null)"><x-icon name="wrench" size="15"/> Respond to Issues</button>
+            <button class="btn btn-full" onclick="SubUI.openSearch()"><x-icon name="search" size="15"/> Quick Search</button>
+          </div>
+        </div>
+
+        <!-- Recent Issues (Span 12) -->
         <div class="card bento-col-12">
           <div class="card-title">Recent Issues</div>
+          <div class="card-subtitle">Newest resident reports that may need attention.</div>
           <div id="dashIssueList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card"></div></div>
           <button class="btn btn-sm" style="margin-top:16px;" onclick="nav('issues',null)">View All Issues</button>
         </div>
@@ -331,9 +357,10 @@
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
             <input type="text" id="annSearch" placeholder="Search announcements…" style="width:200px;" oninput="renderAnnouncements()">
             <select id="annStatusFilter" onchange="renderAnnouncements()" style="width:auto;">
-              <option value="all">All</option>
-              <option value="Active" selected>Active</option>
-              <option value="Archived">Archived</option>
+        <option value="all">All</option>
+            <option value="Active" selected>Active</option>
+            <option value="Draft">Drafts</option>
+            <option value="Archived">Archived</option>
             </select>
           </div>
           <button class="btn" onclick="openModal('ann')">+ New Announcement</button>
@@ -529,10 +556,11 @@
           <div class="card-title">Most Reported Issues</div>
           <div id="analytics-common-issues" style="min-height:180px;"></div>
         </div>
-        <div class="card">
-          <div class="card-title">Security Logs</div>
-          <div class="graph-placeholder"><div class="g-icon"><x-icon name="lock" size="22"/></div><div>Security Events</div></div>
-        </div>
+          <div class="card">
+            <div class="card-title">Security Logs</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Account and record-handling events from the activity trail.</div>
+            <div id="analytics-security-logs" style="min-height:180px;"><div class="empty-state" style="padding:14px;">Loading…</div></div>
+          </div>
       </div>
     </div>
 
@@ -544,12 +572,16 @@
         <div class="map-toolbar">
           <div>
             <span style="font-size:14px;font-weight:600;color:var(--text);">Terra Nova Subdivision</span>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Issue pins are numbered by report sequence. Map is limited to the Terra Nova subdivision boundary.</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Issue pins are numbered by report sequence. Map is limited to the Terra Nova subdivision boundary. The heatmap shows issue density per area (green → amber → red).</div>
           </div>
           <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             <label class="map-toggle"><input type="checkbox" id="layer-households" checked> Households</label>
             <label class="map-toggle"><input type="checkbox" id="layer-facilities" checked> Facilities</label>
             <label class="map-toggle"><input type="checkbox" id="layer-issues" checked> Issue Pins</label>
+            <label class="map-toggle"><input type="checkbox" id="layer-heat"> Heatmap</label>
+            <select id="heat-category" class="btn btn-sm" style="padding:4px 8px;font-size:12px;" title="Filter the heatmap by issue category">
+              <option value="">All categories</option>
+            </select>
             <button class="btn btn-sm btn-green" onclick="enterAddFacilityMode()">+ Add Facility</button>
             <button class="btn btn-sm" onclick="if(mapInst)mapInst.setView([10.62269,122.96134],17)">⌖ Reset View</button>
           </div>
@@ -572,9 +604,11 @@
       <!-- Map -->
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
         <button class="btn btn-sm" onclick="enterCustomizeArea()" id="btn-customize-area"><x-icon name="pencil" size="14"/> Customize Area</button>
-        <span id="map-customize-hint" style="display:none;font-size:12px;color:var(--accent);">Pan &amp; zoom to frame the subdivision area, then click <strong>Save Area</strong>.</span>
-        <span style="margin-left:auto;display:none;gap:8px;align-items:center;" id="map-area-toolbar">
+        <span id="map-customize-hint" style="display:none;font-size:12px;color:var(--accent);">Drag handles to freely adjust the border. Drag <strong>Move Area</strong> to reposition, or click <strong>Draw New Border</strong>.</span>
+        <span style="margin-left:auto;display:none;gap:8px;align-items:center;flex-wrap:wrap;" id="map-area-toolbar">
+          <button class="btn btn-sm" onclick="toggleDrawAreaMode()" id="btn-draw-area" title="Click and drag on the map to draw a new border box"><x-icon name="plus" size="14"/> <span id="btn-draw-area-text">Draw New Border</span></button>
           <button class="btn btn-sm btn-green" onclick="saveMapArea()" id="btn-save-area"><x-icon name="save" size="14"/> Save Area</button>
+          <button class="btn btn-sm" onclick="cancelCustomizeArea()" id="btn-cancel-area">✕ Cancel</button>
           <button class="btn btn-sm" onclick="resetMapArea()" id="btn-reset-area">↺ Reset</button>
         </span>
       </div>
@@ -683,9 +717,26 @@
       </div>
 
       <!-- Policy add/edit modal -->
-      <div class="modal-overlay" id="modal-policy">
-        <div class="modal-box" style="max-width:560px;">
-          <div class="modal-title" id="policyModalTitle">Add Policy</div>
+        <!-- Ledger statement — linked from a resident card's balance -->
+        <div class="modal-overlay" id="modal-ledger">
+          <div class="modal-box" style="max-width:640px;">
+            <div class="modal-title" id="ledgerTitle">Ledger statement</div>
+            <div id="ledgerSummary" style="font-size:13px;color:var(--text-mid);margin-bottom:10px;"></div>
+            <div style="overflow:auto;max-height:46vh;">
+              <table class="data-table">
+                <thead><tr><th>Date</th><th>Description</th><th style="text-align:right;">Charge</th><th style="text-align:right;">Payment</th><th style="text-align:right;">Balance</th></tr></thead>
+                <tbody id="ledgerBody"></tbody>
+              </table>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;">
+              <button type="button" class="btn btn-sm" onclick="closeModal('ledger')">Close</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-overlay" id="modal-policy">
+          <div class="modal-box" style="max-width:560px;">
+            <div class="modal-title" id="policyModalTitle">Add Policy</div>
           <input type="hidden" id="policyId">
           <div class="f-row"><div class="f-field"><span class="f-label">Title</span><input type="text" id="policyTitle" maxlength="200"></div></div>
           <div class="f-row">
@@ -866,12 +917,16 @@
 
       </div><!-- /settings -->
 
-      <div class="fin-section" data-fin="payments">
-      <!-- GCash payment submissions (validation queue) -->
-      <div class="card" style="margin-top:16px;">
-        <div class="card-title" style="margin:0 0 12px;">Payment Submissions</div>
-        <div id="paymentsQueue"><div class="empty-state" style="padding:12px;">Loading…</div></div>
-      </div>
+        <div class="fin-section" data-fin="settings">
+        <!-- GCash payment submissions (validation queue) — shown under the
+             "GCash & Payments" tab together with the account settings -->
+        <div class="card" style="margin-top:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+            <div class="card-title" style="margin:0;">Payment Submissions</div>
+            <button class="btn btn-sm" onclick="SubUI.exportCsv('/api/export/payments')">&#8595; Export CSV</button>
+          </div>
+          <div id="paymentsQueue"><div class="empty-state" style="padding:12px;">Loading.</div></div>
+        </div>
 
       </div><!-- /payments -->
 
@@ -1040,10 +1095,11 @@
     </div>
     <div class="f-row"><div class="f-field"><span class="f-label">Title</span><input type="text" id="annTitle" placeholder="Announcement title"></div></div>
     <div class="f-row"><div class="f-field"><span class="f-label">Message</span><textarea id="annBody" placeholder="Write your announcement…" style="min-height:100px;resize:vertical;"></textarea></div></div>
-    <div class="modal-actions">
-      <button class="modal-close-btn" onclick="closeModal('ann')">Cancel</button>
-      <button class="btn btn-sm" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,postAnnouncement):postAnnouncement()">Post Announcement</button>
-    </div>
+      <div class="modal-actions">
+        <button class="modal-close-btn" onclick="closeModal('ann')">Cancel</button>
+        <button class="btn btn-sm" style="background:transparent;border:1px solid var(--glass-border);color:var(--text-mid);" onclick="saveAnnDraft()">Save as Draft</button>
+        <button class="btn btn-sm" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,postAnnouncement):postAnnouncement()">Post Announcement</button>
+      </div>
   </div>
 </div>
 
@@ -1443,9 +1499,23 @@
   </div>
 </div>
 
-<script src="{{ asset('js/d3.v7.min.js') }}"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script>
+/* ── LAZY LIBRARY LOADERS (RAM/parse only when the feature is opened) ──
+     d3 (~280 KB) loads when Analytics opens; Leaflet already has its own
+     loader below. */
+let _d3Loaded = false;
+function loadD3(){
+  if(_d3Loaded || typeof d3 !== 'undefined') return Promise.resolve();
+  const AB = window.APP_BASE || '';
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = AB + '/js/d3.v7.min.js';
+    s.onload = () => { _d3Loaded = true; resolve(); };
+    s.onerror = reject;
+    document.head.appendChild(s);
+  });
+}
+
 /* ══ LAZY LEAFLET LOADER — Leaflet loads from local origin only when the map is opened ══ */
 let _leafletLoaded = false;
 function loadLeaflet(){
@@ -1499,7 +1569,8 @@ function closeSidebar(){
   document.getElementById('menuToggle').innerHTML = '<x-icon name="menu" size="18"/>';
 }
 /* ══════════════ LEAFLET MAP ══════════════ */
-let mapInst = null, layerHouseholds, layerFacilities, layerIssues;
+let mapInst = null, layerHouseholds, layerFacilities, layerIssues, layerHeat;
+let mapIssuesData = [];
 let analyticsMapInst = null;
 let addFacilityMode = false, pendingPin = null;
 let editFacilityId = null;
@@ -1524,6 +1595,12 @@ function makeNumberedIcon(color, num) {
 let mapSettings = null;
 let areaRect = null;
 let customizingArea = false;
+let editBounds = null;
+let areaHandles = {};
+let drawAreaMode = false;
+let drawTempRect = null;
+let drawStartLatLng = null;
+const MIN_AREA_DELTA = 0.0003; // Minimum boundary span (~33m) to prevent inverted rectangles
 
 async function fetchMapSettings(){
   try{
@@ -1536,31 +1613,360 @@ async function fetchMapSettings(){
 
 function applyMapArea(){
   const b = mapSettings || {};
+  if (!b.min_lat || !b.max_lat || !b.min_lng || !b.max_lng) return;
   const bounds = L.latLngBounds([[b.min_lat,b.min_lng],[b.max_lat,b.max_lng]]);
-  mapInst.setMinZoom(14);
-  mapInst.setMaxZoom(20);
-  mapInst.setMaxBounds(bounds);
-  mapInst.options.maxBoundsViscosity = 1.0;
+  if (mapInst) {
+    mapInst.setMinZoom(14);
+    mapInst.setMaxZoom(20);
+    if (typeof bounds.pad === 'function') {
+      mapInst.setMaxBounds(bounds.pad(0.08));
+    } else {
+      mapInst.setMaxBounds(bounds);
+    }
+    mapInst.options.maxBoundsViscosity = 0.8;
+  }
   if(areaRect) areaRect.remove();
-  areaRect = L.rectangle(bounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.06}).addTo(mapInst);
+  if(mapInst) {
+    areaRect = L.rectangle(bounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.06}).addTo(mapInst);
+  }
+}
+
+function makeAreaHandleIcon(type, cursor) {
+  if (type === 'corner') {
+    return L.divIcon({
+      className: 'area-handle area-handle-corner',
+      html: `<div style="cursor:${cursor};" title="Drag with mouse to resize border"></div>`,
+      iconSize: [14, 14],
+      iconAnchor: [7, 7]
+    });
+  } else if (type === 'edge-ns') {
+    return L.divIcon({
+      className: 'area-handle area-handle-edge-ns',
+      html: `<div style="cursor:${cursor};" title="Drag North/South border"></div>`,
+      iconSize: [20, 10],
+      iconAnchor: [10, 5]
+    });
+  } else if (type === 'edge-ew') {
+    return L.divIcon({
+      className: 'area-handle area-handle-edge-ew',
+      html: `<div style="cursor:${cursor};" title="Drag East/West border"></div>`,
+      iconSize: [10, 20],
+      iconAnchor: [5, 10]
+    });
+  } else if (type === 'center') {
+    return L.divIcon({
+      className: 'area-handle area-handle-center',
+      html: `<div title="Drag with mouse to move the entire border area"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg> Move Area</div>`,
+      iconSize: [95, 24],
+      iconAnchor: [47, 12]
+    });
+  }
+}
+
+function destroyAreaHandles(){
+  Object.values(areaHandles).forEach(h => {
+    try { h.remove(); } catch(e){}
+  });
+  areaHandles = {};
+}
+
+function createAreaHandles(){
+  if(!mapInst || !editBounds) return;
+  destroyAreaHandles();
+
+  const midLat = (editBounds.minLat + editBounds.maxLat) / 2;
+  const midLng = (editBounds.minLng + editBounds.maxLng) / 2;
+
+  const handleDefs = [
+    { key: 'nw', pos: [editBounds.maxLat, editBounds.minLng], icon: makeAreaHandleIcon('corner', 'nwse-resize') },
+    { key: 'ne', pos: [editBounds.maxLat, editBounds.maxLng], icon: makeAreaHandleIcon('corner', 'nesw-resize') },
+    { key: 'se', pos: [editBounds.minLat, editBounds.maxLng], icon: makeAreaHandleIcon('corner', 'nwse-resize') },
+    { key: 'sw', pos: [editBounds.minLat, editBounds.minLng], icon: makeAreaHandleIcon('corner', 'nesw-resize') },
+    { key: 'n',  pos: [editBounds.maxLat, midLng],             icon: makeAreaHandleIcon('edge-ns', 'ns-resize') },
+    { key: 's',  pos: [editBounds.minLat, midLng],             icon: makeAreaHandleIcon('edge-ns', 'ns-resize') },
+    { key: 'e',  pos: [midLat, editBounds.maxLng],             icon: makeAreaHandleIcon('edge-ew', 'ew-resize') },
+    { key: 'w',  pos: [midLat, editBounds.minLng],             icon: makeAreaHandleIcon('edge-ew', 'ew-resize') },
+    { key: 'center', pos: [midLat, midLng],                    icon: makeAreaHandleIcon('center', 'move') }
+  ];
+
+  handleDefs.forEach(def => {
+    const marker = L.marker(def.pos, {
+      icon: def.icon,
+      draggable: true,
+      zIndexOffset: def.key === 'center' ? 1000 : 1100
+    }).addTo(mapInst);
+    areaHandles[def.key] = marker;
+  });
+
+  areaHandles.nw.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.maxLat = Math.max(p.lat, editBounds.minLat + MIN_AREA_DELTA);
+    editBounds.minLng = Math.min(p.lng, editBounds.maxLng - MIN_AREA_DELTA);
+    updateAreaRectAndHandles('nw');
+  });
+
+  areaHandles.ne.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.maxLat = Math.max(p.lat, editBounds.minLat + MIN_AREA_DELTA);
+    editBounds.maxLng = Math.max(p.lng, editBounds.minLng + MIN_AREA_DELTA);
+    updateAreaRectAndHandles('ne');
+  });
+
+  areaHandles.se.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.minLat = Math.min(p.lat, editBounds.maxLat - MIN_AREA_DELTA);
+    editBounds.maxLng = Math.max(p.lng, editBounds.minLng + MIN_AREA_DELTA);
+    updateAreaRectAndHandles('se');
+  });
+
+  areaHandles.sw.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.minLat = Math.min(p.lat, editBounds.maxLat - MIN_AREA_DELTA);
+    editBounds.minLng = Math.min(p.lng, editBounds.maxLng - MIN_AREA_DELTA);
+    updateAreaRectAndHandles('sw');
+  });
+
+  areaHandles.n.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.maxLat = Math.max(p.lat, editBounds.minLat + MIN_AREA_DELTA);
+    updateAreaRectAndHandles('n');
+  });
+
+  areaHandles.s.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.minLat = Math.min(p.lat, editBounds.maxLat - MIN_AREA_DELTA);
+    updateAreaRectAndHandles('s');
+  });
+
+  areaHandles.e.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.maxLng = Math.max(p.lng, editBounds.minLng + MIN_AREA_DELTA);
+    updateAreaRectAndHandles('e');
+  });
+
+  areaHandles.w.on('drag', function(e){
+    const p = e.target.getLatLng();
+    editBounds.minLng = Math.min(p.lng, editBounds.maxLng - MIN_AREA_DELTA);
+    updateAreaRectAndHandles('w');
+  });
+
+  let centerDragStartPos = null;
+  let centerDragStartBounds = null;
+  areaHandles.center.on('dragstart', function(e){
+    centerDragStartPos = e.target.getLatLng();
+    centerDragStartBounds = { ...editBounds };
+  });
+  areaHandles.center.on('drag', function(e){
+    if(!centerDragStartPos || !centerDragStartBounds) return;
+    const cur = e.target.getLatLng();
+    const dLat = cur.lat - centerDragStartPos.lat;
+    const dLng = cur.lng - centerDragStartPos.lng;
+    editBounds.minLat = centerDragStartBounds.minLat + dLat;
+    editBounds.maxLat = centerDragStartBounds.maxLat + dLat;
+    editBounds.minLng = centerDragStartBounds.minLng + dLng;
+    editBounds.maxLng = centerDragStartBounds.maxLng + dLng;
+    updateAreaRectAndHandles('center');
+  });
+  areaHandles.center.on('dragend', function(){
+    centerDragStartPos = null;
+    centerDragStartBounds = null;
+    updateAreaRectAndHandles(null);
+  });
+
+  ['nw','ne','se','sw','n','s','e','w'].forEach(k => {
+    if(areaHandles[k]){
+      areaHandles[k].on('dragend', function(){
+        updateAreaRectAndHandles(null);
+      });
+    }
+  });
+}
+
+function updateAreaRectAndHandles(skipHandle = null){
+  const bounds = L.latLngBounds(
+    [editBounds.minLat, editBounds.minLng],
+    [editBounds.maxLat, editBounds.maxLng]
+  );
+  if (areaRect) {
+    areaRect.setBounds(bounds);
+  }
+
+  const midLat = (editBounds.minLat + editBounds.maxLat) / 2;
+  const midLng = (editBounds.minLng + editBounds.maxLng) / 2;
+
+  const positions = {
+    nw: [editBounds.maxLat, editBounds.minLng],
+    ne: [editBounds.maxLat, editBounds.maxLng],
+    se: [editBounds.minLat, editBounds.maxLng],
+    sw: [editBounds.minLat, editBounds.minLng],
+    n:  [editBounds.maxLat, midLng],
+    s:  [editBounds.minLat, midLng],
+    e:  [midLat, editBounds.maxLng],
+    w:  [midLat, editBounds.minLng],
+    center: [midLat, midLng]
+  };
+
+  for (const [key, latlng] of Object.entries(positions)) {
+    if (areaHandles[key] && key !== skipHandle) {
+      areaHandles[key].setLatLng(latlng);
+    }
+  }
+}
+
+function toggleDrawAreaMode(){
+  if(!customizingArea || !mapInst) return;
+  if(drawAreaMode){
+    stopDrawAreaMode();
+  } else {
+    startDrawAreaMode();
+  }
+}
+
+function startDrawAreaMode(){
+  drawAreaMode = true;
+  const btnText = document.getElementById('btn-draw-area-text');
+  if(btnText) btnText.textContent = '✕ Stop Drawing';
+  mapInst.getContainer().classList.add('area-drawing-active');
+  mapInst.dragging.disable();
+  destroyAreaHandles();
+
+  mapInst.on('mousedown', handleDrawMouseDown);
+  mapInst.on('mousemove', handleDrawMouseMove);
+  window.addEventListener('mouseup', handleDrawMouseUp);
+}
+
+function stopDrawAreaMode(){
+  drawAreaMode = false;
+  const btnText = document.getElementById('btn-draw-area-text');
+  if(btnText) btnText.textContent = 'Draw New Border';
+  if(mapInst){
+    mapInst.getContainer().classList.remove('area-drawing-active');
+    mapInst.dragging.enable();
+    mapInst.off('mousedown', handleDrawMouseDown);
+    mapInst.off('mousemove', handleDrawMouseMove);
+  }
+  window.removeEventListener('mouseup', handleDrawMouseUp);
+  if(drawTempRect){
+    drawTempRect.remove();
+    drawTempRect = null;
+  }
+  drawStartLatLng = null;
+  createAreaHandles();
+}
+
+function handleDrawMouseDown(e){
+  if(!drawAreaMode) return;
+  drawStartLatLng = e.latlng;
+  if(drawTempRect) drawTempRect.remove();
+  drawTempRect = L.rectangle([e.latlng, e.latlng], {
+    color: '#2563EB',
+    weight: 2,
+    dashArray: '5 5',
+    fillColor: '#3B82F6',
+    fillOpacity: 0.15
+  }).addTo(mapInst);
+}
+
+function handleDrawMouseMove(e){
+  if(!drawAreaMode || !drawStartLatLng || !drawTempRect) return;
+  drawTempRect.setBounds(L.latLngBounds(drawStartLatLng, e.latlng));
+}
+
+function handleDrawMouseUp(e){
+  if(!drawAreaMode || !drawStartLatLng) return;
+  const endPoint = (e.latlng && e.latlng.lat) ? e.latlng : (drawTempRect ? drawTempRect.getBounds().getNorthEast() : drawStartLatLng);
+  const b = L.latLngBounds(drawStartLatLng, endPoint);
+  const dLat = Math.abs(b.getNorthEast().lat - b.getSouthWest().lat);
+  const dLng = Math.abs(b.getNorthEast().lng - b.getSouthWest().lng);
+
+  if (dLat >= MIN_AREA_DELTA && dLng >= MIN_AREA_DELTA) {
+    editBounds = {
+      minLat: b.getSouthWest().lat,
+      maxLat: b.getNorthEast().lat,
+      minLng: b.getSouthWest().lng,
+      maxLng: b.getNorthEast().lng
+    };
+    if (areaRect) areaRect.setBounds(b);
+    showToast('Border updated. Adjust handles to refine.');
+  }
+
+  stopDrawAreaMode();
 }
 
 function enterCustomizeArea(){
+  if(typeof cancelAddFacilityMode === 'function' && addFacilityMode) cancelAddFacilityMode();
   customizingArea = true;
+  document.getElementById('btn-customize-area').style.display='none';
   document.getElementById('map-area-toolbar').style.display='flex';
-  document.getElementById('map-customize-hint').style.display='block';
-  // release the lock so the admin can pan/zoom to frame the new area
+  document.getElementById('map-customize-hint').style.display='inline-block';
+  document.getElementById('btn-save-area').disabled = false;
+  document.getElementById('btn-reset-area').disabled = false;
+
   if(mapInst){
     mapInst.setMaxBounds(null);
-    document.getElementById('btn-save-area').disabled = false;
-    document.getElementById('btn-reset-area').disabled = false;
   }
+
+  const b = (areaRect && areaRect.getBounds()) ||
+            (mapSettings && L.latLngBounds([[mapSettings.min_lat, mapSettings.min_lng],[mapSettings.max_lat, mapSettings.max_lng]])) ||
+            (mapInst ? mapInst.getBounds() : L.latLngBounds([[10.6195,122.9580],[10.6260,122.9650]]));
+
+  editBounds = {
+    minLat: +b.getSouthWest().lat,
+    maxLat: +b.getNorthEast().lat,
+    minLng: +b.getSouthWest().lng,
+    maxLng: +b.getNorthEast().lng
+  };
+
+  if (areaRect) {
+    areaRect.setBounds(L.latLngBounds([
+      [editBounds.minLat, editBounds.minLng],
+      [editBounds.maxLat, editBounds.maxLng]
+    ]));
+    areaRect.setStyle({
+      color: '#2563EB',
+      weight: 3,
+      dashArray: '6 4',
+      fillColor: '#3B82F6',
+      fillOpacity: 0.12
+    });
+  }
+
+  createAreaHandles();
+}
+
+function exitCustomizeArea(saved = false){
+  if(drawAreaMode) stopDrawAreaMode();
+  destroyAreaHandles();
+  customizingArea = false;
+  document.getElementById('btn-customize-area').style.display='inline-flex';
+  document.getElementById('map-area-toolbar').style.display='none';
+  document.getElementById('map-customize-hint').style.display='none';
+
+  if (areaRect) {
+    areaRect.setStyle({
+      color: '#A07D53',
+      weight: 2,
+      dashArray: '6 4',
+      fillColor: '#A07D53',
+      fillOpacity: 0.06
+    });
+  }
+}
+
+function cancelCustomizeArea(){
+  if(!customizingArea) return;
+  exitCustomizeArea(false);
+  applyMapArea();
+  showToast('Boundary editing cancelled.');
 }
 
 function saveMapArea(){
   if(!mapInst || !customizingArea) return;
-  const b = mapInst.getBounds();
-  const c = mapInst.getCenter();
+  const b = areaRect ? areaRect.getBounds() : L.latLngBounds([
+    [editBounds.minLat, editBounds.minLng],
+    [editBounds.maxLat, editBounds.maxLng]
+  ]);
+  const c = b.getCenter();
   const payload = {
     min_lat:    +b.getSouthWest().lat.toFixed(7),
     max_lat:    +b.getNorthEast().lat.toFixed(7),
@@ -1574,17 +1980,30 @@ function saveMapArea(){
     method:'PUT',
     headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':document.querySelector('meta[name="csrf-token"]').content},
     body: JSON.stringify(payload),
-  }).then(r=>r.json()).then(()=>{
+  }).then(r=>r.json()).then(res=>{
+    if(res && res.errors){
+      showToast('⚠ Failed: ' + Object.values(res.errors).flat().join(', '));
+      return;
+    }
     mapSettings = payload;
+    exitCustomizeArea(true);
     applyMapArea();
-    customizingArea = false;
-    document.getElementById('map-customize-hint').style.display='none';
-    showToast('✅ Map area updated.');
+    showToast('✅ Map border updated.');
     if(typeof loadMapData === 'function') loadMapData();
-  }).catch(()=>showToast('⚠ Could not save map area.'));
+  }).catch(()=>showToast('⚠ Could not save map border.'));
 }
 
-function resetMapArea(){
+async function resetMapArea(){
+  if(typeof SubUI !== 'undefined' && SubUI.confirm){
+    const ok = await SubUI.confirm({
+      title: 'Reset Map Boundary?',
+      message: 'This will reset the subdivision border back to original default coordinates.',
+      confirmText: 'Reset to Default',
+      danger: true,
+      icon: 'alert'
+    });
+    if(!ok) return;
+  }
   const payload = {min_lat:10.6195,max_lat:10.6260,min_lng:122.9580,max_lng:122.9650,center_lat:10.62269,center_lng:122.96134,zoom:17};
   fetch('/api/map/settings',{
     method:'PUT',
@@ -1592,10 +2011,13 @@ function resetMapArea(){
     body: JSON.stringify(payload),
   }).then(r=>r.json()).then(()=>{
     mapSettings = payload;
-    if(mapInst){ mapInst.setMaxBounds(null); mapInst.fitBounds([[payload.min_lat,payload.min_lng],[payload.max_lat,payload.max_lng]],{padding:[20,20]}); applyMapArea(); }
-    customizingArea = false;
-    document.getElementById('map-customize-hint').style.display='none';
-    showToast('✅ Map area reset to default.');
+    exitCustomizeArea(true);
+    if(mapInst){
+      mapInst.setMaxBounds(null);
+      mapInst.fitBounds([[payload.min_lat,payload.min_lng],[payload.max_lat,payload.max_lng]],{padding:[20,20]});
+      applyMapArea();
+    }
+    showToast('✅ Map border reset to default.');
     if(typeof loadMapData === 'function') loadMapData();
   }).catch(()=>showToast('⚠ Could not reset map area.'));
 }
@@ -2005,8 +2427,8 @@ function initMap() {
   mapInst = L.map('map-container', {
     minZoom: 14,
     maxZoom: 20,
-    maxBounds: areaBounds,
-    maxBoundsViscosity: 1.0,
+    maxBounds: typeof areaBounds.pad === 'function' ? areaBounds.pad(0.08) : areaBounds,
+    maxBoundsViscosity: 0.8,
   }).fitBounds(areaBounds, {padding:[20,20]});
   areaRect = L.rectangle(areaBounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.06}).addTo(mapInst);
 
@@ -2018,14 +2440,20 @@ function initMap() {
   layerHouseholds = L.layerGroup().addTo(mapInst);
   layerFacilities = L.layerGroup().addTo(mapInst);
   layerIssues     = L.layerGroup().addTo(mapInst);
+  layerHeat       = L.layerGroup(); // off by default — toggled by the Heatmap checkbox
 
   loadMapData();
 
   mapInst.on('click', function(e) {
-    if (!addFacilityMode) return;
+    if (!addFacilityMode || customizingArea) return;
     const { lat, lng } = e.latlng;
     if (pendingPin) pendingPin.remove();
-    pendingPin = L.marker([lat, lng]).addTo(mapInst);
+    // Explicit divIcon: Leaflet's default marker image can fail to resolve (broken pin).
+    pendingPin = L.marker([lat, lng], { icon: L.divIcon({
+      className: '',
+      html: '<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#4CAF50;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
+      iconSize: [20, 20], iconAnchor: [10, 20]
+    }) }).addTo(mapInst);
     document.getElementById('fac-lat').value = lat.toFixed(7);
     document.getElementById('fac-lng').value = lng.toFixed(7);
     openModal('addFacility');
@@ -2040,6 +2468,13 @@ function initMap() {
   document.getElementById('layer-issues').addEventListener('change', function() {
     this.checked ? mapInst.addLayer(layerIssues) : mapInst.removeLayer(layerIssues);
   });
+  const heatToggle = document.getElementById('layer-heat');
+  if (heatToggle) heatToggle.addEventListener('change', function() {
+    if (this.checked) { if (!mapInst.hasLayer(layerHeat)) mapInst.addLayer(layerHeat); renderIssueHeatmap(); }
+    else { mapInst.removeLayer(layerHeat); }
+  });
+  const heatCat = document.getElementById('heat-category');
+  if (heatCat) heatCat.addEventListener('change', renderIssueHeatmap);
   });
 }
 
@@ -2091,9 +2526,59 @@ function loadMapData() {
       const color = i.status === 'Resolved' ? '#888' : (i.status === 'In Progress' ? '#f5a623' : '#e05555');
       issueMarkerCount++;
       L.marker([parseFloat(i.latitude), parseFloat(i.longitude)], {icon: makeNumberedIcon(color, idx + 1)})
-        .bindPopup(`<strong>Report #${idx + 1} — ${i.title}</strong><br>${i.category}<br><small>Status: ${i.status}</small>`)
+        .bindPopup(`<strong>Report #${idx + 1} - ${i.title}</strong><br>${i.category}<br><small>Status: ${i.status}</small>`)
         .addTo(layerIssues);
     });
+
+    // Heatmap source data + category options (kept in sync with what the map shows).
+    mapIssuesData = Array.isArray(data) ? data : [];
+    const catSel = document.getElementById('heat-category');
+    if (catSel && catSel.options.length <= 1) {
+      [...new Set(mapIssuesData.map(i => i.category).filter(Boolean))].sort().forEach(c => {
+        const o = document.createElement('option');
+        o.value = c; o.textContent = c;
+        catSel.appendChild(o);
+      });
+    }
+    renderIssueHeatmap();
+  });
+}
+
+/* Issue-density heatmap: groups the plotted issues into ~110 m grid cells and
+   draws a circle per cell — green (1) → amber (2) → red (3+) — optionally
+   filtered by issue category. Pure Leaflet, no extra plugins. */
+function renderIssueHeatmap() {
+  if (!mapInst || !layerHeat) return;
+  layerHeat.clearLayers();
+  if (!mapInst.hasLayer(layerHeat)) return;
+
+  const catEl = document.getElementById('heat-category');
+  const cat = catEl ? catEl.value : '';
+  const pts = (mapIssuesData || []).filter(i => !cat || i.category === cat);
+
+  const cells = {};
+  pts.forEach(i => {
+    const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
+    if (isNaN(lat) || isNaN(lng)) return;
+    const key = lat.toFixed(3) + '|' + lng.toFixed(3); // ~110 m grid
+    const c = cells[key] = cells[key] || { latSum: 0, lngSum: 0, n: 0, cats: {} };
+    c.latSum += lat; c.lngSum += lng; c.n++;
+    const cc = i.category || 'Other';
+    c.cats[cc] = (c.cats[cc] || 0) + 1;
+  });
+
+  const colorFor = n => n >= 3 ? '#c0392b' : n === 2 ? '#e08a2e' : '#4F7A57';
+  Object.values(cells).forEach(c => {
+    const breakdown = Object.entries(c.cats).map(([k, v]) => k + ': ' + v).join(' · ');
+    L.circle([c.latSum / c.n, c.lngSum / c.n], {
+      radius: 45 + c.n * 22,
+      color: colorFor(c.n),
+      weight: 1,
+      opacity: 0.7,
+      fillColor: colorFor(c.n),
+      fillOpacity: 0.32,
+    }).bindPopup(`<strong>${c.n} issue${c.n > 1 ? 's' : ''} nearby</strong><br><small>${breakdown}</small>`)
+      .addTo(layerHeat);
   });
 }
 

@@ -51,7 +51,7 @@ class UserSetting extends Model
             'notify_payments' => (bool) ($this->notify_payments ?? true),
             'notify_issues' => (bool) ($this->notify_issues ?? true),
             'notify_messages' => (bool) ($this->notify_messages ?? true),
-            'email_notifications' => (bool) ($this->email_notifications ?? false),
+            'email_notifications' => (bool) ($this->email_notifications ?? true),
         ];
     }
 }

@@ -201,7 +201,7 @@ was verified/changed, plus any deliberate follow-ups.
 - `Message` joined the observed models; new `message` payload includes `conversationId`/`senderType` (never message content).
 - **WebSocket-first** in all three portals: SSE now refuses to start while Reverb is connected, closes itself when the socket comes up, and restarts automatically if the socket drops (`disconnected`/`unavailable`). The 10s thread poll stays only as a fallback.
 - `server.js` is unnecessary — Reverb is already the WS server and broadcasts are generated from Laravel observers.
-- Privacy decision: the `subsync` channel **stays public** for now — it carries exactly the same community-wide data the authenticated SSE stream already sends to every portal (never message content, never resident-specific rows), and the payloads are metadata only. Switching to private channels would require per-portal `broadcasting/auth` (the admin portal authenticates via session id, not a guard, so it needs custom handling) and risks breaking realtime right before the defense for little gain. Revisit the day staff-only data (e.g. full message bodies, resident PII) needs to ride the bus — that's the trigger documented for the panel.
+- Privacy decision (superseded): the channel originally stayed public. It is now a **private** `subsync` channel with guard-based `broadcasting/auth`, PII-scrubbed payloads (no sender/approval names) and a role-filtered SSE fallback — see `docs/SYSTEM_REVIEW.md` P0.1. Admins are logged into the `admin` guard by `AuthController::adminLogin` so Echo's auth request succeeds for all three portals.
 - Tests: `tests/Feature/RealtimeMessagesTest.php` (bus/broadcast + portal-script markers), plus syntax/regression checks.
 
 ### Items 3 + 13 — Icon system (done)
@@ -222,7 +222,7 @@ was verified/changed, plus any deliberate follow-ups.
 - **opcache**: already enabled (128 MB, 20k files, `validate_timestamps=1` + 2 s revalidate — right for dev). `jit=disable` is deliberate (JIT crashes the Apache child). No change needed.
 - **Indexes**: `check_indexes.php` confirms the schema is well-indexed — including the hot paths (`sse_events`, `messages_conversation_id`, `announcements_status_created_at`, sessions/cache/jobs).
 - **Processes**: Reverb + `queue:work --tries=3` + `schedule:work` all running; SSE bus is one tiny indexed query per second per client by design.
-- **MySQL**: stock Laragon defaults (128 MB buffer pool, slow log off). Fine for capstone load; production sizing is covered in `SCALABILITY.md` / `DEPLOYMENT.md` (Redis + larger pool) — not changed here to avoid a risky DB restart before the defense.
+- **MySQL**: stock Laragon defaults (128 MB buffer pool, slow log off). Fine for capstone load; production sizing is covered in `docs/SCALABILITY.md` / `DEPLOYMENT.md` (Redis + larger pool) — not changed here to avoid a risky DB restart before the defense.
 
 ### Item 7 — Docs (done)
 
@@ -306,6 +306,56 @@ Everything that previously required a refresh or a poll now rides the bus
 Verified live end-to-end: a registration produced `RESIDENT {name, "Pending"}` on a raw WS
 client, and the admin's approval produced `{status: "Active"}` seconds later. 4 new tests
 (`RealtimeBusTest`: payloads for every new event + client-side subscription markers).
+
+## Mobile-network access (ngrok blocked by carriers)
+
+- Diagnosis via ngrok's request log: the phone's requests **never reached the tunnel**
+  (only server-side requests were recorded) — PH mobile carriers commonly block/break
+  `*.ngrok-free.dev` on mobile data.
+- Fix: a **Cloudflare quick tunnel** now runs alongside ngrok as the backup public URL.
+  `start.cmd` starts it (binary at `C:\laragon\bin\cloudflared.exe`), `stop.cmd` stops it,
+  `start.cmd -Status` prints the random `https://*.trycloudflare.com` URL (also in
+  `storage/logs/cloudflared.log`). New Apache vhost `subsync-trycloudflare.conf` mirrors
+  the ngrok `/app` proxy so **realtime works through it** — verified end-to-end: mobile-UA
+  login 200 + full Pusher WebSocket handshake (`pusher:connection_established`).
+- Note: the trycloudflare URL changes on every restart — grab it from `-Status` before a
+  demo; ngrok remains the stable primary link where it is reachable.
+
+## Post-backlog — reminders, balance links, issue heatmap, file organization
+
+- **Monthly balance reminder**: new `subsync:remind-balances` command (emails every Active
+  resident whose ledger shows an outstanding balance; `--dry-run` supported for previews)
+  scheduled for the **5th of every month at 08:00** — a few days after dues post, so the
+  fresh charge is included. Busy/production mail is unaffected (dev mail is the log driver).
+- **Balances are linked to their ledger**: the balance figure on each admin resident card
+  is now a button that opens that resident's **full ledger statement** (modal with running
+  balance, charges, payments) — straight from `/api/ledger/{id}`, the source of truth
+  behind the cached `current_balance`. (The rest of the chain was already sound and is now
+  covered by tests: dues → ledger → cached balance; validated GCash payment → ledger
+  credit → balance; resident portal chip updates in realtime.)
+- **Issue heatmap on the admin map**: new "Heatmap" layer with a category filter —
+  plots issue density in ~110 m grid cells (green → amber → red), pure Leaflet (no extra
+  plugins), with per-cell category breakdown in the popup.
+- **Project files organized**: root now only holds entry-point files. Session notes and
+  thesis docs moved to `docs/`, DB dumps to `database/dumps/`, dev utilities to `scripts/`,
+  stray artifacts to `storage/app/archive/`; an empty stray `Subsync/` folder removed and
+  all doc references updated.
+
+## Full system review (2026-10-21)
+
+Read `docs/SYSTEM_REVIEW.md` — full findings, fixes applied, prioritized backlog,
+industry-standards mapping (OWASP/ASVS/WCAG/RA 10173/DHSUD/ISO 25010) and a benchmark
+against public HOA platforms (PayHOA, TownSq, Buildium, AppFolio, FrontSteps).
+
+Highlights fixed in this pass: resident portal data load (const-reassignment bug),
+household-member IDOR + broken admin member panel, officer self-rename, deactivated
+accounts rejected at login, login/register throttles, member-card/filename XSS escapes,
+announcement read-tracking wiring, CSRF bug in officer conversation delete, and 10
+performance indexes (migration applied + rollback smoke-tested).
+
+Top remaining (P0): private WS channels / SSE per-role filtering (payload PII), moving
+confidential uploads off the public disk, RA 10173 consent + retention, bulk-endpoint
+pagination and dashboard payload caps.
 
 ### Final validation
 

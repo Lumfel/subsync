@@ -140,6 +140,32 @@ class LoginTest extends TestCase
         $this->assertSame('officer', session('active_role'));
     }
 
+    public function test_deactivated_resident_cannot_log_in(): void
+    {
+        $this->resident(['status' => 'Inactive']);
+
+        $this->postJson('/login', ['email' => 'r@x.com', 'password' => 'Secret@12345', 'role' => 'resident'])
+            ->assertOk()
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Your account has been deactivated. Contact the HOA office.');
+
+        $this->assertGuest('resident');
+    }
+
+    public function test_deactivated_officer_cannot_log_in(): void
+    {
+        Officer::create([
+            'name' => 'Officer', 'email' => 'o2@x.com',
+            'password' => 'Secret@12345', 'status' => 'Inactive',
+        ]);
+
+        $this->postJson('/login', ['email' => 'o2@x.com', 'password' => 'Secret@12345', 'role' => 'officer'])
+            ->assertOk()
+            ->assertJsonPath('success', false);
+
+        $this->assertGuest('officer');
+    }
+
     public function test_pending_officer_cannot_log_in(): void
     {
         $this->officer(['status' => 'Pending']);

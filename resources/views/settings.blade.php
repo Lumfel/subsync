@@ -130,7 +130,18 @@ window.__ACTOR = @json($actor['type']);
     </div>
   </section>
 
-  @if(($actor['type'] ?? null) === 'admin')
+    <!-- Privacy & Data (RA 10173) -->
+    <section class="card set-card">
+      <div class="set-card-head"><h2>Privacy &amp; Data</h2></div>
+      <p class="set-hint" style="margin-top:0;">Your rights under the Data Privacy Act (RA 10173): access a copy of your data, correct it, or request its erasure.</p>
+      <div class="set-actions">
+        <a class="btn" href="{{ url('api/settings/export') }}" download>Download my data (JSON)</a>
+        <a class="btn" href="{{ url('privacy') }}" target="_blank" rel="noopener">Privacy Notice</a>
+        <button class="btn btn-danger" type="button" id="erasureBtn">Request account erasure</button>
+      </div>
+    </section>
+
+    @if(($actor['type'] ?? null) === 'admin')
   <!-- System (admin only) -->
   <section class="card set-card" id="setSystem">
     <div class="set-card-head">

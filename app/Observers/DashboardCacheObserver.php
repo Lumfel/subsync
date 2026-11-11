@@ -44,6 +44,7 @@ class DashboardCacheObserver
             'announcements.Active',
             'announcements.all',
             'announcements.Archived',
+            'announcements.Draft',
         ];
     }
 }

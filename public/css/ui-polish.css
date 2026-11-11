@@ -116,47 +116,47 @@ input:focus, textarea:focus, select:focus {
 /* ─────────────────────────────────────────────
    COMFORTABLE SCALE — slightly larger, kind to the eyes
    ───────────────────────────────────────────── */
-body { font-size: 16px !important; line-height: 1.6 !important; }
+body { font-size: 16.5px !important; line-height: 1.62 !important; }
 
-h1 { font-size: 28px !important; }
-h2 { font-size: 23px !important; }
-h3 { font-size: 20px !important; }
-h4 { font-size: 17px !important; }
+h1 { font-size: 29px !important; }
+h2 { font-size: 24px !important; }
+h3 { font-size: 20.5px !important; }
+h4 { font-size: 17.5px !important; }
 
 /* Buttons */
-.btn { font-size: 15px !important; padding: 10px 18px !important; }
-.btn-sm { font-size: 13.5px !important; padding: 7px 13px !important; }
+.btn { font-size: 15.5px !important; padding: 10px 18px !important; }
+.btn-sm { font-size: 14px !important; padding: 7px 13px !important; }
 
 /* Inputs & controls */
 input[type=text], input[type=email], input[type=password], input[type=number],
 input[type=date], input[type=file], textarea, select {
-  font-size: 15px !important;
+  font-size: 15.5px !important;
   padding: 10px 13px !important;
 }
 textarea { line-height: 1.6 !important; }
-.f-label { font-size: 13px !important; letter-spacing: 0.03em; }
+.f-label { font-size: 13.5px !important; letter-spacing: 0.03em; }
 .f-row { margin-bottom: 13px !important; }
 
 /* Cards — balanced padding & consistent rhythm */
 .card { padding: 18px 20px !important; }
-.card-title { font-size: 16px !important; }
-.card-subtitle { font-size: 14px !important; line-height: 1.6 !important; }
+.card-title { font-size: 16.5px !important; }
+.card-subtitle { font-size: 14.5px !important; line-height: 1.6 !important; }
 .card-divider { margin: 14px 0 !important; }
 
 /* Consistent card spacing between sections */
 .card { margin-top: 16px !important; }
 
 /* Tables */
-th, td { padding: 11px 13px !important; font-size: 14px !important; }
-thead th { font-size: 12px !important; }
+th, td { padding: 11px 13px !important; font-size: 14.5px !important; }
+thead th { font-size: 12.5px !important; }
 
 /* Pills / badges */
-.pill, .tab-badge { font-size: 11.5px !important; padding: 4px 9px !important; }
+.pill, .tab-badge { font-size: 12px !important; padding: 4px 9px !important; }
 
-/* Navigation / sidebar */
-.sidebar li, .nav-item { font-size: 14.5px !important; padding: 11px 16px !important; }
-.nav-section-label { font-size: 11px !important; padding: 12px 16px 6px !important; }
-.sidebar-brand, .sidebar .logo { font-size: 23px !important; }
+/* Navigation / sidebar — bolder & more legible tabs */
+.sidebar li, .nav-item, .sidebar .tab-btn { font-size: 15.5px !important; font-weight: 600 !important; padding: 11px 16px !important; }
+.nav-section-label { font-size: 11.5px !important; font-weight: 700 !important; padding: 12px 16px 6px !important; }
+.sidebar-brand, .sidebar .logo { font-size: 24px !important; }
 
 /* Announcements / issues / recs */
 .ann-title, .issue-title, .rec-title { font-size: 18px !important; }
@@ -951,9 +951,11 @@ thead th { color: #5C5750 !important; }
    ───────────────────────────────────────────── */
 
 /* Text size (zoom keeps px-based layouts consistent across portals) */
-html[data-font="small"] body { zoom: .92; }
-html[data-font="default"] body { zoom: 1; }
-html[data-font="large"] body { zoom: 1.05; }
+/* Text size — scale type cleanly without CSS zoom (which breaks fixed viewports) */
+html[data-font="small"] { font-size: 92%; }
+html[data-font="default"] { font-size: 100%; }
+html[data-font="large"] { font-size: 108%; }
+html, body { zoom: 1 !important; }
 
 /* Density */
 html[data-density="compact"] .card { padding: 12px !important; }
@@ -998,6 +1000,12 @@ html[data-theme="dark"] .sidebar { background: #1B1815 !important; border-color:
 html[data-theme="dark"] .sidebar * { color: #E9E3D8 !important; }
 html[data-theme="dark"] .sidebar .nav-item.active,
 html[data-theme="dark"] .sidebar .tab-btn.active { background: rgba(199,154,99,0.18) !important; color: #F3D9B4 !important; }
+html[data-theme="dark"] .brand-logo img,
+html[data-theme="dark"] .sidebar-brand img,
+html[data-theme="dark"] .logo img,
+html[data-theme="dark"] img[src*="emblem_1"] {
+  filter: invert(1) brightness(1.1) !important;
+}
 
 html[data-theme="dark"] h1, html[data-theme="dark"] h2, html[data-theme="dark"] h3,
 html[data-theme="dark"] h4, html[data-theme="dark"] h5, html[data-theme="dark"] h6 { color: #F1ECE3 !important; }
@@ -1441,12 +1449,14 @@ html[data-theme="dark"] .res-balance-card .btn {
    MAIN AREA — align with the (wider) fixed sidebar and
    stop the 40px padding from insetting the admin topbar
    (which left empty space above/left of the bar).
+   Add a 24px bottom gap between topbar and content panels.
    ───────────────────────────────────────────── */
 .main { margin-left: var(--sidebar-w) !important; }
-.topbar { margin: -40px -40px 0 !important; }
+.topbar { margin: -40px -40px 24px !important; }
+#panel-dashboard .bento-grid { margin-top: 0 !important; }
 @media (max-width: 991px) {
   .main { margin-left: 0 !important; }
-  .topbar { margin: 0 !important; }
+  .topbar { margin: 0 0 16px !important; }
 }
 
 /* ─────────────────────────────────────────────
@@ -1581,6 +1591,29 @@ html[data-theme="dark"] .data-table tbody td { border-bottom-color: rgba(255,255
 .btn-primary { background: var(--accent, #86653D) !important; color: #fff !important; border-color: transparent !important; }
 html[data-theme="dark"] .btn-primary { color: #1A1610 !important; }
 
+/* Warmer action buttons — report & suggestion submits */
+.btn.btn-orange {
+  background: linear-gradient(135deg, #E8892F, #D2661D) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
+.btn.btn-orange:hover { filter: brightness(1.06); }
+
+/* Selected-file chips — remove a file before submitting */
+.file-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.file-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; padding: 4px 10px; max-width: 100%;
+  background: var(--glass, #fff); color: var(--text-mid, #4A4744);
+  border: 1px solid var(--glass-border, #E6DFD5); border-radius: 999px;
+}
+.file-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.file-chip button {
+  border: 0; background: transparent; cursor: pointer; padding: 0 2px;
+  color: var(--danger, #A84545); font-size: 14px; line-height: 1;
+}
+.file-chip button:hover { color: #7d2f2f; }
+
 /* KPI / stat cards: clean sans number, small uppercase label */
 .stat-card { border-radius: 9px !important; }
 .stat-value {
@@ -1650,7 +1683,7 @@ html:not([data-theme="dark"]) [style*="color:#f59e0b"] { color: #A9660A !importa
 
 /* Sidebar: fill the true viewport height (mobile address bars included) and
    keep the profile/footer pinned to the bottom so no dead strip shows. */
-.sidebar { height: 100vh; height: 100dvh; }
+.sidebar { position: fixed !important; top: 0 !important; bottom: 0 !important; height: auto !important; min-height: 100vh !important; min-height: 100dvh !important; }
 .sidebar-profile, .sidebar-footer { margin-top: auto !important; }
 
 /* Bento grids collapse to ONE column on tablet/mobile. The old "span 12"
@@ -1662,17 +1695,34 @@ html:not([data-theme="dark"]) [style*="color:#f59e0b"] { color: #A9660A !importa
   }
 }
 
-/* Tighten the gap under the sidebar footer (was ~30px of padding) */
 .sidebar { padding-bottom: 14px !important; }
 
-/* Resident/Officer sidebar: spread the nav rows so they fill the column
-   instead of leaving a large empty block above the footer. */
+/* Sidebar nav: the officer menu is short, so spread its rows to fill the
+   column. The resident menu is longer — keep it top-aligned with a steady
+   rhythm and let it scroll only when the viewport is genuinely short. */
 .sidebar > ul {
   display: flex !important;
   flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: flex-start;
+  gap: 6px;
 }
 .sidebar > ul > li { margin-bottom: 0 !important; }
+.officer-body .sidebar > ul { justify-content: space-evenly; }
+
+/* Stacked quick actions — one consistent pattern for the overview cards
+   (resident / officer / admin): full-width buttons, even gaps. */
+.quick-stack { display: flex; flex-direction: column; gap: 8px; }
+.quick-stack .btn {
+  width: 100%;
+  margin-top: 0 !important;
+  justify-content: center;
+}
+
+/* Resident household form: stack the fields so nothing is squeezed or
+   truncated inside the narrow overview card. */
+.residents-body .add-row { flex-direction: column; align-items: stretch; }
+.residents-body .add-row input { width: 100%; min-width: 0; }
+.residents-body .add-row .btn { width: 100%; }
 
 /* ─────────────────────────────────────────────
    SIMPLE & CLEAR MODE — residents & officers
@@ -1770,19 +1820,23 @@ input[type="url"]:focus, input[type="datetime-local"]:focus, select:focus, texta
 .modal-box, .ui-modal-box { border-radius: var(--radius-lg) !important; box-shadow: var(--shadow-3) !important; }
 .alerts-popover, .ui-toast, .nc-pop { border-radius: var(--radius-md) !important; box-shadow: var(--shadow-3) !important; }
 
-/* ── Sidebar shell: ONE coherent model (desktop) ──────────────────────
-   Three layers redefined .sidebar (base sheet, the "premium" fixed-250px
-   section, mobile drawer) with fragile ordering. This pins the desktop
-   behaviour regardless of source order: a full-height rail whose nav
-   scrolls and whose footer/profile anchors to the bottom — no dead strip
-   under the profile card. Mobile (<=991px) keeps its off-canvas drawer. */
+/* ── Admin sidebar: mirror the officer portal's proven model ──────────
+   The officer sidebar is a plain fixed 100vh rail — content flows in
+   order (nav → tools → profile) and the white rail always fills the
+   screen. The admin sidebar instead used a flex column with an inner
+   scrollable nav + bottom-pinned footer, which left a dead strip under
+   the profile card. Scope the officer-style rail to the admin portal
+   only; officer/resident portals are untouched. Mobile (<=991px) keeps
+   its off-canvas drawer. */
 @media (min-width: 992px) {
   .sidebar {
     position: fixed !important;
     top: 0 !important;
+    bottom: 0 !important;
     left: 0 !important;
-    height: 100vh !important;
+    height: auto !important;
     min-height: 100vh !important;
+    min-height: 100dvh !important;
     display: flex !important;
     flex-direction: column !important;
   }
@@ -1790,4 +1844,28 @@ input[type="url"]:focus, input[type="datetime-local"]:focus, select:focus, texta
   .sidebar .sidebar-nav { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; }
   .sidebar .sidebar-footer,
   .sidebar .sidebar-profile { margin-top: auto !important; flex-shrink: 0; }
+  body:not(.officer-body):not(.residents-body) .sidebar .sidebar-nav {
+    flex: 1 1 auto !important;
+    overflow-y: visible !important;
+    min-height: 0;
+  }
+  body:not(.officer-body):not(.residents-body) .sidebar .sidebar-footer,
+  body:not(.officer-body):not(.residents-body) .sidebar .sidebar-profile {
+    margin-top: auto !important;
+  }
+  /* Center the admin profile block like the officer rail footer */
+  body:not(.officer-body):not(.residents-body) .sidebar .admin-profile {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+    padding: 6px 0;
+    background: transparent;
+    border: 0;
+  }
+  body:not(.officer-body):not(.residents-body) .sidebar .admin-profile .admin-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 16px;
+  }
 }

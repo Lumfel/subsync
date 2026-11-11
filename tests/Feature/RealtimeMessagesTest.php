@@ -58,7 +58,7 @@ class RealtimeMessagesTest extends TestCase
         Event::assertDispatched(
             SubSyncEvent::class,
             fn (SubSyncEvent $e) => $e->eventName === 'message'
-                && $e->payload['senderName'] === 'Res'
+                && ! array_key_exists('senderName', $e->payload) // no PII on the bus
                 && $e->payload['senderType'] === 'resident'
                 && $e->payload['senderId'] === $resident->id
         );
@@ -80,9 +80,11 @@ class RealtimeMessagesTest extends TestCase
             $this->assertStringContainsString(".listen('.message'", $js, "{$file} must listen for message events.");
             $this->assertStringContainsString('String(evt.conversationId)', $js, "{$file} must match the pushed conversation id.");
 
-            // Incoming messages announce who is contacting you.
+            // Incoming messages announce who is contacting you — the name is
+            // resolved from the client's own thread list (no PII on the bus).
             $this->assertStringContainsString("'New message from '", $js, "{$file} must name the sender on new messages.");
-            $this->assertStringContainsString('senderName', $js, "{$file} must use the pushed sender name.");
+            $this->assertStringNotContainsString('senderName', $js, "{$file} must not rely on PII in the payload.");
+            $this->assertStringContainsString("Echo.private('subsync')", $js, "{$file} must subscribe to the private channel.");
 
             // A poll is still allowed, but only as fallback — never a bare
             // setInterval that fetches unconditionally.

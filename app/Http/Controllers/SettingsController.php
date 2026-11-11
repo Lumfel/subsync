@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
+use App\Models\Announcement;
+use App\Models\Household;
+use App\Models\IssueReport;
+use App\Models\OfficerFile;
+use App\Models\PaymentSubmission;
+use App\Models\Recommendation;
 use App\Support\Actor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -116,7 +123,15 @@ class SettingsController extends Controller
 
         $user->update(['password' => $data['password']]);
 
-        return response()->json(['success' => true, 'message' => 'Password updated.']);
+        // Rotate the session id on a credential change (session-fixation defence).
+        // The response carries the fresh CSRF token so the open page keeps working.
+        $request->session()->regenerate();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated.',
+            'csrf_token' => csrf_token(),
+        ]);
     }
 
     /** POST /api/settings/photo — upload a profile photo. */
@@ -160,6 +175,83 @@ class SettingsController extends Controller
         $settings->update($data);
 
         return response()->json(['success' => true, 'preferences' => $settings->fresh()->toPrefs()]);
+    }
+
+    /** GET /api/settings/export — the signed-in actor's personal data (RA 10173 access right). */
+    public function exportData()
+    {
+        $actor = Actor::current();
+        $user = $actor['user'];
+        if (! $user) {
+            abort(401);
+        }
+
+        $export = [
+            'exported_at' => now()->toIso8601String(),
+            'portal' => $actor['type'],
+            'profile' => $user->only(['id', 'name', 'email', 'contact_number', 'status', 'created_at']),
+        ];
+
+        if ($actor['type'] === 'resident') {
+            $house = Household::with('householdMembers')->find($user->house_id);
+            $export['household'] = $house ? [
+                'block_lot_number' => $house->block_lot_number,
+                'members' => $house->householdMembers->map(fn ($m) => [
+                    'name' => $m->name,
+                    'relationship' => $m->relationship,
+                ])->all(),
+            ] : null;
+            $export['issue_reports'] = IssueReport::where('resident_id', $user->id)
+                ->get(['id', 'category', 'title', 'description', 'status', 'priority', 'created_at'])
+                ->toArray();
+            $export['payment_submissions'] = PaymentSubmission::where('resident_id', $user->id)
+                ->get(['id', 'amount', 'reference_no', 'status', 'paid_at', 'created_at'])
+                ->toArray();
+            $export['recommendations'] = Recommendation::where('resident_id', $user->id)
+                ->get(['id', 'title', 'description', 'status', 'created_at'])
+                ->toArray();
+        }
+
+        if ($actor['type'] === 'officer') {
+            $export['announcements'] = Announcement::where('officer_id', $user->id)
+                ->get(['id', 'title', 'status', 'created_at'])
+                ->toArray();
+            $export['sent_files'] = OfficerFile::where('officer_id', $user->id)
+                ->get(['id', 'original_name', 'category', 'created_at'])
+                ->toArray();
+        }
+
+        return response()->json($export, 200, [
+            'Content-Disposition' => 'attachment; filename="subsync-my-data.json"',
+        ]);
+    }
+
+    /** POST /api/settings/erasure-request — file an RA 10173 erasure request with the HOA office. */
+    public function requestErasure(Request $request)
+    {
+        $actor = Actor::current();
+        $user = $actor['user'];
+        if (! $user) {
+            abort(401);
+        }
+
+        $request->validate(['reason' => 'nullable|string|max:500']);
+
+        ActivityLog::create([
+            'actor_type' => ucfirst((string) $actor['type']),
+            'actor_id' => $user->id,
+            'actor_name' => $user->name,
+            'action' => 'erasure_request',
+            'subject_type' => get_class($user),
+            'subject_id' => $user->id,
+            'description' => 'Data-erasure request submitted under RA 10173.',
+            'meta' => ['reason' => $request->input('reason')],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request received. The HOA office will process it within 15 working days.',
+        ]);
     }
 
     private function payload(array $actor): array

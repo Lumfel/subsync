@@ -20,6 +20,13 @@ function changeImg(id,inp){
   const r=new FileReader();
   r.onload=e=>document.getElementById(id).src=e.target.result;
   r.readAsDataURL(f);
+  if(id==='avatarPreview'){
+    const fd=new FormData(); fd.append('avatar', f);
+    fetch('/api/officers/avatar',{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:fd})
+      .then(x=>x.json())
+      .then(d=>{ if(d.success) showToast('✅ Profile photo updated.'); else showToast('⚠ Could not save photo.'); })
+      .catch(()=>showToast('⚠ Could not save photo.'));
+  }
 }
 function nowTime(){ return new Date().toLocaleTimeString('en-PH',{hour:'2-digit',minute:'2-digit'}); }
 function todayStr(){ return new Date().toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}); }
@@ -41,6 +48,7 @@ function switchTab(name){
     if(b) b.style.display='none';
     loadOfficerThreads();
   }
+  if(name==='calendar') loadOfficerEvents();
   if(name==='map') setTimeout(initOfficerMonitorMap, 80);
   
   // Auto-close sidebar on mobile
@@ -56,6 +64,7 @@ let myAnnouncements=[];
 let officerIssues=[];
 let sentFiles=[];
 let lastAnnouncementId=0;
+let announcementMap={};
 
 const csrfToken=()=>document.querySelector('meta[name=csrf-token]').content;
 async function apiGet(url){const r=await fetch(url,{headers:{'Accept':'application/json'}});return r.json();}
@@ -74,14 +83,18 @@ function openModal(id){const el=document.getElementById('modal-'+id);if(el)el.cl
 function closeModal(id){const el=document.getElementById('modal-'+id);if(el)el.classList.remove('active');}
 
 async function loadOfficerData(){
-  const [ann, iss, res]=await Promise.all([
+  const [ann, iss, res, drafts]=await Promise.all([
     safeGetArray('/api/announcements'),
     safeGetArray('/api/issues'),
     safeGetArray('/api/residents'),
+    safeGetArray('/api/announcements?status=Draft'),
   ]);
   adminAnnouncements=ann;
   if(ann.length) lastAnnouncementId=ann[0].id;
-  myAnnouncements=ann.filter(a=>a.posted_by&&a.posted_by===window.__OFFICER.name);
+  // Own posts include drafts (the Active feed never carries them).
+  myAnnouncements=ann.filter(a=>a.posted_by&&a.posted_by===window.__OFFICER.name)
+    .concat((Array.isArray(drafts)?drafts:[]).filter(a=>a.posted_by&&a.posted_by===window.__OFFICER.name))
+    .sort((a,b)=>(b.id||0)-(a.id||0));
   // Create a map for quick lookup by id
   announcementMap = {};
   adminAnnouncements.forEach(a => {
@@ -93,28 +106,34 @@ async function loadOfficerData(){
   renderOfficerIssues();
   loadOfficerCommonIssues();
   // Update overview stat cards
+  const openIssues=iss.filter(i=>i.status!=='Resolved').length;
+  if(document.getElementById('annCount'))         document.getElementById('annCount').textContent=myAnnCountThisMonth();
+  if(document.getElementById('openReportsCount')) document.getElementById('openReportsCount').textContent=openIssues;
+  if(document.getElementById('blockResidentsCount')) document.getElementById('blockResidentsCount').textContent=Array.isArray(res)?res.filter(r=>r.status==='Active').length:'—';
+}
+
+/* Announcements posted by this officer in the current month (overview "Notices"). */
+function myAnnCountThisMonth(){
   const now=new Date();
-  const myAnnThisMonth=myAnnouncements.filter(a=>{
+  return myAnnouncements.filter(a=>{
+    if(a.status==='Draft') return false;
     if(!a.created_at) return false;
     const d=new Date(a.created_at);
     return !isNaN(d)&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
   }).length;
-  const openIssues=iss.filter(i=>i.status!=='Resolved').length;
-  if(document.getElementById('annCount'))         document.getElementById('annCount').textContent=myAnnThisMonth;
-  if(document.getElementById('openReportsCount')) document.getElementById('openReportsCount').textContent=openIssues;
-  if(document.getElementById('blockResidentsCount')) document.getElementById('blockResidentsCount').textContent=Array.isArray(res)?res.length:'—';
 }
 
 // View announcement details
 function viewAnnouncement(id) {
   const ann = announcementMap[id];
   if (ann) {
-    document.getElementById('annV-tag').className = `pill pill-${ann.tag||'notice'}`;
-    document.getElementById('annV-tag').textContent = ann.tag.charAt(0).toUpperCase() + ann.tag.slice(1);
+    const tag=ann.tag||'notice';
+    document.getElementById('annV-tag').className = `pill pill-${tag}`;
+    document.getElementById('annV-tag').textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
     document.getElementById('annV-priority').style.display = ann.priority === 'High' ? '' : 'none';
     document.getElementById('annV-title').textContent = ann.title;
     document.getElementById('annV-by').textContent = ann.posted_by;
-    document.getElementById('annV-meta').innerHTML = `<span>${ann.created_at}</span>${ann.target && ann.target !== 'All Residents' ? `<span> • ${ann.target}</span>` : ''}${ann.event_date ? `<span> • ${ann.event_date}</span>` : ''}`;
+    document.getElementById('annV-meta').innerHTML = `<span>${escHtml(ann.created_at)}</span>${ann.target && ann.target !== 'All Residents' ? `<span> • ${escHtml(ann.target)}</span>` : ''}${ann.event_date ? `<span> • ${escHtml(ann.event_date)}</span>` : ''}`;
     document.getElementById('annV-content').textContent = ann.content;
     document.getElementById('modal-annView').classList.add('open');
   }
@@ -135,8 +154,8 @@ async function loadOfficerThreads(){
     <div class="msg-req-title">Message Requests (${reqs.length})</div>
     ${reqs.map(q=>`<div class="msg-req-item">
       <div class="msg-thread-info">
-        <div class="msg-thread-name">${(q.from||q.title||'Someone')}</div>
-        <div class="msg-thread-preview">${(q.last_message||'No message')}</div>
+        <div class="msg-thread-name">${escHtml(q.from||q.title||'Someone')}</div>
+        <div class="msg-thread-preview">${escHtml(q.last_message||'No message')}</div>
       </div>
       <div class="msg-req-actions">
         <button class="btn btn-sm" onclick="acceptOfficerRequest(${q.id})">Accept</button>
@@ -147,11 +166,11 @@ async function loadOfficerThreads(){
   const list=Array.isArray(data)?data:[];
   list.forEach(t=>{threads[t.id]={...t,msgs:[]};});
   const threadsHtml=list.length?list.map((t,i)=>`<div class="msg-thread-item${i===0?' active':''}" onclick="selectOfficerThread(${t.id},this)">
-      <div class="msg-thread-avatar ta-admin">${(t.title||'?').substring(0,2).toUpperCase()}</div>
+      <div class="msg-thread-avatar ta-admin">${escHtml((t.title||'?').substring(0,2).toUpperCase())}</div>
       <div class="msg-thread-info">
-        <div class="msg-thread-name">${t.title}</div>
-        <div class="msg-thread-preview">${t.last_message||'No messages yet'}</div>
-        ${t.last_time?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Updated ${t.last_time}</div>`:''}
+        <div class="msg-thread-name">${escHtml(t.title)}</div>
+        <div class="msg-thread-preview">${escHtml(t.last_message||'No messages yet')}</div>
+        ${t.last_time?`<div style="font-size:10px;color:var(--text-dim);margin-top:3px;">Updated ${escHtml(t.last_time)}</div>`:''}
       </div>
       <button class="msg-thread-del" aria-label="Delete conversation" onclick="event.stopPropagation();deleteOfficerConversation(${t.id})" title="Delete">&#10005;</button>
     </div>`).join(''):'<div style="color:var(--text-dim);font-size:12px;padding:12px;">No conversations yet.<br><button class="btn btn-sm" style="margin-top:8px;" onclick="openOfficerNewConv()">Start one</button></div>';
@@ -189,8 +208,7 @@ async function selectOfficerThread(id,el){
 function selectThread(id,el){ /* legacy */ }
 async function deleteOfficerConversation(id){
   if(!(await SubUI.confirm({ title:'Delete conversation?', message:'This deletes the conversation and all its messages.', confirmText:'Delete', danger:true, icon:'!' }))) return;
-  const csrfToken=document.querySelector('meta[name=csrf-token]')?.content||'';
-  const res=await fetch('/api/messages/'+id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken}}).then(r=>r.json()).catch(()=>({success:false}));
+    const res=await fetch('/api/messages/'+id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()}}).then(r=>r.json()).catch(()=>({success:false}));
   if(res.success){
     delete threads[id];
     if(currentThread==id){
@@ -288,14 +306,14 @@ function renderOverviewAnn(){
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
-        <span class="ann-date">${a.created_at}</span>
+        <span class="ann-date">${escHtml(a.created_at)}</span>
       </div>
-      <div class="ann-title">${a.title}</div>
-      <div class="ann-body">${a.content}</div>
-      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
-      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
+      <div class="ann-title">${escHtml(a.title)}</div>
+      <div class="ann-body">${escHtml(a.content)}</div>
+      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${escHtml(a.target)}</div>`:''}
+      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;display:inline-flex;align-items:center;gap:4px;">${SubUI.icon('calendar',12)} ${escHtml(a.event_date)}</div>`:''}
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
-        <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
+        <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${escHtml(a.status)}</span>
       </div>
       <div class="ann-click-hint">${SubUI.icon('search',12)} Click to view full details</div>
     </div>`).join(''):'<div class="empty-state">' + SubUI.icon('megaphone', 28) + 'No announcements yet.</div>';
@@ -313,19 +331,29 @@ function renderMyAnn(){
       <div class="ann-meta">
         <span class="pill pill-${a.tag||'notice'}">${tagLabel[a.tag]||'Notice'}</span>
         ${a.priority==='High'?'<span class="pill pill-urgent">High Priority</span>':''}
-        <span class="ann-date">${a.created_at}</span>
+        <span class="ann-date">${escHtml(a.created_at)}</span>
       </div>
-      <div class="ann-title">${a.title}</div>
-      <div class="ann-body">${a.content}</div>
-      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${a.target}</div>`:''}
-      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">📅 ${a.event_date}</div>`:''}
+      <div class="ann-title">${escHtml(a.title)}</div>
+      <div class="ann-body">${escHtml(a.content)}</div>
+      ${a.target&&a.target!=='All Residents'?`<div style="font-size:11px;color:var(--text-dim);margin-top:4px;">🎯 ${escHtml(a.target)}</div>`:''}
+      ${a.event_date?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;display:inline-flex;align-items:center;gap:4px;">${SubUI.icon('calendar',12)} ${escHtml(a.event_date)}</div>`:''}
       <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">
-        <span class="pill ${a.status==='Archived'?'pill-inactive':'pill-active'}">${a.status}</span>
+        <span class="pill ${a.status==='Archived'?'pill-inactive':(a.status==='Draft'?'pill-pending':'pill-active')}">${escHtml(a.status)}</span>
       </div>
       <div class="ann-actions">
+        ${a.status==='Draft'?`<button class="btn btn-sm btn-green" onclick="publishMyAnn(${a.id});event.stopPropagation();">${SubUI.icon('send',13)} Publish</button>`:''}
         <button class="btn btn-sm btn-danger" onclick="deleteMyAnn(${a.id});event.stopPropagation();">Delete</button>
       </div>
     </div>`).join('');
+}
+async function publishMyAnn(id){
+  const res=await fetch('/api/announcements/'+id+'/publish',{method:'PATCH',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()}}).then(r=>r.json()).catch(()=>({success:false}));
+  if(res&&res.success){
+    showToast('✅ Announcement published to residents.');
+    await loadOfficerData();
+  } else {
+    showToast('⚠ Could not publish the announcement.');
+  }
 }
 async function deleteMyAnn(id){
   if(!(await SubUI.confirm({ title:'Delete announcement?', message:'Delete this announcement? This cannot be undone.', confirmText:'Delete', danger:true, icon:'!' }))) return;
@@ -336,12 +364,12 @@ async function deleteMyAnn(id){
     renderMyAnn();
     renderOverviewAnn();
     showToast('🗑️ Announcement deleted.');
-    if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnouncements.length;
+    if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnCountThisMonth();
   } else {
     showToast('⚠ Failed to delete announcement.');
   }
 }
-async function postAnnouncement(){
+async function postAnnouncement(draft){
   const tag=document.getElementById('annType').value;
   const title=document.getElementById('annTitle').value.trim();
   const content=document.getElementById('annBody').value.trim();
@@ -350,23 +378,89 @@ async function postAnnouncement(){
   const event_date=document.getElementById('annDate').value||null;
   if(!SubUI.required([[title,'annTitle','Please enter a title.'],[content,'annBody','Please enter the announcement body.']])) return;
   if(!title||!content){showToast('⚠ Please fill in all fields.');return;}
-  const res=await apiPost('/api/announcements',{tag,title,content,target,priority,event_date});
+  const res=await apiPost('/api/announcements',{tag,title,content,target,priority,event_date,status:draft?'Draft':'Active'});
   if(res.success){
-    adminAnnouncements.unshift(res.announcement);
+    if(!draft) adminAnnouncements.unshift(res.announcement);
     myAnnouncements.unshift(res.announcement);
     document.getElementById('annTitle').value='';
     document.getElementById('annBody').value='';
     renderMyAnn();
     renderOverviewAnn();
-    if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnouncements.length;
-    showToast('✅ Announcement posted!');
+    if(document.getElementById('annCount')) document.getElementById('annCount').textContent=myAnnCountThisMonth();
+    showToast(draft?'Draft saved - publish it from your list below.':'Announcement posted!');
   } else {
     showToast('⚠ '+(res.message||'Failed to post announcement.'));
   }
 }
 
+function saveAnnDraft(){ postAnnouncement(true); }
+
+/* Announcement quick-fill: built-in presets, replaced by DB templates when seeded. */
+let _annTemplateList=[];
+function applyAnnTemplate(type){
+  const templates={
+    notice:{tag:'notice',title:'Community Notice',body:'Dear residents,\n\nPlease be informed that [details here].\n\nThank you for your cooperation.'},
+    urgent:{tag:'urgent',title:'Urgent Advisory',body:'Dear residents,\n\n[Urgent details here]. Please take immediate action.\n\nFor concerns, please contact the HOA office.'},
+    event:{tag:'event',title:'Upcoming Event',body:'We are pleased to invite all residents to [Event Name].\n\nDate: [Date]\nVenue: [Location]\nTime: [Time]\n\nWe look forward to seeing you there!'},
+  };
+  const t=templates[type];
+  if(!t) return;
+  document.getElementById('annType').value=t.tag;
+  document.getElementById('annTitle').value=t.title;
+  document.getElementById('annBody').value=t.body;
+  if(type==='event') document.getElementById('annDate').value='';
+}
+async function loadOfficerAnnTemplates(){
+  try{ _annTemplateList=await apiGet('/api/announcement-templates'); }catch(e){ _annTemplateList=[]; }
+  const row=document.getElementById('officerAnnTemplateRow');
+  if(!row||!Array.isArray(_annTemplateList)||!_annTemplateList.length) return;
+  row.innerHTML='<span style="font-size:11px;color:var(--text-dim);align-self:center;white-space:nowrap;">Template:</span>'+
+    _annTemplateList.map(t=>`<button class="btn btn-sm" style="font-size:11px;padding:4px 10px;" onclick="applyAnnTemplateById(${t.id})">${escHtml(t.name)}</button>`).join('');
+}
+function applyAnnTemplateById(id){
+  const t=(_annTemplateList||[]).find(x=>Number(x.id)===Number(id)); if(!t) return;
+  if(t.type && ['notice','urgent','event'].includes(t.type)) document.getElementById('annType').value=t.type;
+  document.getElementById('annTitle').value=t.subject_template||t.name||'';
+  document.getElementById('annBody').value=t.body_template||'';
+}
+
+/* ══ COMMUNITY CALENDAR ══ */
+async function loadOfficerEvents(){
+  const el=document.getElementById('officerEventList');
+  if(!el) return;
+  let events=[];
+  try{ events=await fetch('/api/events',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){ events=[]; }
+  if(!Array.isArray(events)||!events.length){
+    el.innerHTML='<div class="empty-state">'+SubUI.icon('calendar',28)+'No upcoming events.</div>';
+    return;
+  }
+  el.innerHTML=events.map(e=>`
+    <div class="report-item" style="margin-bottom:12px;">
+      <div class="report-top">
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${SubUI.icon('calendar',12)} ${escHtml(e.starts_at||'')}${e.ends_at?' – '+escHtml(e.ends_at):''}</div>
+          <div class="report-title">${escHtml(e.title)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="pill pill-notice">${parseInt(e.going,10)||0} going</span>
+          ${e.maybe?`<span style="font-size:10px;color:var(--text-dim);">${parseInt(e.maybe,10)} maybe</span>`:''}
+        </div>
+      </div>
+      ${e.location?`<div class="report-meta" style="font-size:13px;color:var(--text-mid);display:flex;align-items:center;gap:5px;">${SubUI.icon('map-pin',12)} ${escHtml(e.location)}</div>`:''}
+      ${e.description?`<div class="report-meta" style="font-size:13px;color:var(--text-mid);margin-top:6px;line-height:1.55;">${escHtml(e.description)}</div>`:''}
+    </div>`).join('');
+}
+
 /* ══ ISSUE RESPONSES ══ */
 let officerRespondingId=null;
+
+/* Roster for the issue "Assign To" picker (fetched once per session). */
+let _officerRoster=null;
+async function officerRoster(){
+  if(_officerRoster) return _officerRoster;
+  try{ const raw=await apiGet('/api/officers'); _officerRoster=Array.isArray(raw)?raw:[]; }catch(e){ _officerRoster=[]; }
+  return _officerRoster;
+}
 async function loadOfficerCommonIssues(){
   const el=document.getElementById('officerCommonIssues');
   if(!el) return;
@@ -388,7 +482,14 @@ async function loadOfficerCommonIssues(){
 function renderOfficerIssues(){
   const sf=(document.getElementById('officerIssueFilter')||{}).value||'';
   const sort=(document.getElementById('officerIssueSort')||{}).value||'';
+  const af=(document.getElementById('officerIssueAssigneeFilter')||{}).value||'';
   let filtered=officerIssues.filter(i=>!sf||i.status===sf);
+  if(af==='mine'){
+    const myId = window.__OFFICER_ID;
+    filtered = filtered.filter(i => myId && Number(i.assigned_officer_id) === Number(myId));
+  } else if(af==='unassigned'){
+    filtered = filtered.filter(i => !i.assigned_officer_id);
+  }
   if(sort==='urgent'){const order={Critical:0,High:1,Medium:2,Low:3};filtered=[...filtered].sort((a,b)=>(order[a.priority]??9)-(order[b.priority]??9));}
   const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
   const priColor={Critical:'#ff5555',High:'#f08080',Medium:'var(--yellow)',Low:'var(--green)'};
@@ -414,6 +515,12 @@ function renderOfficerIssues(){
         ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="SLA due date">${i.overdue?SubUI.icon('clock',12)+' Overdue ':SubUI.icon('calendar',12)+' Due '}${escHtml(i.due_date)}</span>`:''}
         <span style="font-size:11px;color:var(--text-dim);">· #${i.id} · ${escHtml(i.created_at)}</span>
       </div>
+      ${(i.media&&i.media.length)?`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;">${i.media.map(m=>{
+        const isImg=/\.(png|jpe?g|gif|webp)$/i.test(m.name||m.url||'');
+        return isImg
+          ?`<a href="${escHtml(m.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation();"><img src="${escHtml(m.url)}" alt="${escHtml(m.name)}" style="width:82px;height:60px;object-fit:cover;border-radius:6px;border:1px solid var(--glass-border);display:block;"></a>`
+          :`<a href="${escHtml(m.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation();" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--accent);text-decoration:underline;">${SubUI.icon('paperclip',12)} ${escHtml(m.name)}</a>`;
+      }).join('')}</div>`:''}
       ${(i.responses&&i.responses.length)?`<div style="margin-top:12px;padding:10px 12px;background:rgba(122,180,240,0.07);border-left:2px solid rgba(122,180,240,0.4);border-radius:0 6px 6px 0;">
         <div style="font-size:10px;color:var(--blue);font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px;">Response</div>
         <div style="font-size:13px;color:var(--text-mid);">${escHtml(i.responses[0].content)}</div>
@@ -438,6 +545,40 @@ async function openOfficerRespond(id){
   document.getElementById('officerRespondStatus').value=issue.status;
   document.getElementById('officerRespondPriority').value=issue.priority||'Low';
   document.getElementById('officerRespondText').value=(issue.responses&&issue.responses[0])?issue.responses[0].content:'';
+  // Show the resident's photo/document evidence inside the modal too.
+  const mediaEl=document.getElementById('officerRespondMedia');
+  if(mediaEl){
+    mediaEl.innerHTML=(issue.media&&issue.media.length)
+      ?'<div style="width:100%;font-size:10px;color:var(--text-dim);font-weight:700;letter-spacing:.06em;text-transform:uppercase;">Attachments</div>'+issue.media.map(m=>{
+        const isImg=/\.(png|jpe?g|gif|webp)$/i.test(m.name||m.url||'');
+        return isImg
+          ?`<a href="${escHtml(m.url)}" target="_blank" rel="noopener"><img src="${escHtml(m.url)}" alt="${escHtml(m.name)}" style="width:96px;height:68px;object-fit:cover;border-radius:6px;border:1px solid var(--glass-border);display:block;"></a>`
+          :`<a href="${escHtml(m.url)}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--accent);text-decoration:underline;">${SubUI.icon('paperclip',12)} ${escHtml(m.name)}</a>`;
+      }).join('')
+      :'';
+  }
+  // Assignment + SLA due date, with a compact audit-trail preview.
+  const assigneeSel=document.getElementById('officerRespondAssignee');
+  if(assigneeSel){
+    const roster=await officerRoster();
+    assigneeSel.innerHTML='<option value="">Unassigned</option>'+roster.map(o=>`<option value="${o.id}">${escHtml(o.name)}${Number(o.id) === Number(window.__OFFICER_ID) ? ' (You)' : ''}</option>`).join('');
+    assigneeSel.value=issue.assigned_officer_id?String(issue.assigned_officer_id):'';
+  }
+  const dueEl=document.getElementById('officerRespondDue');
+  if(dueEl) dueEl.value=issue.due_date||'';
+  const histEl=document.getElementById('officerRespondHistory');
+  if(histEl){
+    histEl.style.display='none'; histEl.innerHTML='';
+    fetch('/api/issues/'+id+'/history',{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(rows=>{
+      if(!Array.isArray(rows)||!rows.length) return;
+      histEl.innerHTML='<div style="font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:6px;">History</div>'+
+        rows.slice(0,8).map(l=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px dashed var(--glass-border);">
+          <span>${escHtml(l.action)}${(l.old||l.new)?': '+escHtml(String(l.old||'—'))+' → '+escHtml(String(l.new||'—')):''}</span>
+          <span style="color:var(--text-dim);white-space:nowrap;">${escHtml(l.actor||'')} · ${escHtml(l.at||'')}</span>
+        </div>`).join('');
+      histEl.style.display='block';
+    }).catch(()=>{});
+  }
   openModal('officerRespond');
 }
 async function submitOfficerResponse(){
@@ -446,17 +587,33 @@ async function submitOfficerResponse(){
   const newStatus=document.getElementById('officerRespondStatus').value;
   const newPriority=document.getElementById('officerRespondPriority').value;
   const content=document.getElementById('officerRespondText').value.trim();
-  const [statusRes,priorityRes,respondRes]=await Promise.all([
+  const assigneeSel=document.getElementById('officerRespondAssignee');
+  const dueEl=document.getElementById('officerRespondDue');
+  const newAssignee=assigneeSel&&assigneeSel.value?Number(assigneeSel.value):null;
+  const newDue=dueEl&&dueEl.value?dueEl.value:null;
+  const origAssignee=issue.assigned_officer_id?Number(issue.assigned_officer_id):null;
+  const origDue=issue.due_date||null;
+  const assignChanged=(newAssignee!==origAssignee)||(newDue!==origDue);
+  const [statusRes,priorityRes,respondRes,assignRes]=await Promise.all([
     apiPut('/api/issues/'+officerRespondingId+'/status',{status:newStatus}),
     newPriority ? apiPut('/api/issues/'+officerRespondingId+'/priority',{priority:newPriority}) : Promise.resolve({success:true}),
     content ? apiPost('/api/issues/'+officerRespondingId+'/respond',{content}) : Promise.resolve({success:true}),
+    assignChanged ? apiPut('/api/issues/'+officerRespondingId+'/assign',{assigned_officer_id:newAssignee,due_date:newDue}) : Promise.resolve({success:true}),
   ]);
   if(!statusRes||!statusRes.success){showToast('⚠ Failed to update status.');return;}
   if(newPriority && (!priorityRes||!priorityRes.success)){showToast('Failed to update priority.');return;}
   if(content && (!respondRes||!respondRes.success)){showToast('Failed to save the response.');return;}
+  if(assignChanged && (!assignRes||!assignRes.success)){showToast('Failed to update the assignment.');return;}
   issue.status=newStatus;
   if(priorityRes&&priorityRes.success) issue.priority=newPriority;
   if(content) issue.responses=[{content}];
+  if(assignChanged){
+    issue.assigned_officer_id=newAssignee;
+    issue.due_date=newDue;
+    const match=(_officerRoster||[]).find(o=>Number(o.id)===Number(newAssignee));
+    issue.assigned_officer=match?match.name:null;
+    issue.overdue=newDue?newDue<new Date().toISOString().slice(0,10):false;
+  }
   closeModal('officerRespond');
   renderOfficerIssues();
   showToast('✅ Response submitted.');
@@ -569,7 +726,7 @@ function handleDrop(e){
   document.getElementById('uploadZone').classList.remove('drag-over');
   const f=e.dataTransfer.files[0];
   if(!f){return;}
-  if(!f.name.match(/\.(xlsx|xls|csv)$/i)){showToast('⚠ Please upload an Excel or CSV file.');return;}
+  if(!f.name.match(/\.(xlsx|xls|csv|pdf|doc|docx|png|jpg|jpeg|gif|webp)$/i)){showToast('⚠ Please upload an Excel, CSV, PDF, Word, or image file.');return;}
   selectedFile=f;
   document.getElementById('selectedFileName').textContent=f.name;
   document.getElementById('selectedFileMeta').textContent=fmtBytes(f.size)+' · Spreadsheet';
@@ -581,6 +738,7 @@ async function sendFile(){
   const notes  = document.getElementById('fileNotes').value.trim();
   const input  = document.getElementById('fileUploadInput');
   if(!input.files.length){showToast('⚠ Please select a file to send.'); return;}
+  if(input.files[0].size > 10 * 1024 * 1024){showToast('⚠ File is larger than the 10 MB limit.'); return;}
 
   const fd = new FormData();
   fd.append('file',     input.files[0]);
@@ -609,7 +767,7 @@ async function sendFile(){
       renderSentFiles();
       showToast('✅ File sent to admin: ' + res.file.original_name);
     } else {
-      showToast('⚠ Upload failed.');
+      showToast('⚠ ' + (res.message || 'Upload failed.'));
     }
   } catch(e) {
     showToast('⚠ Upload error: ' + e.message);
@@ -631,6 +789,7 @@ function renderSentFiles(){
           <div class="file-meta">${f.category} · ${f.period} · ${f.date} · ${f.size}</div>
         </div>
         <span class="file-status ${f.status==='sent'?'file-sent':'file-pending-send'}">${f.status==='sent'?'Sent':'Pending'}</span>
+        ${f.id?`<a class="btn btn-sm" style="margin-left:8px;" href="/api/officer-files/${f.id}/download">${SubUI.icon('download',13)} Download</a>`:''}
         ${f.id?`<button class="btn btn-sm btn-danger" style="margin-left:8px;" onclick="deleteSentFile(${f.id})">Delete</button>`:''}
       </div>`).join('');
   }
@@ -651,6 +810,7 @@ async function deleteSentFile(id){
 /* ══ INIT ══ */
 const OFFICER_ID = window.__OFFICER.id;
 loadOfficerData();
+loadOfficerAnnTemplates();
 
 /* ── Save officer name on blur ── */
 const _oNameEl = document.getElementById('officerName');
@@ -694,7 +854,7 @@ document.getElementById('annNotifViewBtn').onclick=()=>{
    the existing REST endpoints.
    ══════════════════════════════════════════════════════════ */
 let _lastUrgentId = null;
-function dismissEmergency(){ document.getElementById('emergencyAlert').style.display='none'; }
+function dismissEmergency(){ const el = document.getElementById('emergencyAlert'); if (el) el.style.display='none'; }
 
 let _sseAnnId   = 0;
 let _sseIssueId = 0;
@@ -892,9 +1052,10 @@ setInterval(()=>{
     return;
   }
   try {
-    const ch = window.Echo.channel('subsync');
+    const ch = window.Echo.private('subsync');
     const refresh = () => {
       if(typeof loadOfficerData === 'function') loadOfficerData().catch(function(){});
+      if(document.getElementById('panel-calendar')?.classList.contains('active')) loadOfficerEvents().catch(function(){});
       document.dispatchEvent(new Event('subsync:refresh-alerts'));
     };
     ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
@@ -906,7 +1067,8 @@ setInterval(()=>{
       const mine = evt.senderType === 'officer' && Number(evt.senderId) === Number(OFFICER_ID);
       if(mine){ if(isOpen) refreshOfficerMessages(); return; }
       if(isOpen && panelOpen){ refreshOfficerMessages(); return; }
-      showToast('New message from ' + (evt.senderName || 'someone') + '.');
+      const _tName=(threads[evt.conversationId]&&threads[evt.conversationId].title)||'';
+      showToast(_tName ? 'New message from ' + _tName + '.' : 'New message.');
       const badge = document.getElementById('badge-messages');
       if(badge){ badge.textContent = (parseInt(badge.textContent,10)||0) + 1; badge.style.display = 'inline-flex'; }
       refreshOfficerRequestBlock();

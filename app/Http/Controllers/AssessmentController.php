@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Assessment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 
 class AssessmentController extends Controller
 {
@@ -44,12 +45,20 @@ class AssessmentController extends Controller
     /** POST /api/assessments/generate — post this period's charges now. */
     public function generate(Request $request)
     {
-        $period = $request->input('period');
-        \Illuminate\Support\Facades\Artisan::call('assessments:generate-dues', $period ? ['--period' => $period] : []);
+        // A malformed period used to reach the command and blow up on explode('-')
+        // (500); require YYYY-MM up front.
+        // Array syntax: the pattern contains "|", which would otherwise be split
+        // into separate rules by the string form.
+        $data = $request->validate([
+            'period' => ['nullable', 'string', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
+        ]);
+
+        $period = $data['period'] ?? null;
+        Artisan::call('assessments:generate-dues', $period ? ['--period' => $period] : []);
 
         return response()->json([
             'success' => true,
-            'message' => trim(\Illuminate\Support\Facades\Artisan::output()) ?: 'Dues generated.',
+            'message' => trim(Artisan::output()) ?: 'Dues generated.',
         ]);
     }
 

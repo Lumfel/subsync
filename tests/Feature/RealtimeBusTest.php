@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Events\SubSyncEvent;
+use App\Models\Admin;
 use App\Models\Event;
 use App\Models\EventRsvp;
 use App\Models\Officer;
@@ -10,7 +11,9 @@ use App\Models\OfficerFile;
 use App\Models\PaymentSubmission;
 use App\Models\Recommendation;
 use App\Models\Resident;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Event as EventBus;
 use Tests\TestCase;
 
@@ -39,7 +42,7 @@ class RealtimeBusTest extends TestCase
 
         EventBus::assertDispatched(
             fn (SubSyncEvent $e) => $e->eventName === 'resident'
-                && $e->payload['name'] === 'Juan Dela Cruz'
+                && ! array_key_exists('name', $e->payload) // no PII on the bus
                 && $e->payload['status'] === 'Pending'
         );
 
@@ -65,7 +68,7 @@ class RealtimeBusTest extends TestCase
 
         EventBus::assertDispatched(
             fn (SubSyncEvent $e) => $e->eventName === 'officer'
-                && $e->payload['name'] === 'Off One'
+                && ! array_key_exists('name', $e->payload) // no PII on the bus
                 && $e->payload['status'] === 'Pending'
         );
 
@@ -157,5 +160,53 @@ class RealtimeBusTest extends TestCase
 
         $bell = file_get_contents(public_path('js/notifications.js'));
         $this->assertStringContainsString('subsync:refresh-alerts', $bell);
+    }
+
+    public function test_realtime_bus_is_a_private_channel(): void
+    {
+        $event = new SubSyncEvent('announcement', ['x' => 1]);
+        $channels = $event->broadcastOn();
+
+        $this->assertInstanceOf(PrivateChannel::class, $channels[0]);
+        $this->assertSame('private-subsync', (string) $channels[0]);
+    }
+
+    public function test_broadcasting_auth_requires_a_portal_session(): void
+    {
+        // phpunit runs with BROADCAST_CONNECTION=null, whose broadcaster skips
+        // authorization entirely — switch to the real (Reverb) broadcaster so
+        // the channel checks actually execute (signing is local, no network).
+        // Channel definitions are registered on whichever driver is default at
+        // boot, so they must be replayed onto the swapped driver.
+        config(['broadcasting.default' => 'reverb']);
+        Broadcast::purge();
+        require base_path('routes/channels.php');
+
+        $resident = $this->resident(['status' => 'Active']);
+
+        // Guests cannot subscribe.
+        $this->postJson('/broadcasting/auth', ['channel_name' => 'private-subsync', 'socket_id' => '1.2'])
+            ->assertStatus(403);
+
+        // Residents (guard-based session) are authorized.
+        $this->actingAs($resident, 'resident')
+            ->postJson('/broadcasting/auth', ['channel_name' => 'private-subsync', 'socket_id' => '1.2'])
+            ->assertOk()
+            ->assertJsonStructure(['auth']);
+
+        // Admins authenticate via the admin guard (set by adminLogin).
+        $this->app['auth']->forgetGuards();
+        $this->flushSession();
+
+        $admin = Admin::create([
+            'name' => 'Boss', 'email' => 'boss@example.test',
+            'password' => 'Secret@12345', 'status' => 'Active',
+        ]);
+        $this->withSession(['admin_id' => $admin->id]);
+        $this->app['auth']->guard('admin')->login($admin);
+
+        $this->postJson('/broadcasting/auth', ['channel_name' => 'private-subsync', 'socket_id' => '1.2'])
+            ->assertOk()
+            ->assertJsonStructure(['auth']);
     }
 }

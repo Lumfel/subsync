@@ -11,7 +11,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap"></noscript>
-<link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="stylesheet" href="{{ asset('css/residents.css') . '?v=' . filemtime(public_path('css/residents.css')) }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +48,7 @@
     <li class="tab-btn" onclick="switchTab('payments')" id="tab-payments"><x-icon name="credit-card" size="15"/> Payments</li>
     <li class="tab-btn" onclick="switchTab('issues')" id="tab-issues"><x-icon name="wrench" size="15"/> Issues</li>
     <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages"><x-icon name="message" size="15"/> Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
-    <li class="tab-btn" onclick="switchTab('calendar')" id="tab-calendar">&#128197; Calendar</li>
+    <li class="tab-btn" onclick="switchTab('calendar')" id="tab-calendar"><x-icon name="calendar" size="15"/> Calendar</li>
     <li class="tab-btn" onclick="switchTab('expenses')" id="tab-expenses"><x-icon name="coins" size="15"/> Expenses</li>
     <li class="tab-btn" onclick="switchTab('recs')" id="tab-recs"><x-icon name="lightbulb" size="15"/> Suggestions</li>
     <li class="tab-btn" onclick="switchTab('policies')" id="tab-policies"><x-icon name="scroll" size="15"/> Policies</li>
@@ -58,7 +57,7 @@
 
   <!-- Sidebar tools: search + notifications -->
   <div class="sidebar-tools">
-    <button type="button" class="nc-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)" aria-label="Search">&#128269;</button>
+    <button type="button" class="nc-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)" aria-label="Search"><x-icon name="search" size="14"/></button>
     @include('partials.notification-center')
   </div>
 
@@ -72,7 +71,7 @@
     <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Block/Lot: <span id="locationText">{{ $blockLot }}</span></div>
     
     <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'resident' }}"></form>
-    <a href="{{ url('settings') }}?portal={{ $role ?? 'resident' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;">&#9881; Settings</a>
+    <a href="{{ url('settings') }}?portal={{ $role ?? 'resident' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;"><x-icon name="gear" size="13"/> Settings</a>
     <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:8px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
 </aside>
@@ -106,19 +105,7 @@
         <div class="balance-label">Outstanding Balance</div>
         <div class="balance-val" id="residentBalance">₱{{ number_format((float)($balance ?? 0), 2) }}</div>
         <div style="font-size:12px; color:var(--text-dim); margin-top:6px;">Settle your dues via the Payments tab.</div>
-        <button class="btn btn-sm" style="margin-top:12px; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.22); color:#fff;" onclick="switchTab('payments')">Pay via GCash</button>
-      </div>
-
-      <!-- Quick Actions (Span 12) -->
-      <div class="card bento-col-12" id="residentQuickActions">
-        <div class="card-title">Quick Actions</div>
-        <div class="card-subtitle">The most common things you may need. Tap one to begin.</div>
-        <div class="quick-actions" style="margin-top:10px;">
-          <button class="btn" onclick="switchTab('payments')"><x-icon name="credit-card" size="15"/> Pay My Dues</button>
-          <button class="btn" onclick="switchTab('issues')"><x-icon name="megaphone" size="15"/> Report a Problem</button>
-          <button class="btn" style="background:#e05555;border-color:#e05555;color:#fff;" onclick="switchTab('issues'); setTimeout(startEmergency, 200);"><x-icon name="alert" size="15"/> Emergency</button>
-          <button class="btn" onclick="switchTab('messages')"><x-icon name="mail" size="15"/> Message the HOA</button>
-        </div>
+        <button class="btn btn-sm" style="margin-top:12px; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.22); color:#fff;" onclick="quickPay()">Pay via GCash</button>
       </div>
 
       <!-- Announcements Box (Span 8 - Front & Center) -->
@@ -126,6 +113,18 @@
         <div class="card-title">Announcements</div>
         <div class="card-subtitle">Neighborhood notices and community calendar events.</div>
         <div id="announcementList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card" style="margin-bottom:10px;"></div></div>
+      </div>
+
+      <!-- Quick Actions (Span 4, stacked like the officer portal) -->
+      <div class="card bento-col-4" id="residentQuickActions">
+        <div class="card-title">Quick Actions</div>
+        <div class="card-subtitle">Common tasks, one tap away.</div>
+        <div class="quick-stack">
+          <button class="btn btn-full" onclick="switchTab('payments')"><x-icon name="credit-card" size="15"/> Pay My Dues</button>
+          <button class="btn btn-full" onclick="switchTab('issues')"><x-icon name="megaphone" size="15"/> Report a Problem</button>
+          <button class="btn btn-full" style="background:#e05555;border-color:#e05555;color:#fff;" onclick="switchTab('issues'); setTimeout(startEmergency, 200);"><x-icon name="alert" size="15"/> Emergency</button>
+          <button class="btn btn-full" onclick="switchTab('messages')"><x-icon name="mail" size="15"/> Message the HOA</button>
+        </div>
       </div>
 
       <!-- Household Members (Span 4) -->
@@ -141,14 +140,14 @@
       </div>
 
       
-        <!-- HOA Policies Preview Card (Span 12) -->
-        <div class="card bento-col-12">
+        <!-- HOA Policies Preview Card (Span 8) -->
+        <div class="card bento-col-8">
           <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
             <span>HOA Community Policies &amp; Regulations</span>
             <button class="btn btn-sm" onclick="switchTab('policies')"><x-icon name="scroll" size="14"/> View All Policies</button>
           </div>
           <div class="card-subtitle">Essential guidelines for property maintenance, sanitation, security, and peaceful community living.</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px;">
             <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
               <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">1. Membership &amp; Community Conduct</div>
               <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Resident rights, good-neighbor conduct, and community etiquette.</div>
@@ -257,6 +256,7 @@
             <input type="file" id="issueCamera" accept="image/*" capture="environment" style="display:none">
             <span id="issueCameraCount" style="font-size:11px;color:var(--text-dim);"></span>
           </div>
+          <div class="file-chips" id="issueImageChips"></div>
         </div>
       </div>
       <div class="f-row">
@@ -264,6 +264,7 @@
           <span class="f-label"><x-icon name="paperclip" size="14"/> Supporting Documents (optional, up to 5)</span>
           <input type="file" id="issueDocuments" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple style="font-size:13px;padding:6px 0;">
           <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">PDF, Word, or Excel files (max 10 MB each).</div>
+          <div class="file-chips" id="issueDocChips"></div>
         </div>
       </div>
       <div class="f-row">
@@ -274,12 +275,13 @@
             <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="openIssuePicker()">Pin on Map</button>
             <span id="issue-loc-display" style="font-size:12px;color:var(--text-dim);">No location set</span>
           </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Tip: click the map or use GPS, then drag the pin to fine-tune. The pin must stay inside the Terra Nova boundary.</div>
           <div id="issue-picker-map" style="display:none;height:240px;border-radius:8px;border:1px solid var(--glass-border);margin-bottom:8px;z-index:1;"></div>
           <input type="hidden" id="issue-lat">
           <input type="hidden" id="issue-lng">
         </div>
       </div>
-      <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitIssue):submitIssue()">Submit Report</button>
+      <button class="btn btn-full btn-orange" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitIssue):submitIssue()">Submit Report</button>
     </div>
 
     <div class="card">
@@ -296,6 +298,36 @@
       <div id="timelineList" style="max-height:360px;overflow-y:auto;"></div>
       <div class="modal-actions">
         <button class="modal-close-btn" onclick="document.getElementById('modal-timeline').classList.remove('open')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Details Modal (append info/photos to an open report) -->
+  <div class="modal-overlay" id="modal-addDetails" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal-box" style="max-width:520px;">
+      <div class="modal-title" id="addDetailsTitle">Add Details</div>
+      <div id="addDetailsMeta" style="font-size:13px;color:var(--text-mid);margin-bottom:14px;"></div>
+      <div class="f-row">
+        <div class="f-field"><span class="f-label">More details (optional)</span>
+          <textarea id="addDetailsText" placeholder="Add more context — what changed, when it happens, anything that helps the team…" style="min-height:90px;"></textarea>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field"><span class="f-label"><x-icon name="camera" size="14"/> Photos (optional, up to 5, max 8 MB each)</span>
+          <input type="file" id="addDetailsImages" accept="image/*" multiple>
+          <div class="file-chips" id="addDetailsImageChips"></div>
+        </div>
+      </div>
+      <div class="f-row">
+        <div class="f-field"><span class="f-label"><x-icon name="paperclip" size="14"/> Documents (optional, up to 5)</span>
+          <input type="file" id="addDetailsDocs" accept=".pdf,.doc,.docx,.xls,.xlsx" multiple>
+          <div class="file-chips" id="addDetailsDocChips"></div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:#f08080;margin-bottom:8px;" id="addDetailsMsg"></div>
+      <div class="modal-actions">
+        <button class="modal-close-btn" onclick="document.getElementById('modal-addDetails').classList.remove('open')">Cancel</button>
+        <button class="btn btn-sm" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitAddDetails):submitAddDetails()">Submit</button>
       </div>
     </div>
   </div>
@@ -332,7 +364,7 @@
           <textarea id="recBody" placeholder="Explain your suggestion — why it benefits the community, estimated impact, how it could be implemented…"></textarea>
         </div>
       </div>
-      <button class="btn btn-full" style="color:var(--purple);background:var(--purple-dim);border-color:rgba(185,154,245,0.3);" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitRec):submitRec()">Submit Suggestion</button>
+      <button class="btn btn-full btn-orange" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitRec):submitRec()">Submit Suggestion</button>
     </div>
 
     <div class="card">
@@ -353,6 +385,7 @@
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;display:inline-block;"></span>Issue (Pending)</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;"></span>Issue (In Progress)</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#888;display:inline-block;"></span>Issue (Resolved, ≤7d)</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;border:2px solid #FFD700;display:inline-block;"></span>Your report</span>
         <span style="margin-left:auto;font-size:12px;color:var(--text-dim);">Issue pins are numbered by report sequence</span>
       </div>
     </div>
@@ -393,17 +426,23 @@
       </div>
     </div>
 
-    <div class="card" style="margin-bottom:12px;">
+    <div class="card" id="payFormCard" style="margin-bottom:12px;">
       <div class="card-title" style="margin:0 0 12px;">Submit Payment for Validation</div>
       <div class="f-row">
+        <div class="f-field" style="width:100%;">
+          <span class="f-label">Receipt Screenshot (photo, max 8 MB) — <em style="font-weight:normal;color:var(--accent);">Auto-reads Ref No. &amp; Amount</em></span>
+          <input type="file" id="payReceipt" accept="image/*" onchange="onReceiptFileSelected(this)">
+          <div id="ocrStatus" style="display:none;margin-top:8px;font-size:12px;padding:8px 12px;border-radius:6px;border:1px solid transparent;line-height:1.4;"></div>
+        </div>
+      </div>
+      <div class="f-row">
         <div class="f-field"><span class="f-label">Amount (₱)</span><input type="number" id="payAmount" min="1" step="0.01" placeholder="0.00"></div>
-        <div class="f-field"><span class="f-label">GCash Reference No.</span><input type="text" id="payReference" maxlength="100" placeholder="e.g. 1234 5678 9012"></div>
+        <div class="f-field"><span class="f-label">GCash Reference No.</span><input type="text" id="payReference" maxlength="100" placeholder="e.g. 1002 3456 78901 (13 digits)"></div>
       </div>
       <div class="f-row">
         <div class="f-field"><span class="f-label">Sender Name</span><input type="text" id="paySender" maxlength="150"></div>
         <div class="f-field"><span class="f-label">Date Paid</span><input type="date" id="payDate"></div>
       </div>
-      <div class="f-row"><div class="f-field"><span class="f-label">Receipt Screenshot (photo, max 8 MB)</span><input type="file" id="payReceipt" accept="image/*"></div></div>
       <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitPayment):submitPayment()">Submit Payment</button>
     </div>
     </div><!-- /pay -->
@@ -551,7 +590,7 @@
     <div class="card" style="margin-top:0;">
       <div class="card-title">Community Calendar</div>
       <div class="card-subtitle">Upcoming events and meetings. Let the HOA know if you're coming.</div>
-      <div id="eventsList" style="margin-top:12px;"><div class="empty-state"><div class="empty-icon">&#128197;</div>Loading…</div></div>
+      <div id="eventsList" style="margin-top:12px;"><div class="empty-state"><div class="empty-icon"><x-icon name="calendar" size="32"/></div>Loading…</div></div>
     </div>
   </div>
 
@@ -614,10 +653,10 @@ function makeResCircle(color) {
   });
 }
 
-function makeResIssueIcon(color, num) {
+function makeResIssueIcon(color, num, mine) {
   return L.divIcon({
     className: '',
-    html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
+    html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid ${mine?'#FFD700':'rgba(255,255,255,0.9)'};box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
     iconSize:[24,24], iconAnchor:[12,12], popupAnchor:[0,-12]
   });
 }
@@ -662,10 +701,12 @@ function initResidentMap() {
         L.marker([parseFloat(f.latitude),parseFloat(f.longitude)],{icon:makeResCircle('#4CAF50')}).bindPopup(popupContent).addTo(resMapInst);
       });
 
+      const ownIssueIds=new Set((typeof issues!=='undefined'&&Array.isArray(issues)?issues:[]).map(x=>String(x.id)));
       (data.issues || []).forEach((i, index)=>{
         const color = i.status==='Resolved' ? '#888' : (i.status==='In Progress'?'#f5a623':'#e05555');
-        let popupContent = '<strong>Report #' + (index + 1) + ': ' + i.title + '</strong><br><small>' + i.status + '</small>';
-        L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon:makeResIssueIcon(color, index + 1)}).bindPopup(popupContent).addTo(resMapInst);
+        const mine=ownIssueIds.has(String(i.id));
+        let popupContent = '<strong>' + (mine?'Your report':'Report') + ' #' + (index + 1) + ': ' + i.title + '</strong><br><small>' + i.status + '</small>';
+        L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon:makeResIssueIcon(color, index + 1, mine)}).bindPopup(popupContent).addTo(resMapInst);
       });
 
       if(HOUSE_ID){
@@ -720,18 +761,36 @@ window._cameraIssueImages = [];
       const n = window._cameraIssueImages.length;
       count.textContent = n ? (n + ' camera photo' + (n > 1 ? 's' : '') + ' added') : '';
     }
+    if (typeof refreshIssueFileChips === 'function') refreshIssueFileChips();
   });
 })();
 
+function setIssuePin(lat,lng){
+  document.getElementById('issue-lat').value=lat;
+  document.getElementById('issue-lng').value=lng;
+  document.getElementById('issue-loc-display').textContent=(+lat).toFixed(5) + ', ' + (+lng).toFixed(5);
+}
+function pickerPinIcon(){
+  // Explicit divIcon: Leaflet's default marker image can 404 when its CSS is still
+  // loading (lazy-loaded here), which showed a broken-image pin.
+  return L.divIcon({
+    className:'',
+    html:'<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#A07D53;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
+    iconSize:[20,20], iconAnchor:[10,20], popupAnchor:[0,-18]
+  });
+}
+function makePickerPin(lat,lng){
+  issuePickerPin=L.marker([lat,lng],{draggable:true, icon:pickerPinIcon()}).addTo(issuePickerMap);
+  issuePickerPin.on('dragend',()=>{ const ll=issuePickerPin.getLatLng(); setIssuePin(ll.lat,ll.lng); });
+  return issuePickerPin;
+}
 function useMyLocation() {
   if (!navigator.geolocation) { showToast('Geolocation not supported.'); return; }
   navigator.geolocation.getCurrentPosition(pos=>{
     const lat=pos.coords.latitude, lng=pos.coords.longitude;
-    document.getElementById('issue-lat').value=lat;
-    document.getElementById('issue-lng').value=lng;
-    document.getElementById('issue-loc-display').textContent=lat.toFixed(5) + ', ' + lng.toFixed(5);
     if(issuePickerPin) issuePickerPin.setLatLng([lat,lng]);
-    else if(issuePickerMap) issuePickerPin=L.marker([lat,lng]).addTo(issuePickerMap);
+    else if(issuePickerMap) makePickerPin(lat,lng);
+    setIssuePin(lat,lng);
     if(issuePickerMap) issuePickerMap.setView([lat,lng], 18);
   }, ()=>showToast('Could not get location.'));
 }
@@ -756,7 +815,7 @@ function openIssuePicker() {
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
         if(issuePickerPin) issuePickerPin.setLatLng([lat,lng]);
-        else issuePickerPin=L.marker([lat,lng]).addTo(issuePickerMap);
+        else makePickerPin(lat,lng);
         document.getElementById('issue-lat').value=lat.toFixed(7);
         document.getElementById('issue-lng').value=lng.toFixed(7);
         document.getElementById('issue-loc-display').textContent=lat.toFixed(5) + ', ' + lng.toFixed(5);

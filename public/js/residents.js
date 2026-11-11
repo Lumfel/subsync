@@ -183,8 +183,9 @@ function viewAnnouncement(id) {
     document.getElementById('annV-priority').style.display = ann.priority === 'High' ? '' : 'none';
     document.getElementById('annV-title').textContent = ann.title;
     document.getElementById('annV-by').textContent = ann.posted_by;
-    document.getElementById('annV-meta').innerHTML = `<span>${ann.created_at}</span>${ann.target && ann.target !== 'All Residents' ? `<span> • ${ann.target}</span>` : ''}${ann.event_date ? `<span> • ${ann.event_date}</span>` : ''}`;
+    document.getElementById('annV-meta').innerHTML = `<span>${escHtml(ann.created_at)}</span>${ann.target && ann.target !== 'All Residents' ? `<span> • ${escHtml(ann.target)}</span>` : ''}${ann.event_date ? `<span> • ${escHtml(ann.event_date)}</span>` : ''}`;
     document.getElementById('annV-content').textContent = ann.content;
+    fetch('/api/announcements/'+id+'/view',{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()}}).then(()=>{document.dispatchEvent(new Event('subsync:refresh-alerts'));}).catch(()=>{});
     document.getElementById('modal-annView').classList.add('open');
   }
 }
@@ -194,8 +195,8 @@ function annItem(a){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   const meta=[];
   if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
-  if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
-  if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 '+a.event_date+'</span>');
+  if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+escHtml(a.target)+'</span>');
+  if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);display:inline-flex;align-items:center;gap:4px;">'+SubUI.icon('calendar',12)+' '+escHtml(a.event_date)+'</span>');
   const statusClass = a.status === 'Archived' ? 'pill-inactive' : 'pill-active';
   meta.push('<span class="pill '+statusClass+'" style="font-size:11px;">'+a.status+'</span>');
   return `
@@ -251,11 +252,11 @@ async function loadResidentThreads(){
   list.forEach(t=>{threads[t.id]={...t,messages:[]};});
   const sortedData=[...list].sort((a,b)=>{const g=x=>x.title==='Community Chat';return g(a)&&!g(b)?-1:(!g(a)&&g(b)?1:0);});
   const threadsHtml=sortedData.length?sortedData.map((t,i)=>`<div class="msg-thread-item${i===0?' active':''}" onclick="selectResThread(${t.id},this)">
-      <div class="msg-thread-avatar ta-admin">${(t.title||'?').substring(0,2).toUpperCase()}</div>
-      <div class="msg-thread-info">
-        <div class="msg-thread-name">${t.title}</div>
-        <div class="msg-thread-preview">${t.last_message||'No messages yet'}</div>
-      </div>
+        <div class="msg-thread-avatar ta-admin">${escHtml((t.title||'?').substring(0,2).toUpperCase())}</div>
+        <div class="msg-thread-info">
+          <div class="msg-thread-name">${escHtml(t.title)}</div>
+          <div class="msg-thread-preview">${escHtml(t.last_message||'No messages yet')}</div>
+        </div>
       <button class="msg-thread-del" aria-label="Delete conversation" onclick="event.stopPropagation();deleteResidentConversation(${t.id})" title="Delete">&#10005;</button>
     </div>`).join(''):'<div style="color:var(--text-dim);font-size:12px;padding:12px;">No conversations yet.<br><button class="btn btn-sm" style="margin-top:8px;" onclick="openNewConvModal()">Start one</button></div>';
   if(sidebar) sidebar.innerHTML=reqHtml+threadsHtml;
@@ -296,8 +297,7 @@ function selectThread(id, el){ /* legacy – kept for old static threads */ }
 
 async function deleteResidentConversation(id){
   if(!(await SubUI.confirm({ title:'Delete conversation?', message:'This deletes the conversation and all its messages.', confirmText:'Delete', danger:true, icon:'!' }))) return;
-  const csrfToken=document.querySelector('meta[name=csrf-token]')?.content||'';
-  const res=await fetch('/api/messages/'+id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken}}).then(r=>r.json()).catch(()=>({success:false}));
+    const res=await fetch('/api/messages/'+id,{method:'DELETE',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()}}).then(r=>r.json()).catch(()=>({success:false}));
   if(res.success){
     delete threads[id];
     if(currentThread==id){
@@ -434,9 +434,14 @@ function renderIssues(){
     const priLabel={Critical:'🚨 Critical',High:'🔴 High',Medium:'🟡 Medium',Low:'🟢 Low'}[i.priority]||'';
     const priSpan=i.priority?`<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;${priStyle[i.priority]||''}">${priLabel}</span><span style="font-size:10px;color:var(--text-dim);margin-left:2px;">assigned</span>`:'';
     const isCritical=i.priority==='Critical';
-    // Photo gallery
-    const photos=(i.media||[]);
-    const gallery=photos.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">${photos.map(m=>`<a href="${m.url}" target="_blank"><img src="${m.url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);" loading="lazy"></a>`).join('')}</div>`:'';
+      // Photo + document gallery
+      const mediaItems=(i.media||[]);
+      const gallery=mediaItems.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;align-items:center;">${mediaItems.map(m=>{
+        const isImg=/\.(png|jpe?g|gif|webp)$/i.test(m.name||m.url||'');
+        return isImg
+          ?`<a href="${escHtml(m.url)}" target="_blank"><img src="${escHtml(m.url)}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);" loading="lazy"></a>`
+          :`<a href="${escHtml(m.url)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--accent);text-decoration:underline;">${SubUI.icon('paperclip',12)} ${escHtml(m.name)}</a>`;
+      }).join('')}</div>`:'';
     return `
     <div class="issue-item" style="${isCritical?'border-left:3px solid #ff4040;':''}">
       <div class="issue-top">
@@ -456,10 +461,11 @@ function renderIssues(){
           <div class="issue-response-label">Admin Response</div>
           <div class="issue-response-text">${i.response}</div>
         </div>`:''}
-      <div style="margin-top:10px;">
-        <button class="btn btn-sm" onclick="openTimeline(${i.id})">View timeline</button>
-      </div>
-    </div>`}).join('');
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="openTimeline(${i.id})">View timeline</button>
+          ${i.status!=='Resolved'?`<button class="btn btn-sm" onclick="openAddDetails(${i.id})">${SubUI.icon('paperclip',13)} Add details</button>`:''}
+        </div>
+      </div>`}).join('');
 }
 function statusPillHtml(s){return {Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'}[s]||'';}
 async function openTimeline(id){
@@ -472,7 +478,7 @@ async function openTimeline(id){
     +(it.priority?` <span style="font-size:11px;color:var(--text-dim);">· Priority ${escHtml(it.priority)}</span>`:'')
     +(it.assigned_officer?`<div style="margin-top:6px;">${SubUI.icon('user',12)} Assigned to <strong>${escHtml(it.assigned_officer)}</strong></div>`:'')
     +(it.due_date?`<div style="margin-top:4px;">${it.overdue?'<span style="color:#f08080;">' + SubUI.icon('clock',12) + ' Overdue</span>':SubUI.icon('calendar',12) + ' Expected by'} <strong>${escHtml(it.due_date)}</strong></div>`:'');
-  const labels={status:'Status changed',priority:'Priority set',assign:'Assigned officer',due_date:'Due date set',archive:'Archive state'};
+    const labels={status:'Status changed',priority:'Priority set',assign:'Assigned officer',due_date:'Due date set',archive:'Archive state',details:'You added details',attachments:'You added files'};
   const tl=(data.timeline||[]);
   document.getElementById('timelineList').innerHTML=tl.length?tl.map(t=>{
     const txt=labels[t.action]||t.action;
@@ -484,17 +490,143 @@ async function openTimeline(id){
   }).join(''):'<div style="font-size:13px;color:var(--text-dim);padding:8px 0;">No changes yet — your report is with the HOA team.</div>';
   document.getElementById('modal-timeline').classList.add('open');
 }
-/* First human-readable error from a Laravel JSON error response */
-function errMsg(data,fallback){
+  /* ── Append details/photos to an open report (audit-trail safe) ── */
+  let _addDetailsId=null;
+  function openAddDetails(id){
+    const i=(issues||[]).find(x=>String(x.id)===String(id));
+    if(!i) return;
+    _addDetailsId=id;
+    document.getElementById('addDetailsTitle').textContent='Add Details to Report #'+id;
+    document.getElementById('addDetailsMeta').textContent=i.title||'';
+    document.getElementById('addDetailsText').value='';
+      document.getElementById('addDetailsImages').value='';
+      document.getElementById('addDetailsDocs').value='';
+      document.getElementById('addDetailsMsg').textContent='';
+      refreshAddDetailsChips();
+      document.getElementById('modal-addDetails').classList.add('open');
+  }
+  async function submitAddDetails(){
+    if(!_addDetailsId) return;
+    const txt=document.getElementById('addDetailsText').value.trim();
+    const imgs=document.getElementById('addDetailsImages').files;
+    const docs=document.getElementById('addDetailsDocs').files;
+    const msg=document.getElementById('addDetailsMsg');
+    if(!txt && !imgs.length && !docs.length){ msg.textContent='Add a note or attach a photo/document first.'; return; }
+    if(imgs.length>5 || docs.length>5){ msg.textContent='Up to 5 photos and 5 documents per update.'; return; }
+    const fd=new FormData();
+    if(txt) fd.append('details',txt);
+    Array.from(imgs).forEach(f=>fd.append('images[]',f));
+    Array.from(docs).forEach(f=>fd.append('documents[]',f));
+    try{
+      const res=await fetch('/api/issues/'+_addDetailsId+'/details',{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':csrfToken()},body:fd}).then(r=>r.json());
+        if(res&&res.success){
+          document.getElementById('modal-addDetails').classList.remove('open');
+          document.getElementById('addDetailsImages').value='';
+          document.getElementById('addDetailsDocs').value='';
+          refreshAddDetailsChips();
+          showToast('✅ Details added to your report.');
+          loadIssues();
+      } else {
+        msg.textContent=(res&&res.message)||'Could not save. Please try again.';
+      }
+    }catch(e){ msg.textContent='Could not save. Please try again.'; }
+  }
+
+  /* First human-readable error from a Laravel JSON error response */
+  function errMsg(data,fallback){
   if(data&&data.errors){ const keys=Object.keys(data.errors); if(keys.length&&Array.isArray(data.errors[keys[0]])&&data.errors[keys[0]][0]) return data.errors[keys[0]][0]; }
   return (data&&data.message)||fallback;
 }
-async function submitIssue(){
-  const category=document.getElementById('issueCategory').value;
+  /* ── Selected-file chips: remove one file so it can be replaced ── */
+  function _fileChip(name, onRemove, camera){
+    const chip=document.createElement('span');
+    chip.className='file-chip';
+    const label=document.createElement('span');
+    label.textContent=(camera?'📷 ':'')+name;
+    const x=document.createElement('button');
+    x.type='button';
+    x.title='Remove '+name;
+    x.setAttribute('aria-label','Remove '+name);
+    x.textContent='\u00d7';
+    x.addEventListener('click', onRemove);
+    chip.append(label, x);
+    return chip;
+  }
+  function _setInputFiles(input, files){
+    try {
+      const dt=new DataTransfer();
+      files.forEach(f=>dt.items.add(f));
+      input.files=dt.files;
+    } catch(e){ /* very old browsers: fall back to clearing everything */
+      input.value='';
+    }
+  }
+  function _removeFromInput(input, index){
+    const arr=Array.from(input.files);
+    arr.splice(index,1);
+    _setInputFiles(input, arr);
+  }
+  function refreshIssueFileChips(){
+    const imgInput=document.getElementById('issueImages');
+    const docInput=document.getElementById('issueDocuments');
+    const imgBox=document.getElementById('issueImageChips');
+    const docBox=document.getElementById('issueDocChips');
+
+    if(imgBox && imgInput){
+      imgBox.innerHTML='';
+      Array.from(imgInput.files).forEach((f,i)=>imgBox.append(
+        _fileChip(f.name, ()=>{ _removeFromInput(imgInput,i); refreshIssueFileChips(); })
+      ));
+      (window._cameraIssueImages||[]).forEach((f,i)=>imgBox.append(
+        _fileChip(f.name, ()=>{
+          window._cameraIssueImages.splice(i,1);
+          const c=document.getElementById('issueCameraCount');
+          const n=window._cameraIssueImages.length;
+          if(c) c.textContent=n?(n+' camera photo'+(n>1?'s':'')+' added'):'';
+          refreshIssueFileChips();
+        }, true)
+      ));
+    }
+
+    if(docBox && docInput){
+      docBox.innerHTML='';
+      Array.from(docInput.files).forEach((f,i)=>docBox.append(
+        _fileChip(f.name, ()=>{ _removeFromInput(docInput,i); refreshIssueFileChips(); })
+      ));
+    }
+  }
+  function refreshAddDetailsChips(){
+    [['addDetailsImages','addDetailsImageChips'],['addDetailsDocs','addDetailsDocChips']].forEach(([inputId, boxId])=>{
+      const input=document.getElementById(inputId);
+      const box=document.getElementById(boxId);
+      if(!input||!box) return;
+      box.innerHTML='';
+      Array.from(input.files).forEach((f,i)=>box.append(
+        _fileChip(f.name, ()=>{ _removeFromInput(input,i); refreshAddDetailsChips(); })
+      ));
+    });
+  }
+  ['issueImages','issueDocuments'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change', refreshIssueFileChips);
+  });
+  ['addDetailsImages','addDetailsDocs'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el) el.addEventListener('change', refreshAddDetailsChips);
+  });
+
+  async function submitIssue(){
+    const category=document.getElementById('issueCategory').value;
   const title=document.getElementById('issueTitle').value.trim();
   const description=document.getElementById('issueBody').value.trim();
-  const latitude=document.getElementById('issue-lat').value||null;
-  const longitude=document.getElementById('issue-lng').value||null;
+    const latitude=document.getElementById('issue-lat').value||null;
+    const longitude=document.getElementById('issue-lng').value||null;
+    if(latitude&&longitude&&typeof mapSettings!=='undefined'&&mapSettings&&(
+      parseFloat(latitude)<mapSettings.min_lat||parseFloat(latitude)>mapSettings.max_lat||
+      parseFloat(longitude)<mapSettings.min_lng||parseFloat(longitude)>mapSettings.max_lng)){
+      showToast('⚠ The pin must be inside the Terra Nova Subdivision boundary. Drag it back or clear it.');
+      return;
+    }
   if(!SubUI.required([[category,'issueCategory','Please choose a category.'],[title,'issueTitle','Please enter a title.'],[description,'issueBody','Please describe the concern.']])) return;
   if(!category||!title||!description){showToast('⚠ Please fill in all fields.');return;}
   const fd=new FormData();
@@ -522,9 +654,10 @@ async function submitIssue(){
     ['issueCategory','issueTitle','issueBody','issue-lat','issue-lng'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     if(imgInput) imgInput.value='';
     if(docInput) docInput.value='';
-    window._cameraIssueImages=[];
-    const camCount=document.getElementById('issueCameraCount');
-    if(camCount) camCount.textContent='';
+      window._cameraIssueImages=[];
+      const camCount=document.getElementById('issueCameraCount');
+      if(camCount) camCount.textContent='';
+      refreshIssueFileChips();
     if(typeof toggleEmergencyNote==='function') toggleEmergencyNote();
     const disp=document.getElementById('issue-loc-display');
     if(disp) disp.textContent='No location set';
@@ -564,7 +697,30 @@ async function loadPayments(){
   loadStatement();
   loadTransparency();
   await loadMyPayments();
+  const senderInput = document.getElementById('paySender');
+  const dateInput = document.getElementById('payDate');
+  const amtInput = document.getElementById('payAmount');
+  if(senderInput && !senderInput.value) senderInput.value = window.__RESIDENT?.name || RESIDENT_NAME || '';
+  if(dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  if(amtInput && !amtInput.value && Number(window.__RESIDENT?.balance || 0) > 0){
+    amtInput.value = Number(window.__RESIDENT.balance).toFixed(2);
+  }
+  bindReceiptPasteAndDrop();
 }
+function quickPay(amount){
+  switchTab('payments');
+  payTab('pay');
+  const bal = amount != null ? Number(amount) : Number(window.__RESIDENT?.balance || 0);
+  const amtInput = document.getElementById('payAmount');
+  const senderInput = document.getElementById('paySender');
+  const dateInput = document.getElementById('payDate');
+  if(amtInput && bal > 0) amtInput.value = bal.toFixed(2);
+  if(senderInput && !senderInput.value) senderInput.value = window.__RESIDENT?.name || RESIDENT_NAME || '';
+  if(dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  const formCard = document.getElementById('payFormCard') || amtInput;
+  if(formCard) formCard.scrollIntoView({behavior:'smooth', block:'center'});
+}
+window.quickPay = quickPay;
 function payTab(name, el){
   document.querySelectorAll('#payTabs .fin-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
@@ -712,6 +868,174 @@ function renderMyPayments(){
       </div>
     </div>`).join('');
 }
+async function onReceiptFileSelected(input){
+  const file = input?.files?.[0];
+  if(!file) return;
+  await runReceiptOcr(file);
+}
+window.onReceiptFileSelected = onReceiptFileSelected;
+
+async function runReceiptOcr(file){
+  const statusEl = document.getElementById('ocrStatus');
+  if(!statusEl) return;
+  if(!file || !file.type.startsWith('image/')) return;
+
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'rgba(74, 144, 226, 0.08)';
+  statusEl.style.borderColor = 'rgba(74, 144, 226, 0.25)';
+  statusEl.style.color = 'var(--text-mid)';
+  statusEl.innerHTML = '<span style="display:inline-block;">⏳</span> Scanning receipt with OCR to auto-fill details...';
+
+  try {
+    if(typeof Tesseract === 'undefined'){
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        s.onload = resolve;
+        s.onerror = () => reject(new Error('OCR engine unavailable'));
+        document.head.appendChild(s);
+      });
+    }
+
+    const worker = await Tesseract.createWorker('eng');
+    const ret = await worker.recognize(file);
+    await worker.terminate();
+    const rawText = ret?.data?.text || '';
+
+    // 1. Reference Number extraction (GCash references are typically 13 digits, e.g. 1002 3456 78901)
+    let refNo = null;
+    const refMatch = rawText.match(/(?:ref(?:\.?\s*no\.?|\s*number)?|reference(?:\s*no\.?)?)[:\s#]*([0-9\s]{9,20})/i);
+    if(refMatch){
+      const digits = refMatch[1].replace(/\s+/g, '');
+      if(digits.length >= 9 && digits.length <= 16) refNo = digits;
+    }
+    if(!refNo){
+      const standalone = rawText.match(/\b(1\d{3}\s?\d{4}\s?\d{4,5}|\d{4}\s?\d{4}\s?\d{4,5})\b/);
+      if(standalone) refNo = standalone[1].replace(/\s+/g, '');
+    }
+
+    // 2. Amount extraction (e.g. PHP 500.00, ₱500.00, Total: 500.00)
+    let amount = null;
+    const amtMatch = rawText.match(/(?:amount|total(?:\s*amount)?|paid|php|₱)\s*[:#]?\s*[₱P]?\s*([0-9,]+\.[0-9]{2})/i);
+    if(amtMatch){
+      const val = parseFloat(amtMatch[1].replace(/,/g, ''));
+      if(!isNaN(val) && val > 0) amount = val;
+    }
+    if(!amount){
+      const fallbackAmt = rawText.match(/[₱P]\s*([0-9,]+\.[0-9]{2})/);
+      if(fallbackAmt){
+        const val = parseFloat(fallbackAmt[1].replace(/,/g, ''));
+        if(!isNaN(val) && val > 0) amount = val;
+      }
+    }
+
+    // 3. Date extraction (e.g. 09 Nov 2026, Nov 09, 2026, 2026-11-09)
+    let dateStr = null;
+    const months = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+    const dMatch1 = rawText.match(/\b(\d{1,2})\s+([A-Za-z]{3,9})\s+(\d{4})\b/);
+    if(dMatch1){
+      const m = dMatch1[2].toLowerCase().substring(0, 3);
+      if(months[m]) dateStr = `${dMatch1[3]}-${months[m]}-${dMatch1[1].padStart(2, '0')}`;
+    }
+    if(!dateStr){
+      const dMatch2 = rawText.match(/\b([A-Za-z]{3,9})\s+(\d{1,2}),?\s+(\d{4})\b/);
+      if(dMatch2){
+        const m = dMatch2[1].toLowerCase().substring(0, 3);
+        if(months[m]) dateStr = `${dMatch2[3]}-${months[m]}-${dMatch2[2].padStart(2, '0')}`;
+      }
+    }
+    if(!dateStr){
+      const dMatch3 = rawText.match(/\b(\d{4})[-/](\d{2})[-/](\d{2})\b/);
+      if(dMatch3) dateStr = `${dMatch3[1]}-${dMatch3[2]}-${dMatch3[3]}`;
+    }
+
+    // Apply auto-filled values
+    const detected = [];
+    if(refNo){
+      document.getElementById('payReference').value = refNo;
+      detected.push('Ref: ' + refNo);
+    }
+    if(amount){
+      document.getElementById('payAmount').value = amount.toFixed(2);
+      detected.push('₱' + amount.toLocaleString(undefined, {minimumFractionDigits: 2}));
+    }
+    if(dateStr){
+      document.getElementById('payDate').value = dateStr;
+      detected.push('Date: ' + dateStr);
+    }
+
+    if(detected.length > 0){
+      statusEl.style.background = 'rgba(46, 125, 50, 0.08)';
+      statusEl.style.borderColor = 'rgba(46, 125, 50, 0.25)';
+      statusEl.style.color = '#2e7d32';
+      statusEl.innerHTML = `<strong>✨ Auto-detected:</strong> ${escHtml(detected.join(' · '))}. <span style="font-size:11px;color:var(--text-dim);">(Please verify before submitting)</span>`;
+    } else {
+      statusEl.style.background = 'rgba(239, 108, 0, 0.08)';
+      statusEl.style.borderColor = 'rgba(239, 108, 0, 0.25)';
+      statusEl.style.color = '#e65100';
+      statusEl.innerHTML = 'Could not auto-read reference number or amount from this image. Please check and enter the fields manually.';
+    }
+  } catch(err) {
+    statusEl.style.background = 'rgba(239, 108, 0, 0.08)';
+    statusEl.style.borderColor = 'rgba(239, 108, 0, 0.25)';
+    statusEl.style.color = '#e65100';
+    statusEl.innerHTML = 'OCR preview unavailable. Please verify and enter the fields manually.';
+  }
+}
+
+function bindReceiptPasteAndDrop(){
+  const card = document.getElementById('payFormCard');
+  if(!card || card.__ocrBound) return;
+  card.__ocrBound = true;
+
+  card.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if(!items) return;
+    for(let i = 0; i < items.length; i++){
+      if(items[i].type.indexOf('image') !== -1){
+        const file = items[i].getAsFile();
+        if(file){
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          const inp = document.getElementById('payReceipt');
+          if(inp){
+            inp.files = dt.files;
+            onReceiptFileSelected(inp);
+            showToast('📋 Receipt pasted from clipboard.');
+          }
+        }
+        break;
+      }
+    }
+  });
+
+  ['dragenter', 'dragover'].forEach(evtName => {
+    card.addEventListener(evtName, (e) => {
+      e.preventDefault();
+      card.style.borderColor = 'var(--accent)';
+    });
+  });
+  ['dragleave', 'drop'].forEach(evtName => {
+    card.addEventListener(evtName, (e) => {
+      e.preventDefault();
+      card.style.borderColor = '';
+    });
+  });
+  card.addEventListener('drop', (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if(file && file.type.startsWith('image/')){
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      const inp = document.getElementById('payReceipt');
+      if(inp){
+        inp.files = dt.files;
+        onReceiptFileSelected(inp);
+        showToast('📁 Receipt attached.');
+      }
+    }
+  });
+}
+
 async function submitPayment(){
   const amount = document.getElementById('payAmount').value;
   const receipt = document.getElementById('payReceipt').files[0];
@@ -729,6 +1053,8 @@ async function submitPayment(){
     if(data.success){
       ['payAmount','payReference','paySender','payDate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
       document.getElementById('payReceipt').value='';
+      const ocrStatus = document.getElementById('ocrStatus');
+      if(ocrStatus){ ocrStatus.style.display = 'none'; ocrStatus.innerHTML = ''; }
       await loadMyPayments();
       showToast('✅ Payment submitted for validation.');
     } else showToast('⚠ '+errMsg(data,'Could not submit payment.'));
@@ -839,9 +1165,9 @@ async function submitRec(){
   }
 }
 
-const RESIDENT_ID = window.__RESIDENT.id;
-const HOUSE_ID = window.__RESIDENT.houseId;
-const RESIDENT_NAME = window.__RESIDENT.name;
+let RESIDENT_ID = window.__RESIDENT.id;
+let HOUSE_ID = window.__RESIDENT.houseId;
+let RESIDENT_NAME = window.__RESIDENT.name;
 
 /* ══ INIT ══ */
 async function loadPortalData() {
@@ -1069,7 +1395,7 @@ if(_nameEl && RESIDENT_ID){
     return;
   }
   try {
-    const ch = window.Echo.channel('subsync');
+    const ch = window.Echo.private('subsync');
     const refresh = () => {
       loadAnnouncements(); loadIssues(); loadHOAExpenses(); loadHOAPolicies();
       document.dispatchEvent(new Event('subsync:refresh-alerts'));
@@ -1098,7 +1424,8 @@ if(_nameEl && RESIDENT_ID){
       const mine = evt.senderType === 'resident' && Number(evt.senderId) === Number(RESIDENT_ID);
       if(mine){ if(isOpen) refreshResidentMessages(); return; }
       if(isOpen && panelOpen){ refreshResidentMessages(); return; }
-      showToast('New message from ' + (evt.senderName || 'someone') + '.');
+      const _tName=(threads[evt.conversationId]&&threads[evt.conversationId].title)||'';
+      showToast(_tName ? 'New message from ' + _tName + '.' : 'New message.');
       const badge = document.getElementById('badge-messages');
       if(badge){ badge.textContent = (parseInt(badge.textContent,10)||0) + 1; badge.style.display = 'inline-flex'; }
       refreshResidentRequestBlock();

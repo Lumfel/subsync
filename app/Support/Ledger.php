@@ -5,6 +5,7 @@ namespace App\Support;
 use App\Models\FinancialRecord;
 use App\Models\Resident;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * The single source of truth for a resident's money:
@@ -79,6 +80,38 @@ class Ledger
         $records = FinancialRecord::where('resident_id', $residentId)
             ->orderBy('id')->get(['record_type', 'amount', 'due_date', 'record_date']);
 
+        return self::agingFromRecords($records);
+    }
+
+    /**
+     * Aging for many residents in a single query (avoids the per-resident N+1).
+     *
+     * @param  iterable<int>  $residentIds
+     * @return array<int, array{buckets: array<string, float>, total: float, credit: float}>
+     */
+    public static function agingForMany(iterable $residentIds): array
+    {
+        $ids = collect($residentIds)->map(fn ($id) => (int) $id)->unique()->values();
+        if ($ids->isEmpty()) {
+            return [];
+        }
+
+        $grouped = FinancialRecord::whereIn('resident_id', $ids)
+            ->orderBy('id')
+            ->get(['resident_id', 'record_type', 'amount', 'due_date', 'record_date'])
+            ->groupBy('resident_id');
+
+        $out = [];
+        foreach ($ids as $id) {
+            $out[$id] = self::agingFromRecords($grouped->get($id, collect()));
+        }
+
+        return $out;
+    }
+
+    /** @param  Collection<int, FinancialRecord>  $records */
+    private static function agingFromRecords($records): array
+    {
         $charges = [];
         $credit = 0.0;
 

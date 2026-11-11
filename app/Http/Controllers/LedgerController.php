@@ -46,8 +46,12 @@ class LedgerController extends Controller
             ->orderByDesc('current_balance')
             ->get(['id', 'name', 'house_id', 'current_balance']);
 
-        $rows = $residents->map(function (Resident $r) {
-            $aging = Ledger::agingFor($r->id);
+        // One query for every resident's records instead of one per resident.
+        $ages = Ledger::agingForMany($residents->pluck('id'));
+        $empty = ['buckets' => ['current' => 0.0, 'd1_30' => 0.0, 'd31_60' => 0.0, 'd61_90' => 0.0, 'd90_plus' => 0.0], 'total' => 0.0, 'credit' => 0.0];
+
+        $rows = $residents->map(function (Resident $r) use ($ages, $empty) {
+            $aging = $ages[$r->id] ?? $empty;
 
             return [
                 'id' => $r->id,

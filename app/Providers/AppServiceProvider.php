@@ -27,7 +27,9 @@ use App\Observers\ActivityLogObserver;
 use App\Observers\DashboardCacheObserver;
 use App\Observers\SsePublishingObserver;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
@@ -48,10 +50,26 @@ class AppServiceProvider extends ServiceProvider
         Route::pattern('convId', '[0-9]+');
         Route::pattern('templateId', '[0-9]+');
 
+        // Polymorphic media rows store short aliases ('IssueReport'), so the
+        // morph classes must resolve to the same aliases for the relations to
+        // match. Notifications keep their FQCN types — those classes stay unmapped.
+        Relation::morphMap([
+            'IssueReport' => IssueReport::class,
+            'Household' => Household::class,
+            'Facility' => Facility::class,
+            'Announcement' => Announcement::class,
+        ]);
+
         // Dev only: surface N+1 queries + silent attribute issues immediately
         // so slow queries get fixed instead of accumulating silently.
         if ($this->app->isLocal()) {
             Model::shouldBeStrict();
+        }
+
+        // Loud reminder: debug mode must never be on for real users.
+        // Run `php artisan subsync:check-prod-env` before every deployment.
+        if (! $this->app->isLocal() && ! $this->app->runningUnitTests() && config('app.debug')) {
+            Log::critical('APP_DEBUG is enabled in a non-local environment — disable it before serving users.');
         }
 
         // Apply SQLite performance PRAGMAs (WAL, NORMAL sync, busy timeout) so concurrent

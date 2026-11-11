@@ -23,17 +23,22 @@ class ArchiveStaleAnnouncements extends Command
         $eventCutoff = now()->subDays(7);
         $ageCutoff = now()->subDays(90);
 
-        $expiredEvents = Announcement::where('status', 'Active')
-            ->whereNotNull('event_date')
-            ->where('event_date', '<', $eventCutoff)
-            ->update(['status' => 'Archived']);
+        // Iterate the models instead of a query-builder update so each change emits
+        // its events: activity log, realtime/SSE push, and cache invalidation.
+        $stale = Announcement::where('status', 'Active')
+            ->where(function ($query) use ($eventCutoff, $ageCutoff) {
+                $query->where(fn ($q) => $q->whereNotNull('event_date')->where('event_date', '<', $eventCutoff))
+                    ->orWhere(fn ($q) => $q->whereNull('event_date')->where('created_at', '<', $ageCutoff));
+            })
+            ->get();
 
-        $oldNotices = Announcement::where('status', 'Active')
-            ->whereNull('event_date')
-            ->where('created_at', '<', $ageCutoff)
-            ->update(['status' => 'Archived']);
+        $archived = 0;
+        foreach ($stale as $announcement) {
+            $announcement->update(['status' => 'Archived']);
+            $archived++;
+        }
 
-        $this->info('Archived '.($expiredEvents + $oldNotices).' stale announcement(s).');
+        $this->info("Archived {$archived} stale announcement(s).");
 
         return self::SUCCESS;
     }

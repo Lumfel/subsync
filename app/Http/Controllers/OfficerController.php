@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Officer;
+use App\Support\Actor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class OfficerController extends Controller
 {
@@ -34,6 +37,24 @@ class OfficerController extends Controller
         });
     }
 
+    /** POST /api/officers/avatar — officer updates their own profile photo. */
+    public function updateAvatar(Request $request)
+    {
+        $officer = Auth::guard('officer')->user();
+        if (! $officer) {
+            return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
+        }
+
+        $request->validate(['avatar' => 'required|image|max:8192']);
+
+        $path = $request->file('avatar')->store('officer-avatars', 'public');
+        $url = Storage::url($path);
+
+        $officer->update(['avatar' => $url]);
+
+        return response()->json(['success' => true, 'avatar' => $url]);
+    }
+
     /** POST /api/officers */
     public function store(Request $request)
     {
@@ -57,7 +78,12 @@ class OfficerController extends Controller
     /** PUT /api/officers/{id} */
     public function update(Request $request, int $id)
     {
-        $this->ensureAdmin();
+        $actor = Actor::current();
+        $isSelf = $actor['type'] === 'officer' && (int) $actor['id'] === $id;
+
+        if (! $isSelf) {
+            $this->ensureAdmin();
+        }
 
         $officer = Officer::findOrFail($id);
 
@@ -68,6 +94,12 @@ class OfficerController extends Controller
             'status' => 'sometimes|in:Active,Inactive,Pending',
             'password' => 'sometimes|nullable|string|min:8',
         ]);
+
+        // Officers may correct their own profile (name/contact) but can never
+        // self-approve, change status, or reset their password via this route.
+        if ($isSelf) {
+            $data = array_intersect_key($data, array_flip(['name', 'contact_number']));
+        }
 
         if (! empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);

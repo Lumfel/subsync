@@ -50,6 +50,7 @@ class ExpenseTransparencyTest extends TestCase
     public function test_admin_can_create_update_and_delete_expense(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
         $admin = $this->admin();
 
         $create = $this->withSession(['admin_id' => $admin->id])

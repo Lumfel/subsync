@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Private files are streamed through authorized controller routes
+            // (issues media, officer files, receipts) — never via public URLs.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

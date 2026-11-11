@@ -10,6 +10,7 @@ use App\Models\PaymentSubmission;
 use App\Support\Ledger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
@@ -93,9 +94,6 @@ class PaymentController extends Controller
             abort(403, 'Only administrators may validate payments.');
         }
 
-        $payment = PaymentSubmission::findOrFail($id);
-        $payment->load('resident');
-
         $data = $request->validate([
             'action' => 'required|in:approve,reject,needs_info',
             'admin_response' => 'nullable|string|max:1000',
@@ -103,46 +101,59 @@ class PaymentController extends Controller
             'official_receipt' => 'nullable|image|max:8192',
         ]);
 
-        if ($data['action'] === 'approve') {
-            if ($request->hasFile('official_receipt')) {
-                if ($payment->official_receipt_path) {
-                    Storage::disk('local')->delete($payment->official_receipt_path);
+        // Serialise concurrent decisions on the same submission: the row lock
+        // guarantees the ledger credit can never be applied twice.
+        $payment = DB::transaction(function () use ($request, $data, $id) {
+            $payment = PaymentSubmission::whereKey($id)->lockForUpdate()->firstOrFail();
+            $payment->load('resident');
+
+            if ($data['action'] !== 'approve' && $payment->status === 'Validated') {
+                abort(422, 'This payment is already validated. Correct it through the ledger instead of re-deciding it.');
+            }
+
+            if ($data['action'] === 'approve') {
+                if ($request->hasFile('official_receipt')) {
+                    if ($payment->official_receipt_path) {
+                        Storage::disk('local')->delete($payment->official_receipt_path);
+                    }
+                    $payment->official_receipt_path = $request->file('official_receipt')->store('payment-receipts/official', 'local');
+                    $payment->acknowledged_at = now();
                 }
-                $payment->official_receipt_path = $request->file('official_receipt')->store('payment-receipts/official', 'local');
-                $payment->acknowledged_at = now();
+
+                // Record the validated payment in the ledger once, then reconcile the balance.
+                if (! $payment->financial_record_id) {
+                    $record = FinancialRecord::create([
+                        'resident_id' => $payment->resident_id,
+                        'record_type' => 'Payment',
+                        'description' => 'GCash payment'.($payment->reference_no ? ' ('.$payment->reference_no.')' : ''),
+                        'amount' => $payment->amount,
+                        'record_date' => now()->toDateString(),
+                        'period' => now()->format('Y-m'),
+                        'source' => 'payment',
+                        'payment_gateway' => 'gcash',
+                        'gcash_reference' => $payment->reference_no,
+                    ]);
+                    $payment->financial_record_id = $record->id;
+
+                    // Derive the balance from the ledger (overpayments become a credit).
+                    Ledger::reconcile((int) $payment->resident_id);
+                }
+
+                $payment->status = 'Validated';
+            } elseif ($data['action'] === 'reject') {
+                $payment->status = 'Rejected';
+                $payment->rejection_reason = $data['rejection_reason'] ?? null;
+            } else {
+                $payment->status = 'Needs Info';
             }
 
-            // Record the validated payment in the ledger once, then reconcile the balance.
-            if (! $payment->financial_record_id) {
-                $record = FinancialRecord::create([
-                    'resident_id' => $payment->resident_id,
-                    'record_type' => 'Payment',
-                    'description' => 'GCash payment'.($payment->reference_no ? ' ('.$payment->reference_no.')' : ''),
-                    'amount' => $payment->amount,
-                    'record_date' => now()->toDateString(),
-                    'period' => now()->format('Y-m'),
-                    'source' => 'payment',
-                    'payment_gateway' => 'gcash',
-                    'gcash_reference' => $payment->reference_no,
-                ]);
-                $payment->financial_record_id = $record->id;
+            $payment->admin_response = $data['admin_response'] ?? null;
+            $payment->validated_by = session('admin_id');
+            $payment->validated_at = now();
+            $payment->save();
 
-                // Derive the balance from the ledger (overpayments become a credit).
-                Ledger::reconcile((int) $payment->resident_id);
-            }
-
-            $payment->status = 'Validated';
-        } elseif ($data['action'] === 'reject') {
-            $payment->status = 'Rejected';
-            $payment->rejection_reason = $data['rejection_reason'] ?? null;
-        } else {
-            $payment->status = 'Needs Info';
-        }
-
-        $payment->admin_response = $data['admin_response'] ?? null;
-        $payment->validated_by = session('admin_id');
-        $payment->validated_at = now();
-        $payment->save();
+            return $payment;
+        });
 
         // Email the resident a receipt once the payment is validated.
         if ($payment->status === 'Validated' && $payment->resident?->email) {

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\HoaExpense;
 use App\Models\IssueReport;
 use App\Models\PaymentSubmission;
 use App\Models\Resident;
+use App\Support\Actor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,6 +18,23 @@ class ExportController extends Controller
         if (! session('admin_id') && ! auth('officer')->check()) {
             abort(403, 'Only administrators or officers may export data.');
         }
+    }
+
+    /** Record bulk-PII exports in the activity trail (RA 10173 accountability). */
+    private function logExport(string $what, int $count): void
+    {
+        $actor = Actor::current();
+
+        ActivityLog::create([
+            'actor_type' => ucfirst((string) $actor['type']),
+            'actor_id' => $actor['id'],
+            'actor_name' => $actor['name'],
+            'action' => 'export',
+            'subject_type' => $what,
+            'subject_id' => null,
+            'description' => "Exported {$what} as CSV ({$count} row(s)).",
+            'meta' => ['rows' => $count],
+        ]);
     }
 
     /** Neutralise spreadsheet formula injection (leading = + - @ or control chars). */
@@ -59,6 +78,8 @@ class ExportController extends Controller
             number_format((float) $r->current_balance, 2, '.', ''),
         ]);
 
+        $this->logExport('resident directory', $rows->count());
+
         return $this->csv('residents-'.date('Ymd').'.csv', ['ID', 'Name', 'Email', 'Contact', 'Block/Lot', 'Status', 'Balance'], $rows);
     }
 
@@ -72,6 +93,8 @@ class ExportController extends Controller
             $i->resident?->name, $i->assignee?->name,
             $i->due_date?->format('Y-m-d'), $i->created_at?->format('Y-m-d'),
         ]);
+
+        $this->logExport('issue reports', $rows->count());
 
         return $this->csv('issues-'.date('Ymd').'.csv', ['ID', 'Title', 'Category', 'Status', 'Priority', 'Resident', 'Assigned Officer', 'Due Date', 'Created'], $rows);
     }
@@ -87,6 +110,8 @@ class ExportController extends Controller
             $p->paid_at?->format('Y-m-d'), $p->validated_at?->format('Y-m-d H:i'),
         ]);
 
+        $this->logExport('payment submissions', $rows->count());
+
         return $this->csv('payments-'.date('Ymd').'.csv', ['ID', 'Resident', 'Amount', 'Method', 'Reference', 'Status', 'Paid At', 'Validated At'], $rows);
     }
 
@@ -99,6 +124,8 @@ class ExportController extends Controller
             $e->id, $e->title, $e->category, number_format((float) $e->amount, 2, '.', ''),
             $e->expense_date?->format('Y-m-d'), $e->status,
         ]);
+
+        $this->logExport('HOA expenses', $rows->count());
 
         return $this->csv('hoa-expenses-'.date('Ymd').'.csv', ['ID', 'Title', 'Category', 'Amount', 'Date', 'Status'], $rows);
     }
@@ -122,6 +149,8 @@ class ExportController extends Controller
         ])->values()->all();
 
         $rows[] = ['', '', 'Outstanding balance', number_format((float) $resident->current_balance, 2, '.', ''), ''];
+
+        $this->logExport('resident statement #'.$resident->id, count($rows));
 
         return $this->csv('statement-'.$resident->id.'-'.date('Ymd').'.csv', ['ID', 'Date Paid', 'Amount', 'Reference', 'Status'], $rows);
     }

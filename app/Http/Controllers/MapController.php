@@ -61,7 +61,6 @@ class MapController extends Controller
                     ->whereNotNull('longitude')
                     ->whereBetween('latitude', [$b['min_lat'], $b['max_lat']])
                     ->whereBetween('longitude', [$b['min_lng'], $b['max_lng']])
-                    ->with('media')
                     ->get()
                     ->map(fn ($h) => $h->toArray())
                     ->all(),
@@ -70,7 +69,6 @@ class MapController extends Controller
                     ->whereNotNull('longitude')
                     ->whereBetween('latitude', [$b['min_lat'], $b['max_lat']])
                     ->whereBetween('longitude', [$b['min_lng'], $b['max_lng']])
-                    ->with('media')
                     ->get()
                     ->map(fn ($f) => $f->toArray())
                     ->all(),
@@ -83,7 +81,6 @@ class MapController extends Controller
                         $q->where('status', '!=', 'Resolved')
                             ->orWhere('updated_at', '>=', now()->subDays(7));
                     })
-                    ->with('media')
                     ->get()
                     ->map(fn ($i) => $i->toArray())
                     ->all(),

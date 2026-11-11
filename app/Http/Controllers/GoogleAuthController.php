@@ -79,8 +79,10 @@ class GoogleAuthController extends Controller
         $user->update(['google_id' => $google->getId(), 'avatar' => $google->getAvatar()]);
 
         if ($role === 'officer') {
-            if ($user->status === 'Pending') {
-                return redirect(url('login'))->with('error', 'Your account is awaiting admin approval.');
+            if ($user->status !== 'Active') {
+                return redirect(url('login'))->with('error', $user->status === 'Pending'
+                    ? 'Your account is awaiting admin approval.'
+                    : 'Your account has been deactivated. Contact the HOA office.');
             }
 
             Auth::guard('resident')->logout();
@@ -100,8 +102,10 @@ class GoogleAuthController extends Controller
             return redirect(url('auth/google/complete'));
         }
 
-        if ($user->status === 'Pending') {
-            return redirect(url('login'))->with('error', 'Your account is awaiting admin approval.');
+        if ($user->status !== 'Active') {
+            return redirect(url('login'))->with('error', $user->status === 'Pending'
+                ? 'Your account is awaiting admin approval.'
+                : 'Your account has been deactivated. Contact the HOA office.');
         }
 
         return $this->loginResident($request, $user);
@@ -148,6 +152,10 @@ class GoogleAuthController extends Controller
 
         if ($resident->status === 'Pending') {
             return redirect(url('login'))->with('error', 'Registration complete. Awaiting admin approval.');
+        }
+
+        if ($resident->status !== 'Active') {
+            return redirect(url('login'))->with('error', 'Your account has been deactivated. Contact the HOA office.');
         }
 
         return $this->loginResident($request, $resident);

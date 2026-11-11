@@ -64,6 +64,7 @@ class Phase1FixesTest extends TestCase
     public function test_officer_file_upload_accepts_images(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         $res = $this->withSession(['admin_id' => $this->admin()->id, 'admin_name' => 'Test Admin'])
             ->post('/api/officer-files', [

@@ -25,7 +25,7 @@ class AuthController extends Controller
         $email = strtolower(trim($credentials['email']));
         $admin = Admin::firstWhere('email', $email);
 
-        if (! $admin && Admin::count() === 0) {
+        if (! $admin && Admin::count() === 0 && app()->environment(['local', 'testing'])) {
             $admin = Admin::create([
                 'name' => 'System Admin',
                 'email' => 'admin@subsync.com',
@@ -34,10 +34,13 @@ class AuthController extends Controller
             ]);
         }
 
-        if ($admin && Hash::check($credentials['password'], $admin->password)) {
+        if ($admin && $admin->status === 'Active' && Hash::check($credentials['password'], $admin->password)) {
             Auth::guard('resident')->logout();
             Auth::guard('officer')->logout();
             $request->session()->forget(['resident_id', 'officer_id']);
+            // Also log in on the admin guard: the broadcasting auth endpoint
+            // resolves private-channel subscribers through the guards.
+            Auth::guard('admin')->login($admin);
             $request->session()->put('admin_id', $admin->id);
             $request->session()->put('admin_name', $admin->name);
             $request->session()->put('active_role', 'admin');
@@ -71,10 +74,12 @@ class AuthController extends Controller
             $officer = Officer::firstWhere('email', $credentials['email']);
 
             if ($officer && Hash::check($credentials['password'], $officer->password)) {
-                if ($officer->status === 'Pending') {
+                if ($officer->status !== 'Active') {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Your account is awaiting admin approval.',
+                        'message' => $officer->status === 'Pending'
+                            ? 'Your account is awaiting admin approval.'
+                            : 'Your account has been deactivated. Contact the HOA office.',
                     ]);
                 }
                 Auth::guard('resident')->logout();
@@ -91,10 +96,12 @@ class AuthController extends Controller
             }
         } else {
             $resident = Resident::where('email', $credentials['email'])->first();
-            if ($resident && $resident->status === 'Pending' && Hash::check($credentials['password'], $resident->password)) {
+            if ($resident && Hash::check($credentials['password'], $resident->password) && $resident->status !== 'Active') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Your account is awaiting admin approval.',
+                    'message' => $resident->status === 'Pending'
+                        ? 'Your account is awaiting admin approval.'
+                        : 'Your account has been deactivated. Contact the HOA office.',
                 ]);
             }
             if (Auth::guard('resident')->attempt([
@@ -132,6 +139,9 @@ class AuthController extends Controller
                 'name' => 'required|string|max:150',
                 'email' => 'required|email|unique:officers,email',
                 'password' => 'required|string|min:8',
+                'contact_number' => 'nullable|string|max:20',
+                'role_description' => 'nullable|string|max:100',
+                'consent' => 'accepted',
             ]);
             $data['password'] = Hash::make($data['password']);
             $data['status'] = 'Pending';
@@ -143,6 +153,7 @@ class AuthController extends Controller
                 'password' => 'required|string|min:8',
                 'contact_number' => 'nullable|string|max:20',
                 'block_lot' => 'nullable|string|max:50',
+                'consent' => 'accepted',
             ]);
 
             $residentData = [
@@ -172,11 +183,30 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
+        $isAdmin = $request->input('portal') === 'admin'
+            || $request->session()->get('active_role') === 'admin'
+            || (bool) $request->session()->get('admin_id')
+            || Auth::guard('admin')->check();
+
+        $isOfficer = $request->input('portal') === 'officer'
+            || $request->session()->get('active_role') === 'officer'
+            || (bool) $request->session()->get('officer_id')
+            || Auth::guard('officer')->check();
+
         Auth::guard('resident')->logout();
         Auth::guard('officer')->logout();
+        Auth::guard('admin')->logout();
         $request->session()->forget(['admin_id', 'admin_name', 'active_role', 'resident_id', 'officer_id']);
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
+        if ($isAdmin) {
+            return redirect(url('admin-access'));
+        }
+
+        if ($isOfficer) {
+            return redirect(url('login').'?portal=officer');
+        }
 
         return redirect(url('login'));
     }

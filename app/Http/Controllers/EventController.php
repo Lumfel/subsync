@@ -19,9 +19,21 @@ class EventController extends Controller
     {
         $residentId = Auth::guard('resident')->id();
 
+        // Counts come back with the rows (no per-event queries).
         $events = Event::where('starts_at', '>=', now()->subDay())
+            ->withCount([
+                'rsvps as going_count' => fn ($q) => $q->where('status', 'going'),
+                'rsvps as maybe_count' => fn ($q) => $q->where('status', 'maybe'),
+            ])
             ->orderBy('starts_at')
             ->get();
+
+        // One lookup for the resident's own RSVP states.
+        $myStatuses = $residentId
+            ? EventRsvp::where('resident_id', $residentId)
+                ->whereIn('event_id', $events->pluck('id'))
+                ->pluck('status', 'event_id')
+            : collect();
 
         return response()->json($events->map(fn ($e) => [
             'id' => $e->id,
@@ -30,9 +42,9 @@ class EventController extends Controller
             'location' => $e->location,
             'starts_at' => $e->starts_at?->format('M d, Y g:i A'),
             'ends_at' => $e->ends_at?->format('M d, Y g:i A'),
-            'going' => $e->rsvps()->where('status', 'going')->count(),
-            'maybe' => $e->rsvps()->where('status', 'maybe')->count(),
-            'my_status' => $residentId ? $e->rsvps()->where('resident_id', $residentId)->value('status') : null,
+            'going' => (int) $e->going_count,
+            'maybe' => (int) $e->maybe_count,
+            'my_status' => $myStatuses[$e->id] ?? null,
         ]));
     }
 

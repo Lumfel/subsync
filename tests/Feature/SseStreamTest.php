@@ -3,6 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Admin;
+use App\Models\Household;
+use App\Models\Resident;
+use App\Models\SseEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -38,5 +41,29 @@ class SseStreamTest extends TestCase
 
         // Opening the stream (before draining it) must be fast.
         $this->assertLessThan(1500, $elapsedMs, "SSE setup took {$elapsedMs}ms");
+    }
+
+    public function test_resident_stream_hides_staff_and_other_members_events(): void
+    {
+        $house = Household::create(['block_lot_number' => 'Block 1 Lot 1']);
+        $alice = Resident::create(['name' => 'Alice', 'email' => 'alice@example.test', 'password' => 'Secret@12345', 'status' => 'Active', 'house_id' => $house->id]);
+        $bob = Resident::create(['name' => 'Bob', 'email' => 'bob@example.test', 'password' => 'Secret@12345', 'status' => 'Active', 'house_id' => $house->id]);
+
+        SseEvent::emit('payment_submissions', 'payment', ['latestId' => 1, 'residentId' => $bob->id, 'status' => 'Validated']);
+        SseEvent::emit('payment_submissions', 'payment', ['latestId' => 2, 'residentId' => $alice->id, 'status' => 'Pending']);
+        SseEvent::emit('officer_files', 'officer-file', ['latestId' => 3, 'name' => 'secret-file.xlsx']);
+        SseEvent::emit('announcements', 'announcement', ['latestId' => 4, 'title' => 'Community notice']);
+
+        $body = $this->actingAs($alice, 'resident')
+            ->get('/api/stream/updates?lastEventId=0&max=1')
+            ->assertOk()
+            ->streamedContent();
+
+        // Own payment + community events pass…
+        $this->assertStringContainsString('"residentId":'.$alice->id, $body);
+        $this->assertStringContainsString('Community notice', $body);
+        // …other members' payments and staff-only files do not.
+        $this->assertStringNotContainsString('"residentId":'.$bob->id, $body);
+        $this->assertStringNotContainsString('secret-file.xlsx', $body);
     }
 }

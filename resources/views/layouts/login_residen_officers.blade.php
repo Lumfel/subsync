@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
     <script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
-    <link rel="stylesheet" href="{{ asset('styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles.css') . '?v=' . filemtime(public_path('styles.css')) }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
@@ -448,6 +448,16 @@
     <!-- ══ REGISTER FORM ══ -->
     <form class="form-panel" id="registerPanel" onsubmit="event.preventDefault();handleRegister();return false;">
 
+        <!-- REGISTRATION ROLE SELECTOR -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;background:#FAF6F0;border:1px solid #E6DFD5;border-radius:12px;padding:4px;">
+            <button type="button" class="role-tab active" id="reg-role-resident" onclick="switchRole('resident')" style="flex:1;padding:8px 10px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <x-icon name="home" size="14"/> Resident Account
+            </button>
+            <button type="button" class="role-tab" id="reg-role-officer" onclick="switchRole('officer')" style="flex:1;padding:8px 10px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                <x-icon name="shield" size="14"/> Officer Account
+            </button>
+        </div>
+
         <!-- RESIDENT FIELDS -->
         <div id="resident-fields">
             <div class="input-group">
@@ -475,12 +485,13 @@
             </div>
             <div class="input-group">
                 <span class="input-icon"><x-icon name="user" size="16"/></span>
-                <select id="reg-member-type" required>
+                <select id="reg-member-type" required onchange="if(this.value==='officer'){ switchRole('officer'); this.value=''; }">
                     <option value="" disabled selected>Member Type</option>
                     <option value="head">Head of Household</option>
                     <option value="family">Family Member</option>
                     <option value="relative">Relative</option>
                     <option value="tenant">Tenant</option>
+                    <option value="officer">HOA Officer (Switch to Officer Registration)</option>
                 </select>
             </div>
             <div class="input-group">
@@ -506,6 +517,10 @@
                 <input type="email" id="off-email" placeholder="Gmail Address" required>
             </div>
             <div class="input-group">
+                <span class="input-icon"><x-icon name="phone" size="16"/></span>
+                <input type="tel" id="off-contact" placeholder="Contact Number (optional)">
+            </div>
+            <div class="input-group">
                 <span class="input-icon"><x-icon name="lock" size="16"/></span>
                 <input type="password" id="off-password" placeholder="Create Password" oninput="updateStrength(this.value)" autocomplete="new-password">
                 <button class="eye-btn" onclick="togglePwd('off-password',this)" type="button"><x-icon name="eye" size="16" class="eye-on" /><x-icon name="eye-off" size="16" class="eye-off" /></button>
@@ -518,7 +533,13 @@
             <p style="font-size:11px;opacity:0.45;margin:-6px 0 12px;text-align:center;">Registration requires admin approval before access is granted.</p>
         </div>
 
-        <button class="portal-btn btn-resident" id="registerBtn" type="submit">Create Account</button>
+          <!-- RA 10173 consent -->
+          <label style="display:flex;gap:9px;align-items:flex-start;text-align:left;font-size:12px;line-height:1.55;margin:4px 0 12px;cursor:pointer;opacity:0.85;">
+              <input type="checkbox" id="reg-consent" style="margin-top:2px;flex-shrink:0;">
+              <span>I have read and accept the <a href="{{ url('privacy') }}" target="_blank" rel="noopener" style="text-decoration:underline;">Data Privacy Notice</a>. I consent to SubSync processing my personal data for HOA membership, community management, and communication (RA 10173).</span>
+          </label>
+
+          <button class="portal-btn btn-resident" id="registerBtn" type="submit">Create Account</button>
 
         <div class="divider">or</div>
 
@@ -537,6 +558,7 @@
 </div>
 
 <script>
+    const initialTab = @json($initialTab ?? (request()->query('tab') === 'register' || request()->is('register') ? 'register' : 'login'));
     const LOGIN_PORTAL = (new URLSearchParams(location.search).get('portal') === 'officer') ? 'officer' : 'resident';
     let currentRole = LOGIN_PORTAL;
     let currentForm = 'login';
@@ -549,27 +571,90 @@
         document.getElementById('tab-resident').className = 'role-tab' + (!isOfficer ? ' active' : '');
         document.getElementById('tab-officer').className  = 'role-tab' + (isOfficer  ? ' officer-active' : '');
 
+        const regRoleRes = document.getElementById('reg-role-resident');
+        const regRoleOff = document.getElementById('reg-role-officer');
+        if (regRoleRes) regRoleRes.className = 'role-tab' + (!isOfficer ? ' active' : '');
+        if (regRoleOff) regRoleOff.className = 'role-tab' + (isOfficer  ? ' officer-active' : '');
+
         const badge = document.getElementById('roleBadge');
         badge.className = 'role-badge ' + (isOfficer ? 'role-badge-officer' : 'role-badge-resident');
         badge.innerHTML = isOfficer
             ? `<span class="role-badge-icon"><x-icon name="shield" size="20"/></span><div><div class="role-badge-text">Officer Access</div><div class="role-badge-sub">HOA officer portal — credentials required</div></div>`
             : `<span class="role-badge-icon"><x-icon name="home" size="20"/></span><div><div class="role-badge-text">Resident Access</div><div class="role-badge-sub">Login or register your household account</div></div>`;
 
-        // Update button colors
+        // Update button colors and text
         document.getElementById('loginBtn').className    = 'portal-btn ' + (isOfficer ? 'btn-officer' : 'btn-resident');
-        document.getElementById('registerBtn').className = 'portal-btn ' + (isOfficer ? 'btn-officer' : 'btn-resident');
+        const regBtn = document.getElementById('registerBtn');
+        if (regBtn) {
+            regBtn.className = 'portal-btn ' + (isOfficer ? 'btn-officer' : 'btn-resident');
+            regBtn.textContent = isOfficer ? 'Create Officer Account' : 'Create Resident Account';
+        }
 
         // Show officer note on login
         document.getElementById('officerNote').style.display = isOfficer ? 'block' : 'none';
+
+        // Synchronize fields so typed data is not lost when switching roles
+        syncFormFields(isOfficer);
 
         // Toggle register fields
         toggleRegisterFields(isOfficer);
 
         clearMsg();
 
-        // Reload under the role's own session cookie so the CSRF token matches on submit.
-        if (!fromInit && role !== LOGIN_PORTAL) {
+        // Reload under the role's own session cookie for login session isolation ONLY.
+        // Never reload when the user is registering, so their typed data and form tab are preserved!
+        if (!fromInit && currentForm === 'login' && role !== LOGIN_PORTAL) {
             window.location.href = '{{ url('login') }}?portal=' + role;
+        }
+    }
+
+    function syncFormFields(toOfficer) {
+        if (toOfficer) {
+            const name = document.getElementById('reg-family-name')?.value || '';
+            const email = document.getElementById('reg-email')?.value || '';
+            const contact = document.getElementById('reg-contact')?.value || '';
+            const pwd = document.getElementById('reg-password')?.value || '';
+            const conf = document.getElementById('reg-confirm')?.value || '';
+
+            if (name && document.getElementById('off-name') && !document.getElementById('off-name').value) {
+                document.getElementById('off-name').value = name;
+            }
+            if (email && document.getElementById('off-email') && !document.getElementById('off-email').value) {
+                document.getElementById('off-email').value = email;
+            }
+            if (contact && document.getElementById('off-contact') && !document.getElementById('off-contact').value) {
+                document.getElementById('off-contact').value = contact;
+            }
+            if (pwd && document.getElementById('off-password') && !document.getElementById('off-password').value) {
+                document.getElementById('off-password').value = pwd;
+                updateStrength(pwd);
+            }
+            if (conf && document.getElementById('off-confirm') && !document.getElementById('off-confirm').value) {
+                document.getElementById('off-confirm').value = conf;
+            }
+        } else {
+            const name = document.getElementById('off-name')?.value || '';
+            const email = document.getElementById('off-email')?.value || '';
+            const contact = document.getElementById('off-contact')?.value || '';
+            const pwd = document.getElementById('off-password')?.value || '';
+            const conf = document.getElementById('off-confirm')?.value || '';
+
+            if (name && document.getElementById('reg-family-name') && !document.getElementById('reg-family-name').value) {
+                document.getElementById('reg-family-name').value = name;
+            }
+            if (email && document.getElementById('reg-email') && !document.getElementById('reg-email').value) {
+                document.getElementById('reg-email').value = email;
+            }
+            if (contact && document.getElementById('reg-contact') && !document.getElementById('reg-contact').value) {
+                document.getElementById('reg-contact').value = contact;
+            }
+            if (pwd && document.getElementById('reg-password') && !document.getElementById('reg-password').value) {
+                document.getElementById('reg-password').value = pwd;
+                updateStrength(pwd);
+            }
+            if (conf && document.getElementById('reg-confirm') && !document.getElementById('reg-confirm').value) {
+                document.getElementById('reg-confirm').value = conf;
+            }
         }
     }
 
@@ -645,13 +730,18 @@
         });
     }
 
-    function handleRegister() {
-        const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        const btn  = document.getElementById('registerBtn');
+      function handleRegister() {
+          const csrf = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+          const btn  = document.getElementById('registerBtn');
+          if (!document.getElementById('reg-consent')?.checked) {
+              showMsg('Please accept the Data Privacy Notice to continue.', 'error');
+              return;
+          }
 
         if (currentRole === 'officer') {
             const name     = document.getElementById('off-name')?.value.trim();
             const email    = document.getElementById('off-email')?.value.trim();
+            const contact  = document.getElementById('off-contact')?.value.trim();
             const password = document.getElementById('off-password')?.value;
             const confirm  = document.getElementById('off-confirm')?.value;
             if (!name || !email || !password) { showMsg('Please fill in all required fields.', 'error'); return; }
@@ -663,7 +753,14 @@
             fetch('{{ route("register.post") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
-                body: JSON.stringify({ role: 'officer', name, email, password }),
+                body: JSON.stringify({
+                    role: 'officer',
+                    name,
+                    email,
+                    password,
+                    contact_number: contact || null,
+                    consent: true
+                }),
             })
             .then(r => r.json())
             .then(data => {
@@ -694,7 +791,7 @@
             fetch('{{ route("register.post") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf },
-                body: JSON.stringify({ role: 'resident', name, email, password, contact_number: contact || null, block_lot: `Block ${block} Lot ${lot}` }),
+                body: JSON.stringify({ role: 'resident', name, email, password, contact_number: contact || null, block_lot: `Block ${block} Lot ${lot}`, consent: true }),
             })
             .then(r => r.json())
             .then(data => {
@@ -746,7 +843,8 @@
 
     /* Initialise the UI for the role the page was loaded with (?portal=) */
     if (LOGIN_PORTAL === 'officer') switchRole('officer', true);
-    toggleRegisterFields(LOGIN_PORTAL === 'officer');
+    if (initialTab === 'register') switchForm('register');
+    else toggleRegisterFields(LOGIN_PORTAL === 'officer');
 </script>
 
 @if(session('error') || session('message'))

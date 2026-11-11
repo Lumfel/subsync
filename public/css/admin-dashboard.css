@@ -65,6 +65,10 @@ body {
   height: auto;
   display: block;
   filter: none;
+  transition: filter 0.2s ease;
+}
+html[data-theme="dark"] .brand-logo img {
+  filter: invert(1) brightness(1.1);
 }
 .brand-sub {
   font-size: 9px;
@@ -765,6 +769,84 @@ select option { background: #FFFFFF; color: var(--text); }
   padding:10px 14px; margin-top:12px;
   font-size:13px; color:var(--accent);
   align-items:center; gap:10px;
+}
+
+/* ── MAP AREA CUSTOMIZATION HANDLES ── */
+.area-handle {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+.area-handle-corner > div {
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  border: 2.5px solid #2563EB;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+  box-sizing: border-box;
+  transition: transform 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+}
+.area-handle-corner:hover > div {
+  transform: scale(1.25);
+  border-color: #1D4ED8;
+  background: #EFF6FF;
+}
+.area-handle-edge-ns > div {
+  width: 20px;
+  height: 10px;
+  background: #ffffff;
+  border: 2px solid #2563EB;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  box-sizing: border-box;
+  cursor: ns-resize;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+.area-handle-edge-ns:hover > div {
+  transform: scale(1.2);
+  border-color: #1D4ED8;
+}
+.area-handle-edge-ew > div {
+  width: 10px;
+  height: 20px;
+  background: #ffffff;
+  border: 2px solid #2563EB;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  box-sizing: border-box;
+  cursor: ew-resize;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+.area-handle-edge-ew:hover > div {
+  transform: scale(1.2);
+  border-color: #1D4ED8;
+}
+.area-handle-center > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  background: #2563EB;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  cursor: move;
+  user-select: none;
+  border: 1.5px solid #ffffff;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  transition: background 0.12s ease, transform 0.1s ease;
+}
+.area-handle-center:hover > div {
+  background: #1D4ED8;
+  transform: scale(1.06);
+}
+.area-drawing-active,
+.area-drawing-active .leaflet-interactive {
+  cursor: crosshair !important;
 }
 
 /* ── MEMBERS ── */

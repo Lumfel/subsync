@@ -39,13 +39,24 @@ Route::get('/', function () {
     return view('landing');
 });
 
+// Public data-privacy notice (RA 10173)
+Route::view('/privacy', 'privacy')->name('privacy');
+
 // Resident / Officer login
 Route::get('/login', function () {
     return view('layouts.login_residen_officers');
 })->name('login')->middleware('cache.headers:no_store;private');
 
-Route::post('/login', [AuthController::class, 'residentLogin'])->name('login.post');
-Route::post('/register', [AuthController::class, 'register'])->name('register.post');
+Route::get('/register', function () {
+    return view('layouts.login_residen_officers', ['initialTab' => 'register']);
+})->name('register')->middleware('cache.headers:no_store;private');
+
+Route::post('/login', [AuthController::class, 'residentLogin'])
+    ->name('login.post')
+    ->middleware('throttle:10,1');
+Route::post('/register', [AuthController::class, 'register'])
+    ->name('register.post')
+    ->middleware('throttle:10,1');
 
 // Google OAuth login (residents and officers; admin stays password-only)
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
@@ -82,6 +93,7 @@ Route::get('/officer-portal', function () {
     return view('layouts.officer-portal', [
         'officerName' => $officer?->name ?? 'Officer',
         'officerId' => $officer?->id,
+        'avatar' => $officer?->avatar,
         'prefs' => Actor::prefs(),
         'role' => 'officer',
     ]);
@@ -176,9 +188,11 @@ Route::prefix('api')->group(function () {
     Route::middleware('portal.role:admin,officer,resident')->group(function () {
         Route::get('/settings', [SettingsController::class, 'show']);
         Route::put('/settings/profile', [SettingsController::class, 'updateProfile']);
-        Route::post('/settings/password', [SettingsController::class, 'updatePassword']);
+        Route::post('/settings/password', [SettingsController::class, 'updatePassword'])->middleware('throttle:5,1');
         Route::post('/settings/photo', [SettingsController::class, 'updatePhoto']);
         Route::put('/settings/preferences', [SettingsController::class, 'updatePreferences']);
+        Route::get('/settings/export', [SettingsController::class, 'exportData']);
+        Route::post('/settings/erasure-request', [SettingsController::class, 'requestErasure'])->middleware('throttle:5,1');
         Route::get('/search', [SearchController::class, 'index']);
     });
 
@@ -225,8 +239,8 @@ Route::prefix('api')->group(function () {
     // Payment Statuses
     // Removed: payment tracking/status removed from the system.
 
-    // Household Members
-    Route::middleware('portal.role:resident')->group(function () {
+    // Household Members — residents manage their own household; staff may manage any.
+    Route::middleware('portal.role:admin,officer,resident')->group(function () {
         Route::get('/household-members', [ResidentController::class, 'members']);
         Route::post('/household-members', [ResidentController::class, 'storeMember']);
         Route::put('/household-members/{id}', [ResidentController::class, 'updateMember']);
@@ -242,6 +256,7 @@ Route::prefix('api')->group(function () {
         Route::post('/announcements', [AnnouncementController::class, 'store']);
         Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
         Route::patch('/announcements/{id}/archive', [AnnouncementController::class, 'archive']);
+        Route::patch('/announcements/{id}/publish', [AnnouncementController::class, 'publish']);
     });
 
     // Announcement Templates
@@ -270,7 +285,11 @@ Route::prefix('api')->group(function () {
         Route::get('/issues/my', [IssueController::class, 'myIssues']);
         Route::get('/issues/my/{id}/timeline', [IssueController::class, 'myTimeline']);
         Route::post('/issues', [IssueController::class, 'store']);
+        Route::post('/issues/{id}/details', [IssueController::class, 'addDetails']);
     });
+    // Issue media (photos/documents) lives on the private disk — owner or staff only.
+    Route::get('/issues/media/{id}', [IssueController::class, 'media'])
+        ->middleware('portal.role:admin,officer,resident');
     Route::middleware('portal.role:admin,officer')->group(function () {
         Route::get('/issues/urgent-check', [IssueController::class, 'urgentCheck']);
         Route::get('/issues/common', [IssueController::class, 'common']);
@@ -320,6 +339,7 @@ Route::prefix('api')->group(function () {
     Route::middleware('portal.role:admin,officer')->group(function () {
         Route::get('/officers', [OfficerController::class, 'index']);
         Route::post('/officers', [OfficerController::class, 'store']);
+        Route::post('/officers/avatar', [OfficerController::class, 'updateAvatar']);
         Route::put('/officers/{id}', [OfficerController::class, 'update']);
         Route::delete('/officers/{id}', [OfficerController::class, 'destroy']);
     });
@@ -343,12 +363,15 @@ Route::prefix('api')->group(function () {
     Route::middleware('portal.role:admin,officer')->group(function () {
         Route::get('/officer-files', [OfficerFileController::class, 'index']);
         Route::post('/officer-files', [OfficerFileController::class, 'store']);
+        Route::get('/officer-files/{id}/download', [OfficerFileController::class, 'download']);
         Route::patch('/officer-files/{id}/archive', [OfficerFileController::class, 'archive']);
         Route::delete('/officer-files/{id}', [OfficerFileController::class, 'destroy']);
     });
 
     // HOA Expenses Transparency — how fees are utilized (all roles view; admin records)
     Route::get('/hoa-expenses', [HoaExpenseController::class, 'index'])
+        ->middleware('portal.role:admin,officer,resident');
+    Route::get('/hoa-expenses/{id}/receipt', [HoaExpenseController::class, 'receipt'])
         ->middleware('portal.role:admin,officer,resident');
     Route::middleware('portal.role:admin')->group(function () {
         Route::post('/hoa-expenses', [HoaExpenseController::class, 'store']);

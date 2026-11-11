@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Subsync Dashboard</title>
-<link rel="stylesheet" href="{{ asset('styles.css') }}">
-<link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
-<script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
+<link rel="stylesheet" href="{{ asset('styles.css') . '?v=' . filemtime(public_path('styles.css')) }}">
+<link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') . '?v=' . filemtime(public_path('vendor/leaflet/leaflet.css')) }}" />
+<script src="{{ asset('vendor/leaflet/leaflet.js') . '?v=' . filemtime(public_path('vendor/leaflet/leaflet.js')) }}"></script>
 <script>
   // Point default marker icons at local images
   if(window.L && L.Icon && L.Icon.Default){

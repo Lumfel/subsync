@@ -52,7 +52,7 @@ class ResolvePortalSession
 
         $role = $request->input('role');
         if (is_string($role) && in_array($role, ['admin', 'officer', 'resident'], true)
-            && ($request->is('login') || $request->is('register'))) {
+            && $request->is('login')) {
             return $role;
         }
 

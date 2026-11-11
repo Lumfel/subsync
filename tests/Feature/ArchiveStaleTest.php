@@ -57,11 +57,31 @@ class ArchiveStaleTest extends TestCase
             'resident_id' => $resident->id, 'category' => 'Road / Pavement', 'title' => 'Pothole',
             'description' => 'x', 'status' => 'Resolved',
         ]);
-        $issue->forceFill(['updated_at' => now()->subDays(40)])->saveQuietly();
+        $issue->forceFill(['resolved_at' => now()->subDays(40)])->saveQuietly();
 
         $this->artisan('issues:purge-resolved')->assertSuccessful();
 
         $this->assertDatabaseHas('issue_reports', ['id' => $issue->id]);
+        $this->assertNotNull($issue->fresh()->archived_at);
+    }
+
+    public function test_recently_edited_resolved_issue_still_archives_on_its_resolution_age(): void
+    {
+        $resident = Resident::create(['name' => 'R2', 'email' => 'r2@example.test', 'password' => 'Secret@12345', 'status' => 'Active']);
+        $issue = IssueReport::create([
+            'resident_id' => $resident->id, 'category' => 'Road / Pavement', 'title' => 'Pothole',
+            'description' => 'x', 'status' => 'Resolved',
+        ]);
+
+        // Resolved 40 days ago, but edited (any field) today — the archiving clock
+        // must follow resolved_at, not the last edit.
+        $issue->forceFill([
+            'resolved_at' => now()->subDays(40),
+            'updated_at' => now(),
+        ])->saveQuietly();
+
+        $this->artisan('issues:purge-resolved')->assertSuccessful();
+
         $this->assertNotNull($issue->fresh()->archived_at);
     }
 }

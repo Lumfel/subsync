@@ -200,6 +200,7 @@ class AcceptanceTest extends TestCase
     public function test_tc09_image_and_file_uploads(): void
     {
         Storage::fake('public');
+        Storage::fake('local');
 
         // Resident issue photo
         $this->as('resident', $this->resident);
@@ -215,7 +216,7 @@ class AcceptanceTest extends TestCase
         $this->as('officer', $this->officer);
         $res = $this->postJson('/api/officer-files', ['file' => UploadedFile::fake()->create('report.pdf', 12, 'application/pdf'), 'category' => 'Reports'])
             ->assertOk()->assertJson(['success' => true]);
-        Storage::disk('public')->assertExists($res->json('file.file_path'));
+        Storage::disk('local')->assertExists($res->json('file.file_path'));
     }
 
     // ── TC-10 Compatibility & Performance (automated partial) ──

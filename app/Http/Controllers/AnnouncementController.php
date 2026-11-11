@@ -57,12 +57,13 @@ class AnnouncementController extends Controller
             'target' => 'sometimes|string|max:50',
             'priority' => 'sometimes|in:Normal,High',
             'event_date' => 'nullable|date',
+            'status' => 'sometimes|in:Active,Draft',
         ]);
 
         $data['tag'] = $data['tag'] ?? 'notice';
         $data['target'] = $data['target'] ?? 'All Residents';
         $data['priority'] = $data['priority'] ?? 'Normal';
-        $data['status'] = 'Active';
+        $data['status'] = $data['status'] ?? 'Active';
 
         // Determine poster: admin or officer
         if (session('admin_id')) {
@@ -109,6 +110,15 @@ class AnnouncementController extends Controller
         $announcement->update(['status' => $newStatus]);
 
         return response()->json(['success' => true, 'status' => $newStatus]);
+    }
+
+    /** PATCH /api/announcements/{id}/publish — move a Draft onto the live feed */
+    public function publish(int $id)
+    {
+        $announcement = Announcement::findOrFail($id);
+        $announcement->update(['status' => 'Active']);
+
+        return response()->json(['success' => true, 'status' => 'Active']);
     }
 
     /** POST /api/announcements/{id}/view — mark as viewed by resident */

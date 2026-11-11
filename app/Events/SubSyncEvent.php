@@ -2,15 +2,17 @@
 
 namespace App\Events;
 
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Generic real-time event pushed to every connected client (Reverb/WebSocket).
+ * Generic real-time event pushed to connected clients (Reverb/WebSocket).
  * Mirrors the compact SSE bus payloads so the front-end handlers can be reused.
+ * Broadcasts on a PRIVATE channel: only authenticated portal sessions may
+ * subscribe (authorization in routes/channels.php).
  */
 class SubSyncEvent implements ShouldBroadcastNow
 {
@@ -24,7 +26,7 @@ class SubSyncEvent implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        return [new Channel($this->channelName)];
+        return [new PrivateChannel($this->channelName)];
     }
 
     public function broadcastAs(): string

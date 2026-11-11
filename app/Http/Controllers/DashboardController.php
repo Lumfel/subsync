@@ -155,6 +155,14 @@ class DashboardController extends Controller
                 // non-critical
             }
 
+            // Pending GCash payment validation count
+            $pendingPaymentsCount = 0;
+            try {
+                $pendingPaymentsCount = DB::table('payment_submissions')->where('status', 'Pending')->count();
+            } catch (\Throwable $e) {
+                // non-critical
+            }
+
             return [
                 'residents' => $residents,
                 'households' => $households,
@@ -166,6 +174,7 @@ class DashboardController extends Controller
                 'families' => $families,
                 'expenses' => $expenses,
                 'msgCount' => $msgCount,
+                'pendingPaymentsCount' => $pendingPaymentsCount,
             ];
         }));
     }

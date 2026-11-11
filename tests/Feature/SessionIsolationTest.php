@@ -107,4 +107,32 @@ class SessionIsolationTest extends TestCase
         $this->assertGuest('resident');
         $this->assertNull(session('active_role'));
     }
+
+    public function test_admin_logout_redirects_to_admin_access(): void
+    {
+        $admin = $this->admin();
+        $this->actingAs($admin, 'admin');
+
+        $this->withSession(['admin_id' => $admin->id, 'active_role' => 'admin'])
+            ->post('/logout', ['portal' => 'admin'])
+            ->assertRedirect(url('admin-access'));
+
+        $this->assertGuest('admin');
+        $this->assertNull(session('admin_id'));
+        $this->assertNull(session('active_role'));
+    }
+
+    public function test_officer_logout_redirects_to_officer_login(): void
+    {
+        $officer = $this->officer();
+        $this->actingAs($officer, 'officer');
+
+        $this->withSession(['officer_id' => $officer->id, 'active_role' => 'officer'])
+            ->post('/logout', ['portal' => 'officer'])
+            ->assertRedirect(url('login').'?portal=officer');
+
+        $this->assertGuest('officer');
+        $this->assertNull(session('officer_id'));
+        $this->assertNull(session('active_role'));
+    }
 }

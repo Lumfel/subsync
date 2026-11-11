@@ -116,7 +116,7 @@ function nav(name, el){
   }
   if(name==='issues') renderIssues();
   if(name==='members') renderMembers();
-  if(name==='analytics') setTimeout(renderAnalytics, 80);
+    if(name==='analytics') loadD3().then(function(){ setTimeout(function(){ renderAnalytics(); loadAnalyticsSecurityLogs(); }, 30); }).catch(function(){});
   if(name==='reports'){ renderReports(); loadReportTemplatesAdmin(); loadIssueData(); }
   if(name==='announcements') loadAdminEvents();
   if(name==='mapping') setTimeout(initMap, 80);
@@ -187,6 +187,35 @@ recommendations = d.recommendations||[];
   if(document.getElementById('pendingNoticeCount')) document.getElementById('pendingNoticeCount').textContent = pendingCount;
   const notice = document.getElementById('pendingNotice');
   if(notice) notice.style.display = pendingCount > 0 ? 'flex' : 'none';
+
+  // Update Daily Action Center
+  const pendingPays = Number(d.pendingPaymentsCount || 0);
+  const criticalOnly = issues.filter(i => i.status !== 'Resolved' && (i.priority === 'Critical' || i.overdue)).length;
+  const totalActions = pendingCount + pendingPays + criticalOnly;
+  const actionCenter = document.getElementById('adminActionCenter');
+  if(actionCenter){
+    const itemRes = document.getElementById('actionItemRegistrations');
+    const itemPay = document.getElementById('actionItemPayments');
+    const itemIss = document.getElementById('actionItemIssues');
+    if(itemRes){
+      itemRes.style.display = pendingCount > 0 ? 'flex' : 'none';
+      const c = document.getElementById('actionPendingResCount');
+      if(c) c.textContent = pendingCount;
+    }
+    if(itemPay){
+      itemPay.style.display = pendingPays > 0 ? 'flex' : 'none';
+      const c = document.getElementById('actionPendingPayCount');
+      if(c) c.textContent = pendingPays;
+    }
+    if(itemIss){
+      itemIss.style.display = criticalOnly > 0 ? 'flex' : 'none';
+      const c = document.getElementById('actionUrgentIssueCount');
+      if(c) c.textContent = criticalOnly;
+    }
+    const summary = document.getElementById('actionCenterSummary');
+    if(summary) summary.textContent = totalActions > 0 ? `${totalActions} task(s) requiring attention` : 'All caught up';
+    actionCenter.style.display = totalActions > 0 ? 'block' : 'none';
+  }
   if(document.getElementById('statBalance'))   document.getElementById('statBalance').textContent   = '₱'+Number(fin.total_balance||0).toLocaleString();
   if(document.getElementById('finCollected'))   document.getElementById('finCollected').textContent  = '₱'+Number(fin.total_collected||0).toLocaleString();
   if(document.getElementById('finDues'))        document.getElementById('finDues').textContent       = '₱'+Number(fin.total_dues||0).toLocaleString();
@@ -298,7 +327,10 @@ function renderResidents(){
         <span class="pill ${r.status==='Active'?'pill-active':'pill-inactive'}">${r.status}</span>
         <span class="pill ${payPill(r.current_balance)}">${payLabel(r.current_balance)}</span>
       </div>
-      <div style="margin-top:10px;font-size:12px;color:var(--text-dim);">Balance: ${SubUI.money(r.current_balance)}</div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text-dim);">Balance:
+        <button type="button" class="btn btn-sm" style="padding:1px 9px;font-size:12px;" title="View this resident's ledger statement"
+          onclick="event.stopPropagation();openLedgerModal(${r.id})">${SubUI.money(r.current_balance)} ${SubUI.icon('scroll',12)}</button>
+      </div>
       <div style="margin-top:10px;display:flex;gap:8px;">
         <button class="btn btn-sm" onclick="event.stopPropagation();SubUI.exportCsv('/api/residents/${r.id}/statement')">${SubUI.icon('download',13)} Statement</button>
         <button class="btn btn-sm" onclick="event.stopPropagation();remindResident(${r.id})">${SubUI.icon('bell',13)} Remind</button>
@@ -307,6 +339,48 @@ function renderResidents(){
   if(_more>0){ document.getElementById('residentGrid').insertAdjacentHTML('beforeend', `<div style="grid-column:1/-1;text-align:center;padding:12px;"><button class="btn btn-sm" onclick="residentCap+=24;renderResidents();">Show ${Math.min(_more,24)} more (${_more} remaining)</button></div>`); }
 }
 function filterResidents(){ residentCap=24; renderResidents(); }
+
+/* Opens a resident's full ledger statement (the source of truth behind the
+   cached balance figure on the card). */
+async function openLedgerModal(id){
+  const r = residents.find(x => x.id === id);
+  const title = document.getElementById('ledgerTitle');
+  if (title) title.textContent = 'Ledger — ' + (r ? r.name : 'Resident');
+  const sum = document.getElementById('ledgerSummary');
+  const body = document.getElementById('ledgerBody');
+  if (sum) sum.textContent = '';
+  if (body) body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:14px;">Loading…</td></tr>';
+
+  let s = null;
+  try { s = await apiGet('/api/ledger/' + id); } catch (e) {}
+
+  if (!s) {
+    if (body) body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:14px;">Could not load the statement.</td></tr>';
+    openModal('ledger');
+    return;
+  }
+
+  if (sum) {
+    sum.textContent = 'Outstanding: ' + SubUI.money(s.balance)
+      + ' · Charges: ' + SubUI.money(s.total_charges)
+      + ' · Payments: ' + SubUI.money(s.total_payments);
+  }
+
+  const entries = Array.isArray(s.entries) ? s.entries : [];
+  if (body) {
+    body.innerHTML = entries.length ? entries.slice().reverse().map(e => `
+      <tr>
+        <td style="white-space:nowrap;">${escHtml(e.date || '—')}</td>
+        <td>${escHtml(e.description || e.type || '')}</td>
+        <td style="text-align:right;">${e.charge ? SubUI.money(e.charge) : '—'}</td>
+        <td style="text-align:right;">${e.payment ? SubUI.money(e.payment) : '—'}</td>
+        <td style="text-align:right;font-weight:600;">${SubUI.money(e.balance)}</td>
+      </tr>`).join('')
+      : '<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:14px;">No ledger entries yet.</td></tr>';
+  }
+
+  openModal('ledger');
+}
 function toggleAllPending(cb){ document.querySelectorAll('.pending-check').forEach(c=>c.checked=cb.checked); }
 async function bulkPending(action){
   const ids=[...document.querySelectorAll('.pending-check:checked')].map(c=>Number(c.value));
@@ -349,14 +423,14 @@ function renderMembers(){
     const col=colorFor(colorIdx(m.name));
     const rel=m.relationship||'Member';
     const relStyle=`color:${relColor[rel]||'var(--text-dim)'};`;
-    const encoded=encodeURIComponent(JSON.stringify(m));
+    const encoded=encodeURIComponent(JSON.stringify(m)).replace(/'/g,'%27');
     return `<div class="member-card" style="cursor:pointer;" onclick="openMemberDetail('${encoded}')" title="Click to view details">
       <div class="member-avatar ${col}">${initStr}</div>
       <div class="member-info">
-        <h4>${m.name||'—'}</h4>
-        <p>${m.block_lot||'—'}</p>
+        <h4>${escHtml(m.name||'—')}</h4>
+        <p>${escHtml(m.block_lot||'—')}</p>
         <div class="m-type" style="${relStyle}">${rel}</div>
-        ${m.contact_number?`<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${SubUI.icon('phone',12)} ${m.contact_number}</div>`:''}
+        ${m.contact_number?`<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${SubUI.icon('phone',12)} ${escHtml(m.contact_number||'')}</div>`:''}
       </div>
     </div>`;
   }).join('');
@@ -436,67 +510,8 @@ async function addMemberSubmit(){
   }catch(e){msg.textContent='Error adding member.';}
 }
 
-function renderPaymentStatuses(){
-  document.getElementById('paymentStatusGrid').innerHTML=paymentStatuses.length?paymentStatuses.map(d=>{
-    const residentNames=(d.residents||[]).map(r=>r.name).join(', ')||'—';
-    const totalBal=(d.residents||[]).reduce((s,r)=>s+(r.current_balance||0),0);
-    const encoded=encodeURIComponent(JSON.stringify(d));
-    return `
-    <div class="res-card" onclick="openPaymentStatusDetail('${encoded}')" title="Click for details">
-      <div class="res-thumb">
-        <div style="width:100%;height:100%;background:rgba(240,100,100,0.1);display:flex;align-items:center;justify-content:center;font-size:36px;">${SubUI.icon('home',36)}</div>
-      </div>
-      <div class="res-info">
-        <h4>${d.block_lot}</h4>
-        <div class="res-reason">${d.reason||'—'}</div>
-        <div class="res-location">Residents: ${residentNames}</div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Outstanding: ₱${Number(totalBal).toLocaleString()} · Flagged: ${d.date_flagged||'—'}</div>
-      </div>
-    </div>`;
-  }).join(''):'<div class="empty-state">' + SubUI.icon('check', 28) + 'All households are in good standing.</div>';
-}
 
-function openPaymentStatusDetail(encoded){
-  const d=JSON.parse(decodeURIComponent(encoded));
-  const totalBal=(d.residents||[]).reduce((s,r)=>s+(r.current_balance||0),0);
-  const residentsHtml=(d.residents||[]).length
-    ?(d.residents||[]).map(r=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:8px;">
-        <div>
-          <div style="font-weight:600;font-size:13px;">${r.name}</div>
-          ${r.contact_number?`<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${SubUI.icon('phone',12)} ${r.contact_number}</div>`:''}
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:12px;color:${r.current_balance>0?'#f08080':'var(--green)'}; font-weight:700;">
-            ${r.current_balance>0?'₱'+Number(r.current_balance).toLocaleString()+' due':'Settled'}
-          </div>
-        </div>
-      </div>`).join('')
-    :'<div style="color:var(--text-dim);font-size:13px;">No resident records.</div>';
-  document.getElementById('paymentStatus-modal-block').textContent=d.block_lot||'—';
-  document.getElementById('paymentStatus-modal-reason').textContent=d.reason||'No reason provided';
-  document.getElementById('paymentStatus-modal-flagged').textContent=d.date_flagged||'—';
-  document.getElementById('paymentStatus-modal-total').textContent='₱'+Number(totalBal).toLocaleString();
-  document.getElementById('paymentStatus-modal-residents').innerHTML=residentsHtml;
-  document.getElementById('modal-payment-status').classList.add('open');
-}
-function closePaymentStatus(){ document.getElementById('modal-payment-status').classList.remove('open'); }
 
-function renderPayments(){
-  const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
-  const payPill=bal=>bal<=0?'pill-resolved':(bal<1000?'pill-pending':'pill-urgent');
-  document.getElementById('paymentList').innerHTML=payments.map(r=>`
-    <div class="payment-row">
-      <div class="r-avatar ${r.color}" style="width:36px;height:36px;font-size:12px;">${r.initials}</div>
-      <div class="pay-household">
-        <div class="pay-name">${r.name}</div>
-        <div class="pay-block">${r.block_lot}</div>
-      </div>
-      <span class="pill ${payPill(r.current_balance)}">${payLabel(r.current_balance)}</span>
-      <div class="pay-amount">${r.current_balance<=0?'₱0 owed':'₱'+Number(r.current_balance).toLocaleString()+' due'}</div>
-      <button class="btn btn-sm" onclick="openPaymentDetail(${r.id})">View</button>
-    </div>`).join('');
-}
 
 function renderThreads(){
   const list=document.getElementById('threadList');
@@ -596,16 +611,18 @@ function renderAnnouncements(){
   const searchQ=((document.getElementById('annSearch')||{}).value||'').toLowerCase();
   let filtered=statusFilter==='all'?announcements:announcements.filter(a=>(a.status||'Active')===statusFilter);
   if(searchQ) filtered=filtered.filter(a=>(a.title||'').toLowerCase().includes(searchQ)||(a.content||'').toLowerCase().includes(searchQ));
-  document.getElementById('annList').innerHTML=filtered.length?filtered.map(a=>{
-    const isArchived=(a.status||'Active')==='Archived';
+    document.getElementById('annList').innerHTML=filtered.length?filtered.map(a=>{
+      const isArchived=(a.status||'Active')==='Archived';
+      const isDraft=(a.status||'Active')==='Draft';
     // Format date formally
     let postedDate='';
     try{ postedDate=new Date(a.created_at).toLocaleString('en-PH',{year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ postedDate=a.created_at; }
     const meta=[];
     if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
-    if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+a.target+'</span>');
-    if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);">📅 Event: '+a.event_date+'</span>');
-    if(isArchived) meta.push('<span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase;">ARCHIVED</span>');
+    if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+escHtml(a.target)+'</span>');
+      if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);display:inline-flex;align-items:center;gap:4px;">'+SubUI.icon('calendar',12)+' Event: '+escHtml(a.event_date)+'</span>');
+      if(isArchived) meta.push('<span style="font-size:11px;font-weight:700;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase;">ARCHIVED</span>');
+      if(isDraft) meta.push('<span style="font-size:11px;font-weight:700;color:#f59e0b;letter-spacing:.05em;text-transform:uppercase;">DRAFT — not visible to residents</span>');
     return `
     <div class="ann-item" onclick="openAnnView(${a.id})" style="cursor:pointer;${isArchived?'opacity:0.65;':''}">
       <div class="ann-meta" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:6px;">
@@ -618,29 +635,42 @@ function renderAnnouncements(){
       <div class="ann-title" style="font-size:15px;font-weight:600;margin-bottom:4px;text-align:center;">${a.title}</div>
       <div class="ann-body" style="font-size:13px;color:var(--text-mid);white-space:pre-line;line-height:1.65;text-align:center;">${a.content}</div>
       <div style="font-size:11px;color:var(--text-dim);margin-top:6px;border-top:1px solid var(--glass-border);padding-top:6px;">Issued by: ${a.posted_by} &nbsp;·&nbsp; Audience: ${a.target||'All Residents'}</div>
-      <div class="ann-actions">
-        <button class="btn btn-sm" onclick="event.stopPropagation();archiveAnn(${a.id})">${isArchived?SubUI.icon('refresh',13)+' Restore':SubUI.icon('archive',13)+' Archive'}</button>
-        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteAnn(${a.id})">Delete</button>
-      </div>
-    </div>`}).join(''):'<div class="empty-state">' + SubUI.icon('megaphone', 28) + 'No announcements found.</div>';
-}
+        <div class="ann-actions">
+          ${isDraft
+            ? `<button class="btn btn-sm btn-green" onclick="event.stopPropagation();publishAnn(${a.id})">${SubUI.icon('send',13)} Publish</button>`
+            : `<button class="btn btn-sm" onclick="event.stopPropagation();archiveAnn(${a.id})">${isArchived?SubUI.icon('refresh',13)+' Restore':SubUI.icon('archive',13)+' Archive'}</button>`}
+          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteAnn(${a.id})">Delete</button>
+        </div>
+      </div>`}).join(''):'<div class="empty-state">' + SubUI.icon('megaphone', 28) + 'No announcements found.</div>';
+  }
 async function archiveAnn(id){
   const res=await apiPatch('/api/announcements/'+id+'/archive');
   if(res&&res.success){
     const a=announcements.find(x=>x.id===id);
-    if(a) a.status=res.announcement.status;
+    if(a) a.status=res.status;
     renderAnnouncements();
-    showToast(res.announcement.status==='Archived'?'📦 Announcement archived.':'♻ Announcement restored.');
+    showToast(res.status==='Archived'?'📦 Announcement archived.':'♻ Announcement restored.');
   } else {
     showToast('⚠ Failed to update status.');
   }
 }
-let viewingAnnId=null;
+  async function publishAnn(id){
+    const res=await apiPatch('/api/announcements/'+id+'/publish');
+    if(res&&res.success){
+      const a=announcements.find(x=>x.id===id);
+      if(a) a.status='Active';
+      renderAnnouncements();
+      showToast('Announcement published to residents.');
+    } else {
+      showToast('Failed to publish the announcement.');
+    }
+  }
+  let viewingAnnId=null;
 function openAnnView(id){
   const a=announcements.find(x=>x.id===id);
   if(!a) return;
   viewingAnnId=id;
-  const tagLabel={notice:'Notice',urgent:'🚨 Urgent',event:'📅 Event'};
+  const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   document.getElementById('annV-tag').textContent=tagLabel[a.tag]||'Notice';
   document.getElementById('annV-tag').className='pill pill-'+(a.tag||'notice');
   document.getElementById('annV-priority').style.display=a.priority==='High'?'inline':'none';
@@ -648,13 +678,13 @@ function openAnnView(id){
   document.getElementById('annV-content').textContent=a.content;
   document.getElementById('annV-by').textContent='Posted by '+a.posted_by+' on '+a.created_at;
   const meta=[];
-  if(a.target&&a.target!=='All Residents') meta.push('👥 '+a.target);
-  if(a.event_date) meta.push('📅 Event date: '+a.event_date);
+  if(a.target&&a.target!=='All Residents') meta.push('Audience: '+escHtml(a.target));
+  if(a.event_date) meta.push('Event date: '+escHtml(a.event_date));
   document.getElementById('annV-meta').textContent=meta.join(' · ')||'All Residents';
   document.getElementById('annV-delBtn').onclick=()=>{ deleteAnn(a.id); document.getElementById('modal-annView').classList.remove('open'); };
   const archBtn=document.getElementById('annV-archBtn');
   if(archBtn){
-    archBtn.innerHTML=(a.status||'Active')==='Archived'?SubUI.icon('refresh',12)+' Unarchive':SubUI.icon('archive',12)+' Archive';
+      archBtn.innerHTML=(a.status||'Active')==='Archived'?SubUI.icon('refresh',12)+' Unarchive':((a.status||'Active')==='Draft'?SubUI.icon('send',12)+' Publish':SubUI.icon('archive',12)+' Archive');
   }
   document.getElementById('modal-annView').classList.add('open');
 }
@@ -674,8 +704,8 @@ async function deleteAnn(id){
     showToast('⚠ Failed to delete announcement.');
   }
 }
-async function postAnnouncement(){
-  const tag=document.getElementById('annType').value;
+  async function postAnnouncement(draft){
+    const tag=document.getElementById('annType').value;
   const title=document.getElementById('annTitle').value.trim();
   const content=document.getElementById('annBody').value.trim();
   const target=document.getElementById('annTarget').value;
@@ -683,7 +713,7 @@ async function postAnnouncement(){
   const event_date=document.getElementById('annDate').value||null;
   if(!SubUI.required([[title,'annTitle','Please enter a title.'],[content,'annBody','Please enter the announcement body.']])) return;
   if(!title||!content){showToast('⚠ Please fill in all fields.');return;}
-  const res=await apiPost('/api/announcements',{tag,title,content,target,priority,event_date});
+    const res=await apiPost('/api/announcements',{tag,title,content,target,priority,event_date,status:draft?'Draft':'Active'});
   if(res.success){
     announcements.unshift(res.announcement);
     closeModal('ann');
@@ -691,13 +721,15 @@ async function postAnnouncement(){
     document.getElementById('annBody').value='';
     document.getElementById('annDate').value='';
     renderAnnouncements();
-    showToast('✅ Announcement posted to all residents.');
+    showToast(draft?'Draft saved - publish it from the list.':'Announcement posted to all residents.');
   } else {
     showToast('⚠ '+(res.message||'Failed to post announcement.'));
   }
 }
-// Announcement template quick-fill
-function applyAnnTemplate(type){
+  async function saveAnnDraft(){ await postAnnouncement(true); }
+
+  // Announcement template quick-fill
+  function applyAnnTemplate(type){
   const templates={
     notice:{tag:'notice',title:'Community Notice',body:'Dear residents,\n\nPlease be informed that [details here].\n\nThank you for your cooperation.\n\nSUBSYNC Administration'},
     announcement:{tag:'notice',title:'General Announcement',body:'Attention all residents,\n\n[Announcement details here].\n\nFor questions, please contact the HOA office.\n\nSUBSYNC Administration'},
@@ -1207,7 +1239,7 @@ function openIssueDetail(id){
   const mediaEl=document.getElementById('issD-media');
   if(mediaEl){
     const photos=i.media||[];
-    mediaEl.innerHTML=photos.length?photos.map(m=>/\.(jpg|jpeg|png|gif|webp)$/i.test(m.name||m.url)?`<a href="${m.url}" target="_blank"><img src="${m.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--glass-border);cursor:pointer;" title="Click to open full size"></a>`:`<a href="${m.url}" target="_blank" style="display:inline-block;padding:8px 10px;border:1px solid var(--glass-border);border-radius:8px;color:var(--blue);font-size:12px;">📎 ${m.name||'Attachment'}</a>`).join(''):'';
+    mediaEl.innerHTML=photos.length?photos.map(m=>/\.(jpg|jpeg|png|gif|webp)$/i.test(m.name||m.url)?`<a href="${m.url}" target="_blank"><img src="${m.url}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--glass-border);cursor:pointer;" title="Click to open full size"></a>`:`<a href="${m.url}" target="_blank" style="display:inline-block;padding:8px 10px;border:1px solid var(--glass-border);border-radius:8px;color:var(--blue);font-size:12px;">📎 ${escHtml(m.name||'Attachment')}</a>`).join(''):'';
   }
   const hasLoc=i.latitude&&i.longitude;
   document.getElementById('issD-location').innerHTML=hasLoc?`<a href="https://maps.google.com/?q=${i.latitude},${i.longitude}" target="_blank" style="color:var(--blue);font-size:12px;">📍 View on map</a>`:'';
@@ -1261,30 +1293,6 @@ function openRecDetail(id){
 }
 
 
-function renderFinancialRecords(records){
-  if(!records||!Array.isArray(records)) return;
-  const thead=document.querySelector('#excelTable thead tr');
-  const tbody=document.querySelector('#excelTable tbody');
-  if(!tbody) return;
-  if(thead) thead.innerHTML='<th>Resident</th><th>Type</th><th>Description</th><th style="text-align:right">Amount</th><th>Date</th><th></th>';
-  if(!records.length){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px;">No financial records yet.</td></tr>';
-    return;
-  }
-  tbody.innerHTML=records.map(r=>`<tr data-res="${(r.resident||'').toLowerCase()}" data-type="${r.record_type}" data-date="${r.record_date||''}">
-    <td>
-      <div style="font-size:13px;">${r.resident||'—'}</div>
-      ${r.block_lot&&r.block_lot!=='—'?`<div style="font-size:10px;color:var(--text-dim);">${r.block_lot}</div>`:''}
-    </td>
-    <td><span class="pill ${r.record_type==='Payment'?'pill-resolved':r.record_type==='Penalty'?'pill-urgent':'pill-pending'}">${r.record_type==='Payment'?'Cash Payment':r.record_type}</span></td>
-    <td style="font-size:12px;">${r.description||'—'}</td>
-    <td style="text-align:right;font-weight:500;color:${r.record_type==='Payment'?'var(--green)':r.record_type==='Adjustment'&&r.amount<0?'var(--green)':'#f08080'}">
-      ${r.record_type==='Payment'?'−':'+'}&#8369;${Number(Math.abs(r.amount)).toLocaleString()}
-    </td>
-    <td style="font-size:12px;">${r.record_date?new Date(r.record_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):'—'}</td>
-    <td><button class="btn btn-sm btn-danger" onclick="deleteFinRecord(${r.id})">Delete</button></td>
-  </tr>`).join('');
-}
 
 
 async function addOfficer(){
@@ -1350,13 +1358,13 @@ async function renderReports(){
       <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--glass-border);">
         <span style="font-size:22px;flex-shrink:0">📊</span>
         <div style="flex:1;min-width:0;">
-          <div style="font-size:13px;font-weight:500;margin-bottom:2px;">${f.original_name}</div>
-          <div style="font-size:11px;color:var(--text-dim);">${f.officer_name} &middot; ${f.category} &middot; ${f.period||'&mdash;'}</div>
-          ${f.notes?`<div style="font-size:11px;color:var(--text-mid);margin-top:3px;">${f.notes}</div>`:''}
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px;">${escHtml(f.original_name)}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${escHtml(f.officer_name)} &middot; ${escHtml(f.category)} &middot; ${f.period||'&mdash;'}</div>
+          ${f.notes?`<div style="font-size:11px;color:var(--text-mid);margin-top:3px;">${escHtml(f.notes)}</div>`:''}
           <div style="font-size:10px;color:var(--text-dim);margin-top:3px;">${new Date(f.created_at).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'})}</div>
         </div>
         <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
-          ${f.file_path?`<a href="${(window.APP_BASE||'')}/storage/${f.file_path}" download="${f.original_name}" class="btn btn-sm">&darr; Download</a>`:''}
+          ${f.file_path?`<a href="${(window.APP_BASE||'')}/api/officer-files/${f.id}/download" class="btn btn-sm">&darr; Download</a>`:''}
           <button class="btn btn-sm" onclick="event.stopPropagation();toggleAdminFileArchive(${f.id})">📦 Archive</button>
         </div>
       </div>`).join('');
@@ -1385,11 +1393,12 @@ function downloadCSV(filename, headers, rows){
   URL.revokeObjectURL(a.href);
 }
 
-function getReportDateRange(){
-  const from=(document.getElementById('reportDateFrom')||{}).value||'';
-  const to=(document.getElementById('reportDateTo')||{}).value||'';
-  return {from, to};
-}
+  function getReportDateRange(){
+    let from=(document.getElementById('reportDateFrom')||{}).value||'';
+    let to=(document.getElementById('reportDateTo')||{}).value||'';
+    if(from && to && from > to){ [from,to]=[to,from]; }
+    return {from, to};
+  }
 function inDateRange(dateStr, from, to){
   if(!from&&!to) return true;
   const d=new Date(dateStr);
@@ -1525,7 +1534,7 @@ function renderManageTables(){
   if(document.getElementById('memberTbody'))
     document.getElementById('memberTbody').innerHTML=muMembers.map((m,i)=>`
       <tr>
-        <td>${m.id}</td><td>${m.name||'—'}</td><td>${m.block_lot||m.house_id||'—'}</td><td>${m.relationship||'Member'}</td>
+        <td>${m.id}</td><td>${m.name?escHtml(m.name):'—'}</td><td>${escHtml(String(m.block_lot||m.house_id||'—'))}</td><td>${escHtml(m.relationship||'Member')}</td>
         <td>
           <div style="display:flex;gap:6px;">
             <button class="btn btn-sm btn-blue" onclick="openEditMember(${m.id})">Edit</button>
@@ -1703,7 +1712,21 @@ async function loadCommonIssues(){
 }
 
 /* Theme-aware, muted palette for the analytics widgets. */
-function chartColors(){
+  async function loadAnalyticsSecurityLogs(){
+    const el=document.getElementById('analytics-security-logs');
+    if(!el) return;
+    let logs=[];
+    try{ const res=await apiGet('/api/activity-logs'); logs=(res&&Array.isArray(res.logs))?res.logs:[]; }catch(e){ logs=[]; }
+    if(!logs.length){ el.innerHTML='<div class="empty-state" style="padding:14px;">No recorded activity yet.</div>'; return; }
+    const security=/export|erasure|backup|password|login|account|setting/i;
+    const relevant=logs.filter(l=>security.test(String(l.action||'')+' '+String(l.description||'')));
+    const list=(relevant.length?relevant:logs).slice(0,6);
+    el.innerHTML=list.map(l=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px solid var(--glass-border);font-size:12.5px;">
+      <span>${escHtml(l.description||l.action||'')}</span>
+      <span style="color:var(--text-dim);white-space:nowrap;">${escHtml(l.actor||'')} · ${escHtml(l.time||'')}</span>
+    </div>`).join('');
+  }
+  function chartColors(){
   const dark = document.documentElement.getAttribute('data-theme') === 'dark';
   return {
     dark,
@@ -1866,319 +1889,6 @@ function drawComplaintsChart(){
     .call(ax=>{ax.select('.domain').attr('stroke',c.axis);ax.selectAll('.tick line').remove();ax.selectAll('text').attr('fill',c.dim).style('font-size','11px');});
 }
 
-/* ══════════════ FINANCIAL RECORDS ══════════════ */
-function openAddRecordModal(){
-  const sel=document.getElementById('recResident');
-  if(sel){
-    sel.innerHTML='<option value="">— Select Resident —</option>'+
-      residents.map(r=>`<option value="${r.id}">${r.name}${r.block_lot&&r.block_lot!=='—'?' ('+r.block_lot+')':''}</option>`).join('');
-  }
-  openModal('addFinRecord');
-}
-async function saveFinancialRecord(){
-  const resident_id=document.getElementById('recResident').value;
-  const record_type=document.getElementById('recType').value;
-  const description=document.getElementById('recDesc').value.trim();
-  const amount=parseFloat(document.getElementById('recAmount').value)||0;
-  const record_date=document.getElementById('recDate').value;
-  if(!resident_id){showToast('⚠ Please select a resident.');return;}
-  if(!amount){showToast('⚠ Please enter an amount.');return;}
-  if(!record_date){showToast('⚠ Please enter a date.');return;}
-  const res=await apiPost('/api/financial',{resident_id,record_type,description,amount,record_date});
-  if(res.success){
-    closeModal('addFinRecord');
-    ['recDesc','recAmount','recDate'].forEach(id=>document.getElementById(id).value='');
-    const newFinData=await apiGet('/api/financial');
-    finRecs=Array.isArray(newFinData)?newFinData:[];
-    renderFinancialRecords(finRecs);
-    const summary=await apiGet('/api/financial/summary');
-    if(document.getElementById('finCollected')) document.getElementById('finCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
-    if(document.getElementById('finDues'))      document.getElementById('finDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
-    if(document.getElementById('finBalance'))   document.getElementById('finBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
-    if(document.getElementById('payCollected')) document.getElementById('payCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
-    if(document.getElementById('payDues'))      document.getElementById('payDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
-    if(document.getElementById('payBalance'))   document.getElementById('payBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
-    showToast('✅ Financial record added.');
-  } else {
-    showToast('⚠ '+(res.message||'Failed to save record.'));
-  }
-}
-
-/* ══════════════ FINANCE / RECEIPTS ══════════════ */
-let receiptCollections=[];
-let receiptExpenses=[];
-const savedReceipts=[];
-
-async function loadReceipts(){
-  const data=await apiGet('/api/financial-reports').catch(()=>[]);
-  if(Array.isArray(data)&&data.length){
-    savedReceipts.length=0;
-    data.forEach(r=>savedReceipts.push({id:r.id,month:r.month,previous:r.previous_balance,collections:r.collections,expenses:r.expenses}));
-    renderReceipts();
-  }
-}
-
-function renderReceipts(){
-  const container=document.getElementById('receiptContainer');
-  container.querySelectorAll('.receipt').forEach(r=>r.remove());
-  const addBtn=container.querySelector('.receipt-add-btn');
-  savedReceipts.forEach(r=>{
-    const totalCollect=r.collections.reduce((a,c)=>a+c.amt,0);
-    const totalExpense=r.expenses.reduce((a,e)=>a+e.amt,0);
-    const savings=r.previous+totalCollect-totalExpense;
-    const el=document.createElement('div');
-    el.className='receipt';
-    el.innerHTML=`
-      <div class="receipt-title">Financial Report</div>
-      <div class="receipt-subtitle">${r.month}</div>
-      <hr class="receipt-perforate">
-      <div class="receipt-section-label">Previous Balance</div>
-      <div class="receipt-line"><span class="r-label">Carried Over</span><span class="r-val">${fmt(r.previous)}</span></div>
-      <div class="receipt-section-label">Collections</div>
-      ${r.collections.map(c=>`<div class="receipt-line"><span class="r-label">${c.name}</span><span class="r-val positive">${fmt(c.amt)}</span></div>`).join('')}
-      <div class="receipt-section-label">Expenses</div>
-      ${r.expenses.map(e=>`<div class="receipt-line"><span class="r-label">${e.name}</span><span class="r-val negative">−${fmt(e.amt)}</span></div>`).join('')}
-      <hr class="receipt-perforate">
-      <div class="receipt-total">
-        <div class="rt-label">Net Savings</div>
-        <div class="rt-val">${fmt(savings)}</div>
-      </div>
-      ${r.id?`<button class="btn btn-sm btn-danger" style="margin-top:10px;width:100%;" onclick="deleteReceipt(${r.id})">Delete</button>`:''}`;
-    container.insertBefore(el, addBtn);
-  });
-}
-
-function updatePreview(){
-  const month=document.getElementById('r-month').value;
-  const prev=parseFloat(document.getElementById('r-prev').value)||0;
-  document.getElementById('p-month').textContent=month?new Date(month+'-01').toLocaleDateString('en-PH',{month:'long',year:'numeric'}):'Month';
-  document.getElementById('p-previous').textContent=fmt(prev);
-  const totalC=receiptCollections.reduce((a,c)=>a+c.amt,0);
-  const totalE=receiptExpenses.reduce((a,e)=>a+e.amt,0);
-  document.getElementById('p-savings').textContent=fmt(prev+totalC-totalE);
-  document.getElementById('p-collections').innerHTML=receiptCollections.length
-    ?receiptCollections.map(c=>`<div class="receipt-line"><span class="r-label">${c.name}</span><span class="r-val positive">${fmt(c.amt)}</span></div>`).join('')
-    :'<div class="receipt-line"><span class="r-label">—</span><span class="r-val">₱0</span></div>';
-  document.getElementById('p-expenses').innerHTML=receiptExpenses.length
-    ?receiptExpenses.map(e=>`<div class="receipt-line"><span class="r-label">${e.name}</span><span class="r-val negative">−${fmt(e.amt)}</span></div>`).join('')
-    :'<div class="receipt-line"><span class="r-label">—</span><span class="r-val negative">₱0</span></div>';
-}
-function addReceiptLine(type){
-  if(type==='collection'){
-    const name=document.getElementById('c-name').value.trim();
-    const amt=parseFloat(document.getElementById('c-amount').value)||0;
-    if(!name){showToast('⚠ Enter a collection name.');return;}
-    receiptCollections.push({name,amt});
-    document.getElementById('c-name').value='';document.getElementById('c-amount').value='';
-  } else {
-    const name=document.getElementById('e-name').value.trim();
-    const amt=parseFloat(document.getElementById('e-amount').value)||0;
-    if(!name){showToast('⚠ Enter an expense name.');return;}
-    receiptExpenses.push({name,amt});
-    document.getElementById('e-name').value='';document.getElementById('e-amount').value='';
-  }
-  updatePreview();
-}
-async function saveReceipt(){
-  const month=document.getElementById('r-month').value;
-  const prev=parseFloat(document.getElementById('r-prev').value)||0;
-  if(!month){showToast('⚠ Please select a month.');return;}
-  const payload={
-    month,
-    previous_balance:prev,
-    collections:[...receiptCollections],
-    expenses:[...receiptExpenses]
-  };
-  const res=await apiPost('/api/financial-reports',payload);
-  if(res.success){
-    savedReceipts.unshift({id:res.report.id,month:new Date(month+'-01').toLocaleDateString('en-PH',{month:'long',year:'numeric'}),previous:prev,collections:[...receiptCollections],expenses:[...receiptExpenses]});
-    receiptCollections=[];receiptExpenses=[];
-    closeModal('addReceipt');
-    renderReceipts();
-    showToast('✅ Receipt saved.');
-  } else {
-    showToast('⚠ '+(res.message||'Failed to save receipt.'));
-  }
-}
-async function deleteReceipt(id){
-  const res=await apiDelete('/api/financial-reports/'+id);
-  if(res.success){
-    const idx=savedReceipts.findIndex(r=>r.id===id);
-    if(idx>-1) savedReceipts.splice(idx,1);
-    renderReceipts();
-    showToast('✅ Receipt deleted.');
-  }
-}
-
-/* Excel Upload — document-level guard prevents browser navigating to the file */
-document.addEventListener('dragover',function(e){e.preventDefault();});
-document.addEventListener('drop',function(e){
-  e.preventDefault();
-  const zone=document.getElementById('excelDropZone');
-  if(!zone) return;
-  const file=e.dataTransfer&&e.dataTransfer.files[0];
-  if(!file) return;
-  const ext=file.name.split('.').pop().toLowerCase();
-  if(ext==='xlsx'||ext==='xls'){
-    zone.style.borderColor='';
-    processExcelFile(file);
-  }
-});
-/* Drop zone highlight */
-const _dz=document.getElementById('excelDropZone');
-if(_dz){
-  _dz.addEventListener('dragover',function(e){e.preventDefault();this.style.borderColor='var(--accent)';this.style.background='rgba(120,180,255,0.08)';});
-  _dz.addEventListener('dragleave',function(){this.style.borderColor='';this.style.background='';});
-  _dz.addEventListener('drop',function(e){e.preventDefault();this.style.borderColor='';this.style.background='';const f=e.dataTransfer&&e.dataTransfer.files[0];if(f) processExcelFile(f);});
-}
-function handleExcelDrop(e){
-  e.preventDefault();
-  document.getElementById('excelDropZone').style.borderColor='';
-  const file=e.dataTransfer.files[0];
-  if(!file) return;
-  processExcelFile(file);
-}
-function uploadExcel(){
-  const file=document.getElementById('excelFile').files[0];
-  if(!file) return;
-  processExcelFile(file);
-  document.getElementById('excelFile').value='';
-}
-let pendingImportRows=[];
-function processExcelFile(file){
-  if(!window.XLSX){showToast('⚠ Excel library not loaded yet. Please try again.');return;}
-  const fn=document.getElementById('excelFileName');
-  if(fn) fn.textContent='Reading: '+file.name+'…';
-  const reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      // Get all rows as arrays to find the actual header row (handles title/spacer rows)
-      const allRows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      // Find the row index that contains 'resident_id' (case-insensitive)
-      const headerIdx=allRows.findIndex(row=>row.some(cell=>cell!=null&&cell.toString().toLowerCase().trim()==='resident_id'));
-      // If no header row found, fall back to row 0
-      const startIdx=headerIdx>=0?headerIdx:0;
-      const headers=allRows[startIdx].map(h=>h.toString().toLowerCase().trim().replace(/[^a-z0-9_]/g,'_'));
-      const dataRows=allRows.slice(startIdx+1).filter(row=>row.some(c=>c!==''&&c!=null));
-      const raw=dataRows.map(row=>{
-        const obj={};
-        headers.forEach((h,i)=>{ obj[h]=row[i]!==undefined?row[i]:''; });
-        return obj;
-      });
-      if(!raw.length){showToast('⚠ No data rows found.');if(fn) fn.textContent='';return;}
-      const rows=raw;
-      const validTypes=['Due','Payment','Penalty','Adjustment'];
-      pendingImportRows=[];
-      const errors=[];
-      rows.forEach((r,i)=>{
-        const rowNum=i+1;
-        const rid=parseInt(r['resident_id']||r['residentid']||r['id']);
-        const rtype=(r['record_type']||r['recordtype']||r['type']||'').toString().trim();
-        const desc=(r['description']||r['desc']||r['notes']||'').toString().trim();
-        const amt=parseFloat(r['amount']||r['amt']||0);
-        let rdate=r['record_date']||r['recorddate']||r['date']||'';
-        if(rdate instanceof Date){const d=rdate;rdate=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
-        else{rdate=rdate.toString().trim();}
-        if(!rid){errors.push('Row '+rowNum+': missing resident_id');return;}
-        if(!validTypes.includes(rtype)){errors.push('Row '+rowNum+': invalid record_type "'+rtype+'" (must be Due/Payment/Penalty/Adjustment)');return;}
-        if(!amt){errors.push('Row '+rowNum+': missing or zero amount');return;}
-        if(!rdate){errors.push('Row '+rowNum+': missing record_date');return;}
-        pendingImportRows.push({resident_id:rid,record_type:rtype,description:desc,amount:amt,record_date:rdate});
-      });
-      if(fn) fn.textContent=file.name+' — '+pendingImportRows.length+' valid row(s)'+(errors.length?' | '+errors.length+' skipped':'');
-      renderImportPreview(pendingImportRows,errors);
-    }catch(err){
-      showToast('⚠ Could not read file: '+err.message);
-      if(fn) fn.textContent='';
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-function renderImportPreview(rows,errors){
-  const thead=document.querySelector('#excelTable thead tr');
-  const tbody=document.querySelector('#excelTable tbody');
-  if(thead) thead.innerHTML='<th>#</th><th>Resident ID</th><th>Type</th><th>Description</th><th style="text-align:right">Amount</th><th>Date</th><th>Status</th>';
-  if(tbody) tbody.innerHTML=rows.map((r,i)=>`<tr data-import-row="${i}">
-    <td>${i+1}</td>
-    <td>${r.resident_id}</td>
-    <td><span class="pill ${r.record_type==='Payment'?'pill-resolved':'pill-pending'}">${r.record_type}</span></td>
-    <td>${r.description||'—'}</td>
-    <td style="text-align:right">₱${Number(r.amount).toLocaleString()}</td>
-    <td>${r.record_date}</td>
-    <td class="import-status" style="color:var(--green);font-size:11px;">✓ Ready</td>
-  </tr>`).join('')+
-  (errors.length?errors.map(e=>`<tr><td colspan="7" style="color:var(--red,#f08080);font-size:11px;padding:4px 8px;">⚠ ${e}</td></tr>`).join(''):'');
-  const card=document.querySelector('#excelTable').closest('.card');
-  let bar=card.querySelector('.import-confirm-bar');
-  if(!bar){
-    bar=document.createElement('div');
-    bar.className='import-confirm-bar';
-    bar.style.cssText='display:flex;gap:10px;align-items:center;margin-top:12px;';
-    card.appendChild(bar);
-  }
-  bar.innerHTML=rows.length
-    ?`<button class="btn btn-green" onclick="confirmImport()">⬆ Import ${rows.length} Record${rows.length>1?'s':''}</button>
-       <button class="btn" onclick="cancelImport()">Cancel</button>
-       <span style="font-size:11px;color:var(--text-dim);">${errors.length?errors.length+' row(s) skipped due to errors':''}</span>`
-    :`<span style="font-size:12px;color:var(--red,#f08080);">No valid rows to import.</span>
-      <button class="btn" onclick="cancelImport()">Clear</button>`;
-}
-async function confirmImport(){
-  if(!pendingImportRows.length){showToast('⚠ Nothing to import.');return;}
-  const btn=document.querySelector('.import-confirm-bar .btn-green');
-  if(btn){btn.disabled=true;btn.textContent='Importing…';}
-  const tbody=document.querySelector('#excelTable tbody');
-  const trs=tbody?[...tbody.querySelectorAll('tr[data-import-row]')]:[];
-  let ok=0,fail=0;
-  const results=[];
-  for(let i=0;i<pendingImportRows.length;i++){
-    const row=pendingImportRows[i];
-    const res=await apiPost('/api/financial',row);
-    const tr=trs[i];
-    if(res&&res.success){
-      ok++;
-      results.push({ok:true});
-      if(tr)tr.querySelector('.import-status').innerHTML='<span style="color:var(--green);">✓ Saved</span>';
-    } else {
-      fail++;
-      const msg=res.message||(res.errors?Object.values(res.errors).flat()[0]:'Failed');
-      results.push({ok:false,msg});
-      if(tr)tr.querySelector('.import-status').innerHTML='<span style="color:var(--red,#f08080);font-size:11px;">✗ '+msg+'</span>';
-    }
-  }
-  pendingImportRows=pendingImportRows.filter((_,i)=>!results[i].ok);
-  const newFinData=await apiGet('/api/financial');
-  finRecs=Array.isArray(newFinData)?newFinData:[];
-  const summary=await apiGet('/api/financial/summary');
-  if(document.getElementById('finCollected')) document.getElementById('finCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
-  if(document.getElementById('finDues'))      document.getElementById('finDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
-  if(document.getElementById('finBalance'))   document.getElementById('finBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
-  if(document.getElementById('payCollected')) document.getElementById('payCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
-  if(document.getElementById('payDues'))      document.getElementById('payDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
-  if(document.getElementById('payBalance'))   document.getElementById('payBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
-  const bar=document.querySelector('.import-confirm-bar');
-  if(bar){
-    if(fail>0){
-      bar.innerHTML=`<span style="font-size:12px;color:var(--green)">✅ ${ok} imported</span>
-        <span style="font-size:12px;color:var(--red,#f08080);">⚠ ${fail} failed — fix errors above then re-import</span>
-        <button class="btn" onclick="cancelImport()">Clear</button>`;
-      renderFinancialRecords(finRecs);
-    } else {
-      cancelImport();
-    }
-  }
-  showToast(ok>0?'✅ Imported '+ok+' record'+(ok>1?'s':'')+(fail>0?' | '+fail+' failed (see table)':'')+'.':(fail>0?'⚠ All '+fail+' records failed. Check the error details in the table.':''));
-}
-function cancelImport(){
-  pendingImportRows=[];
-  const bar=document.querySelector('.import-confirm-bar');
-  if(bar) bar.remove();
-  const fn=document.getElementById('excelFileName');
-  if(fn) fn.textContent='';
-  renderFinancialRecords(finRecs);
-}
 async function adminSend(){
   const inp=document.getElementById('msgInput');
   const txt=inp.value.trim(); if(!txt||!currentThread) return;
@@ -2201,108 +1911,12 @@ function exportCSV(rows, filename){
   a.download=filename; a.click();
 }
 /* ══ FINANCIAL RECORDS — delete, filter, export ══ */
-async function deleteFinRecord(id){
-  if(!(await SubUI.confirm({ title:'Delete record?', message:'Delete this financial record? The resident balance will be adjusted.', confirmText:'Delete', danger:true, icon:'!' }))) return;
-  const res=await apiDelete('/api/financial/'+id);
-  if(res&&res.success){
-    finRecs=finRecs.filter(r=>r.id!==id);
-    renderFinancialRecords(finRecs);
-    filterFinRecords();
-    const summary=await apiGet('/api/financial/summary');
-    if(document.getElementById('finCollected')) document.getElementById('finCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
-    if(document.getElementById('finDues'))      document.getElementById('finDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
-    if(document.getElementById('finBalance'))   document.getElementById('finBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
-    if(document.getElementById('payCollected')) document.getElementById('payCollected').textContent='₱'+Number(summary.total_collected||0).toLocaleString();
-    if(document.getElementById('payDues'))      document.getElementById('payDues').textContent='₱'+Number(summary.total_dues||0).toLocaleString();
-    if(document.getElementById('payBalance'))   document.getElementById('payBalance').textContent='₱'+Number(summary.total_balance||0).toLocaleString();
-    showToast('✅ Record deleted and balance adjusted.');
-  } else {
-    showToast('⚠ '+(res&&res.message||'Failed to delete record.'));
-  }
-}
-function filterFinRecords(){
-  const q=(document.getElementById('finSearch')||{}).value?.toLowerCase()||'';
-  const t=(document.getElementById('finTypeFilter')||{}).value||'';
-  const df=(document.getElementById('finDateFrom')||{}).value||'';
-  const dt=(document.getElementById('finDateTo')||{}).value||'';
-  document.querySelectorAll('#excelTable tbody tr[data-res]').forEach(row=>{
-    const matchQ=!q||row.dataset.res.includes(q);
-    const matchT=!t||row.dataset.type===t;
-    let matchD=true;
-    if((df||dt)&&row.dataset.date){
-      const d=new Date(row.dataset.date);
-      if(df&&d<new Date(df)) matchD=false;
-      if(dt&&d>new Date(dt+'T23:59:59')) matchD=false;
-    }
-    row.style.display=(matchQ&&matchT&&matchD)?'':'none';
-  });
-}
-function exportFinRecordsCSV(){
-  if(!finRecs.length){showToast('⚠ No records to export.');return;}
-  const rows=[['Resident','Block/Lot','Type','Description','Amount','Date'],
-    ...finRecs.map(r=>[r.resident,r.block_lot,r.record_type,r.description||'',r.amount,r.record_date])];
-  exportCSV(rows,'financial_records_'+new Date().toISOString().slice(0,10)+'.csv');
-  showToast('✅ Financial records exported.');
-}
-/* ══ PAYMENTS — filter ══ */
-function filterPayments(){
-  const q=(document.getElementById('paySearch')||{}).value?.toLowerCase()||'';
-  const s=(document.getElementById('payStatusFilter')||{}).value||'';
-  const payLabel=bal=>bal<=0?'Paid':(bal<1000?'Partial':'Unpaid');
-  document.querySelectorAll('#paymentList .payment-row').forEach(row=>{
-    const name=row.querySelector('.pay-name')?.textContent.toLowerCase()||'';
-    const block=row.querySelector('.pay-block')?.textContent.toLowerCase()||'';
-    const pill=row.querySelector('.pill')?.textContent||'';
-    const matchQ=!q||(name.includes(q)||block.includes(q));
-    const matchS=!s||pill===s;
-    row.style.display=(matchQ&&matchS)?'':'none';
-  });
-}
-function exportPaymentsCSV(){
-  if(!payments.length){showToast('⚠ No payment data.');return;}
-  const rows=[['Name','Block & Lot','Balance','Status'],
-    ...payments.map(r=>[r.name,r.block_lot,r.current_balance,r.current_balance<=0?'Paid':(r.current_balance<1000?'Partial':'Unpaid')])];
-  exportCSV(rows,'payments_'+new Date().toISOString().slice(0,10)+'.csv');
-  showToast('✅ Payments exported.');
-}
 function exportIssuesCSV(){
   if(!issues.length){showToast('⚠ No issue data.');return;}
   const rows=[['ID','Title','Category','Resident','Block','Status','Date'],
     ...issues.map(i=>[i.id,i.title,i.category,i.resident,i.block_lot,i.status,i.created_at])];
   exportCSV(rows,'issues_'+new Date().toISOString().slice(0,10)+'.csv');
   showToast('✅ Issues exported.');
-}
-function exportReceiptsCSV(){
-  if(!savedReceipts.length){showToast('⚠ No receipts.');return;}
-  const rows=[['Month','Previous Balance','Total Collections','Total Expenses','Net']];
-  savedReceipts.forEach(r=>{
-    const tc=r.collections.reduce((a,c)=>a+Number(c.amt),0);
-    const te=r.expenses.reduce((a,e)=>a+Number(e.amt),0);
-    rows.push([r.month,r.previous,tc,te,r.previous+tc-te]);
-  });
-  exportCSV(rows,'receipts_'+new Date().toISOString().slice(0,10)+'.csv');
-  showToast('✅ Receipts exported.');
-}
-
-/* ══ PAYMENT DETAIL MODAL ══ */
-async function openPaymentDetail(residentId){
-  const r=payments.find(x=>x.id===residentId);
-  if(!r) return;
-  const records=await apiGet('/api/financial').catch(()=>[]);
-  const mine=Array.isArray(records)?records.filter(rec=>rec.resident_id===residentId):[];
-  const body=mine.length
-    ?mine.map(rec=>`<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px;">
-        <span>${rec.description||rec.record_type} <span style="font-size:10px;color:var(--text-dim);">${rec.record_date?new Date(rec.record_date).toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'}):''}</span></span>
-        <span style="color:${rec.record_type==='Payment'?'var(--green)':'#f08080'};font-weight:600;">
-          ${rec.record_type==='Payment'?'-':'+'}&#8369;${Number(rec.amount).toLocaleString()}
-        </span></div>`).join('')
-    :'<div style="color:var(--text-dim);padding:12px 0;">No financial records yet.</div>';
-  const el=document.getElementById('payDetailBody');
-  if(el){
-    el.innerHTML=`<div style="font-weight:600;margin-bottom:6px;">${r.name}</div>
-      <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">${r.block_lot} &mdash; Balance: &#8369;${Number(r.current_balance).toLocaleString()}</div>${body}`;
-  }
-  openModal('payDetail');
 }
 
 /* Analytics heatmap removed in favour of numbered issue pins (see Subdivision Map). */
@@ -2590,7 +2204,7 @@ setInterval(function(){ if(!document.hidden) loadAlerts(); }, 30000);
     return;
   }
   try {
-    const ch = window.Echo.channel('subsync');
+    const ch = window.Echo.private('subsync');
     const refresh = () => { if(typeof loadAllData === 'function') loadAllData().catch(function(){}); };
     ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
     ch.listen('.message', (evt) => {
@@ -2599,7 +2213,8 @@ setInterval(function(){ if(!document.hidden) loadAlerts(); }, 30000);
       const panelOpen = document.getElementById('panel-messages')?.classList.contains('active');
       if(evt.senderType === 'admin'){ if(isOpen) refreshAdminMessages(); return; }
       if(isOpen && panelOpen){ refreshAdminMessages(); return; }
-      showToast('New message from ' + (evt.senderName || 'someone') + '.');
+      const _tName=(threads[evt.conversationId]&&threads[evt.conversationId].title)||'';
+      showToast(_tName ? 'New message from ' + _tName + '.' : 'New message.');
       const badge = document.getElementById('msgBadge');
       if(badge){ badge.textContent = (parseInt(badge.textContent,10)||0) + 1; badge.style.display = 'inline-flex'; }
       refreshAdminThreadList();
@@ -2843,3 +2458,4 @@ async function deleteEvent(id){
   const res=await apiDelete('/api/events/'+id);
   if(res&&res.success){ showToast('Event deleted.'); loadAdminEvents(); } else showToast('Could not delete the event.');
 }
+

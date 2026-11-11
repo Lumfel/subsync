@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Symfony\Component\Process\Process;
 
@@ -56,9 +57,20 @@ class BackupDatabase extends Command
             return null;
         }
 
-        File::copy($source, "{$dir}/backup-{$stamp}.sqlite");
+        $target = "{$dir}/backup-{$stamp}.sqlite";
 
-        return true;
+        // VACUUM INTO gives a consistent snapshot; the app runs SQLite in WAL mode,
+        // so a plain file copy can miss committed WAL frames (torn/stale backup).
+        try {
+            DB::statement("VACUUM INTO '".str_replace("'", "''", $target)."'");
+
+            return true;
+        } catch (\Throwable $e) {
+            // Very old SQLite without VACUUM INTO — fall back to a plain copy.
+            File::copy($source, $target);
+
+            return true;
+        }
     }
 
     /** @return true|string|null true on success, message on skip/failure */
@@ -91,7 +103,18 @@ class BackupDatabase extends Command
         }
 
         $process = new Process($args, null, null, null, 300);
-        $process->run();
+
+        try {
+            $process->run();
+        } catch (\Throwable $e) {
+            // Timed out (ProcessTimedOutException) or failed to start: never keep
+            // the half-written dump, which would otherwise be pruned in as "valid".
+            if (is_file($target)) {
+                File::delete($target);
+            }
+
+            return 'mysqldump failed: '.$e->getMessage();
+        }
 
         if (! $process->isSuccessful()) {
             if (is_file($target)) {

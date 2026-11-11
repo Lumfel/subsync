@@ -163,3 +163,25 @@
     loadActivity();
   }
 })();
+
+/* ── Privacy: RA 10173 erasure request ── */
+(function () {
+  var btn = document.getElementById('erasureBtn');
+  if (!btn) return;
+  btn.addEventListener('click', function () {
+    SubUI.confirm({
+      title: 'Request account erasure?',
+      message: 'This files a data-erasure request with the HOA office under RA 10173. Your account stays active until the office processes it (up to 15 working days).',
+      confirmText: 'Submit request',
+      danger: true,
+      icon: '!'
+    }).then(function (ok) {
+      if (!ok) return;
+      api('POST', '/api/settings/erasure-request', { reason: '' }).then(function (res) {
+        toast((res.data && res.data.message) || 'Request submitted.', 'success');
+      }).catch(function () {
+        toast('Could not submit the request.', 'error');
+      });
+    });
+  });
+})();

@@ -20,7 +20,14 @@ class GenerateDues extends Command
 
     public function handle(): int
     {
-        $period = $this->option('period') ?: now()->format('Y-m');
+        $period = (string) ($this->option('period') ?: now()->format('Y-m'));
+
+        if (! preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $period)) {
+            $this->error("Invalid period '{$period}'. Expected YYYY-MM (e.g. 2026-10).");
+
+            return self::FAILURE;
+        }
+
         $month = (int) substr($period, 5, 2);
 
         $generated = 0;
@@ -32,13 +39,14 @@ class GenerateDues extends Command
 
             $dueDate = $this->dueDateFor($assessment, $period);
 
-            foreach (Resident::where('status', 'Active')->pluck('id') as $residentId) {
-                $exists = FinancialRecord::where('assessment_id', $assessment->id)
-                    ->where('period', $period)
-                    ->where('resident_id', $residentId)
-                    ->exists();
+            // Prefetch everyone already charged this period (one query, not one per resident).
+            $alreadyCharged = FinancialRecord::where('assessment_id', $assessment->id)
+                ->where('period', $period)
+                ->pluck('resident_id')
+                ->flip();
 
-                if ($exists) {
+            foreach (Resident::where('status', 'Active')->pluck('id') as $residentId) {
+                if ($alreadyCharged->has($residentId)) {
                     continue;
                 }
 

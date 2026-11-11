@@ -61,7 +61,7 @@ class HoaPolicyController extends Controller
             'description' => 'required|string',
             'category' => 'required|string|max:100',
             'effective_date' => 'required|date',
-            'status' => 'nullable|string|max:50',
+            'status' => 'nullable|in:Active,Inactive,Archived',
         ]);
     }
 }

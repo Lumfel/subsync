@@ -82,6 +82,28 @@ class FrontendRegressionTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/<option[^>]*>[^<]*<x-icon/', $officer);
     }
 
+    public function test_balance_link_and_issue_heatmap_are_wired(): void
+    {
+        // Balance on a resident card links to the ledger statement modal.
+        $admin = $this->js('admin-dashboard.js');
+        $this->assertStringContainsString('async function openLedgerModal', $admin);
+        $this->assertStringContainsString('openLedgerModal(${r.id})', $admin);
+        $this->assertStringContainsString("apiGet('/api/ledger/' + id)", $admin);
+
+        $html = view('layouts.admin-dashboard', [
+            'adminName' => 'A', 'adminId' => 1, 'prefs' => [], 'role' => 'admin',
+        ])->render();
+
+        $this->assertStringContainsString('id="modal-ledger"', $html);
+        $this->assertStringContainsString('id="ledgerBody"', $html);
+
+        // Issue heatmap: toggle + category filter + renderer.
+        $this->assertStringContainsString('id="layer-heat"', $html);
+        $this->assertStringContainsString('id="heat-category"', $html);
+        $this->assertStringContainsString('function renderIssueHeatmap', $html);
+        $this->assertStringContainsString('renderIssueHeatmap();', $html);
+    }
+
     public function test_design_system_page_documents_tokens_and_kit(): void
     {
         // Admin-only, like the dashboard: guests are sent to the admin login.
@@ -474,5 +496,25 @@ class FrontendRegressionTest extends TestCase
         $this->assertStringContainsString('function importResidents(', $js);
         $this->assertStringContainsString('function issueReport(', $js);
         $this->assertStringContainsString('function saveEvent(', $js);
+    }
+
+    public function test_resident_report_form_can_remove_files_and_uses_orange_submits(): void
+    {
+        $layout = file_get_contents(resource_path('views/layouts/residents.blade.php'));
+        $js = file_get_contents(public_path('js/residents.js'));
+
+        // Remove-before-submit chips (photos, camera photos, documents)
+        $this->assertStringContainsString('id="issueImageChips"', $layout);
+        $this->assertStringContainsString('id="issueDocChips"', $layout);
+        $this->assertStringContainsString('function refreshIssueFileChips', $js);
+        $this->assertStringContainsString('DataTransfer', $js);
+
+        // Warmer (orange) submit buttons for reports + suggestions
+        $this->assertStringContainsString('btn-orange" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitIssue)', $layout);
+        $this->assertStringContainsString('btn-orange" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitRec)', $layout);
+
+        // Map picker pin must not rely on Leaflet's default marker image
+        $this->assertStringContainsString('function pickerPinIcon', $layout);
+        $this->assertStringContainsString('icon:pickerPinIcon()', $layout);
     }
 }

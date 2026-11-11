@@ -15,9 +15,12 @@ class PurgeResolvedIssues extends Command
     public function handle(): int
     {
         $cutoff = now()->subDays(30);
+        // resolved_at is the authority for "resolved for more than 30 days";
+        // using updated_at let any later edit (status, priority, assignment,
+        // due date) reset the clock and stop an issue from ever archiving.
         $expired = IssueReport::where('status', 'Resolved')
             ->whereNull('archived_at')
-            ->where('updated_at', '<', $cutoff)
+            ->where('resolved_at', '<', $cutoff)
             ->get();
 
         if ($expired->isEmpty()) {

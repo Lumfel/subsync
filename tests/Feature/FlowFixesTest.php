@@ -60,7 +60,7 @@ class FlowFixesTest extends TestCase
 
         // Backdate it beyond the 30-day cutoff (bypass model timestamps).
         DB::table('issue_reports')->where('id', $issue->id)
-            ->update(['updated_at' => now()->subDays(31)]);
+            ->update(['resolved_at' => now()->subDays(31)]);
 
         $this->artisan('issues:purge-resolved')->assertSuccessful();
 
@@ -99,6 +99,7 @@ class FlowFixesTest extends TestCase
             'password' => 'Secret@12345',
             'contact_number' => '09170000000',
             'block_lot' => 'Block 7 Lot 7',
+            'consent' => true,
         ]);
 
         $res->assertOk()->assertJson(['success' => true]);
@@ -118,5 +119,35 @@ class FlowFixesTest extends TestCase
         $this->assertSame($house->id, $a->id);
         $this->assertSame($house->id, $b->id);
         $this->assertSame(1, Household::count());
+    }
+
+    public function test_manual_officer_registration_creates_pending_officer_and_no_resident(): void
+    {
+        $res = $this->withHeaders(['Accept' => 'application/json'])->post('/register', [
+            'role' => 'officer',
+            'name' => 'Maria Santos',
+            'email' => 'maria.officer@example.test',
+            'contact_number' => '09181234567',
+            'password' => 'Secret@12345',
+            'consent' => true,
+        ]);
+
+        $res->assertOk()->assertJson(['success' => true]);
+
+        // Assert officer was created with Pending status and saved details
+        $officer = Officer::where('email', 'maria.officer@example.test')->first();
+        $this->assertNotNull($officer, 'Officer record must be created in officers table');
+        $this->assertSame('Maria Santos', $officer->name);
+        $this->assertSame('09181234567', $officer->contact_number);
+        $this->assertSame('Pending', $officer->status);
+
+        // Assert account definitely DID NOT go to residents table
+        $this->assertDatabaseMissing('residents', ['email' => 'maria.officer@example.test']);
+    }
+
+    public function test_get_register_page_loads_with_registration_tab(): void
+    {
+        $res = $this->get('/register')->assertOk();
+        $res->assertSee('initialTab = "register"', false);
     }
 }

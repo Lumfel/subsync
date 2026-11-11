@@ -25,6 +25,10 @@ $ngrok = Get-Process ngrok -ErrorAction SilentlyContinue
 if ($ngrok) { $ngrok | Stop-Process -Force; Write-Host '  x ngrok stopped' }
 else { Write-Host '  - ngrok was not running' }
 
+$cf = Get-Process cloudflared -ErrorAction SilentlyContinue
+if ($cf) { $cf | Stop-Process -Force; Write-Host '  x Cloudflare tunnel stopped' }
+else { Write-Host '  - Cloudflare tunnel was not running' }
+
 if ($MySQL) {
     if (Get-Process mysqld -ErrorAction SilentlyContinue) {
         & 'C:\laragon\bin\mysql\mysql-8.4.3-winx64\bin\mysqladmin.exe' -u root shutdown

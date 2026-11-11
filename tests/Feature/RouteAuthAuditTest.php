@@ -26,13 +26,13 @@ class RouteAuthAuditTest extends TestCase
         'register',
         'logout',
         'admin-access',
+        'privacy',
         'mapping',
         'auth/google',
         'auth/google/callback',
         'auth/google/complete',
         // Framework routes.
         'broadcasting/auth',
-        'storage/{path}',
         'up',
     ];
 

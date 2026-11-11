@@ -100,23 +100,18 @@ class SsePublishingObserver
                     'action' => $action,
                     'conversationId' => $model->conversation_id,
                     'senderType' => $model->sender_type,
-                    // Who is trying to reach you — explicit lookups (never lazy-load,
-                    // models are strict in local) and never the message content.
+                    // Identification without PII: clients resolve the display name
+                    // from their own conversation list. Never the message content.
                     'senderId' => $model->resident_id ?? $model->officer_id,
-                    'senderName' => match ($model->sender_type) {
-                        'resident' => Resident::find($model->resident_id)?->name,
-                        'officer' => Officer::find($model->officer_id)?->name,
-                        default => 'HOA Admin',
-                    } ?? 'Someone',
                 ],
             ],
             // Approvals & membership - admins watch the pending queue live.
+            // No names on the bus: clients refresh through authorized endpoints.
             $model instanceof Resident => [
                 'resident',
                 [
                     'latestId' => $model->id,
                     'action' => $action,
-                    'name' => $model->name,
                     'status' => $model->status,
                 ],
             ],
@@ -125,7 +120,6 @@ class SsePublishingObserver
                 [
                     'latestId' => $model->id,
                     'action' => $action,
-                    'name' => $model->name,
                     'status' => $model->status,
                 ],
             ],

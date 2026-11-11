@@ -22,7 +22,7 @@ Prepared 2026-10-04. Two supported paths: **A) VPS + Supervisor (no Docker)** an
 | Assets | `npm run dev` | `npm run build` |
 
 **Priority:** moving off SQLite is the single most important change (single-writer + DB session/cache
-was the top bottleneck — see `SCALABILITY.md`).
+was the top bottleneck — see `docs/SCALABILITY.md`).
 
 ---
 
@@ -248,6 +248,24 @@ public domain, with the reverse proxy (nginx/Caddy/Traefik) forwarding `/app` to
 service.
 
 ---
+
+## Security hardening (production)
+- [ ] **Run `php artisan subsync:check-prod-env`** — it fails while any of the below is unsafe
+      (exit code 1; safe to run in CI/pre-deploy).
+- [ ] `APP_DEBUG=false`, `APP_ENV=production`, `APP_URL=https://…`.
+- [ ] `SESSION_SECURE_COOKIE=true`, `SESSION_ENCRYPT=true` (file sessions in
+      `storage/framework/sessions` are readable on disk otherwise).
+- [ ] `LOG_LEVEL=warning` (or `error`) — never `debug` in production.
+- [ ] Real mail transport (`MAIL_MAILER=smtp`, `mailgun`, …) so receipts/reminders actually send.
+- [ ] `APP_TIMEZONE=Asia/Manila` (displayed times + scheduler). Balance reminders are opt-out
+      by default; residents can disable email copies in Settings.
+- [ ] Serve over HTTPS only; HSTS + CSP are set in `public/.htaccess`.
+- [ ] Consider `SESSION_DRIVER=redis` + `CACHE_STORE=redis` (enables cross-session
+      invalidation and shared cache across workers).
+- [ ] Files uploaded to the private disk (`local`) are streamed by authorized routes; ensure
+      `storage/app/private` (and `storage/app/backups`) are not web-served.
+- [ ] `subsync:prune-activity-logs` scheduled (RA 10173 retention) and
+      `subsync:check-prod-env` in the deploy pipeline.
 
 ## Post-deploy checklist
 - [ ] `APP_DEBUG=false`, `APP_ENV=production`, correct `APP_URL`.

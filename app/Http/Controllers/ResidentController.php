@@ -12,6 +12,7 @@ use App\Models\HouseholdMember;
 use App\Models\IssueReport;
 use App\Models\Recommendation;
 use App\Models\Resident;
+use App\Support\Actor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -168,7 +169,15 @@ class ResidentController extends Controller
     public function bulkApprove(Request $request)
     {
         $data = $request->validate(['ids' => 'required|array', 'ids.*' => 'integer']);
-        $updated = Resident::whereIn('id', $data['ids'])->where('status', 'Pending')->update(['status' => 'Active']);
+
+        // Iterate so every approval emits its model events (activity log, realtime
+        // bus, cache invalidation) rather than a silent query-builder update.
+        $updated = 0;
+        Resident::whereIn('id', $data['ids'])->where('status', 'Pending')->get()
+            ->each(function (Resident $resident) use (&$updated) {
+                $resident->update(['status' => 'Active']);
+                $updated++;
+            });
 
         return response()->json(['success' => true, 'updated' => $updated]);
     }
@@ -177,7 +186,13 @@ class ResidentController extends Controller
     public function bulkReject(Request $request)
     {
         $data = $request->validate(['ids' => 'required|array', 'ids.*' => 'integer']);
-        $deleted = Resident::whereIn('id', $data['ids'])->where('status', 'Pending')->delete();
+
+        $deleted = 0;
+        Resident::whereIn('id', $data['ids'])->where('status', 'Pending')->get()
+            ->each(function (Resident $resident) use (&$deleted) {
+                $resident->delete();
+                $deleted++;
+            });
 
         return response()->json(['success' => true, 'deleted' => $deleted]);
     }
@@ -281,27 +296,33 @@ class ResidentController extends Controller
         return response()->json(['success' => true]);
     }
 
-    /** GET /api/household-members?house_id=X */
+    /** GET /api/household-members?house_id=X - residents only ever see their own household. */
     public function members(Request $request)
     {
+        $actor = Actor::current();
         $query = HouseholdMember::with('household:id,block_lot_number');
+
         if ($request->filled('house_id')) {
             $houseId = $request->validate(['house_id' => 'integer|exists:households,id'])['house_id'];
-            $query->where('house_id', $houseId);
+            // Residents are scoped to their own household regardless of the param.
+            $query->where('house_id', $actor['type'] === 'resident' ? $actor['user']?->house_id : $houseId);
+        } elseif ($actor['type'] === 'resident') {
+            $query->where('house_id', $actor['user']?->house_id);
         }
+
         $members = $query->get()->map(fn ($m) => [
             'id' => $m->id,
             'house_id' => $m->house_id,
             'name' => $m->name,
             'relationship' => $m->relationship,
             'contact_number' => $m->contact_number,
-            'block_lot' => $m->household?->block_lot_number ?? '—',
+            'block_lot' => $m->household?->block_lot_number ?? '-',
         ]);
 
         return response()->json($members);
     }
 
-    /** POST /api/household-members */
+    /** POST /api/household-members - residents can only add to their own household. */
     public function storeMember(Request $request)
     {
         $data = $request->validate([
@@ -311,6 +332,12 @@ class ResidentController extends Controller
             'contact_number' => 'nullable|string|max:20',
         ]);
 
+        $actor = Actor::current();
+        if ($actor['type'] === 'resident') {
+            abort_unless($actor['user']?->house_id, 403, 'Your account has no household assigned.');
+            $data['house_id'] = $actor['user']->house_id;
+        }
+
         $member = HouseholdMember::create($data);
 
         return response()->json(['success' => true, 'member' => $member]);
@@ -319,7 +346,10 @@ class ResidentController extends Controller
     /** PUT /api/household-members/{id} */
     public function updateMember(Request $request, int $id)
     {
+        $actor = Actor::current();
         $member = HouseholdMember::findOrFail($id);
+        $this->authorizeMember($actor, $member);
+
         $data = $request->validate([
             'name' => 'sometimes|string|max:150',
             'relationship' => 'nullable|string|max:50',
@@ -333,9 +363,27 @@ class ResidentController extends Controller
     /** DELETE /api/household-members/{id} */
     public function destroyMember(int $id)
     {
-        HouseholdMember::findOrFail($id)->delete();
+        $actor = Actor::current();
+        $member = HouseholdMember::findOrFail($id);
+        $this->authorizeMember($actor, $member);
+
+        $member->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    /** Residents may only touch members of their own household; staff may touch any. */
+    private function authorizeMember(array $actor, HouseholdMember $member): void
+    {
+        if ($actor['type'] !== 'resident') {
+            return;
+        }
+
+        abort_unless(
+            $actor['user']?->house_id && (int) $member->house_id === (int) $actor['user']->house_id,
+            403,
+            'You can only manage members of your own household.'
+        );
     }
 
     /** GET /api/stats — dashboard counts */
@@ -413,7 +461,7 @@ class ResidentController extends Controller
                     'media' => $i->media->map(fn ($m) => [
                         'id' => $m->id,
                         'name' => $m->file_name,
-                        'url' => Storage::url($m->file_path),
+                        'url' => '/api/issues/media/'.$m->id,
                     ])->all(),
                 ])->all();
 

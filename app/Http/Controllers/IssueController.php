@@ -18,6 +18,32 @@ class IssueController extends Controller
         return Auth::guard('resident')->id() ?? $request->session()->get('resident_id');
     }
 
+    /**
+     * Normalize optional date-range filters. Malformed values are ignored and a
+     * reversed range (from > to) is swapped so the filter always makes sense.
+     *
+     * @return array{0: ?string, 1: ?string}
+     */
+    private function dateRange(Request $request): array
+    {
+        $from = $request->query('date_from');
+        $to = $request->query('date_to');
+
+        $valid = fn ($d) => is_string($d) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d) === 1;
+
+        if (! $valid($from)) {
+            $from = null;
+        }
+        if (! $valid($to)) {
+            $to = null;
+        }
+        if ($from && $to && $from > $to) {
+            [$from, $to] = [$to, $from];
+        }
+
+        return [$from, $to];
+    }
+
     /** Defense-in-depth: only admins (session) or officers (guard) may mutate issues. */
     private function authorizeStaff(): void
     {
@@ -70,12 +96,12 @@ class IssueController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        if ($request->query('date_from')) {
-            $query->whereDate('created_at', '>=', $request->query('date_from'));
+        [$dateFrom, $dateTo] = $this->dateRange($request);
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
         }
-
-        if ($request->query('date_to')) {
-            $query->whereDate('created_at', '<=', $request->query('date_to'));
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
         }
 
         $issues = $query->get()->map(fn ($i) => [
@@ -98,9 +124,10 @@ class IssueController extends Controller
             'media' => $i->media->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->file_name,
-                'url' => Storage::url($m->file_path),
+                'url' => '/api/issues/media/'.$m->id,
             ]),
-            'responses' => $i->responses->map(fn ($r) => [
+            // Latest response first so list previews always show the newest reply.
+            'responses' => $i->responses->sortByDesc('id')->values()->map(fn ($r) => [
                 'id' => $r->id,
                 'content' => $r->response_content,
                 'type' => $r->responder_type,
@@ -136,11 +163,11 @@ class IssueController extends Controller
                 'assigned_officer' => $i->assignee?->name,
                 'due_date' => $i->due_date?->format('Y-m-d'),
                 'overdue' => $i->is_overdue,
-                'response' => $i->responses->first()?->response_content,
+                'response' => $i->responses->sortByDesc('id')->first()?->response_content,
                 'media' => $i->media->map(fn ($m) => [
                     'id' => $m->id,
                     'name' => $m->file_name,
-                    'url' => Storage::url($m->file_path),
+                    'url' => '/api/issues/media/'.$m->id,
                 ]),
             ]);
 
@@ -185,7 +212,7 @@ class IssueController extends Controller
         // Handle uploaded images
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $file) {
-                $path = $file->store('issues', 'public');
+                $path = $file->store('issues', 'local');
                 Media::create([
                     'uploader_id' => $residentId,
                     'uploader_type' => 'Resident',
@@ -199,7 +226,7 @@ class IssueController extends Controller
 
         if ($request->hasFile('documents')) {
             foreach ($request->file('documents') as $file) {
-                $path = $file->store('issues/documents', 'public');
+                $path = $file->store('issues/documents', 'local');
                 Media::create([
                     'uploader_id' => $residentId,
                     'uploader_type' => 'Resident',
@@ -225,9 +252,115 @@ class IssueController extends Controller
             'media' => $issue->media->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->file_name,
-                'url' => Storage::url($m->file_path),
+                'url' => '/api/issues/media/'.$m->id,
             ]),
         ]]);
+    }
+
+    /**
+     * POST /api/issues/{id}/details — the owner resident appends extra details,
+     * photos, or documents to an open report. The original text stays untouched
+     * (audit trail); additions land in the issue history and the media gallery.
+     */
+    public function addDetails(Request $request, int $id)
+    {
+        $residentId = $this->residentId($request);
+        if (! $residentId) {
+            return response()->json(['success' => false, 'message' => 'Resident session expired. Please log in again.'], 401);
+        }
+
+        // Scoped lookup: other residents' reports 404, never 403 (no probing).
+        $issue = IssueReport::where('id', $id)->where('resident_id', $residentId)->firstOrFail();
+
+        if ($issue->status === 'Resolved' || $issue->archived_at) {
+            return response()->json(['success' => false, 'message' => 'This report is already closed. Please file a new report instead.'], 422);
+        }
+
+        $request->validate([
+            'details' => 'nullable|string|max:2000',
+            'images' => 'nullable|array|max:5',
+            'images.*' => 'image|max:8192',
+            'documents' => 'nullable|array|max:5',
+            'documents.*' => 'file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
+        ]);
+
+        $details = trim((string) $request->input('details', ''));
+        $imageFiles = $request->file('images') ?? [];
+        $documentFiles = $request->file('documents') ?? [];
+
+        if ($details === '' && ! $imageFiles && ! $documentFiles) {
+            return response()->json(['success' => false, 'message' => 'Add a note or attach a photo/document first.'], 422);
+        }
+
+        $added = 0;
+        foreach ((array) $imageFiles as $file) {
+            $path = $file->store('issues', 'local');
+            Media::create([
+                'uploader_id' => $residentId,
+                'uploader_type' => 'Resident',
+                'entity_type' => 'IssueReport',
+                'entity_id' => $issue->id,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+            ]);
+            $added++;
+        }
+        foreach ((array) $documentFiles as $file) {
+            $path = $file->store('issues/documents', 'local');
+            Media::create([
+                'uploader_id' => $residentId,
+                'uploader_type' => 'Resident',
+                'entity_type' => 'IssueReport',
+                'entity_id' => $issue->id,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+            ]);
+            $added++;
+        }
+
+        IssueAuditLog::create([
+            'issue_id' => $issue->id,
+            'actor_type' => 'Resident',
+            'actor_id' => $residentId,
+            'action' => $details !== '' ? 'details' : 'attachments',
+            'old_value' => null,
+            'new_value' => $details !== '' ? $details : ($added.' file(s) added'),
+        ]);
+
+        // Touch so the realtime observer pushes an update to the staff portals.
+        $issue->touch();
+        $issue->load('media');
+
+        return response()->json(['success' => true, 'media' => $issue->media->map(fn ($m) => [
+            'id' => $m->id,
+            'name' => $m->file_name,
+            'url' => '/api/issues/media/'.$m->id,
+        ])]);
+    }
+
+    /**
+     * GET /api/issues/media/{id} — stream an issue photo/document. Staff may view
+     * any; residents only media that belongs to their own reports. Files live on
+     * the private disk (legacy rows on the public disk still resolve).
+     */
+    public function media(Request $request, int $id)
+    {
+        $media = Media::findOrFail($id);
+        if ($media->entity_type !== 'IssueReport') {
+            abort(404);
+        }
+
+        $issue = IssueReport::findOrFail($media->entity_id);
+
+        $isStaff = session('admin_id') || Auth::guard('officer')->check();
+        if (! $isStaff && (int) $issue->resident_id !== (int) $this->residentId($request)) {
+            abort(403, 'You can only view media on your own reports.');
+        }
+
+        $disk = Storage::disk('local')->exists($media->file_path) ? 'local' : 'public';
+        abort_unless(Storage::disk($disk)->exists($media->file_path), 404);
+
+        return response()->file(Storage::disk($disk)->path($media->file_path));
     }
 
     /** PUT /api/issues/{id}/status — admin updates status */
@@ -286,7 +419,9 @@ class IssueController extends Controller
             'due_date' => $data['due_date'] ?? null,
         ]);
 
-        if ($oldOfficerId !== ($data['assigned_officer_id'] ?? null)) {
+        // Compare as ints: DB values arrive as strings on some drivers, which made
+        // an unchanged assignee log a spurious audit entry on every save.
+        if ((int) $oldOfficerId !== (int) ($data['assigned_officer_id'] ?? 0)) {
             $this->logAudit($id, 'assign', Officer::find($oldOfficerId)?->name, Officer::find($data['assigned_officer_id'] ?? null)?->name);
         }
         if ($oldDue !== ($data['due_date'] ?? null)) {
@@ -395,11 +530,12 @@ class IssueController extends Controller
         } else {
             $query->whereNull('archived_at');
         }
-        if ($request->query('date_from')) {
-            $query->whereDate('created_at', '>=', $request->query('date_from'));
+        [$dateFrom, $dateTo] = $this->dateRange($request);
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
         }
-        if ($request->query('date_to')) {
-            $query->whereDate('created_at', '<=', $request->query('date_to'));
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
         }
 
         $rows = $query
