@@ -10,6 +10,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\BudgetController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\ExpenseRequestController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FamilyController;
 use App\Http\Controllers\GcashSettingController;
@@ -377,6 +378,20 @@ Route::prefix('api')->group(function () {
         Route::post('/hoa-expenses', [HoaExpenseController::class, 'store']);
         Route::put('/hoa-expenses/{id}', [HoaExpenseController::class, 'update']);
         Route::delete('/hoa-expenses/{id}', [HoaExpenseController::class, 'destroy']);
+    });
+
+    // Officer Expense Requests (staff claim submission + 1-click admin approval)
+    Route::middleware('portal.role:admin,officer')->group(function () {
+        Route::get('/expense-requests', [ExpenseRequestController::class, 'index']);
+        Route::get('/expense-requests/{id}/receipt', [ExpenseRequestController::class, 'receipt']);
+        Route::delete('/expense-requests/{id}', [ExpenseRequestController::class, 'destroy']);
+    });
+    Route::middleware('portal.role:officer')->group(function () {
+        Route::post('/expense-requests', [ExpenseRequestController::class, 'store']);
+    });
+    Route::middleware('portal.role:admin')->group(function () {
+        Route::post('/expense-requests/{id}/approve', [ExpenseRequestController::class, 'approve']);
+        Route::post('/expense-requests/{id}/reject', [ExpenseRequestController::class, 'reject']);
     });
 
     // GCash payments: residents submit + view own; staff manage the queue; admin validates

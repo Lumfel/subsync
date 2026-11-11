@@ -68,7 +68,7 @@
       <input type="file" id="profileInput" accept="image/*" onchange="changeImage('profilePreview',this)" style="display:none;">
     </div>
     <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="householdName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $residentName }}</div>
-    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Block/Lot: <span id="locationText">{{ $blockLot }}</span></div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:2px;">Block/Lot: <span id="locationText" style="font-weight:600;color:var(--text);">{{ $blockLot }}</span></div>
     
     <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'resident' }}"></form>
     <a href="{{ url('settings') }}?portal={{ $role ?? 'resident' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;"><x-icon name="gear" size="13"/> Settings</a>
@@ -104,7 +104,7 @@
       <div class="card bento-col-4 res-balance-card">
         <div class="balance-label">Outstanding Balance</div>
         <div class="balance-val" id="residentBalance">₱{{ number_format((float)($balance ?? 0), 2) }}</div>
-        <div style="font-size:12px; color:var(--text-dim); margin-top:6px;">Settle your dues via the Payments tab.</div>
+        <div style="font-size:13.5px; color:var(--text-dim); margin-top:6px;">Settle your dues via the Payments tab.</div>
         <button class="btn btn-sm" style="margin-top:12px; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.22); color:#fff;" onclick="quickPay()">Pay via GCash</button>
       </div>
 
@@ -250,11 +250,11 @@
         <div class="f-field">
           <span class="f-label"><x-icon name="camera" size="14"/> Photos (optional, up to 5, max 8 MB each)</span>
           <input type="file" id="issueImages" accept="image/*" multiple style="font-size:13px;padding:6px 0;">
-          <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Attach photos to help our team understand the issue.</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-top:4px;">Attach photos to help our team understand the issue.</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;">
-            <button type="button" class="btn" style="font-size:12px;padding:4px 12px;" onclick="document.getElementById('issueCamera').click()"><x-icon name="camera" size="14"/> Take Photo</button>
+            <button type="button" class="btn" style="font-size:13px;padding:5px 14px;" onclick="document.getElementById('issueCamera').click()"><x-icon name="camera" size="14"/> Take Photo</button>
             <input type="file" id="issueCamera" accept="image/*" capture="environment" style="display:none">
-            <span id="issueCameraCount" style="font-size:11px;color:var(--text-dim);"></span>
+            <span id="issueCameraCount" style="font-size:12.5px;color:var(--text-dim);"></span>
           </div>
           <div class="file-chips" id="issueImageChips"></div>
         </div>

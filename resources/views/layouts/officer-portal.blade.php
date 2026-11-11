@@ -52,6 +52,7 @@
     <li class="tab-btn" onclick="switchTab('calendar')" id="tab-calendar"><x-icon name="calendar" size="15"/> Calendar</li>
     <li class="tab-btn" onclick="switchTab('messages')" id="tab-messages"><x-icon name="message" size="15"/> Messages <span class="tab-badge" id="badge-messages" style="display:none;">0</span></li>
     <li class="tab-btn" onclick="switchTab('files')" id="tab-files"><x-icon name="folder" size="15"/> Documents</li>
+    <li class="tab-btn" onclick="switchTab('expenses')" id="tab-expenses"><x-icon name="coins" size="15"/> Expenses</li>
     <li class="tab-btn" onclick="switchTab('map')" id="tab-map"><x-icon name="map" size="15"/> Map</li>
   </ul>
 
@@ -68,7 +69,7 @@
       <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)" style="display:none;">
     </div>
     <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="officerName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $officerName }}</div>
-    <div style="font-size:11px; color:var(--text-dim); margin-top:2px;">Officer</div>
+    <div style="font-size:13px; color:var(--text-dim); margin-top:2px;">Officer</div>
     
     <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'officer' }}"></form>
     <a href="{{ url('settings') }}?portal={{ $role ?? 'officer' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;"><x-icon name="gear" size="13"/> Settings</a>
@@ -96,19 +97,19 @@
       <!-- Quick stats (Span 4) -->
       <div class="bento-col-4" style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
         <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Notices</div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Notices</div>
           <div style="font-size:22px;font-weight:700;color:var(--blue);" id="annCount">—</div>
         </div>
         <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Issues</div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Issues</div>
           <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="openReportsCount">—</div>
         </div>
         <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Excel Sent</div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Excel Sent</div>
           <div style="font-size:22px;font-weight:700;color:var(--green);" id="filesSentCount">—</div>
         </div>
         <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Verified</div>
+          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Verified</div>
           <div style="font-size:22px;font-weight:700;color:var(--accent);" id="blockResidentsCount">—</div>
         </div>
       </div>
@@ -280,9 +281,12 @@
           <span class="f-label">Response / Notes</span>
           <textarea id="officerRespondText" placeholder="Enter your response…" style="min-height:100px;"></textarea>
         </div>
-        <div class="modal-actions">
-          <button class="modal-close-btn" onclick="closeModal('officerRespond')">Cancel</button>
-          <button class="btn btn-sm" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitOfficerResponse):submitOfficerResponse()">Submit</button>
+        <div class="modal-actions" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <button type="button" class="btn btn-sm" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);" onclick="openClaimForCurrentIssue()"><x-icon name="coins" size="13"/> Claim Expense for this Issue</button>
+          <div style="display:flex;gap:8px;">
+            <button class="modal-close-btn" onclick="closeModal('officerRespond')">Cancel</button>
+            <button class="btn btn-sm" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitOfficerResponse):submitOfficerResponse()">Submit</button>
+          </div>
         </div>
       </div>
     </div>
@@ -390,6 +394,104 @@
     <div class="card">
       <div class="card-title">Sent Files History</div>
       <div id="sentFilesList"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ EXPENSES (Officer Claims) ═══════════ -->
+  <div class="tab-panel" id="panel-expenses">
+    <div class="card" style="margin-top:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <div>
+          <div class="card-title" style="margin:0;">Expense Claims &amp; Reimbursements</div>
+          <div class="card-subtitle" style="margin-top:4px;">Submit receipts for repair materials, contractors, or subdivision improvements. Approved claims auto-post to the HOA transparency ledger.</div>
+        </div>
+        <button class="btn btn-sm btn-green" onclick="openExpenseClaimModal()"><x-icon name="coins" size="14"/> + Submit Expense Claim</button>
+      </div>
+
+      <div id="officerExpenseList">
+        <div class="empty-state">Loading your expense claims…</div>
+      </div>
+    </div>
+
+    <!-- Submit Expense Claim Modal -->
+    <div class="modal-overlay" id="modal-officerExpenseClaim">
+      <div class="modal-box" style="max-width:540px;">
+        <div class="modal-title">Submit Expense Claim</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">Upload your receipt and enter the details. Once submitted, the Admin can review and approve it into the HOA ledger with 1 click.</div>
+
+        <div class="f-row">
+          <div class="f-field">
+            <span class="f-label">Title / Item Description</span>
+            <input type="text" id="officerExpTitle" placeholder="e.g. Streetlight Bulb Replacements (Phase 2)" maxlength="200">
+          </div>
+        </div>
+
+        <div class="f-row">
+          <div class="f-field">
+            <span class="f-label">Category</span>
+            <select id="officerExpCategory">
+              <option value="Maintenance">Maintenance</option>
+              <option value="Utilities">Utilities</option>
+              <option value="Security">Security</option>
+              <option value="Landscaping">Landscaping</option>
+              <option value="Amenities">Amenities</option>
+              <option value="Insurance">Insurance</option>
+              <option value="Administrative">Administrative</option>
+              <option value="Events">Events</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="f-field">
+            <span class="f-label">Amount (₱)</span>
+            <input type="number" id="officerExpAmount" min="0.01" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="f-row">
+          <div class="f-field">
+            <span class="f-label">Expense Date</span>
+            <input type="date" id="officerExpDate">
+          </div>
+          <div class="f-field">
+            <span class="f-label">Fund Source</span>
+            <select id="officerExpFund">
+              <option value="Operating">Operating Fund (Routine repairs/supplies)</option>
+              <option value="Reserve">Reserve Fund (Major improvements)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="f-row">
+          <div class="f-field">
+            <span class="f-label">Link to Issue (Optional)</span>
+            <select id="officerExpIssue">
+              <option value="">— Not linked to an issue —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="f-row">
+          <div class="f-field">
+            <span class="f-label">Details / Justification</span>
+            <textarea id="officerExpDescription" placeholder="Store name, contractor details, or problem resolved…" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="f-row">
+          <div class="f-field">
+            <span class="f-label">Official Receipt / Invoice Photo</span>
+            <input type="file" id="officerExpReceipt" accept="image/*">
+            <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Upload receipt/invoice photo (PNG, JPG, max 8 MB).</div>
+          </div>
+        </div>
+
+        <div id="officerExpMsg" style="font-size:12px;color:#c87941;margin-bottom:10px;"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="modal-close-btn" onclick="closeModal('officerExpenseClaim')">Cancel</button>
+          <button type="button" class="btn btn-sm btn-green" onclick="submitOfficerExpenseClaim()">Submit for Admin Approval</button>
+        </div>
+      </div>
     </div>
   </div>
 

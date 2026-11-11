@@ -861,6 +861,7 @@
         <button class="fin-tab" onclick="financeTab('dues',this)">Dues &amp; Assessments</button>
         <button class="fin-tab" onclick="financeTab('collections',this)">Collections &amp; Aging</button>
         <button class="fin-tab" onclick="financeTab('expenses',this)">Expenses</button>
+        <button class="fin-tab" onclick="financeTab('requests',this)">Officer Claims <span id="badge-expense-requests" style="display:none;background:#c87941;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:4px;">0</span></button>
         <button class="fin-tab" onclick="financeTab('budgets',this)">Budgets</button>
       </div>
 
@@ -941,6 +942,27 @@
       </div>
 
       </div><!-- /expenses -->
+
+      <div class="fin-section" data-fin="requests">
+      <!-- Officer Expense Claims (1-click approval pipeline) -->
+      <div class="card" style="margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+          <div>
+            <div class="card-title" style="margin:0;">Officer Expense Claims</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Claims submitted by officers with attached receipts. 1-click approval auto-posts directly to the HOA transparency ledger.</div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <select id="adminExpenseReqFilter" onchange="renderAdminExpenseRequests()" style="padding:4px 8px;border-radius:6px;font-size:12px;border:1px solid var(--glass-border);background:var(--glass);">
+              <option value="">All Statuses</option>
+              <option value="Pending" selected>Pending Review</option>
+              <option value="Approved">Approved</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+        <div id="adminExpenseRequestsList"><div class="empty-state" style="padding:12px;">Loading…</div></div>
+      </div>
+      </div><!-- /requests -->
 
       <div class="fin-section" data-fin="dues">
       <!-- Dues & Assessments -->
@@ -1023,6 +1045,56 @@
           <div class="modal-actions">
             <button class="modal-close-btn" onclick="closeModal('expense')">Cancel</button>
             <button class="btn btn-sm" onclick="saveExpense()">Save Expense</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Review Officer Expense Request Modal -->
+      <div class="modal-overlay" id="modal-reviewExpenseRequest">
+        <div class="modal-box" style="max-width:580px;">
+          <div class="modal-title">Review Officer Expense Claim</div>
+          <input type="hidden" id="reviewExpId">
+
+          <div id="reviewExpHeader" style="background:rgba(43,41,39,0.03);border:1px solid var(--glass-border);border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.6;"></div>
+
+          <div style="text-align:center;margin-bottom:14px;" id="reviewExpReceiptContainer">
+            <img id="reviewExpReceiptImg" alt="Receipt preview" style="max-width:100%;max-height:280px;border-radius:8px;border:1px solid var(--glass-border);display:none;margin:0 auto 8px;">
+            <a id="reviewExpReceiptLink" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="display:none;margin:0 auto;">Open Receipt in New Tab</a>
+          </div>
+
+          <div class="f-row">
+            <div class="f-field">
+              <span class="f-label">Confirm Category</span>
+              <select id="reviewExpCategory">
+                <option>Maintenance</option><option>Utilities</option><option>Security</option>
+                <option>Landscaping</option><option>Amenities</option><option>Insurance</option>
+                <option>Administrative</option><option>Events</option><option>Other</option>
+              </select>
+            </div>
+            <div class="f-field">
+              <span class="f-label">Confirm Fund</span>
+              <select id="reviewExpFund">
+                <option value="Operating">Operating Fund</option>
+                <option value="Reserve">Reserve Fund</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="f-row">
+            <div class="f-field">
+              <span class="f-label">Admin Notes / Reimbursement Details</span>
+              <textarea id="reviewExpNotes" rows="2" placeholder="Optional approval notes, check number, or reason for rejection…"></textarea>
+            </div>
+          </div>
+
+          <div style="font-size:12px;color:#f08080;margin-bottom:8px;" id="reviewExpMsg"></div>
+
+          <div class="modal-actions" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <button class="modal-close-btn" onclick="closeModal('reviewExpenseRequest')">Close</button>
+            <div style="display:flex;gap:8px;" id="reviewExpActionBtns">
+              <button class="btn btn-sm btn-danger" onclick="rejectExpenseRequest()">Reject Claim</button>
+              <button class="btn btn-sm btn-green" onclick="approveExpenseRequest()">✓ Approve &amp; Post to Ledger</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2250,6 +2322,165 @@ async function deleteExpense(id){
   else showToast('⚠ Could not delete expense.');
 }
 
+/* ══════════════ OFFICER EXPENSE CLAIMS & APPROVALS (admin) ══════════════ */
+let adminExpenseRequests = [];
+
+async function loadAdminExpenseRequests(){
+  const el = document.getElementById('adminExpenseRequestsList');
+  try{ adminExpenseRequests = await apiGet('/api/expense-requests'); }catch(e){ adminExpenseRequests = []; }
+  
+  // Update badge on finTab
+  const pendingCount = (adminExpenseRequests||[]).filter(r=>r.status==='Pending').length;
+  const badge = document.getElementById('badge-expense-requests');
+  if(badge){
+    badge.textContent = pendingCount;
+    badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
+
+  renderAdminExpenseRequests();
+}
+
+function renderAdminExpenseRequests(){
+  const el = document.getElementById('adminExpenseRequestsList');
+  if(!el) return;
+  const filter = (document.getElementById('adminExpenseReqFilter')?.value || '');
+  let list = adminExpenseRequests || [];
+  if(filter) list = list.filter(r => r.status === filter);
+
+  if(!Array.isArray(list) || !list.length){
+    el.innerHTML = '<div class="empty-state" style="padding:16px;">No ' + (filter ? filter.toLowerCase() : '') + ' expense claims found.</div>';
+    return;
+  }
+
+  const peso = v => '₱'+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2});
+  const statusBadge = s => {
+    if(s === 'Approved') return '<span class="pill pill-resolved">Approved</span>';
+    if(s === 'Rejected') return '<span class="pill pill-urgent">Rejected</span>';
+    return '<span class="pill pill-pending">Pending Review</span>';
+  };
+
+  el.innerHTML = '<table class="panel-table"><thead><tr>' +
+    '<th>Date</th><th>Officer</th><th>Category</th><th>Fund</th><th>Title / Purpose</th><th>Amount</th><th>Linked Issue</th><th>Status</th><th>Receipt</th><th></th>' +
+    '</tr></thead><tbody>' +
+    list.map(r => `<tr>
+      <td>${escHtml(r.expense_date||'—')}</td>
+      <td><strong>${escHtml(r.officer||'—')}</strong></td>
+      <td>${escHtml(r.category||'Maintenance')}</td>
+      <td>${escHtml(r.fund||'Operating')}</td>
+      <td>
+        <div style="font-weight:600;color:var(--text);">${escHtml(r.title)}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${escHtml(r.description||'')}</div>
+      </td>
+      <td style="font-weight:600;color:#c87941;">${peso(r.amount)}</td>
+      <td>${r.issue_id ? `<span class="pill pill-progress" title="${escHtml(r.issue_title||'')}">#${r.issue_id}</span>` : '—'}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" rel="noopener">View</a>` : '—'}</td>
+      <td style="text-align:right;white-space:nowrap;">
+        <button class="btn btn-sm" onclick="openReviewExpenseRequest(${r.id})">${r.status==='Pending' ? 'Review & Approve' : 'Details'}</button>
+      </td>
+    </tr>`).join('') +
+    '</tbody></table>';
+}
+
+function openReviewExpenseRequest(id){
+  const r = (adminExpenseRequests||[]).find(x => x.id === id);
+  if(!r) return;
+
+  document.getElementById('reviewExpId').value = r.id;
+  document.getElementById('reviewExpCategory').value = r.category || 'Maintenance';
+  document.getElementById('reviewExpFund').value = r.fund || 'Operating';
+  document.getElementById('reviewExpNotes').value = r.admin_notes || '';
+  document.getElementById('reviewExpMsg').textContent = '';
+
+  const peso = '₱' + Number(r.amount||0).toLocaleString(undefined, {minimumFractionDigits:2});
+  const header = document.getElementById('reviewExpHeader');
+  header.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);">${escHtml(r.title)}</div>
+        <div style="color:var(--text-dim);font-size:12px;margin-top:2px;">Submitted by <strong>${escHtml(r.officer)}</strong> on ${escHtml(r.created_at||r.expense_date)}</div>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:#c87941;">${peso}</div>
+    </div>
+    <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--glass-border);color:var(--text);">${escHtml(r.description||'No details provided.')}</div>
+    ${r.issue_id ? `<div style="margin-top:6px;font-size:12px;color:var(--text-dim);">Resolves: <strong>Issue #${r.issue_id} — ${escHtml(r.issue_title||'')}</strong></div>` : ''}
+    <div style="margin-top:6px;font-size:12px;">Status: <strong>${escHtml(r.status)}</strong> ${r.reviewed_at ? `(Reviewed ${escHtml(r.reviewed_at)} by ${escHtml(r.reviewed_by||'Admin')})` : ''}</div>
+  `;
+
+  // Receipt preview
+  const img = document.getElementById('reviewExpReceiptImg');
+  const link = document.getElementById('reviewExpReceiptLink');
+  if(r.receipt_url){
+    img.src = r.receipt_url;
+    img.style.display = 'block';
+    link.href = r.receipt_url;
+    link.style.display = 'inline-block';
+  } else {
+    img.style.display = 'none';
+    link.style.display = 'none';
+  }
+
+  // Show/hide action buttons if already reviewed
+  const actionBtns = document.getElementById('reviewExpActionBtns');
+  if(actionBtns){
+    actionBtns.style.display = r.status === 'Pending' ? 'flex' : 'none';
+  }
+
+  openModal('reviewExpenseRequest');
+}
+
+async function approveExpenseRequest(){
+  const id = document.getElementById('reviewExpId').value;
+  const category = document.getElementById('reviewExpCategory').value;
+  const fund = document.getElementById('reviewExpFund').value;
+  const admin_notes = document.getElementById('reviewExpNotes').value.trim();
+  const msg = document.getElementById('reviewExpMsg');
+
+  msg.textContent = 'Approving and posting to ledger…';
+  try {
+    const res = await apiPost('/api/expense-requests/' + id + '/approve', {
+      category, fund, admin_notes
+    });
+
+    if(res.success){
+      closeModal('reviewExpenseRequest');
+      await loadAdminExpenseRequests();
+      await loadAdminExpenses();
+      if(typeof loadFinanceOverview === 'function') loadFinanceOverview();
+      showToast('✅ Claim approved & auto-posted to HOA ledger.');
+    } else {
+      msg.textContent = res.message || 'Could not approve request.';
+    }
+  } catch(e) {
+    msg.textContent = 'Error approving request.';
+  }
+}
+
+async function rejectExpenseRequest(){
+  const id = document.getElementById('reviewExpId').value;
+  const admin_notes = document.getElementById('reviewExpNotes').value.trim();
+  const msg = document.getElementById('reviewExpMsg');
+
+  if(!admin_notes){
+    msg.textContent = 'Please enter a note/reason for rejecting this claim.';
+    return;
+  }
+
+  msg.textContent = 'Rejecting claim…';
+  try {
+    const res = await apiPost('/api/expense-requests/' + id + '/reject', { admin_notes });
+    if(res.success){
+      closeModal('reviewExpenseRequest');
+      await loadAdminExpenseRequests();
+      showToast('Expense claim rejected.');
+    } else {
+      msg.textContent = res.message || 'Could not reject request.';
+    }
+  } catch(e) {
+    msg.textContent = 'Error rejecting request.';
+  }
+}
+
 /* ══════════════ DUES, COLLECTIONS & BUDGETS ══════════════ */
 let assessments = [];
 let agingRows = [];
@@ -2340,6 +2571,7 @@ function financeTab(name, el){
   else document.querySelectorAll('#finTabs .fin-tab').forEach(t=>{ if(t.textContent.trim().toLowerCase().startsWith(name)) t.classList.add('active'); });
   document.querySelectorAll('#panel-gcash .fin-section').forEach(s=>s.classList.toggle('active', s.dataset.fin===name));
   if(name==='overview') loadFinanceOverview();
+  if(name==='requests') loadAdminExpenseRequests();
 }
 async function loadFinanceOverview(){
   const el = document.getElementById('financeOverview'); if(!el) return;

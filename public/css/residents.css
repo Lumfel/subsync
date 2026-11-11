@@ -61,7 +61,7 @@ body {
 .tab-btn.active { background: #2B2927; color: #FFFFFF; border-color: #2B2927; box-shadow: 0 4px 12px rgba(43,41,39,0.12); }
 .tab-badge {
   background: #FAF6F0; color: #A07D53; border: 1px solid #E6DFD5;
-  font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px;
+  font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
 }
 
 /* ───── Tab panels ───── */
@@ -97,11 +97,11 @@ body {
 /* ───── Form helpers ───── */
 .f-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .f-field { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 140px; }
-.f-label { font-size: 12px; color: var(--text-dim); letter-spacing: 0.03em; }
+.f-label { font-size: 13.5px; font-weight: 600; color: var(--text-dim); letter-spacing: 0.02em; }
 input[type=text], textarea, select {
   background: #FFFFFF; border: 1px solid var(--glass-border);
   color: var(--text); padding: 10px 14px; border-radius: var(--radius-sm);
-  font-family: 'DM Sans', sans-serif; font-size: 14px; outline: none;
+  font-family: 'DM Sans', sans-serif; font-size: 15px; outline: none;
   transition: border-color 0.2s, background 0.2s; width: 100%;
 }
 input[type=text]:focus, textarea:focus, select:focus {
@@ -154,12 +154,12 @@ select option { background: #FFFFFF; color: var(--text); }
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; font-weight: 600; color: var(--accent);
 }
-.member-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.member-name { font-size: 14.5px; font-weight: 600; color: var(--text); }
 .member-role {
-  font-size: 10px; color: var(--accent); background: #FFFFFF;
+  font-size: 12px; color: var(--accent); background: #FFFFFF;
   border: 1px solid var(--glass-border); padding: 2px 8px; border-radius: 20px;
   display: inline-block; width: fit-content;
-  text-transform: uppercase; letter-spacing: 0.02em;
+  text-transform: uppercase; letter-spacing: 0.02em; font-weight: 600;
 }
 .member-remove {
   position: absolute; top: 8px; right: 8px; width: 21px; height: 21px;
@@ -184,9 +184,9 @@ select option { background: #FFFFFF; color: var(--text); }
 .ann-item.ann-item-event  { border-left-color: var(--green); }
 .ann-item:hover { transform: translateY(-1.5px); box-shadow: 0 6px 16px rgba(43,41,39,0.03); }
 .ann-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-.ann-date { font-size: 11px; color: var(--text-dim); }
-.ann-title { font-size: 14px; font-weight: 500; margin-bottom: 4px; text-align: center; }
-.ann-body { font-size: 13px; color: var(--text-mid); line-height: 1.6; text-align: center; }
+.ann-date { font-size: 13px; color: var(--text-dim); }
+.ann-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; text-align: left; }
+.ann-body { font-size: 14.5px; color: var(--text-mid); line-height: 1.6; text-align: left; }
 
 /* ── Dues Card ── */
 .res-balance-card {

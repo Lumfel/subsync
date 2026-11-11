@@ -13,7 +13,7 @@ class HoaExpenseController extends Controller
     public function index()
     {
         return Cache::remember('hoa.expenses', 30, function () {
-            return HoaExpense::orderByDesc('expense_date')->orderByDesc('id')
+            return HoaExpense::with('issue:id,title')->orderByDesc('expense_date')->orderByDesc('id')
                 ->get()
                 ->map(fn ($e) => $this->map($e))
                 ->all();
@@ -102,6 +102,7 @@ class HoaExpenseController extends Controller
             'category' => 'required|in:Maintenance,Utilities,Security,Landscaping,Amenities,Insurance,Administrative,Events,Other',
             'status' => 'nullable|in:Approved,Pending,Paid',
             'fund' => 'nullable|in:Operating,Reserve',
+            'issue_id' => 'nullable|exists:issue_reports,id',
             'receipt' => 'nullable|image|max:8192',
         ]);
     }
@@ -117,6 +118,8 @@ class HoaExpenseController extends Controller
             'category' => $e->category,
             'status' => $e->status,
             'fund' => $e->fund ?: 'Operating',
+            'issue_id' => $e->issue_id,
+            'issue_title' => $e->issue?->title,
             'has_receipt' => (bool) $e->receipt_path,
             'receipt_url' => $e->receipt_path ? '/api/hoa-expenses/'.$e->id.'/receipt' : null,
             'created_at' => $e->created_at?->format('M d, Y'),

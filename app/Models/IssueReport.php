@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -85,6 +86,22 @@ class IssueReport extends Model
     public function responses()
     {
         return $this->hasMany(IssueResponse::class, 'issue_id');
+    }
+
+    public function hoaExpenses(): HasMany
+    {
+        return $this->hasMany(HoaExpense::class, 'issue_id');
+    }
+
+    public function expenseRequests(): HasMany
+    {
+        return $this->hasMany(ExpenseRequest::class, 'issue_id');
+    }
+
+    /** Total verified repair expenses recorded against this issue */
+    public function getTotalRepairCostAttribute(): float
+    {
+        return (float) $this->hoaExpenses()->sum('amount');
     }
 
     public function media()

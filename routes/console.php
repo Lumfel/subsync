@@ -14,6 +14,9 @@ Schedule::command('announcements:archive-stale')->daily();
 // Generate dues/assessment charges at the start of each month.
 Schedule::command('assessments:generate-dues')->monthlyOn(1, '00:05');
 
+// Publish the monthly financial transparency digest to all residents on the 1st of each month.
+Schedule::command('subsync:financial-digest')->monthlyOn(1, '06:00');
+
 // Monthly balance reminder to every resident with an outstanding balance —
 // a few days after dues post, so the new charge is already included.
 Schedule::command('subsync:remind-balances')->monthlyOn(5, '08:00');

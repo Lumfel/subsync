@@ -82,7 +82,7 @@ class IssueController extends Controller
     /** GET /api/issues — all issues (admin/officer) */
     public function index(Request $request)
     {
-        $query = IssueReport::with('resident:id,name,house_id', 'resident.household:id,block_lot_number', 'media', 'responses', 'assignee:id,name')
+        $query = IssueReport::with('resident:id,name,house_id', 'resident.household:id,block_lot_number', 'media', 'responses', 'assignee:id,name', 'hoaExpenses:id,issue_id,amount')
             ->orderByDesc('created_at');
 
         // Archived records are hidden from the working list unless explicitly requested.
@@ -121,6 +121,7 @@ class IssueController extends Controller
             'assigned_officer' => $i->assignee?->name,
             'due_date' => $i->due_date?->format('Y-m-d'),
             'overdue' => $i->is_overdue,
+            'repair_cost' => (float) $i->hoaExpenses->sum('amount'),
             'media' => $i->media->map(fn ($m) => [
                 'id' => $m->id,
                 'name' => $m->file_name,
@@ -147,7 +148,7 @@ class IssueController extends Controller
         }
 
         $issues = IssueReport::where('resident_id', $residentId)
-            ->with('responses', 'media', 'assignee:id,name')
+            ->with('responses', 'media', 'assignee:id,name', 'hoaExpenses:id,issue_id,amount')
             ->orderByDesc('created_at')
             ->get()
             ->map(fn ($i) => [
@@ -163,6 +164,7 @@ class IssueController extends Controller
                 'assigned_officer' => $i->assignee?->name,
                 'due_date' => $i->due_date?->format('Y-m-d'),
                 'overdue' => $i->is_overdue,
+                'repair_cost' => (float) $i->hoaExpenses->sum('amount'),
                 'response' => $i->responses->sortByDesc('id')->first()?->response_content,
                 'media' => $i->media->map(fn ($m) => [
                     'id' => $m->id,

@@ -1563,7 +1563,7 @@ html[data-theme="dark"] [style*="color: #3C4043"] { color: #E9E3D8 !important; }
 /* Data tables → scannable enterprise grid */
 .panel-table, .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .panel-table thead th, .data-table thead th {
-  font-size: 11px !important; text-transform: uppercase; letter-spacing: .06em; font-weight: 700 !important;
+  font-size: 12.5px !important; text-transform: uppercase; letter-spacing: .05em; font-weight: 700 !important;
   color: var(--text-dim) !important; background: transparent !important;
   border-bottom: 1px solid var(--glass-border, #E6DFD5) !important;
   padding: 10px 12px !important; text-align: left; white-space: nowrap;
@@ -1578,12 +1578,12 @@ html[data-theme="dark"] .data-table tbody td { border-bottom-color: rgba(255,255
 .panel-table td:first-child, .data-table td:first-child { font-weight: 600; }
 
 /* Form micro-labels */
-.f-label { font-size: 11px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: .05em; color: var(--text-dim) !important; }
+.f-label { font-size: 12.5px !important; font-weight: 700 !important; text-transform: uppercase; letter-spacing: .04em; color: var(--text-dim) !important; }
 
 /* Status pills → consistent, uppercase */
 .pill, .tab-badge {
-  font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: .04em;
-  text-transform: uppercase; padding: 3px 9px !important; border-radius: 5px !important;
+  font-size: 12px !important; font-weight: 700 !important; letter-spacing: .03em;
+  text-transform: uppercase; padding: 4px 10px !important; border-radius: 6px !important;
 }
 
 /* Buttons: crisp hierarchy */
@@ -1729,19 +1729,58 @@ html:not([data-theme="dark"]) [style*="color:#f59e0b"] { color: #A9660A !importa
    Bigger, easier tap targets and clearer helper text
    for older users. Same type scale as the rest of the app.
    ───────────────────────────────────────────── */
-.residents-body .btn, .officer-body .btn { padding-top: 13px !important; padding-bottom: 13px !important; }
-.residents-body .btn-sm, .officer-body .btn-sm { padding-top: 9px !important; padding-bottom: 9px !important; }
-.residents-body .sidebar li.tab-btn, .officer-body .sidebar li.tab-btn { padding-top: 14px !important; padding-bottom: 14px !important; }
-.residents-body .fin-tab, .officer-body .fin-tab { padding-top: 12px !important; padding-bottom: 12px !important; }
+.residents-body, .officer-body {
+  --text-dim: #5A5652;
+  --text-mid: #3B3835;
+  font-size: 15px;
+}
+html[data-theme="dark"] .residents-body, html[data-theme="dark"] .officer-body {
+  --text-dim: #B4ACA0;
+  --text-mid: #DDD6CA;
+}
+
+.residents-body .btn, .officer-body .btn { padding-top: 13px !important; padding-bottom: 13px !important; font-size: 14.5px !important; }
+.residents-body .btn-sm, .officer-body .btn-sm { padding-top: 9px !important; padding-bottom: 9px !important; font-size: 13px !important; }
+.residents-body .sidebar li.tab-btn, .officer-body .sidebar li.tab-btn { padding-top: 14px !important; padding-bottom: 14px !important; font-size: 15px !important; font-weight: 600 !important; }
+.residents-body .fin-tab, .officer-body .fin-tab { padding-top: 12px !important; padding-bottom: 12px !important; font-size: 14.5px !important; font-weight: 600 !important; }
 .residents-body input[type=text], .residents-body input[type=email], .residents-body input[type=password],
 .residents-body input[type=number], .residents-body input[type=date], .residents-body textarea, .residents-body select,
 .officer-body input[type=text], .officer-body input[type=email], .officer-body input[type=password],
 .officer-body input[type=number], .officer-body input[type=date], .officer-body textarea,
-.officer-body select { padding-top: 12px !important; padding-bottom: 12px !important; }
+.officer-body select { padding-top: 12px !important; padding-bottom: 12px !important; font-size: 15px !important; }
 
 /* Slightly clearer helper text on these two portals */
-.residents-body .card-subtitle, .officer-body .card-subtitle { font-size: 14.5px !important; line-height: 1.6 !important; }
-.residents-body .meta-txt, .officer-body .meta-txt { font-size: 12.5px !important; }
+.residents-body .card-subtitle, .officer-body .card-subtitle { font-size: 15px !important; line-height: 1.65 !important; color: var(--text-mid) !important; }
+.residents-body .meta-txt, .officer-body .meta-txt { font-size: 13.5px !important; color: var(--text-dim) !important; }
+.residents-body .f-label, .officer-body .f-label { font-size: 13.5px !important; font-weight: 700 !important; color: var(--text-mid) !important; }
+.residents-body .pill, .officer-body .pill { font-size: 12.5px !important; padding: 4px 11px !important; letter-spacing: .03em !important; }
+.residents-body .tab-badge, .officer-body .tab-badge { font-size: 12px !important; padding: 2px 7px !important; }
+
+/* Table readability for older eyes */
+.residents-body .panel-table, .residents-body .data-table,
+.officer-body .panel-table, .officer-body .data-table { font-size: 14px !important; }
+.residents-body .panel-table thead th, .residents-body .data-table thead th,
+.officer-body .panel-table thead th, .officer-body .data-table thead th {
+  font-size: 13px !important; font-weight: 700 !important; color: var(--text-dim) !important; padding: 12px 14px !important;
+}
+.residents-body .panel-table tbody td, .residents-body .data-table tbody td,
+.officer-body .panel-table tbody td, .officer-body .data-table tbody td {
+  font-size: 14px !important; padding: 12px 14px !important; line-height: 1.5 !important;
+}
+
+/* Titles and content blocks */
+.residents-body .ann-title, .officer-body .report-title { font-size: 16px !important; font-weight: 600 !important; }
+.residents-body .ann-date { font-size: 13px !important; color: var(--text-dim) !important; }
+.residents-body .issue-title { font-size: 16px !important; font-weight: 600 !important; }
+.residents-body .issue-body, .officer-body .report-meta { font-size: 14.5px !important; line-height: 1.6 !important; }
+.residents-body .member-name { font-size: 14px !important; font-weight: 600 !important; }
+.residents-body .member-role { font-size: 12px !important; }
+.residents-body .balance-label { font-size: 13px !important; font-weight: 700 !important; letter-spacing: .05em !important; }
+.officer-body .file-meta, .officer-body .msg-thread-preview { font-size: 13px !important; color: var(--text-dim) !important; }
+.officer-body .file-name { font-size: 14.5px !important; font-weight: 600 !important; }
+.officer-body .file-status { font-size: 12px !important; padding: 4px 10px !important; }
+.officer-body .date-divider { font-size: 12px !important; font-weight: 700 !important; }
+.officer-body .bubble-time { font-size: 12px !important; }
 
 /* Quick actions stretch evenly instead of stacking narrowly */
 .residents-body .quick-actions .btn { flex: 1 1 190px; }

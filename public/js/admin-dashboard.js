@@ -120,7 +120,7 @@ function nav(name, el){
   if(name==='reports'){ renderReports(); loadReportTemplatesAdmin(); loadIssueData(); }
   if(name==='announcements') loadAdminEvents();
   if(name==='mapping') setTimeout(initMap, 80);
-  if(name==='gcash'){ loadGcashSettings(); loadPaymentsQueue(); loadAdminExpenses(); loadAssessments(); loadAging(); loadBudgets(); financeTab('overview'); loadFinanceOverview(); }
+  if(name==='gcash'){ loadGcashSettings(); loadPaymentsQueue(); loadAdminExpenses(); if(typeof loadAdminExpenseRequests==='function') loadAdminExpenseRequests(); loadAssessments(); loadAging(); loadBudgets(); financeTab('overview'); loadFinanceOverview(); }
   if(name==='policies') loadAdminPolicies();
   if(name==='archives') loadArchives('issues');
   if(name==='manageusers') loadManageData();

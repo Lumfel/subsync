@@ -194,11 +194,11 @@ let _annShowAll=false;
 function annItem(a){
   const tagLabel={notice:'Notice',urgent:'Urgent',event:'Event'};
   const meta=[];
-  if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:11px;">⚡ High Priority</span>');
-  if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:11px;color:var(--text-mid);">👥 '+escHtml(a.target)+'</span>');
-  if(a.event_date) meta.push('<span style="font-size:11px;color:var(--text-mid);display:inline-flex;align-items:center;gap:4px;">'+SubUI.icon('calendar',12)+' '+escHtml(a.event_date)+'</span>');
+  if(a.priority==='High') meta.push('<span style="color:#f08080;font-weight:700;font-size:12.5px;">⚡ High Priority</span>');
+  if(a.target&&a.target!=='All Residents') meta.push('<span style="font-size:12.5px;color:var(--text-mid);">👥 '+escHtml(a.target)+'</span>');
+  if(a.event_date) meta.push('<span style="font-size:12.5px;color:var(--text-mid);display:inline-flex;align-items:center;gap:4px;">'+SubUI.icon('calendar',13)+' '+escHtml(a.event_date)+'</span>');
   const statusClass = a.status === 'Archived' ? 'pill-inactive' : 'pill-active';
-  meta.push('<span class="pill '+statusClass+'" style="font-size:11px;">'+a.status+'</span>');
+  meta.push('<span class="pill '+statusClass+'" style="font-size:12px;">'+a.status+'</span>');
   return `
   <div class="ann-item ann-item-${a.tag||'notice'}" onclick="viewAnnouncement(${a.id})">
     <div class="ann-meta">
@@ -454,6 +454,7 @@ function renderIssues(){
         <span class="pill pill-notice">${i.category}</span>
         ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">${SubUI.icon('user',12)} ${escHtml(i.assigned_officer)}</span>`:''}
         ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="Expected resolution">${i.overdue?'Overdue ':'ETA '}${escHtml(i.due_date)}</span>`:''}
+        ${Number(i.repair_cost||0) > 0 ? `<span class="pill pill-resolved" title="Verified repair cost recorded in HOA Expenses">${SubUI.icon('coins',12)} Repair Cost: ₱${Number(i.repair_cost).toLocaleString(undefined,{minimumFractionDigits:2})}</span>` : ''}
         <span class="meta-txt">· #${i.id} · Filed ${i.created_at}</span>
       </div>
       ${i.response?`
@@ -736,14 +737,14 @@ async function loadStatement(){
   const ag=document.getElementById('statementAging');
   if(ag){
     const b=(s.aging&&s.aging.buckets)||{};
-    const cell=(label,val)=>`<div style="flex:1;min-width:88px;"><div style="font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">${label}</div><div style="font-size:15px;font-weight:600;">₱${Number(val||0).toLocaleString(undefined,{minimumFractionDigits:2})}</div></div>`;
+    const cell=(label,val)=>`<div style="flex:1;min-width:88px;"><div style="font-size:12.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;">${label}</div><div style="font-size:16px;font-weight:700;">₱${Number(val||0).toLocaleString(undefined,{minimumFractionDigits:2})}</div></div>`;
     ag.innerHTML = cell('Current',b.current)+cell('1–30d',b.d1_30)+cell('31–60d',b.d31_60)+cell('61–90d',b.d61_90)+cell('90d+',b.d90_plus);
   }
   const entries=(s.entries||[]);
   if(!entries.length){ tbl.innerHTML='<div class="empty-state">No transactions yet.</div>'; return; }
   const peso=v=>'₱'+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2});
-  tbl.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;">'+
-    '<thead><tr><th style="text-align:left;padding:6px 8px;">Date</th><th style="text-align:left;padding:6px 8px;">Description</th><th style="text-align:right;padding:6px 8px;">Charge</th><th style="text-align:right;padding:6px 8px;">Payment</th><th style="text-align:right;padding:6px 8px;">Balance</th></tr></thead><tbody>'+
+  tbl.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;">'+
+    '<thead><tr><th style="text-align:left;padding:8px 10px;font-size:13px;">Date</th><th style="text-align:left;padding:8px 10px;font-size:13px;">Description</th><th style="text-align:right;padding:8px 10px;font-size:13px;">Charge</th><th style="text-align:right;padding:8px 10px;font-size:13px;">Payment</th><th style="text-align:right;padding:8px 10px;font-size:13px;">Balance</th></tr></thead><tbody>'+
     entries.map(e=>`<tr>
       <td style="padding:6px 8px;color:var(--text-dim);white-space:nowrap;">${escHtml(e.date||'')}</td>
       <td style="padding:6px 8px;">${escHtml(e.description||e.type)}${e.period?` <span style="color:var(--text-dim);font-size:11px;">· ${escHtml(e.period)}</span>`:''}</td>
@@ -795,17 +796,17 @@ async function loadTransparency(){
   let s = {collected:0,spent:0,operating:0,reserve:0,net:0,balance:0,categories:[],period:null};
   try{ s = await fetch('/api/transparency/summary',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){}
   const peso = v => '₱' + Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2});
-  const box = (label,val,color)=>`<div style="flex:1;min-width:110px;"><div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;">${label}</div><div style="font-size:20px;font-weight:600;color:${color};">${peso(val)}</div></div>`;
+  const box = (label,val,color)=>`<div style="flex:1;min-width:110px;"><div style="font-size:13px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">${label}</div><div style="font-size:22px;font-weight:700;color:${color};">${peso(val)}</div></div>`;
   const fmt = d => d ? new Date(d).toLocaleDateString('en-PH',{year:'numeric',month:'short',day:'numeric'}) : '';
   let html = '';
-  if(s.period) html += `<div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Period · ${escHtml(fmt(s.period.from))} – ${escHtml(fmt(s.period.to))}</div>`;
+  if(s.period) html += `<div style="font-size:13px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">Period · ${escHtml(fmt(s.period.from))} – ${escHtml(fmt(s.period.to))}</div>`;
   html += '<div style="display:flex;gap:16px;flex-wrap:wrap;width:100%;">' +
     box('Collected', s.collected, 'var(--green,#6B8E70)') +
     box('Operating', s.operating, '#c87941') +
     box('Reserve', s.reserve, '#5A7F9E') +
     box('Net', s.net, (Number(s.net) < 0 ? '#c87941' : 'var(--text)')) + '</div>';
   if(Number(s.net) < 0){
-    html += `<div style="width:100%;margin-top:8px;font-size:12px;color:var(--text-dim);">Spending this period exceeded collections by ${peso(Math.abs(s.net))} — covered by reserve / prior funds.</div>`;
+    html += `<div style="width:100%;margin-top:8px;font-size:13.5px;color:var(--text-dim);line-height:1.5;">Spending this period exceeded collections by ${peso(Math.abs(s.net))} — covered by reserve / prior funds.</div>`;
   }
 
   const cats = (s.categories || []).filter(c => (c.total||0) > 0 || (c.budget||0) > 0);
@@ -814,7 +815,7 @@ async function loadTransparency(){
     const total = cats.reduce((a,c)=>a+(c.total||0),0) || 1;
     const items = cats.map((c,i)=>({label:c.category||'Uncategorized', value:c.total||0, color:palette[i%palette.length]}));
     html += '<div style="width:100%;margin-top:16px;border-top:1px solid var(--glass-border);padding-top:16px;">' +
-      '<div style="font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Where the Funds Go</div>' +
+      '<div style="font-size:14px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Where the Funds Go</div>' +
       '<div style="display:flex;gap:22px;align-items:center;flex-wrap:wrap;">' +
         '<div style="flex-shrink:0;position:relative;width:170px;height:170px;">' +
           donutSVG(items, 170) +
@@ -1074,7 +1075,10 @@ function renderHOAExpenses(){
     html += `<tr>
       <td>${e.expense_date}</td>
       <td>${e.category}</td>
-      <td>${e.title}</td>
+      <td>
+        <span style="font-weight:600;">${escHtml(e.title)}</span>
+        ${e.issue_id ? `<span class="pill pill-progress" style="font-size:10px;margin-left:6px;" title="Linked to Issue #${e.issue_id}">#Issue ${e.issue_id}</span>` : ''}
+      </td>
       <td>₱${parseFloat(e.amount).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
       <td>${e.status}</td>
       <td>${e.receipt_url?`<a href="${e.receipt_url}" target="_blank" rel="noopener">View</a>`:'—'}</td>

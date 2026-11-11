@@ -49,6 +49,7 @@ function switchTab(name){
     loadOfficerThreads();
   }
   if(name==='calendar') loadOfficerEvents();
+  if(name==='expenses') loadOfficerExpenseRequests();
   if(name==='map') setTimeout(initOfficerMonitorMap, 80);
   
   // Auto-close sidebar on mobile
@@ -500,20 +501,20 @@ function renderOfficerIssues(){
     <div class="report-item ${isCritical?'issue-critical-row':''}" style="margin-bottom:12px;" onclick="openOfficerRespond(${i.id})" title="Click to view / respond to this issue">
       <div class="report-top">
         <div>
-          <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">${escHtml(i.resident)} · ${escHtml(i.block_lot)}</div>
+          <div style="font-size:13px;color:var(--text-dim);margin-bottom:4px;">${escHtml(i.resident)} · ${escHtml(i.block_lot)}</div>
           <div class="report-title">${isCritical?SubUI.icon('alert',12)+' ':''}${escHtml(i.title)}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
           ${statusPill[i.status]||''}
-          ${i.priority?`<span style="font-size:10px;font-weight:700;color:${priColor[i.priority]||'var(--text-dim)'}">${escHtml(i.priority)}</span>`:''}
+          ${i.priority?`<span style="font-size:12px;font-weight:700;color:${priColor[i.priority]||'var(--text-dim)'}">${escHtml(i.priority)}</span>`:''}
         </div>
       </div>
-      <div class="report-meta" style="font-size:13px;color:var(--text-mid);margin-bottom:10px;line-height:1.55;">${escHtml(i.description)}</div>
+      <div class="report-meta" style="font-size:14px;color:var(--text-mid);margin-bottom:10px;line-height:1.55;">${escHtml(i.description)}</div>
       <div class="report-meta">
         <span class="pill pill-notice">${escHtml(i.category)}</span>
         ${i.assigned_officer?`<span class="pill pill-progress" title="Assigned officer">${SubUI.icon('user',12)} ${escHtml(i.assigned_officer)}</span>`:''}
         ${i.due_date?`<span class="pill ${i.overdue?'pill-urgent':'pill-notice'}" title="SLA due date">${i.overdue?SubUI.icon('clock',12)+' Overdue ':SubUI.icon('calendar',12)+' Due '}${escHtml(i.due_date)}</span>`:''}
-        <span style="font-size:11px;color:var(--text-dim);">· #${i.id} · ${escHtml(i.created_at)}</span>
+        <span style="font-size:12.5px;color:var(--text-dim);">· #${i.id} · ${escHtml(i.created_at)}</span>
       </div>
       ${(i.media&&i.media.length)?`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px;">${i.media.map(m=>{
         const isImg=/\.(png|jpe?g|gif|webp)$/i.test(m.name||m.url||'');
@@ -804,6 +805,162 @@ async function deleteSentFile(id){
     if(idx>-1) sentFiles.splice(idx,1);
     renderSentFiles();
     showToast('✅ File removed.');
+  }
+}
+
+/* ══ EXPENSE CLAIMS & REIMBURSEMENTS ══ */
+let officerExpenseRequests = [];
+
+async function loadOfficerExpenseRequests(){
+  const el = document.getElementById('officerExpenseList');
+  if(!el) return;
+  try {
+    officerExpenseRequests = await apiGet('/api/expense-requests');
+  } catch(e) {
+    officerExpenseRequests = [];
+  }
+  renderOfficerExpenseList();
+}
+
+function renderOfficerExpenseList(){
+  const el = document.getElementById('officerExpenseList');
+  if(!el) return;
+  if(!Array.isArray(officerExpenseRequests) || !officerExpenseRequests.length){
+    el.innerHTML = '<div class="empty-state">' + SubUI.icon('coins', 28) + '<div style="margin-top:8px;">No expense claims submitted yet. Click "+ Submit Expense Claim" above.</div></div>';
+    return;
+  }
+
+  const statusBadge = s => {
+    if(s === 'Approved') return '<span class="pill pill-resolved">Approved</span>';
+    if(s === 'Rejected') return '<span class="pill pill-urgent">Rejected</span>';
+    return '<span class="pill pill-pending">Pending Review</span>';
+  };
+
+  const peso = v => '₱' + Number(v||0).toLocaleString(undefined, {minimumFractionDigits:2});
+
+  el.innerHTML = '<table class="panel-table" style="width:100%;"><thead><tr>' +
+    '<th>Date</th><th>Category</th><th>Fund</th><th>Title / Purpose</th><th>Amount</th><th>Linked Issue</th><th>Status</th><th>Receipt</th><th>Notes</th><th></th>' +
+    '</tr></thead><tbody>' +
+    officerExpenseRequests.map(r => `<tr>
+      <td>${escHtml(r.expense_date||'—')}</td>
+      <td><span class="pill pill-notice">${escHtml(r.category||'Maintenance')}</span></td>
+      <td style="font-size:12px;color:var(--text-dim);">${escHtml(r.fund||'Operating')}</td>
+      <td>
+        <div style="font-weight:600;color:var(--text);">${escHtml(r.title)}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${escHtml(r.description||'')}</div>
+      </td>
+      <td style="font-weight:600;color:#c87941;">${peso(r.amount)}</td>
+      <td>${r.issue_id ? `<span class="pill pill-progress" title="${escHtml(r.issue_title||'')}">#${r.issue_id}</span>` : '—'}</td>
+      <td>${statusBadge(r.status)}</td>
+      <td>${r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" rel="noopener" class="btn btn-sm" style="display:inline-flex;align-items:center;gap:4px;">${SubUI.icon('search',12)} View</a>` : '—'}</td>
+      <td style="font-size:11px;color:var(--text-dim);max-width:180px;">${r.admin_notes ? escHtml(r.admin_notes) : (r.status==='Approved' ? '✅ Posted to HOA ledger' : '—')}</td>
+      <td style="text-align:right;">
+        ${r.status === 'Pending' ? `<button class="btn btn-sm btn-danger" onclick="cancelExpenseRequest(${r.id})">Cancel</button>` : ''}
+      </td>
+    </tr>`).join('') +
+    '</tbody></table>';
+}
+
+function openExpenseClaimModal(preselectedIssueId = null){
+  document.getElementById('officerExpTitle').value = '';
+  document.getElementById('officerExpCategory').value = 'Maintenance';
+  document.getElementById('officerExpAmount').value = '';
+  document.getElementById('officerExpDate').value = new Date().toISOString().slice(0, 10);
+  document.getElementById('officerExpFund').value = 'Operating';
+  document.getElementById('officerExpDescription').value = '';
+  document.getElementById('officerExpReceipt').value = '';
+  document.getElementById('officerExpMsg').textContent = '';
+
+  // Populate issue dropdown
+  const issueSelect = document.getElementById('officerExpIssue');
+  if(issueSelect){
+    let opts = '<option value="">— Not linked to an issue —</option>';
+    (officerIssues || []).forEach(iss => {
+      const sel = (preselectedIssueId && Number(preselectedIssueId) === Number(iss.id)) ? 'selected' : '';
+      opts += `<option value="${iss.id}" ${sel}>#${iss.id} — ${escHtml(iss.title)} (${iss.status})</option>`;
+    });
+    issueSelect.innerHTML = opts;
+  }
+
+  openModal('officerExpenseClaim');
+}
+
+function openClaimForCurrentIssue(){
+  closeModal('officerRespond');
+  setTimeout(() => {
+    openExpenseClaimModal(officerRespondingId);
+  }, 120);
+}
+
+async function submitOfficerExpenseClaim(){
+  const title = document.getElementById('officerExpTitle').value.trim();
+  const cat = document.getElementById('officerExpCategory').value;
+  const amt = document.getElementById('officerExpAmount').value;
+  const date = document.getElementById('officerExpDate').value;
+  const fund = document.getElementById('officerExpFund').value;
+  const issueId = document.getElementById('officerExpIssue').value;
+  const desc = document.getElementById('officerExpDescription').value.trim();
+  const receipt = document.getElementById('officerExpReceipt').files[0];
+  const msg = document.getElementById('officerExpMsg');
+
+  if(!title || !amt || !date || !desc){
+    msg.textContent = 'Please fill in Title, Amount, Date, and Details.';
+    return;
+  }
+  if(Number(amt) <= 0){
+    msg.textContent = 'Amount must be greater than zero.';
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('title', title);
+  fd.append('category', cat);
+  fd.append('amount', amt);
+  fd.append('expense_date', date);
+  fd.append('fund', fund);
+  fd.append('description', desc);
+  if(issueId) fd.append('issue_id', issueId);
+  if(receipt) fd.append('receipt', receipt);
+
+  msg.textContent = 'Submitting claim…';
+  try {
+    const res = await fetch('/api/expense-requests', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken(),
+      },
+      body: fd,
+    }).then(r => r.json());
+
+    if(res.success){
+      closeModal('officerExpenseClaim');
+      await loadOfficerExpenseRequests();
+      showToast('✅ Expense claim submitted for admin approval.');
+    } else {
+      msg.textContent = res.message || 'Could not submit claim.';
+    }
+  } catch(e) {
+    msg.textContent = 'Error submitting claim. Please try again.';
+  }
+}
+
+async function cancelExpenseRequest(id){
+  const ok = await SubUI.confirm({
+    title: 'Cancel this claim?',
+    message: 'Are you sure you want to cancel this pending expense claim?',
+    confirmText: 'Cancel Claim',
+    danger: true,
+    icon: '!',
+  });
+  if(!ok) return;
+
+  const res = await apiDelete('/api/expense-requests/' + id).catch(() => ({}));
+  if(res && res.success){
+    await loadOfficerExpenseRequests();
+    showToast('Expense claim cancelled.');
+  } else {
+    showToast('⚠ Could not cancel claim.');
   }
 }
 
