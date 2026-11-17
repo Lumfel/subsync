@@ -386,4 +386,44 @@ class AdminMapBlueprintOverlayTest extends TestCase
         $residentView = file_get_contents(resource_path('views/layouts/residents.blade.php'));
         $this->assertStringNotContainsString('My Household', $residentView);
     }
+
+    public function test_block_names_and_lot_starts_can_be_toggled_independently_across_portals(): void
+    {
+        $adminView = file_get_contents(resource_path('views/layouts/admin-dashboard.blade.php'));
+        $this->assertStringContainsString('id="layer-block-names"', $adminView);
+        $this->assertStringContainsString('id="layer-block-starts"', $adminView);
+        $this->assertStringContainsString('id="wrap-layer-block-names"', $adminView);
+        $this->assertStringContainsString('id="wrap-layer-block-starts"', $adminView);
+        $this->assertStringContainsString('function toggleMapBlockNames', $adminView);
+        $this->assertStringContainsString('function toggleMapBlockStarts', $adminView);
+        $this->assertStringContainsString('function updateBlockSubTogglesUI', $adminView);
+
+        $officerView = file_get_contents(resource_path('views/layouts/officer-portal.blade.php'));
+        $this->assertStringContainsString('id="officerLayerBlockNames"', $officerView);
+        $this->assertStringContainsString('id="officerLayerBlockStarts"', $officerView);
+        $this->assertStringContainsString('id="wrap-officer-block-names"', $officerView);
+        $this->assertStringContainsString('id="wrap-officer-block-starts"', $officerView);
+
+        $officerJs = file_get_contents(public_path('js/officer-portal.js'));
+        $this->assertStringContainsString('officerBlockNamesLayer', $officerJs);
+        $this->assertStringContainsString('officerBlockStartsLayer', $officerJs);
+        $this->assertStringContainsString('function toggleOfficerBlockNames', $officerJs);
+        $this->assertStringContainsString('function toggleOfficerBlockStarts', $officerJs);
+        $this->assertStringContainsString('function updateOfficerBlockSubTogglesUI', $officerJs);
+
+        $residentView = file_get_contents(resource_path('views/layouts/residents.blade.php'));
+        $this->assertStringContainsString('id="res-layer-block-names"', $residentView);
+        $this->assertStringContainsString('id="res-layer-block-starts"', $residentView);
+        $this->assertStringContainsString('id="wrap-res-block-names"', $residentView);
+        $this->assertStringContainsString('id="wrap-res-block-starts"', $residentView);
+        $this->assertStringContainsString('resBlockNamesLayer', $residentView);
+        $this->assertStringContainsString('resBlockStartsLayer', $residentView);
+        $this->assertStringContainsString('function toggleResidentBlockNames', $residentView);
+        $this->assertStringContainsString('function toggleResidentBlockStarts', $residentView);
+        $this->assertStringContainsString('function updateResidentBlockSubTogglesUI', $residentView);
+
+        $css = file_get_contents(public_path('css/ui-polish.css'));
+        $this->assertStringContainsString('.map-toggle.is-sub-toggle', $css);
+        $this->assertStringContainsString('.map-toggle.is-disabled', $css);
+    }
 }

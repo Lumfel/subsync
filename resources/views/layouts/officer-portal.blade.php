@@ -435,6 +435,12 @@
           <label class="map-toggle" title="Toggle block partition boundaries">
             <input type="checkbox" id="officerLayerBlocks" onchange="toggleOfficerBlocks(this.checked)"> Block Partitions
           </label>
+          <label class="map-toggle is-sub-toggle" id="wrap-officer-block-names" title="Toggle block name labels on the map">
+            <input type="checkbox" id="officerLayerBlockNames" checked onchange="toggleOfficerBlockNames(this.checked)"> Block Names
+          </label>
+          <label class="map-toggle is-sub-toggle" id="wrap-officer-block-starts" title="Toggle lot starting point directional markers">
+            <input type="checkbox" id="officerLayerBlockStarts" checked onchange="toggleOfficerBlockStarts(this.checked)"> Lot Starts
+          </label>
           <label class="map-toggle" title="Toggle facilities markers">
             <input type="checkbox" id="officerLayerFacilities" checked onchange="toggleOfficerFacilities(this.checked)"> Facilities
           </label>

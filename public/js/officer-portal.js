@@ -729,7 +729,7 @@ function loadOfficerLeaflet(){
   });
 }
 /* ══ OFFICER MONITORING MAP ══ */
-let officerMonitorMapInst=null, officerMonitorLayer=null, officerFacilitiesLayer=null, officerBlocksLayer=null, officerHeatLayer=null, officerMapSettings=null;
+let officerMonitorMapInst=null, officerMonitorLayer=null, officerFacilitiesLayer=null, officerBlocksLayer=null, officerBlockNamesLayer=null, officerBlockStartsLayer=null, officerHeatLayer=null, officerMapSettings=null;
 let officerBlocksData=[], officerActiveBlock='', officerBlockPolygons={};
 async function initOfficerMonitorMap(){
   await loadOfficerLeaflet();
@@ -769,8 +769,17 @@ async function initOfficerMonitorMap(){
   }
   L.rectangle(bounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.05}).addTo(officerMonitorMapInst);
   const officerBlocksChecked = Boolean(document.getElementById('officerLayerBlocks')?.checked);
+  const officerNamesChecked = Boolean(document.getElementById('officerLayerBlockNames')?.checked ?? true);
+  const officerStartsChecked = Boolean(document.getElementById('officerLayerBlockStarts')?.checked ?? true);
   officerBlocksLayer = L.layerGroup();
-  if (officerBlocksChecked) officerBlocksLayer.addTo(officerMonitorMapInst);
+  officerBlockNamesLayer = L.layerGroup();
+  officerBlockStartsLayer = L.layerGroup();
+  if (officerBlocksChecked) {
+    officerBlocksLayer.addTo(officerMonitorMapInst);
+    if (officerNamesChecked) officerBlockNamesLayer.addTo(officerMonitorMapInst);
+    if (officerStartsChecked) officerBlockStartsLayer.addTo(officerMonitorMapInst);
+  }
+  updateOfficerBlockSubTogglesUI(officerBlocksChecked);
 
   const officerFacChecked = document.getElementById('officerLayerFacilities') ? document.getElementById('officerLayerFacilities').checked : true;
   officerFacilitiesLayer = L.layerGroup();
@@ -1131,6 +1140,8 @@ function getBlockStartInfo(b){
 function renderOfficerBlocks(){
   if(!officerMonitorMapInst || !officerBlocksLayer) return;
   officerBlocksLayer.clearLayers();
+  if(officerBlockNamesLayer) officerBlockNamesLayer.clearLayers();
+  if(officerBlockStartsLayer) officerBlockStartsLayer.clearLayers();
   officerBlockPolygons = {};
 
   (officerBlocksData || []).forEach(b => {
@@ -1231,31 +1242,98 @@ function renderOfficerBlocks(){
 
     poly.addTo(officerBlocksLayer);
     if(!isFiltered){
-      labelMarker.addTo(officerBlocksLayer);
-      if(startMarker) startMarker.addTo(officerBlocksLayer);
+      if(officerBlockNamesLayer) labelMarker.addTo(officerBlockNamesLayer);
+      else labelMarker.addTo(officerBlocksLayer);
+      if(startMarker){
+        if(officerBlockStartsLayer) startMarker.addTo(officerBlockStartsLayer);
+        else startMarker.addTo(officerBlocksLayer);
+      }
     }
 
     officerBlockPolygons[b.block_number] = poly;
   });
 
   const toggle = document.getElementById('officerLayerBlocks');
+  const namesChecked = Boolean(document.getElementById('officerLayerBlockNames')?.checked ?? true);
+  const startsChecked = Boolean(document.getElementById('officerLayerBlockStarts')?.checked ?? true);
   if(toggle && officerMonitorMapInst && officerBlocksLayer){
     if(toggle.checked){
       if(!officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.addLayer(officerBlocksLayer);
+      if(officerBlockNamesLayer && namesChecked && !officerMonitorMapInst.hasLayer(officerBlockNamesLayer)) officerMonitorMapInst.addLayer(officerBlockNamesLayer);
+      if(officerBlockStartsLayer && startsChecked && !officerMonitorMapInst.hasLayer(officerBlockStartsLayer)) officerMonitorMapInst.addLayer(officerBlockStartsLayer);
     }else{
       if(officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.removeLayer(officerBlocksLayer);
+      if(officerBlockNamesLayer && officerMonitorMapInst.hasLayer(officerBlockNamesLayer)) officerMonitorMapInst.removeLayer(officerBlockNamesLayer);
+      if(officerBlockStartsLayer && officerMonitorMapInst.hasLayer(officerBlockStartsLayer)) officerMonitorMapInst.removeLayer(officerBlockStartsLayer);
     }
   }
+  updateOfficerBlockSubTogglesUI(Boolean(toggle?.checked));
+}
+
+function updateOfficerBlockSubTogglesUI(blocksActive){
+  const wrapNames = document.getElementById('wrap-officer-block-names');
+  const wrapStarts = document.getElementById('wrap-officer-block-starts');
+  const inputNames = document.getElementById('officerLayerBlockNames');
+  const inputStarts = document.getElementById('officerLayerBlockStarts');
+  if(wrapNames) wrapNames.classList.toggle('is-disabled', !blocksActive);
+  if(wrapStarts) wrapStarts.classList.toggle('is-disabled', !blocksActive);
+  if(inputNames) inputNames.disabled = !blocksActive;
+  if(inputStarts) inputStarts.disabled = !blocksActive;
 }
 
 function toggleOfficerBlocks(show){
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('officerLayerBlocks')?.checked);
+  const toggle = document.getElementById('officerLayerBlocks');
+  if(toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
   if(!officerMonitorMapInst || !officerBlocksLayer) return;
-  if(show){
+  if(!officerBlockNamesLayer) officerBlockNamesLayer = L.layerGroup();
+  if(!officerBlockStartsLayer) officerBlockStartsLayer = L.layerGroup();
+
+  const namesChecked = Boolean(document.getElementById('officerLayerBlockNames')?.checked ?? true);
+  const startsChecked = Boolean(document.getElementById('officerLayerBlockStarts')?.checked ?? true);
+  updateOfficerBlockSubTogglesUI(isChecked);
+
+  if(isChecked){
     if(!officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.addLayer(officerBlocksLayer);
+    if(namesChecked && !officerMonitorMapInst.hasLayer(officerBlockNamesLayer)) officerMonitorMapInst.addLayer(officerBlockNamesLayer);
+    if(startsChecked && !officerMonitorMapInst.hasLayer(officerBlockStartsLayer)) officerMonitorMapInst.addLayer(officerBlockStartsLayer);
+    if(!officerBlocksData || !officerBlocksData.length) loadOfficerBlocks();
   }else{
     if(officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.removeLayer(officerBlocksLayer);
+    if(officerMonitorMapInst.hasLayer(officerBlockNamesLayer)) officerMonitorMapInst.removeLayer(officerBlockNamesLayer);
+    if(officerMonitorMapInst.hasLayer(officerBlockStartsLayer)) officerMonitorMapInst.removeLayer(officerBlockStartsLayer);
   }
 }
+
+function toggleOfficerBlockNames(show){
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('officerLayerBlockNames')?.checked);
+  const toggle = document.getElementById('officerLayerBlockNames');
+  if(toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if(!officerMonitorMapInst || !officerBlockNamesLayer) return;
+  const blocksOn = Boolean(document.getElementById('officerLayerBlocks')?.checked);
+  if(isChecked && blocksOn){
+    if(!officerMonitorMapInst.hasLayer(officerBlockNamesLayer)) officerMonitorMapInst.addLayer(officerBlockNamesLayer);
+  }else{
+    if(officerMonitorMapInst.hasLayer(officerBlockNamesLayer)) officerMonitorMapInst.removeLayer(officerBlockNamesLayer);
+  }
+}
+
+function toggleOfficerBlockStarts(show){
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('officerLayerBlockStarts')?.checked);
+  const toggle = document.getElementById('officerLayerBlockStarts');
+  if(toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if(!officerMonitorMapInst || !officerBlockStartsLayer) return;
+  const blocksOn = Boolean(document.getElementById('officerLayerBlocks')?.checked);
+  if(isChecked && blocksOn){
+    if(!officerMonitorMapInst.hasLayer(officerBlockStartsLayer)) officerMonitorMapInst.addLayer(officerBlockStartsLayer);
+  }else{
+    if(officerMonitorMapInst.hasLayer(officerBlockStartsLayer)) officerMonitorMapInst.removeLayer(officerBlockStartsLayer);
+  }
+}
+window.toggleOfficerBlocks = toggleOfficerBlocks;
+window.toggleOfficerBlockNames = toggleOfficerBlockNames;
+window.toggleOfficerBlockStarts = toggleOfficerBlockStarts;
+window.updateOfficerBlockSubTogglesUI = updateOfficerBlockSubTogglesUI;
 
 function filterOfficerBlocks(blockNum){
   officerActiveBlock = blockNum || '';
@@ -1266,9 +1344,7 @@ function filterOfficerBlocks(blockNum){
     const toggle = document.getElementById('officerLayerBlocks');
     if (toggle && !toggle.checked) {
       toggle.checked = true;
-      if (officerMonitorMapInst && officerBlocksLayer && !officerMonitorMapInst.hasLayer(officerBlocksLayer)) {
-        officerMonitorMapInst.addLayer(officerBlocksLayer);
-      }
+      toggleOfficerBlocks(true);
     }
   }
 

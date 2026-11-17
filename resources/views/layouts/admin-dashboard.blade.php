@@ -853,6 +853,8 @@
               </button>
             </div>
             <label class="map-toggle" title="Toggle block partition boundaries"><input type="checkbox" id="layer-blocks" onchange="toggleMapBlocks(this.checked)"> Block Partitions</label>
+            <label class="map-toggle is-sub-toggle" id="wrap-layer-block-names" title="Toggle block name labels on the map"><input type="checkbox" id="layer-block-names" checked onchange="toggleMapBlockNames(this.checked)"> Block Names</label>
+            <label class="map-toggle is-sub-toggle" id="wrap-layer-block-starts" title="Toggle lot starting point directional markers"><input type="checkbox" id="layer-block-starts" checked onchange="toggleMapBlockStarts(this.checked)"> Lot Starts</label>
             <select id="filter-block-select" onchange="filterMapByBlock(this.value)" class="btn btn-sm" style="padding:4px 8px;font-size:12px;font-weight:600;" title="Filter map to a specific block">
               <option value="">All Blocks (1–14 · 338 Lots)</option>
               <option value="1">Block 1 — Lots 1–10 (Sky Blue)</option>
@@ -2740,6 +2742,8 @@ async function resetMapArea(){
 
 /* ══════════════ SUBDIVISION BLOCK PARTITIONS & EDITING ══════════════ */
 let layerBlocks = null;
+let layerBlockNames = null;
+let layerBlockStarts = null;
 let blocksData = [];
 let blockPolygons = {}; // key: block_number => L.polygon
 let blockLabelMarkers = {}; // key: block_number => L.marker
@@ -2759,8 +2763,12 @@ async function loadBlocksData() {
     blocksData = Array.isArray(data) ? data : [];
     if (mapInst && !layerBlocks) {
       layerBlocks = L.layerGroup();
+      if (!layerBlockNames) layerBlockNames = L.layerGroup();
+      if (!layerBlockStarts) layerBlockStarts = L.layerGroup();
       if (document.getElementById('layer-blocks')?.checked) {
         layerBlocks.addTo(mapInst);
+        if (document.getElementById('layer-block-names')?.checked ?? true) layerBlockNames.addTo(mapInst);
+        if (document.getElementById('layer-block-starts')?.checked ?? true) layerBlockStarts.addTo(mapInst);
       }
     }
     renderBlockPolygons();
@@ -2808,19 +2816,65 @@ function getBlockStartInfo(b) {
 }
 
 /* ── MAP LAYER TOGGLE HANDLERS (ADMIN) ── */
+function updateBlockSubTogglesUI(blocksActive) {
+  const wrapNames = document.getElementById('wrap-layer-block-names');
+  const wrapStarts = document.getElementById('wrap-layer-block-starts');
+  const inputNames = document.getElementById('layer-block-names');
+  const inputStarts = document.getElementById('layer-block-starts');
+  if (wrapNames) wrapNames.classList.toggle('is-disabled', !blocksActive);
+  if (wrapStarts) wrapStarts.classList.toggle('is-disabled', !blocksActive);
+  if (inputNames) inputNames.disabled = !blocksActive;
+  if (inputStarts) inputStarts.disabled = !blocksActive;
+}
+
 function toggleMapBlocks(show) {
   const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('layer-blocks')?.checked);
   const toggle = document.getElementById('layer-blocks');
   if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
   if (!mapInst) return;
-  if (!layerBlocks) {
-    layerBlocks = L.layerGroup();
-  }
+  if (!layerBlocks) layerBlocks = L.layerGroup();
+  if (!layerBlockNames) layerBlockNames = L.layerGroup();
+  if (!layerBlockStarts) layerBlockStarts = L.layerGroup();
+
+  const namesChecked = Boolean(document.getElementById('layer-block-names')?.checked ?? true);
+  const startsChecked = Boolean(document.getElementById('layer-block-starts')?.checked ?? true);
+  updateBlockSubTogglesUI(isChecked);
+
   if (isChecked) {
     if (!mapInst.hasLayer(layerBlocks)) mapInst.addLayer(layerBlocks);
+    if (namesChecked && !mapInst.hasLayer(layerBlockNames)) mapInst.addLayer(layerBlockNames);
+    if (startsChecked && !mapInst.hasLayer(layerBlockStarts)) mapInst.addLayer(layerBlockStarts);
     if (!blocksData || !blocksData.length) loadBlocksData();
   } else {
     if (mapInst.hasLayer(layerBlocks)) mapInst.removeLayer(layerBlocks);
+    if (mapInst.hasLayer(layerBlockNames)) mapInst.removeLayer(layerBlockNames);
+    if (mapInst.hasLayer(layerBlockStarts)) mapInst.removeLayer(layerBlockStarts);
+  }
+}
+
+function toggleMapBlockNames(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('layer-block-names')?.checked);
+  const toggle = document.getElementById('layer-block-names');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!mapInst || !layerBlockNames) return;
+  const blocksOn = Boolean(document.getElementById('layer-blocks')?.checked);
+  if (isChecked && blocksOn) {
+    if (!mapInst.hasLayer(layerBlockNames)) mapInst.addLayer(layerBlockNames);
+  } else {
+    if (mapInst.hasLayer(layerBlockNames)) mapInst.removeLayer(layerBlockNames);
+  }
+}
+
+function toggleMapBlockStarts(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('layer-block-starts')?.checked);
+  const toggle = document.getElementById('layer-block-starts');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!mapInst || !layerBlockStarts) return;
+  const blocksOn = Boolean(document.getElementById('layer-blocks')?.checked);
+  if (isChecked && blocksOn) {
+    if (!mapInst.hasLayer(layerBlockStarts)) mapInst.addLayer(layerBlockStarts);
+  } else {
+    if (mapInst.hasLayer(layerBlockStarts)) mapInst.removeLayer(layerBlockStarts);
   }
 }
 
@@ -2874,6 +2928,8 @@ function toggleMapHeatmap(show) {
 }
 
 window.toggleMapBlocks = toggleMapBlocks;
+window.toggleMapBlockNames = toggleMapBlockNames;
+window.toggleMapBlockStarts = toggleMapBlockStarts;
 window.toggleMapFacilities = toggleMapFacilities;
 window.toggleMapIssues = toggleMapIssues;
 window.toggleMapHeatmap = toggleMapHeatmap;
@@ -2881,13 +2937,12 @@ window.toggleMapHeatmap = toggleMapHeatmap;
 function renderBlockPolygons() {
   if (!mapInst) return;
   if (window.SubUI && SubUI.enableDynamicPinScaling) SubUI.enableDynamicPinScaling(mapInst);
-  if (!layerBlocks) {
-    layerBlocks = L.layerGroup();
-    if (document.getElementById('layer-blocks')?.checked && mapInst) {
-      layerBlocks.addTo(mapInst);
-    }
-  }
+  if (!layerBlocks) layerBlocks = L.layerGroup();
+  if (!layerBlockNames) layerBlockNames = L.layerGroup();
+  if (!layerBlockStarts) layerBlockStarts = L.layerGroup();
   layerBlocks.clearLayers();
+  layerBlockNames.clearLayers();
+  layerBlockStarts.clearLayers();
   blockPolygons = {};
   blockLabelMarkers = {};
   blockStartMarkers = {};
@@ -3080,8 +3135,8 @@ function renderBlockPolygons() {
 
     poly.addTo(layerBlocks);
     if (!isFiltered) {
-      labelMarker.addTo(layerBlocks);
-      if (startMarker) startMarker.addTo(layerBlocks);
+      labelMarker.addTo(layerBlockNames);
+      if (startMarker) startMarker.addTo(layerBlockStarts);
     }
 
     blockPolygons[b.block_number] = poly;
@@ -3089,14 +3144,25 @@ function renderBlockPolygons() {
     if (startMarker) blockStartMarkers[b.block_number] = startMarker;
   });
 
-  const blockToggle = document.getElementById('layer-blocks');
-  if (blockToggle && mapInst && layerBlocks) {
-    if (blockToggle.checked) {
+  const blocksOn = Boolean(document.getElementById('layer-blocks')?.checked);
+  const namesOn = Boolean(document.getElementById('layer-block-names')?.checked ?? true);
+  const startsOn = Boolean(document.getElementById('layer-block-starts')?.checked ?? true);
+
+  if (mapInst) {
+    if (blocksOn) {
       if (!mapInst.hasLayer(layerBlocks)) mapInst.addLayer(layerBlocks);
+      if ((namesOn || editingBlocks) && !mapInst.hasLayer(layerBlockNames)) mapInst.addLayer(layerBlockNames);
+      else if (!namesOn && !editingBlocks && mapInst.hasLayer(layerBlockNames)) mapInst.removeLayer(layerBlockNames);
+
+      if ((startsOn || editingBlocks) && !mapInst.hasLayer(layerBlockStarts)) mapInst.addLayer(layerBlockStarts);
+      else if (!startsOn && !editingBlocks && mapInst.hasLayer(layerBlockStarts)) mapInst.removeLayer(layerBlockStarts);
     } else {
       if (mapInst.hasLayer(layerBlocks)) mapInst.removeLayer(layerBlocks);
+      if (mapInst.hasLayer(layerBlockNames)) mapInst.removeLayer(layerBlockNames);
+      if (mapInst.hasLayer(layerBlockStarts)) mapInst.removeLayer(layerBlockStarts);
     }
   }
+  updateBlockSubTogglesUI(blocksOn);
 }
 
 function findClosestSegment(latlng, coords) {
@@ -4496,12 +4562,21 @@ function initMap() {
   }).addTo(mapInst);
 
   const blockInitChecked = Boolean(document.getElementById('layer-blocks')?.checked);
+  const namesInitChecked = Boolean(document.getElementById('layer-block-names')?.checked ?? true);
+  const startsInitChecked = Boolean(document.getElementById('layer-block-starts')?.checked ?? true);
   const facInitChecked = document.getElementById('layer-facilities') ? document.getElementById('layer-facilities').checked : true;
   const issueInitChecked = document.getElementById('layer-issues') ? document.getElementById('layer-issues').checked : true;
   const heatInitChecked = Boolean(document.getElementById('layer-heat')?.checked);
 
-  layerBlocks     = L.layerGroup();
-  if (blockInitChecked) layerBlocks.addTo(mapInst);
+  layerBlocks      = L.layerGroup();
+  layerBlockNames  = L.layerGroup();
+  layerBlockStarts = L.layerGroup();
+  if (blockInitChecked) {
+    layerBlocks.addTo(mapInst);
+    if (namesInitChecked) layerBlockNames.addTo(mapInst);
+    if (startsInitChecked) layerBlockStarts.addTo(mapInst);
+  }
+  updateBlockSubTogglesUI(blockInitChecked);
 
   layerHouseholds = L.layerGroup(); // individual lot dots removed per simplified subdivision map
 
@@ -4528,6 +4603,14 @@ function initMap() {
   const blocksToggle = document.getElementById('layer-blocks');
   if (blocksToggle) {
     blocksToggle.onchange = function() { toggleMapBlocks(this.checked); };
+  }
+  const blockNamesToggle = document.getElementById('layer-block-names');
+  if (blockNamesToggle) {
+    blockNamesToggle.onchange = function() { toggleMapBlockNames(this.checked); };
+  }
+  const blockStartsToggle = document.getElementById('layer-block-starts');
+  if (blockStartsToggle) {
+    blockStartsToggle.onchange = function() { toggleMapBlockStarts(this.checked); };
   }
   const facToggle = document.getElementById('layer-facilities');
   if (facToggle) {

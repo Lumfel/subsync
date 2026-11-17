@@ -530,6 +530,12 @@
           <label class="map-toggle" title="Toggle block partition boundaries">
             <input type="checkbox" id="res-layer-blocks" onchange="toggleResidentBlocks(this.checked)"> Block Partitions
           </label>
+          <label class="map-toggle is-sub-toggle" id="wrap-res-block-names" title="Toggle block name labels on the map">
+            <input type="checkbox" id="res-layer-block-names" checked onchange="toggleResidentBlockNames(this.checked)"> Block Names
+          </label>
+          <label class="map-toggle is-sub-toggle" id="wrap-res-block-starts" title="Toggle lot starting point directional markers">
+            <input type="checkbox" id="res-layer-block-starts" checked onchange="toggleResidentBlockStarts(this.checked)"> Lot Starts
+          </label>
           <select id="res-filter-block" onchange="filterResidentBlocks(this.value)" class="btn btn-sm" style="padding:4px 8px;font-size:12px;font-weight:600;" title="Filter map to a specific block">
             <option value="">All Blocks (1–14 · 338 Lots)</option>
             <option value="1">Block 1 — Lots 1–10 (Sky Blue)</option>
@@ -1100,6 +1106,8 @@ function loadLeaflet(){
 const RES_CENTER = [10.62269, 122.96134];
 let resMapInst = null;
 let resBlocksLayer = null;
+let resBlockNamesLayer = null;
+let resBlockStartsLayer = null;
 let resFacilitiesLayer = null;
 let resIssuesLayer = null;
 let resHouseholdLayer = null;
@@ -1109,6 +1117,17 @@ let resBlocksData = [];
 let resActiveBlock = '';
 let resBlockPolygons = {};
 let resMapIssuesData = [];
+
+function updateResidentBlockSubTogglesUI(blocksActive) {
+  const wrapNames = document.getElementById('wrap-res-block-names');
+  const wrapStarts = document.getElementById('wrap-res-block-starts');
+  const inputNames = document.getElementById('res-layer-block-names');
+  const inputStarts = document.getElementById('res-layer-block-starts');
+  if (wrapNames) wrapNames.classList.toggle('is-disabled', !blocksActive);
+  if (wrapStarts) wrapStarts.classList.toggle('is-disabled', !blocksActive);
+  if (inputNames) inputNames.disabled = !blocksActive;
+  if (inputStarts) inputStarts.disabled = !blocksActive;
+}
 
 function toggleResidentFacilities(show) {
   const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('res-layer-facilities')?.checked);
@@ -1377,8 +1396,17 @@ function initResidentMap() {
     }).addTo(resMapInst);
 
     const resBlocksChecked = Boolean(document.getElementById('res-layer-blocks')?.checked);
+    const resNamesChecked = Boolean(document.getElementById('res-layer-block-names')?.checked ?? true);
+    const resStartsChecked = Boolean(document.getElementById('res-layer-block-starts')?.checked ?? true);
     resBlocksLayer = L.layerGroup();
-    if (resBlocksChecked) resBlocksLayer.addTo(resMapInst);
+    resBlockNamesLayer = L.layerGroup();
+    resBlockStartsLayer = L.layerGroup();
+    if (resBlocksChecked) {
+      resBlocksLayer.addTo(resMapInst);
+      if (resNamesChecked) resBlockNamesLayer.addTo(resMapInst);
+      if (resStartsChecked) resBlockStartsLayer.addTo(resMapInst);
+    }
+    updateResidentBlockSubTogglesUI(resBlocksChecked);
 
     const resFacChecked = document.getElementById('res-layer-facilities') ? document.getElementById('res-layer-facilities').checked : true;
     resFacilitiesLayer = L.layerGroup();
@@ -1451,6 +1479,8 @@ function getBlockStartInfo(b){
 function renderResidentBlocks() {
   if (!resMapInst || !resBlocksLayer) return;
   resBlocksLayer.clearLayers();
+  if (resBlockNamesLayer) resBlockNamesLayer.clearLayers();
+  if (resBlockStartsLayer) resBlockStartsLayer.clearLayers();
   resBlockPolygons = {};
 
   (resBlocksData || []).forEach(b => {
@@ -1548,31 +1578,88 @@ function renderResidentBlocks() {
 
     poly.addTo(resBlocksLayer);
     if (!isFiltered) {
-      labelMarker.addTo(resBlocksLayer);
-      if (startMarker) startMarker.addTo(resBlocksLayer);
+      if (resBlockNamesLayer) labelMarker.addTo(resBlockNamesLayer);
+      else labelMarker.addTo(resBlocksLayer);
+      if (startMarker) {
+        if (resBlockStartsLayer) startMarker.addTo(resBlockStartsLayer);
+        else startMarker.addTo(resBlocksLayer);
+      }
     }
 
     resBlockPolygons[b.block_number] = poly;
   });
 
   const toggle = document.getElementById('res-layer-blocks');
+  const namesChecked = Boolean(document.getElementById('res-layer-block-names')?.checked ?? true);
+  const startsChecked = Boolean(document.getElementById('res-layer-block-starts')?.checked ?? true);
   if (toggle && resMapInst && resBlocksLayer) {
     if (toggle.checked) {
       if (!resMapInst.hasLayer(resBlocksLayer)) resMapInst.addLayer(resBlocksLayer);
+      if (resBlockNamesLayer && namesChecked && !resMapInst.hasLayer(resBlockNamesLayer)) resMapInst.addLayer(resBlockNamesLayer);
+      if (resBlockStartsLayer && startsChecked && !resMapInst.hasLayer(resBlockStartsLayer)) resMapInst.addLayer(resBlockStartsLayer);
     } else {
       if (resMapInst.hasLayer(resBlocksLayer)) resMapInst.removeLayer(resBlocksLayer);
+      if (resBlockNamesLayer && resMapInst.hasLayer(resBlockNamesLayer)) resMapInst.removeLayer(resBlockNamesLayer);
+      if (resBlockStartsLayer && resMapInst.hasLayer(resBlockStartsLayer)) resMapInst.removeLayer(resBlockStartsLayer);
     }
   }
+  updateResidentBlockSubTogglesUI(Boolean(toggle?.checked));
 }
 
 function toggleResidentBlocks(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('res-layer-blocks')?.checked);
+  const toggle = document.getElementById('res-layer-blocks');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
   if (!resMapInst || !resBlocksLayer) return;
-  if (show) {
+  if (!resBlockNamesLayer) resBlockNamesLayer = L.layerGroup();
+  if (!resBlockStartsLayer) resBlockStartsLayer = L.layerGroup();
+
+  const namesChecked = Boolean(document.getElementById('res-layer-block-names')?.checked ?? true);
+  const startsChecked = Boolean(document.getElementById('res-layer-block-starts')?.checked ?? true);
+  updateResidentBlockSubTogglesUI(isChecked);
+
+  if (isChecked) {
     if (!resMapInst.hasLayer(resBlocksLayer)) resMapInst.addLayer(resBlocksLayer);
+    if (namesChecked && !resMapInst.hasLayer(resBlockNamesLayer)) resMapInst.addLayer(resBlockNamesLayer);
+    if (startsChecked && !resMapInst.hasLayer(resBlockStartsLayer)) resMapInst.addLayer(resBlockStartsLayer);
+    if (!resBlocksData || !resBlocksData.length) loadResidentBlocks();
   } else {
     if (resMapInst.hasLayer(resBlocksLayer)) resMapInst.removeLayer(resBlocksLayer);
+    if (resMapInst.hasLayer(resBlockNamesLayer)) resMapInst.removeLayer(resBlockNamesLayer);
+    if (resMapInst.hasLayer(resBlockStartsLayer)) resMapInst.removeLayer(resBlockStartsLayer);
   }
 }
+
+function toggleResidentBlockNames(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('res-layer-block-names')?.checked);
+  const toggle = document.getElementById('res-layer-block-names');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!resMapInst || !resBlockNamesLayer) return;
+  const blocksOn = Boolean(document.getElementById('res-layer-blocks')?.checked);
+  if (isChecked && blocksOn) {
+    if (!resMapInst.hasLayer(resBlockNamesLayer)) resMapInst.addLayer(resBlockNamesLayer);
+  } else {
+    if (resMapInst.hasLayer(resBlockNamesLayer)) resMapInst.removeLayer(resBlockNamesLayer);
+  }
+}
+
+function toggleResidentBlockStarts(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('res-layer-block-starts')?.checked);
+  const toggle = document.getElementById('res-layer-block-starts');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!resMapInst || !resBlockStartsLayer) return;
+  const blocksOn = Boolean(document.getElementById('res-layer-blocks')?.checked);
+  if (isChecked && blocksOn) {
+    if (!resMapInst.hasLayer(resBlockStartsLayer)) resMapInst.addLayer(resBlockStartsLayer);
+  } else {
+    if (resMapInst.hasLayer(resBlockStartsLayer)) resMapInst.removeLayer(resBlockStartsLayer);
+  }
+}
+
+window.toggleResidentBlocks = toggleResidentBlocks;
+window.toggleResidentBlockNames = toggleResidentBlockNames;
+window.toggleResidentBlockStarts = toggleResidentBlockStarts;
+window.updateResidentBlockSubTogglesUI = updateResidentBlockSubTogglesUI;
 
 function filterResidentBlocks(blockNum) {
   resActiveBlock = blockNum || '';
@@ -1583,9 +1670,7 @@ function filterResidentBlocks(blockNum) {
     const toggle = document.getElementById('res-layer-blocks');
     if (toggle && !toggle.checked) {
       toggle.checked = true;
-      if (resMapInst && resBlocksLayer && !resMapInst.hasLayer(resBlocksLayer)) {
-        resMapInst.addLayer(resBlocksLayer);
-      }
+      toggleResidentBlocks(true);
     }
   }
 

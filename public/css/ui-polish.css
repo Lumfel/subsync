@@ -2418,6 +2418,19 @@ html[data-theme="dark"] .map-zoomed-far:not(.editing-blocks-active) .sub-block-s
   cursor: grabbing !important;
 }
 
+/* ── Block Sub-Toggles (Names & Lot Starts) ── */
+.map-toggle.is-sub-toggle {
+  font-size: 11.5px;
+  padding: 3px 8px;
+  gap: 4px;
+  transition: opacity 0.15s ease;
+}
+.map-toggle.is-disabled {
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
 /* Block vertex & midpoint handles for block boundary editing */
 .block-vertex-handle {
   width: 14px;

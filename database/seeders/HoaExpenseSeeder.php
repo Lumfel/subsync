@@ -20,57 +20,134 @@ class HoaExpenseSeeder extends Seeder
             [
                 'title' => 'Monthly Landscaping Service',
                 'description' => 'Professional landscaping maintenance for common areas, parks, and walkways throughout the subdivision.',
-                'amount' => 1200.00,
+                'amount' => 12000.00,
                 'expense_date' => '2026-09-01',
-                'category' => 'Maintenance',
+                'category' => 'Landscaping',
                 'status' => 'Paid',
+                'fund' => 'Operating',
                 'receipt_path' => 'uploads/expenses/landscaping_sept_2026.pdf',
             ],
             [
                 'title' => 'Community Pool Maintenance',
                 'description' => 'Monthly pool cleaning, chemical balancing, and equipment inspection for the subdivision swimming pool.',
-                'amount' => 800.00,
+                'amount' => 6500.00,
                 'expense_date' => '2026-09-05',
                 'category' => 'Amenities',
                 'status' => 'Paid',
+                'fund' => 'Operating',
                 'receipt_path' => 'uploads/expenses/pool_maintenance_sept_2026.pdf',
             ],
             [
                 'title' => 'Security Guard Services',
-                'description' => 'Monthly contract for 24/7 security personnel at subdivision entrances and patrols.',
-                'amount' => 2500.00,
+                'description' => 'Monthly contract for 24/7 security personnel at subdivision entrances and perimeter patrols.',
+                'amount' => 25000.00,
                 'expense_date' => '2026-09-10',
                 'category' => 'Security',
                 'status' => 'Paid',
+                'fund' => 'Operating',
                 'receipt_path' => 'uploads/expenses/security_sept_2026.pdf',
             ],
             [
-                'title' => 'Liability Insurance Premium',
-                'description' => 'Quarterly payment for subdivision liability insurance covering common areas and amenities.',
-                'amount' => 1500.00,
+                'title' => 'Comprehensive Liability Insurance',
+                'description' => 'Annual premium for subdivision liability insurance covering all common facilities, playgrounds, and amenities.',
+                'amount' => 15000.00,
                 'expense_date' => '2026-09-15',
                 'category' => 'Insurance',
                 'status' => 'Paid',
+                'fund' => 'Reserve',
                 'receipt_path' => 'uploads/expenses/insurance_q3_2026.pdf',
             ],
             [
-                'title' => 'Clubhouse Utilities',
-                'description' => 'Electricity, water, and gas for the community clubhouse and meeting facilities.',
-                'amount' => 450.00,
+                'title' => 'Clubhouse & Common Area Utilities',
+                'description' => 'Electricity, streetlighting power grid, and water utilities for the community clubhouse and facilities.',
+                'amount' => 8450.00,
                 'expense_date' => '2026-09-20',
                 'category' => 'Utilities',
                 'status' => 'Paid',
+                'fund' => 'Operating',
                 'receipt_path' => 'uploads/expenses/utilities_sept_2026.pdf',
+            ],
+            [
+                'title' => 'Drainage Sump Pump Servicing & Desilting',
+                'description' => 'Preventive desilting of main drainage canals and mechanical servicing of the flood sump pump.',
+                'amount' => 9500.00,
+                'expense_date' => '2026-09-25',
+                'category' => 'Maintenance',
+                'status' => 'Paid',
+                'fund' => 'Operating',
+                'receipt_path' => 'uploads/expenses/drainage_sept_2026.pdf',
+            ],
+            [
+                'title' => 'Perimeter CCTV & Guardhouse Hardware Maintenance',
+                'description' => 'Quarterly maintenance, camera lens cleaning, and DVR backup storage replacement for entrance gate.',
+                'amount' => 5200.00,
+                'expense_date' => '2026-09-28',
+                'category' => 'Security',
+                'status' => 'Paid',
+                'fund' => 'Operating',
+                'receipt_path' => 'uploads/expenses/cctv_sept_2026.pdf',
+            ],
+            [
+                'title' => 'Clubhouse Air Conditioning Preventive Servicing',
+                'description' => 'Cleaning and freon replenishment for 4 split-type inverter air conditioning units in the multi-purpose hall.',
+                'amount' => 3500.00,
+                'expense_date' => '2026-10-02',
+                'category' => 'Maintenance',
+                'status' => 'Paid',
+                'fund' => 'Operating',
+                'receipt_path' => 'uploads/expenses/aircon_oct_2026.pdf',
+            ],
+            [
+                'title' => 'Subdivision Waste Hauling Subsidy',
+                'description' => 'Supplemental segregated recycling and solid waste hauling service for community cleanliness.',
+                'amount' => 7200.00,
+                'expense_date' => '2026-10-05',
+                'category' => 'Maintenance',
+                'status' => 'Paid',
+                'fund' => 'Operating',
+                'receipt_path' => 'uploads/expenses/waste_oct_2026.pdf',
+            ],
+            [
+                'title' => 'Annual Independent Financial Audit',
+                'description' => 'Professional CPA engagement for independent audit of HOA treasury and fiscal reporting.',
+                'amount' => 18000.00,
+                'expense_date' => '2026-10-10',
+                'category' => 'Administrative',
+                'status' => 'Paid',
+                'fund' => 'Operating',
+                'receipt_path' => 'uploads/expenses/audit_oct_2026.pdf',
+            ],
+            [
+                'title' => 'General Community Assembly Logistics & Refreshments',
+                'description' => 'Sound system rental, chairs, and light refreshments for the annual community election and general assembly.',
+                'amount' => 4500.00,
+                'expense_date' => '2026-10-15',
+                'category' => 'Events',
+                'status' => 'Paid',
+                'fund' => 'Operating',
+                'receipt_path' => 'uploads/expenses/assembly_oct_2026.pdf',
+            ],
+            [
+                'title' => 'Street Tree Trimming & Hazard Mitigation',
+                'description' => 'Professional arborist service to trim branches interfering with overhead power lines along Blocks 1-4.',
+                'amount' => 6800.00,
+                'expense_date' => '2026-10-18',
+                'category' => 'Maintenance',
+                'status' => 'Paid',
+                'fund' => 'Operating',
+                'receipt_path' => 'uploads/expenses/tree_trimming_oct_2026.pdf',
             ],
         ];
 
         foreach ($expenses as $expense) {
-            Storage::disk('public')->put(
-                $expense['receipt_path'],
-                $this->placeholderReceipt($expense['title'], $expense['amount'], $expense['expense_date'])
-            );
+            $pdf = $this->placeholderReceipt($expense['title'], $expense['amount'], $expense['expense_date']);
+            Storage::disk('public')->put($expense['receipt_path'], $pdf);
+            Storage::disk('local')->put($expense['receipt_path'], $pdf);
 
-            HoaExpense::create($expense);
+            HoaExpense::firstOrCreate(
+                ['title' => $expense['title']],
+                $expense
+            );
         }
     }
 

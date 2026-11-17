@@ -1,0 +1,784 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2560 1420" width="2560" height="1420">
+<defs>
+<style>
+
+        text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        .tbl-title { font-size: 13px; font-weight: 700; letter-spacing: 0.5px; fill: #0F172A; }
+        .type-txt { font-size: 11px; fill: #64748B; }
+        .name-txt { font-size: 11.5px; font-weight: 500; fill: #1E293B; }
+        .pk-txt { font-size: 10.5px; font-weight: 700; fill: #0284C7; }
+        .fk-txt { font-size: 10.5px; font-weight: 600; fill: #475569; }
+        .erd-line { fill: none; stroke: #334155; stroke-width: 1.4px; stroke-linejoin: round; stroke-linecap: round; }
+    
+</style>
+</defs>
+<rect width="2560" height="1420" fill="#FFFFFF"/>
+<text x="60" y="55" font-size="22" font-weight="800" fill="#0F172A">SubSync — Entity Relationship Diagram (ERD)</text>
+<text x="60" y="80" font-size="13" fill="#64748B">Core System Database Architecture • Independent Attribute Connection Ports (Unbundled Relations)</text>
+<g transform="translate(1920, 20)">
+<rect width="400" height="32" rx="4" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="20" y1="16" x2="60" y2="16" stroke="#334155" stroke-width="1.4"/>
+<line x1="24" y1="10" x2="24" y2="22" stroke="#334155" stroke-width="1.4"/><line x1="28" y1="10" x2="28" y2="22" stroke="#334155" stroke-width="1.4"/>
+<text x="70" y="20" font-size="11" font-weight="600" fill="#334155">One (1)</text>
+<line x1="140" y1="16" x2="180" y2="16" stroke="#334155" stroke-width="1.4"/>
+<line x1="180" y1="16" x2="171" y2="10" stroke="#334155" stroke-width="1.4"/><line x1="180" y1="16" x2="171" y2="22" stroke="#334155" stroke-width="1.4"/><line x1="169" y1="10" x2="169" y2="22" stroke="#334155" stroke-width="1.4"/>
+<text x="190" y="20" font-size="11" font-weight="600" fill="#334155">Many (N)</text>
+<rect x="270" y="8" width="40" height="16" rx="2" fill="#E0F2FE"/>
+<text x="290" y="20" font-size="10" font-weight="700" fill="#0284C7" text-anchor="middle">PK</text>
+<rect x="325" y="8" width="40" height="16" rx="2" fill="#F1F5F9"/>
+<text x="345" y="20" font-size="10" font-weight="700" fill="#475569" text-anchor="middle">FK</text>
+</g>
+<path d="M 685,208 L 703,208 L 703,430 L 310,430 L 310,549 L 340,549" class="erd-line"/>
+<line x1="689" y1="202" x2="689" y2="214" stroke="#334155" stroke-width="1.4"/><line x1="693" y1="202" x2="693" y2="214" stroke="#334155" stroke-width="1.4"/>
+<line x1="340" y1="549" x2="331" y2="543" stroke="#334155" stroke-width="1.4"/><line x1="340" y1="549" x2="331" y2="555" stroke="#334155" stroke-width="1.4"/><line x1="329" y1="543" x2="329" y2="555" stroke="#334155" stroke-width="1.4"/>
+<path d="M 685,218 L 715,218 L 715,569 L 720,569" class="erd-line"/>
+<line x1="689" y1="212" x2="689" y2="224" stroke="#334155" stroke-width="1.4"/><line x1="693" y1="212" x2="693" y2="224" stroke="#334155" stroke-width="1.4"/>
+<line x1="720" y1="569" x2="711" y2="563" stroke="#334155" stroke-width="1.4"/><line x1="720" y1="569" x2="711" y2="575" stroke="#334155" stroke-width="1.4"/><line x1="709" y1="563" x2="709" y2="575" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1305,428 L 1370,428 L 1370,469 L 1460,469" class="erd-line"/>
+<line x1="1309" y1="422" x2="1309" y2="434" stroke="#334155" stroke-width="1.4"/><line x1="1313" y1="422" x2="1313" y2="434" stroke="#334155" stroke-width="1.4"/>
+<line x1="1460" y1="469" x2="1451" y2="463" stroke="#334155" stroke-width="1.4"/><line x1="1460" y1="469" x2="1451" y2="475" stroke="#334155" stroke-width="1.4"/><line x1="1449" y1="463" x2="1449" y2="475" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1305,436 L 1390,436 L 1390,370 L 2180,370 L 2180,729 L 2220,729" class="erd-line"/>
+<line x1="1309" y1="430" x2="1309" y2="442" stroke="#334155" stroke-width="1.4"/><line x1="1313" y1="430" x2="1313" y2="442" stroke="#334155" stroke-width="1.4"/>
+<line x1="2220" y1="729" x2="2211" y2="723" stroke="#334155" stroke-width="1.4"/><line x1="2220" y1="729" x2="2211" y2="735" stroke="#334155" stroke-width="1.4"/><line x1="2209" y1="723" x2="2209" y2="735" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1305,444 L 1410,444 L 1410,920 L 1650,920 L 1650,1054 L 1680,1054" class="erd-line"/>
+<line x1="1309" y1="438" x2="1309" y2="450" stroke="#334155" stroke-width="1.4"/><line x1="1313" y1="438" x2="1313" y2="450" stroke="#334155" stroke-width="1.4"/>
+<line x1="1680" y1="1054" x2="1671" y2="1048" stroke="#334155" stroke-width="1.4"/><line x1="1680" y1="1054" x2="1671" y2="1060" stroke="#334155" stroke-width="1.4"/><line x1="1669" y1="1048" x2="1669" y2="1060" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1130,390 L 1130,310 L 1350,310 L 1350,109 L 1380,109" class="erd-line"/>
+<line x1="1124" y1="386" x2="1136" y2="386" stroke="#334155" stroke-width="1.4"/><line x1="1124" y1="382" x2="1136" y2="382" stroke="#334155" stroke-width="1.4"/>
+<line x1="1380" y1="109" x2="1371" y2="103" stroke="#334155" stroke-width="1.4"/><line x1="1380" y1="109" x2="1371" y2="115" stroke="#334155" stroke-width="1.4"/><line x1="1369" y1="103" x2="1369" y2="115" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1180,390 L 1180,290 L 1840,290 L 1840,129 L 1880,129" class="erd-line"/>
+<line x1="1174" y1="386" x2="1186" y2="386" stroke="#334155" stroke-width="1.4"/><line x1="1174" y1="382" x2="1186" y2="382" stroke="#334155" stroke-width="1.4"/>
+<line x1="1880" y1="129" x2="1871" y2="123" stroke="#334155" stroke-width="1.4"/><line x1="1880" y1="129" x2="1871" y2="135" stroke="#334155" stroke-width="1.4"/><line x1="1869" y1="123" x2="1869" y2="135" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1120,622 L 1120,880 L 1140,880 L 1140,1099 L 1170,1099" class="erd-line"/>
+<line x1="1114" y1="626" x2="1126" y2="626" stroke="#334155" stroke-width="1.4"/><line x1="1114" y1="630" x2="1126" y2="630" stroke="#334155" stroke-width="1.4"/>
+<line x1="1170" y1="1099" x2="1161" y2="1093" stroke="#334155" stroke-width="1.4"/><line x1="1170" y1="1099" x2="1161" y2="1105" stroke="#334155" stroke-width="1.4"/><line x1="1159" y1="1093" x2="1159" y2="1105" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1080,622 L 1080,895 L 1040,895 L 1040,1074 L 1015,1074" class="erd-line"/>
+<line x1="1074" y1="626" x2="1086" y2="626" stroke="#334155" stroke-width="1.4"/><line x1="1074" y1="630" x2="1086" y2="630" stroke="#334155" stroke-width="1.4"/>
+<line x1="1015" y1="1074" x2="1024" y2="1068" stroke="#334155" stroke-width="1.4"/><line x1="1015" y1="1074" x2="1024" y2="1080" stroke="#334155" stroke-width="1.4"/><line x1="1026" y1="1068" x2="1026" y2="1080" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1520,400 L 1520,280 L 1330,280 L 1330,134 L 1380,134" class="erd-line"/>
+<line x1="1514" y1="396" x2="1526" y2="396" stroke="#334155" stroke-width="1.4"/><line x1="1514" y1="392" x2="1526" y2="392" stroke="#334155" stroke-width="1.4"/>
+<line x1="1380" y1="134" x2="1371" y2="128" stroke="#334155" stroke-width="1.4"/><line x1="1380" y1="134" x2="1371" y2="140" stroke="#334155" stroke-width="1.4"/><line x1="1369" y1="128" x2="1369" y2="140" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1705,444 L 1800,444 L 1800,154 L 1880,154" class="erd-line"/>
+<line x1="1709" y1="438" x2="1709" y2="450" stroke="#334155" stroke-width="1.4"/><line x1="1713" y1="438" x2="1713" y2="450" stroke="#334155" stroke-width="1.4"/>
+<line x1="1880" y1="154" x2="1871" y2="148" stroke="#334155" stroke-width="1.4"/><line x1="1880" y1="154" x2="1871" y2="160" stroke="#334155" stroke-width="1.4"/><line x1="1869" y1="148" x2="1869" y2="160" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1490,657 L 1490,870 L 1440,870 L 1440,1074 L 1415,1074" class="erd-line"/>
+<line x1="1484" y1="661" x2="1496" y2="661" stroke="#334155" stroke-width="1.4"/><line x1="1484" y1="665" x2="1496" y2="665" stroke="#334155" stroke-width="1.4"/>
+<line x1="1415" y1="1074" x2="1424" y2="1068" stroke="#334155" stroke-width="1.4"/><line x1="1415" y1="1074" x2="1424" y2="1080" stroke="#334155" stroke-width="1.4"/><line x1="1426" y1="1068" x2="1426" y2="1080" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1550,657 L 1550,890 L 1630,890 L 1630,1079 L 1680,1079" class="erd-line"/>
+<line x1="1544" y1="661" x2="1556" y2="661" stroke="#334155" stroke-width="1.4"/><line x1="1544" y1="665" x2="1556" y2="665" stroke="#334155" stroke-width="1.4"/>
+<line x1="1680" y1="1079" x2="1671" y2="1073" stroke="#334155" stroke-width="1.4"/><line x1="1680" y1="1079" x2="1671" y2="1085" stroke="#334155" stroke-width="1.4"/><line x1="1669" y1="1073" x2="1669" y2="1085" stroke="#334155" stroke-width="1.4"/>
+<path d="M 340,516 L 240,516 L 240,78 L 910,78 L 910,109 L 940,109" class="erd-line"/>
+<line x1="336" y1="510" x2="336" y2="522" stroke="#334155" stroke-width="1.4"/><line x1="332" y1="510" x2="332" y2="522" stroke="#334155" stroke-width="1.4"/>
+<line x1="940" y1="109" x2="931" y2="103" stroke="#334155" stroke-width="1.4"/><line x1="940" y1="109" x2="931" y2="115" stroke="#334155" stroke-width="1.4"/><line x1="929" y1="103" x2="929" y2="115" stroke="#334155" stroke-width="1.4"/>
+<path d="M 340,524 L 260,524 L 260,920 L 40,920 L 40,1029 L 60,1029" class="erd-line"/>
+<line x1="336" y1="518" x2="336" y2="530" stroke="#334155" stroke-width="1.4"/><line x1="332" y1="518" x2="332" y2="530" stroke="#334155" stroke-width="1.4"/>
+<line x1="60" y1="1029" x2="51" y2="1023" stroke="#334155" stroke-width="1.4"/><line x1="60" y1="1029" x2="51" y2="1035" stroke="#334155" stroke-width="1.4"/><line x1="49" y1="1023" x2="49" y2="1035" stroke="#334155" stroke-width="1.4"/>
+<path d="M 340,532 L 280,532 L 280,890 L 390,890 L 390,1089 L 420,1089" class="erd-line"/>
+<line x1="336" y1="526" x2="336" y2="538" stroke="#334155" stroke-width="1.4"/><line x1="332" y1="526" x2="332" y2="538" stroke="#334155" stroke-width="1.4"/>
+<line x1="420" y1="1089" x2="411" y2="1083" stroke="#334155" stroke-width="1.4"/><line x1="420" y1="1089" x2="411" y2="1095" stroke="#334155" stroke-width="1.4"/><line x1="409" y1="1083" x2="409" y2="1095" stroke="#334155" stroke-width="1.4"/>
+<path d="M 480,762 L 480,860 L 740,860 L 740,1049 L 770,1049" class="erd-line"/>
+<line x1="474" y1="766" x2="486" y2="766" stroke="#334155" stroke-width="1.4"/><line x1="474" y1="770" x2="486" y2="770" stroke="#334155" stroke-width="1.4"/>
+<line x1="770" y1="1049" x2="761" y2="1043" stroke="#334155" stroke-width="1.4"/><line x1="770" y1="1049" x2="761" y2="1055" stroke="#334155" stroke-width="1.4"/><line x1="759" y1="1043" x2="759" y2="1055" stroke="#334155" stroke-width="1.4"/>
+<path d="M 585,520 L 615,520 L 615,800 L 1820,800 L 1820,179 L 1880,179" class="erd-line"/>
+<line x1="589" y1="514" x2="589" y2="526" stroke="#334155" stroke-width="1.4"/><line x1="593" y1="514" x2="593" y2="526" stroke="#334155" stroke-width="1.4"/>
+<line x1="1880" y1="179" x2="1871" y2="173" stroke="#334155" stroke-width="1.4"/><line x1="1880" y1="179" x2="1871" y2="185" stroke="#334155" stroke-width="1.4"/><line x1="1869" y1="173" x2="1869" y2="185" stroke="#334155" stroke-width="1.4"/>
+<path d="M 530,762 L 530,840 L 1610,840 L 1610,1104 L 1680,1104" class="erd-line"/>
+<line x1="524" y1="766" x2="536" y2="766" stroke="#334155" stroke-width="1.4"/><line x1="524" y1="770" x2="536" y2="770" stroke="#334155" stroke-width="1.4"/>
+<line x1="1680" y1="1104" x2="1671" y2="1098" stroke="#334155" stroke-width="1.4"/><line x1="1680" y1="1104" x2="1671" y2="1110" stroke="#334155" stroke-width="1.4"/><line x1="1669" y1="1098" x2="1669" y2="1110" stroke="#334155" stroke-width="1.4"/>
+<path d="M 1380,84 L 1240,84 L 1240,134 L 1185,134" class="erd-line"/>
+<line x1="1376" y1="78" x2="1376" y2="90" stroke="#334155" stroke-width="1.4"/><line x1="1372" y1="78" x2="1372" y2="90" stroke="#334155" stroke-width="1.4"/>
+<line x1="1185" y1="134" x2="1194" y2="128" stroke="#334155" stroke-width="1.4"/><line x1="1185" y1="134" x2="1194" y2="140" stroke="#334155" stroke-width="1.4"/><line x1="1196" y1="128" x2="1196" y2="140" stroke="#334155" stroke-width="1.4"/>
+<path d="M 305,1004 L 360,1004 L 360,940 L 1130,940 L 1130,1049 L 1170,1049" class="erd-line"/>
+<line x1="309" y1="998" x2="309" y2="1010" stroke="#334155" stroke-width="1.4"/><line x1="313" y1="998" x2="313" y2="1010" stroke="#334155" stroke-width="1.4"/>
+<line x1="1170" y1="1049" x2="1161" y2="1043" stroke="#334155" stroke-width="1.4"/><line x1="1170" y1="1049" x2="1161" y2="1055" stroke="#334155" stroke-width="1.4"/><line x1="1159" y1="1043" x2="1159" y2="1055" stroke="#334155" stroke-width="1.4"/>
+<path d="M 2220,474 L 2140,474 L 2140,905 L 1960,905 L 1960,1029 L 1925,1029" class="erd-line"/>
+<line x1="2216" y1="468" x2="2216" y2="480" stroke="#334155" stroke-width="1.4"/><line x1="2212" y1="468" x2="2212" y2="480" stroke="#334155" stroke-width="1.4"/>
+<line x1="1925" y1="1029" x2="1934" y2="1023" stroke="#334155" stroke-width="1.4"/><line x1="1925" y1="1029" x2="1934" y2="1035" stroke="#334155" stroke-width="1.4"/><line x1="1936" y1="1023" x2="1936" y2="1035" stroke="#334155" stroke-width="1.4"/>
+<g id="table_HOUSEHOLD" transform="translate(440, 170)">
+<rect x="0" y="0" width="245" height="207" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">HOUSEHOLD</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">House_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">string</text>
+<text x="70" y="74" class="name-txt">Block_Lot_Number</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Status</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">decimal</text>
+<text x="70" y="124" class="name-txt">Latitude</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">decimal</text>
+<text x="70" y="149" class="name-txt">Longitude</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">datetime</text>
+<text x="70" y="174" class="name-txt">Created_At</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">datetime</text>
+<text x="70" y="199" class="name-txt">Updated_At</text>
+</g>
+<g id="table_RESIDENT" transform="translate(340, 480)">
+<rect x="0" y="0" width="245" height="282" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">RESIDENT</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Resident_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">House_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Name</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Email</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">string</text>
+<text x="70" y="149" class="name-txt">Password</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">string</text>
+<text x="70" y="174" class="name-txt">Contact_Number</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">string</text>
+<text x="70" y="199" class="name-txt">Status</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">decimal</text>
+<text x="70" y="224" class="name-txt">Current_Balance</text>
+<line x1="0" y1="232" x2="245" y2="232" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="232" x2="62" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="232" x2="210" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="249" class="type-txt">datetime</text>
+<text x="70" y="249" class="name-txt">Created_At</text>
+<line x1="0" y1="257" x2="245" y2="257" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="257" x2="62" y2="282" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="257" x2="210" y2="282" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="274" class="type-txt">datetime</text>
+<text x="70" y="274" class="name-txt">Updated_At</text>
+</g>
+<g id="table_HOUSEHOLD_MEMBER" transform="translate(720, 500)">
+<rect x="0" y="0" width="245" height="182" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">HOUSEHOLD_MEMBER</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Member_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">House_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Name</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Relationship</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">string</text>
+<text x="70" y="149" class="name-txt">Contact_Number</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">datetime</text>
+<text x="70" y="174" class="name-txt">Created_At</text>
+</g>
+<g id="table_ANNOUNCEMENT_VIEW" transform="translate(940, 40)">
+<rect x="0" y="0" width="245" height="132" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">ANNOUNCEMENT_VIEW</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">View_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Resident_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">int</text>
+<text x="70" y="99" class="name-txt">Announcement_ID</text>
+<text x="227.5" y="99" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">datetime</text>
+<text x="70" y="124" class="name-txt">Viewed_At</text>
+</g>
+<g id="table_ANNOUNCEMENT" transform="translate(1380, 40)">
+<rect x="0" y="0" width="245" height="207" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">ANNOUNCEMENT</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Announcement_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Admin_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">int</text>
+<text x="70" y="99" class="name-txt">Officer_ID</text>
+<text x="227.5" y="99" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Title</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">text</text>
+<text x="70" y="149" class="name-txt">Content</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">datetime</text>
+<text x="70" y="174" class="name-txt">Created_At</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">datetime</text>
+<text x="70" y="199" class="name-txt">Updated_At</text>
+</g>
+<g id="table_ADMIN" transform="translate(1060, 390)">
+<rect x="0" y="0" width="245" height="232" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">ADMIN</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Admin_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">string</text>
+<text x="70" y="74" class="name-txt">Name</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Email</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Password</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">string</text>
+<text x="70" y="149" class="name-txt">Contact_Number</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">string</text>
+<text x="70" y="174" class="name-txt">Status</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">datetime</text>
+<text x="70" y="199" class="name-txt">Created_At</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">datetime</text>
+<text x="70" y="224" class="name-txt">Updated_At</text>
+</g>
+<g id="table_OFFICER" transform="translate(1460, 400)">
+<rect x="0" y="0" width="245" height="257" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">OFFICER</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Officer_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Admin_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Name</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Email</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">string</text>
+<text x="70" y="149" class="name-txt">Password</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">string</text>
+<text x="70" y="174" class="name-txt">Contact_Number</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">string</text>
+<text x="70" y="199" class="name-txt">Status</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">string</text>
+<text x="70" y="224" class="name-txt">Role_Position</text>
+<line x1="0" y1="232" x2="245" y2="232" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="232" x2="62" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="232" x2="210" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="249" class="type-txt">datetime</text>
+<text x="70" y="249" class="name-txt">Created_At</text>
+</g>
+<g id="table_MEDIA" transform="translate(1880, 60)">
+<rect x="0" y="0" width="245" height="307" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">MEDIA</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Media_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Admin_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">int</text>
+<text x="70" y="99" class="name-txt">Officer_ID</text>
+<text x="227.5" y="99" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">int</text>
+<text x="70" y="124" class="name-txt">Resident_ID</text>
+<text x="227.5" y="124" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">int</text>
+<text x="70" y="149" class="name-txt">Uploader_ID</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">string</text>
+<text x="70" y="174" class="name-txt">Uploader_Type</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">string</text>
+<text x="70" y="199" class="name-txt">Entity_Type</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">int</text>
+<text x="70" y="224" class="name-txt">Entity_ID</text>
+<line x1="0" y1="232" x2="245" y2="232" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="232" x2="62" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="232" x2="210" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="249" class="type-txt">string</text>
+<text x="70" y="249" class="name-txt">File_Name</text>
+<line x1="0" y1="257" x2="245" y2="257" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="257" x2="62" y2="282" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="257" x2="210" y2="282" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="274" class="type-txt">string</text>
+<text x="70" y="274" class="name-txt">File_Path</text>
+<line x1="0" y1="282" x2="245" y2="282" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="282" x2="62" y2="307" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="282" x2="210" y2="307" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="299" class="type-txt">datetime</text>
+<text x="70" y="299" class="name-txt">Created_At</text>
+</g>
+<g id="table_CONVERSATION" transform="translate(2220, 430)">
+<rect x="0" y="0" width="245" height="107" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">CONVERSATION</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Conversation_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">string</text>
+<text x="70" y="74" class="name-txt">Title</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">datetime</text>
+<text x="70" y="99" class="name-txt">Created_At</text>
+</g>
+<g id="table_FACILITY" transform="translate(2220, 660)">
+<rect x="0" y="0" width="245" height="232" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">FACILITY</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Facility_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Admin_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Name</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Description</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">decimal</text>
+<text x="70" y="149" class="name-txt">Latitude</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">decimal</text>
+<text x="70" y="174" class="name-txt">Longitude</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">string</text>
+<text x="70" y="199" class="name-txt">Status</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">datetime</text>
+<text x="70" y="224" class="name-txt">Created_At</text>
+</g>
+<g id="table_ISSUE_REPORT" transform="translate(60, 960)">
+<rect x="0" y="0" width="245" height="282" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">ISSUE_REPORT</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Issue_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Resident_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Category</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Title</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">text</text>
+<text x="70" y="149" class="name-txt">Description</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">decimal</text>
+<text x="70" y="174" class="name-txt">Latitude</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">decimal</text>
+<text x="70" y="199" class="name-txt">Longitude</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">string</text>
+<text x="70" y="224" class="name-txt">Status</text>
+<line x1="0" y1="232" x2="245" y2="232" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="232" x2="62" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="232" x2="210" y2="257" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="249" class="type-txt">datetime</text>
+<text x="70" y="249" class="name-txt">Created_At</text>
+<line x1="0" y1="257" x2="245" y2="257" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="257" x2="62" y2="282" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="257" x2="210" y2="282" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="274" class="type-txt">datetime</text>
+<text x="70" y="274" class="name-txt">Updated_At</text>
+</g>
+<g id="table_RECOMMENDATION" transform="translate(420, 1020)">
+<rect x="0" y="0" width="245" height="182" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">RECOMMENDATION</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Recommendation_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Resident_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">string</text>
+<text x="70" y="99" class="name-txt">Title</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">text</text>
+<text x="70" y="124" class="name-txt">Description</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">string</text>
+<text x="70" y="149" class="name-txt">Status</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">datetime</text>
+<text x="70" y="174" class="name-txt">Created_At</text>
+</g>
+<g id="table_FINANCIAL_RECORD" transform="translate(770, 980)">
+<rect x="0" y="0" width="245" height="232" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">FINANCIAL_RECORD</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Record_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Resident_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">int</text>
+<text x="70" y="99" class="name-txt">Admin_ID</text>
+<text x="227.5" y="99" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">string</text>
+<text x="70" y="124" class="name-txt">Record_Type</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">string</text>
+<text x="70" y="149" class="name-txt">Description</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">decimal</text>
+<text x="70" y="174" class="name-txt">Amount</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">datetime</text>
+<text x="70" y="199" class="name-txt">Record_Date</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">datetime</text>
+<text x="70" y="224" class="name-txt">Created_At</text>
+</g>
+<g id="table_ISSUE_RESPONSE" transform="translate(1170, 980)">
+<rect x="0" y="0" width="245" height="207" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">ISSUE_RESPONSE</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Response_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Issue_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">int</text>
+<text x="70" y="99" class="name-txt">Officer_ID</text>
+<text x="227.5" y="99" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">int</text>
+<text x="70" y="124" class="name-txt">Admin_ID</text>
+<text x="227.5" y="124" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">string</text>
+<text x="70" y="149" class="name-txt">Responder_Type</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">text</text>
+<text x="70" y="174" class="name-txt">Response_Content</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">datetime</text>
+<text x="70" y="199" class="name-txt">Created_At</text>
+</g>
+<g id="table_MESSAGE" transform="translate(1680, 960)">
+<rect x="0" y="0" width="245" height="232" rx="3" fill="#FFFFFF" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="0" width="245" height="32" rx="3" fill="#E2E8F0" stroke="#475569" stroke-width="1.5"/>
+<rect x="0" y="29" width="245" height="3" fill="#E2E8F0"/>
+<line x1="0" y1="32" x2="245" y2="32" stroke="#475569" stroke-width="1.5"/>
+<text x="122.5" y="21" class="tbl-title" text-anchor="middle">MESSAGE</text>
+<line x1="62" y1="32" x2="62" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="32" x2="210" y2="57" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="49" class="type-txt">int</text>
+<text x="70" y="49" class="name-txt">Message_ID</text>
+<text x="227.5" y="49" class="pk-txt" text-anchor="middle">PK</text>
+<line x1="0" y1="57" x2="245" y2="57" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="57" x2="62" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="57" x2="210" y2="82" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="74" class="type-txt">int</text>
+<text x="70" y="74" class="name-txt">Conversation_ID</text>
+<text x="227.5" y="74" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="82" x2="245" y2="82" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="82" x2="62" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="82" x2="210" y2="107" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="99" class="type-txt">int</text>
+<text x="70" y="99" class="name-txt">Admin_ID</text>
+<text x="227.5" y="99" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="107" x2="245" y2="107" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="107" x2="62" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="107" x2="210" y2="132" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="124" class="type-txt">int</text>
+<text x="70" y="124" class="name-txt">Officer_ID</text>
+<text x="227.5" y="124" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="132" x2="245" y2="132" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="132" x2="62" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="132" x2="210" y2="157" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="149" class="type-txt">int</text>
+<text x="70" y="149" class="name-txt">Resident_ID</text>
+<text x="227.5" y="149" class="fk-txt" text-anchor="middle">FK</text>
+<line x1="0" y1="157" x2="245" y2="157" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="157" x2="62" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="157" x2="210" y2="182" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="174" class="type-txt">string</text>
+<text x="70" y="174" class="name-txt">Sender_Type</text>
+<line x1="0" y1="182" x2="245" y2="182" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="182" x2="62" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="182" x2="210" y2="207" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="199" class="type-txt">text</text>
+<text x="70" y="199" class="name-txt">Content</text>
+<line x1="0" y1="207" x2="245" y2="207" stroke="#CBD5E1" stroke-width="1"/>
+<line x1="62" y1="207" x2="62" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<line x1="210" y1="207" x2="210" y2="232" stroke="#E2E8F0" stroke-width="1"/>
+<text x="8" y="224" class="type-txt">datetime</text>
+<text x="70" y="224" class="name-txt">Created_At</text>
+</g>
+</svg>
