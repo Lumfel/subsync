@@ -882,6 +882,14 @@ function filterOfficerHeatmapToCategory(cat){
   }
 }
 
+function normalizeOfficerHeatmapCategory(rawCat){
+  const cat = String(rawCat || '').trim();
+  if(!cat || cat.toLowerCase() === 'other' || cat.toLowerCase() === 'non-general' || cat.toLowerCase() === 'uncategorized' || cat.toLowerCase() === 'general'){
+    return 'Other';
+  }
+  return cat;
+}
+
 let officerHeatCanvas = null;
 function renderOfficerHeatmap(){
   if(!officerMonitorMapInst || !officerHeatLayer) return;
@@ -902,9 +910,11 @@ function renderOfficerHeatmap(){
     return !isNaN(lat) && !isNaN(lng);
   });
 
-  const overallCategoryCounts = {};
+  // Calculate overall category frequency across all mapped subdivision issues
+  // Always include 'Other' so non-general reports always have a dedicated tag and filter option
+  const overallCategoryCounts = { 'Other': 0 };
   allIssues.forEach(i => {
-    const c = i.category || 'Other';
+    const c = normalizeOfficerHeatmapCategory(i.category);
     overallCategoryCounts[c] = (overallCategoryCounts[c] || 0) + 1;
   });
 
@@ -913,6 +923,7 @@ function renderOfficerHeatmap(){
   const topOverallCat = sortedOverallCats.length ? sortedOverallCats[0][0] : 'None';
   const topOverallCount = sortedOverallCats.length ? sortedOverallCats[0][1] : 0;
   const topOverallPct = totalMappedIssues ? Math.round((topOverallCount / totalMappedIssues) * 100) : 0;
+  const topOverallLabel = topOverallCat === 'Other' ? 'Other (Non-General)' : topOverallCat;
 
   if(catSel){
     const prev = catSel.value;
@@ -920,7 +931,11 @@ function renderOfficerHeatmap(){
     sortedOverallCats.forEach(([c, cnt], idx)=>{
       const opt = document.createElement('option');
       opt.value = c;
-      opt.textContent = `${idx === 0 ? '★ ' : ''}#${idx+1} ${c} (${cnt}${idx === 0 ? ' — Most Frequent' : ''})`;
+      const isOther = c === 'Other';
+      const displayLabel = isOther ? 'Other (Non-General Reports)' : c;
+      const star = (!isOther && idx === 0 && cnt > 0) ? '★ ' : '';
+      const rank = cnt > 0 ? `#${idx+1} ` : '';
+      opt.textContent = `${star}${rank}${displayLabel} (${cnt}${star ? ' — Most Frequent' : ''})`;
       catSel.appendChild(opt);
     });
     catSel.value = prev;
@@ -930,23 +945,30 @@ function renderOfficerHeatmap(){
   if(pillsContainer){
     let html = `
       <span style="font-size:11px;font-weight:700;color:var(--text-dim);margin-right:4px;">Filter Heatmap:</span>
-      <button class="heatmap-pill-btn ${!selectedCat ? 'active' : ''}" onclick="filterOfficerHeatmapToCategory('')">
+      <button class="heatmap-pill-btn ${!selectedCat ? 'active' : ''}" onclick="filterOfficerHeatmapToCategory('')" title="Show all issue categories">
         All Issues <span class="pill-count">${totalMappedIssues}</span>
       </button>
     `;
     sortedOverallCats.forEach(([catName, count], idx)=>{
       const isSel = selectedCat === catName;
-      const rankBadge = idx === 0 ? '★ ' : `#${idx + 1} `;
+      const isOther = catName === 'Other';
+      const star = (!isOther && idx === 0 && count > 0) ? '★ ' : '';
+      const rank = count > 0 ? `#${idx + 1} ` : '';
+      const displayLabel = isOther ? 'Other (Non-General)' : catName;
+      const tooltip = isOther ? 'Filter to Other (Non-General Reports)' : `Filter to ${catName}`;
       html += `
-        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterOfficerHeatmapToCategory('${catName.replace(/'/g, "\\'")}')">
-          ${rankBadge}${escHtml(catName)} <span class="pill-count">${count}</span>
+        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterOfficerHeatmapToCategory('${catName.replace(/'/g, "\\'")}')" title="${tooltip}">
+          ${star}${rank}${escHtml(displayLabel)} <span class="pill-count">${count}</span>
         </button>
       `;
     });
     pillsContainer.innerHTML = html;
   }
 
-  const activeIssues = allIssues.filter(i => !selectedCat || i.category === selectedCat);
+  const activeIssues = allIssues.filter(i => {
+    if(!selectedCat) return true;
+    return normalizeOfficerHeatmapCategory(i.category) === normalizeOfficerHeatmapCategory(selectedCat);
+  });
 
   const heatPoints = [];
   activeIssues.forEach(i => {
@@ -1010,13 +1032,13 @@ function renderOfficerHeatmap(){
   const summaryLine = document.getElementById('officerHeatSummaryLine');
   if(summaryLine){
     if(activeIssues.length === 0){
-      summaryLine.innerHTML = selectedCat ? `No active issues for category <strong>${escHtml(selectedCat)}</strong>.` : 'No issues mapped in subdivision.';
+      summaryLine.innerHTML = selectedCat ? `No active issues for category <strong>${escHtml(selectedCat === 'Other' ? 'Other (Non-General Reports)' : selectedCat)}</strong>.` : 'No issues mapped in subdivision.';
     } else {
-      const filterNotice = selectedCat ? `Filtered to <strong>${escHtml(selectedCat)}</strong> (${activeIssues.length} issues) · ` : '';
+      const filterNotice = selectedCat ? `Filtered to <strong>${escHtml(selectedCat === 'Other' ? 'Other (Non-General Reports)' : selectedCat)}</strong> (${activeIssues.length} issues) · ` : '';
       summaryLine.innerHTML = `
         ${filterNotice}
         🏆 <strong>Subdivision Most Frequent Issue:</strong> 
-        <span style="color:#ef4444;font-weight:800;">${escHtml(topOverallCat)}</span> 
+        <span style="color:#ef4444;font-weight:800;">${escHtml(topOverallLabel)}</span> 
         (${topOverallCount} of ${totalMappedIssues} reports · ${topOverallPct}%) across <strong>${clusters.length}</strong> active hotspot area${clusters.length > 1 ? 's' : ''}.
       `;
     }
@@ -1026,7 +1048,7 @@ function renderOfficerHeatmap(){
     const total = cl.issues.length;
     const catCounts = {};
     cl.issues.forEach(it => {
-      const c = it.category || 'Other';
+      const c = normalizeOfficerHeatmapCategory(it.category);
       catCounts[c] = (catCounts[c] || 0) + 1;
     });
 
@@ -1034,6 +1056,7 @@ function renderOfficerHeatmap(){
     const topCat = sortedCats[0][0];
     const topCount = sortedCats[0][1];
     const topPct = Math.round((topCount / total) * 100);
+    const topCatDisplay = topCat === 'Other' ? 'Other (Non-General)' : topCat;
 
     const severity = total >= 4 ? 'critical' : (total === 3 ? 'high' : (total === 2 ? 'moderate' : 'low'));
     const severityLabel = total >= 4 ? 'Critical Hotspot' : (total === 3 ? 'High Heat Area' : (total === 2 ? 'Moderate Activity' : 'Single Issue Area'));
@@ -1041,10 +1064,10 @@ function renderOfficerHeatmap(){
     const flameIcon = total >= 4 ? '🔥🔥' : (total >= 2 ? '🔥' : '📍');
 
     const badgeHtml = `
-      <div class="sub-hotspot-pill heat-${severity}" title="${severityLabel}: ${escHtml(topCat)} is most frequent (${topCount}/${total})">
+      <div class="sub-hotspot-pill heat-${severity}" title="${severityLabel}: ${escHtml(topCatDisplay)} is most frequent (${topCount}/${total})">
         <span>${flameIcon}</span>
         <span class="hotspot-count">${total}</span>
-        <span class="hotspot-cat">${escHtml(topCat)}</span>
+        <span class="hotspot-cat">${escHtml(topCatDisplay)}</span>
         <span class="hotspot-pct">${topPct}%</span>
       </div>
     `;
@@ -1059,10 +1082,11 @@ function renderOfficerHeatmap(){
     const breakdownRows = sortedCats.map(([cat, cnt]) => {
       const pct = Math.round((cnt / total) * 100);
       const isTop = cat === topCat;
+      const catLabel = cat === 'Other' ? 'Other (Non-General)' : cat;
       return `
         <div class="sub-hotspot-breakdown-row">
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;">
-            <span style="font-weight:${isTop ? '700' : '500'};color:var(--text);">${isTop ? '★ ' : ''}${escHtml(cat)}</span>
+            <span style="font-weight:${isTop ? '700' : '500'};color:var(--text);">${isTop ? '★ ' : ''}${escHtml(catLabel)}</span>
             <span style="font-weight:700;color:var(--text-dim);">${cnt} (${pct}%)</span>
           </div>
           <div class="sub-hotspot-bar-track">
@@ -1081,7 +1105,7 @@ function renderOfficerHeatmap(){
         
         <div class="sub-hotspot-dominant-box">
           <div class="sub-hotspot-dominant-tag">★ Most Frequent Issue Category</div>
-          <div class="sub-hotspot-dominant-title">${escHtml(topCat)}</div>
+          <div class="sub-hotspot-dominant-title">${escHtml(topCatDisplay)}</div>
           <div class="sub-hotspot-dominant-stat">
             <strong>${topCount} of ${total} reports</strong> in this area (${topPct}%)
           </div>
@@ -1093,7 +1117,7 @@ function renderOfficerHeatmap(){
         </div>
 
         <button class="btn btn-sm btn-green" onclick="filterOfficerHeatmapToCategory('${topCat.replace(/'/g, "\\'")}')" style="width:100%;font-size:11px;padding:4px 8px;justify-content:center;font-weight:600;">
-          Focus Heatmap on "${escHtml(topCat)}"
+          Focus Heatmap on "${escHtml(topCatDisplay)}"
         </button>
       </div>
     `;

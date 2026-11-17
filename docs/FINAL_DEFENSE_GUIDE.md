@@ -1,4 +1,4 @@
-# SubSync: Master Final Defense Presentation Guide & Demonstration Script
+# 🎯 SubSync: Defense Presentation Cue Cards & Demo Guide
 
 **Project Title:** SubSync: An Automated Web-Based Platform for Enhancing Community Engagement in Residential Subdivisions  
 **Institution:** Carlos Hilado Memorial State University (CHMSU) — Alijis Campus, Bacolod City  
@@ -18,23 +18,26 @@
 └──────────────────────────────────────────┴──────────────────────────────────────────┘
 ```
 
-### Verified Active Credentials
-| Role | Portal URL | Login Email | Password | Persona / Role in Demo |
+---
+
+## 🔑 Demo Accounts Cheat Sheet
+
+| Role | Login Email | Password | Lot / Balance | Purpose for Demo |
 | :--- | :--- | :--- | :--- | :--- |
-| **System Admin** | `/admin-access` | `admin@subsync.com` | `Admin@12345` | Overall Administrator, Approvals, Ledger |
-| **Security Officer** | `/login` | `officer1@subsync.com` | `Officer@123` | Juan dela Cruz (Security Head, Patrol Reports) |
-| **Maintenance Officer**| `/login` | `officer3@subsync.com` | `Officer@123` | Ricardo Dalisay (Repairs, Work Orders) |
-| **Active Resident** | `/login` | `resident1@subsync.com` | `Resident@123` | Pedro Reyes (`Blk 1 Lot 5`, ₱500 Balance) |
-| **Compliant Resident** | `/login` | `resident2@subsync.com` | `Resident@123` | Ana Garcia (`Blk 2 Lot 3`, ₱0.00 Balance) |
-| **Non-Compliant Resident**| `/login` | `resident3@subsync.com` | `Resident@123` | Carlos Bautista (`Blk 3 Lot 8`, ₱2,500 Overdue) |
-| **Pending Resident** | `/login` | `resident11@subsync.com` | `Resident@123` | Grace Alcantara (**For Live Approval Demo**) |
-| **Pending Officer** | `/login` | `officer_pending@subsync.com`| `Officer@123` | Jaime Mercado (**For Live Officer Approval Demo**) |
+| **System Admin** | `admin@subsync.com` | `Admin@12345` | HQ Portal | Approvals, Validation, Backups |
+| **Security Officer** | `officer1@subsync.com` | `Officer@123` | Juan dela Cruz | Assigned Cases, Roving Reports |
+| **Maintenance Officer**| `officer3@subsync.com` | `Officer@123` | Ricardo Dalisay | Repairs, Fire Hydrant, Work Orders |
+| **Resident 1 (Pedro)**| `resident1@subsync.com` | `Resident@123` | Blk 1 Lot 5 (₱500 due) | Primary Demo: Issues, GCash, Chat |
+| **Resident 2 (Ana)** | `resident2@subsync.com` | `Resident@123` | Blk 2 Lot 3 (₱0.00 clean) | Compliant Resident: Resolved Noise |
+| **Resident 3 (Carlos)**| `resident3@subsync.com` | `Resident@123` | Blk 3 Lot 8 (₱2,500 due) | Non-Compliant: Rejected Payment Note |
+| **Pending Resident** | `resident11@subsync.com` | `Resident@123` | Blk 11 Lot 15 | **Live Resident Approval Demo** |
+| **Pending Officer** | `officer_pending@subsync.com`| `Officer@123` | Safety Head | **Live Officer Approval Demo** |
 
 ---
 
 ## ⏱️ 15-Minute Timeline
 
-| Time | Segment | Focus | Lead Presenter |
+| Time | Act | Focus | Lead |
 | :--- | :--- | :--- | :--- |
 | **00:00 - 02:00** | Act 1 | Theoretical Framing & 4 Specific Objectives | Presenter 1 |
 | **02:00 - 04:00** | Act 2 | RA 10173 Consent, Registration & Multi-Role Approvals | Presenter 1 & 2 |
@@ -47,84 +50,158 @@
 
 ---
 
-## 🎬 Step-by-Step Demonstration Flow
-
-### Act 1: Introduction & Problem Statement (2 Mins)
-* **Opening Spiel:** Present problem of traditional paper blotters, unverified bulletin announcements, and manual ledger tracking.
-* **Introduce 4 Objectives:**
-  1. Integrated Communication (Draft-to-publish notices, formal messaging)
-  2. Issue Reporting (Geofencing, auto-priority, audit trail)
-  3. Community Recommendations (Participatory governance)
-  4. Dynamic Geospatial Mapping (Leaflet interactive subdivision visualization)
-
-### Act 2: Registration, RA 10173 Consent & Approvals (2 Mins)
-* **Landing Page (`/`):** Click the **Privacy Policy (`/privacy`)** link demonstrating compliance with RA 10173 (Data Privacy Act of 2012).
-* **Self-Registration:** Register *"Juan Resident"* with Block/Lot and mandatory privacy consent checkbox. State: `Pending`.
-* **Login Guard:** Attempt to log in immediately; system denies access with pending approval notice.
-* **Admin Approval (Right Window):** Log in as `admin@subsync.com`. Open Residents table, locate `resident11@subsync.com` (*Grace Alcantara*), click **Approve**.
-* **Officer Approval Demo:** Open Officers table, locate `officer_pending@subsync.com` (*Jaime Mercado*), click **Approve**.
-
-### Act 3: Dynamic Mapping & Facilities (2 Mins)
-* **Geofenced Perimeter (S4):** Show the boundary coordinates stored in `map_settings`.
-* **Numbered Issue Pins (S3 / S18):** Active concerns display as numbered pins color-coded by priority.
-* **10 Mapped Facilities:** Clubhouse, Basketball Court, Main Entrance Gate, Playground, Swimming Pool, MRF, Tennis Court, North Perimeter Gate, Central Park.
-* **Household Status (S10):** Occupied vs. Vacant categorization.
-
-### Act 4: Issue Reporting & Staff Resolution (2.5 Mins)
-* **Report Issue (Left Window - Pedro Reyes):** Select Infrastructure, title *"Broken Street Light near Lot 5"*. Show **Auto-Priority** (S2) set to High based on safety criteria.
-* **Draggable Pin & Boundary Validation (S3):** Attempt to drag pin outside perimeter; show out-of-bounds warning.
-* **Add Post-Submission Details (S2):** Open issue, click **Add Details / Additional Photos**, append note: *"Streetlight bracket cracked."*
-* **Staff Dispatch & SLA (Right Window - Officer Juan):** Filter by **"Assigned to Me"** (3 active security cases). Open streetlight issue, update status to **In Progress** -> **Resolved**. Show **History / Audit Log**.
-
-### Act 5: Announcements Draft-to-Publish & Real-Time Push (2 Mins)
-* **Predefined Templates (S5):** In Officer Portal, select *"Maintenance Schedule"* template. Use native HTML5 date picker.
-* **Draft Status (S13):** Click **Save as Draft**. In resident window, show it is **completely invisible**.
-* **Publish & WebSocket Push:** Click **Publish**. Notice appears on resident screen in real time via **Laravel Reverb (WebSocket) / SSE**.
-* **Community Events:** Show *Annual General Assembly* and toggle RSVP to **"Going"**.
-
-### Act 6: HOA Financial Transparency, GCash & CSV Export (2 Mins)
-* **HOA Expenses Transparency:** Resident views 12 audited expenses (Security ₱25k, Landscaping ₱12k, Utilities). Click **"View Receipt"** to stream PDF receipt.
-* **Payment Submission:** Pedro views balance (₱500.00). Shows pending submission Ref `GCASH-20260616-9988`.
-* **Admin Validation Queue:** Admin inspects GCash proof, clicks **Validate Payment**. Balance drops to ₱0.00; official receipt timestamp created.
-* **CSV Export (S11):** Click **Export to CSV** for streaming export.
-
-### Act 7: Governance, Formal Messaging & Household Census (1.5 Mins)
-* **Recommendations (Obj 1.3):** Resident submits *"Rubberized Playground Mats"*; Admin marks **Approved**.
-* **Formal Messaging (Obj 1.1):** Direct message between Pedro and Officer over private WebSocket channel without social media clutter.
-* **Household Census:** Pedro views occupants (*Lina Reyes [Spouse]* & *Ricky Reyes [Child]*). Admin views **15 household members** with search and relationship filters.
-
-### Act 8: Security, Automated Backups & Wrap-up (1 Min)
-* **Automated Backups:** Show daily automated MySQL snapshots (`subsync:backup-database`) with 14-day rotation and click **"Back Up Now"**.
-* **Activity Log:** Show append-only audit trail.
-* **ISO 25010 Summary:** Hand floor over for panel Q&A.
+# 🎬 Live Demonstration Cue Cards
 
 ---
 
-## 🛡️ Panel Revisions Defense Scorecard
+### Act 1: Theoretical Framing & Objectives (00:00 - 02:00)
+* **Screen:** Show Landing Page (`http://subsync.test/`).
+* **Split-Screen Ready:** Left Window (Resident Login), Right Window (Admin Login).
 
-| ID | Panel Revision Request | Code Implementation in SubSync |
-| :--- | :--- | :--- |
-| **S2** | Auto-priority based on details + resident can add details/pictures | Rule-based auto-priority on creation; built `POST /api/issues/{id}/details` for appending notes/photos without tampering with original records. |
-| **S3 & S4** | Accurate map pin + Database subdivision area range | `map_settings` table stores boundary coordinates; draggable Leaflet pin with real-time coordinate preview and geofence rejection. |
-| **S5** | Pre-templated Announcements + Date Picker | Predefined templates (*Notice, Urgent, Maintenance*); all dates enforce native HTML5 date pickers. |
-| **S6** | Fixed Date From–To filters | Server-side date normalization (`IssueController::dateRange`) with client-side auto-swap for reversed ranges. |
-| **S10** | Replace the term "Delinquent" | Completely replaced: households are **Occupied / Vacant**; accounts are **Active / Non-Compliant**. |
-| **S11** | Standardize on CSV instead of Excel | SheetJS dependencies removed; replaced with RFC-compliant streaming CSV exports. |
-| **S13** | Announcement Draft handling | Added **Draft vs. Active** status. Drafts are strictly isolated from resident feeds until explicitly published. |
-| **D1** | Real-time tracking documentation | Architectural write-up of Laravel Reverb WebSocket private channel with automatic Server-Sent Events (SSE) fallback. |
+> 🗣️ **Presenter 1 Spiel:**  
+> *"Good day esteemed panel members: Dr. Usy, Dr. Yen, and Engr. Talaquines. We present SubSync: An Automated Web-Based Platform for Enhancing Community Engagement in Residential Subdivisions.*  
+> *Traditional HOAs rely on paper records, physical bulletin boards, and manual ledgers. SubSync digitalizes subdivision governance around 4 core objectives:*  
+> *1. **Communication:** Draft-to-publish notices and formal messaging.*  
+> *2. **Issue Reporting:** Geofenced reporting, auto-priority, and audit trail.*  
+> *3. **Recommendations:** Civic feedback module.*  
+> *4. **Geospatial Mapping:** Leaflet interactive map of facilities and occupancy.*  
+> *Allow us to demonstrate the live workflow."*
 
 ---
 
-## ❓ Anticipated Panel Q&A
+### Act 2: Registration & Multi-Role Approvals (02:00 - 04:00)
 
-**Q: "Why are there two separate financial views (Personal Balance vs. HOA Expenses)?"**  
-*Answer:* "SubSync intentionally separates individual resident obligations (monthly dues and GCash validation receipts) from community fiscal transparency. The HOA Expenses ledger publicly discloses how association fees are utilized (security payroll, pool chemicals, street lighting) with verifiable PDF receipts, satisfying civic transparency."
+* **📱 Left Window [Resident]:**
+  1. Point to **Data Privacy Notice (`/privacy`)** — *RA 10173 compliant*.
+  2. Click **Register**. Enter: *Juan Resident*, *Blk 3 Lot 14*. Check mandatory **Privacy Consent** box. Submit.
+  3. Try logging in immediately: Screen blocks with **"Pending Approval"**.
+* **💻 Right Window [Admin]:**
+  4. Log into `/admin-access`. Point out top **Pending Registrations badge**.
+  5. Go to **Households & Users** ➔ Residents ➔ Find `resident11@subsync.com` (*Grace Alcantara*) ➔ Click **Approve**. Status turns `Active`!
+  6. Go to **Officers** ➔ Find `officer_pending@subsync.com` (*Jaime Mercado*) ➔ Click **Approve**.
 
-**Q: "How does the system protect against Insecure Direct Object Reference (IDOR) on household members?"**  
-*Answer:* "In `ResidentController::authorizeMember()`, resident requests are strictly scoped to their authenticated `house_id`. Any attempt by a resident to read, modify, or delete family members belonging to another household returns an immediate 403 Forbidden."
+> 🗣️ **Key Defense Line:**  
+> *"Both residents and staff accounts require administrator vetting before entering the system, safeguarding community records."*
 
-**Q: "How do you avoid session collisions when Admin and Resident open tabs on the same computer?"**  
-*Answer:* "SubSync employs Laravel multi-guard authentication (`admin`, `officer`, and `resident` guards). Custom session cookies (`subsync_admin_session`, `subsync_resident_session`) are resolved by our global `ResolvePortalSession` middleware before session initialization, preventing privilege escalation or accidental session overwrite."
+---
 
-**Q: "What happens if WebSockets fail or are blocked by carrier firewalls?"**  
-*Answer:* "SubSync uses a dual-layer real-time architecture: it is WebSocket-first using Laravel Reverb for low-overhead push, but automatically downgrades to an HTTP-based Server-Sent Events (SSE) stream (`/api/stream/updates`) if WebSocket handshakes fail."
+### Act 3: Interactive Map & Facilities (04:00 - 06:00)
+
+* **💻 Right Window [Admin / Officer]:**
+  1. Open **Interactive Map**.
+  2. **Geofence Range (S4):** Point out boundary coordinates in `map_settings` (10.6195 to 10.6260 Lat).
+  3. **Numbered Pins (S3/S18):** Show active concerns appear as numbered priority pins.
+  4. **Facilities (10 Mapped):** Click *Clubhouse*, *Basketball Court*, *Gate 1*, *Pool*, *MRF*.
+  5. **Occupancy Status (S10):** Point out lots are categorized strictly as **Occupied** or **Vacant**.
+
+> 🗣️ **Key Defense Line:**  
+> *"As requested in Revision S10, the term 'delinquent' was completely removed. Lots are categorized as Occupied or Vacant, and accounts are Active or Non-Compliant."*
+
+---
+
+### Act 4: Issue Reporting & Staff Resolution (06:00 - 08:30)
+
+* **📱 Left Window [Resident - Pedro Reyes `resident1@subsync.com`]:**
+  1. Click **Report an Issue**. Select Category: **Infrastructure** ➔ Title: *Broken Street Light*.
+  2. **Auto-Priority (S2):** Show priority auto-set to **High** based on safety rules.
+  3. **Draggable Pin (S3):** Click inside Block 1. *(Quick drag outside border ➔ show out-of-bounds warning)*. Submit report.
+  4. **Add Details Later (S2):** Click on submitted ticket ➔ Click **Add Details / Pictures** ➔ Append: *"Bracket is cracked."*
+* **🛡️ Right Window [Officer - Juan dela Cruz `officer1@subsync.com`]:**
+  5. Filter by **"Assigned to Me"**: Shows Officer Juan's 3 assigned security tasks.
+  6. Open Pedro's streetlight issue.
+  7. Change status to **In Progress** ➔ then **Resolved**.
+  8. Click **History / Audit Log**: Shows immutable timestamp of who acted.
+
+> 🗣️ **Key Defense Line:**  
+> *"Per Revision S2, the resident can append extra photos and notes anytime while keeping the original incident report tamper-proof."*
+
+---
+
+### Act 5: Announcements & WebSocket Push (08:30 - 10:30)
+
+* **🛡️ Right Window [Officer]:**
+  1. Go to **Announcements** ➔ Create.
+  2. **Template (S5):** Select *"Maintenance Schedule"* quick-fill preset.
+  3. **Draft Mode (S13):** Click **Save as Draft**.
+  4. *Look at Left Window (Resident):* **Draft is completely hidden!**
+  5. In Officer window ➔ Click **Publish**.
+* **📱 Left Window [Resident]:**
+  6. **Watch screen pop up instantly** via Laravel Reverb (WebSocket) without page reload!
+  7. Click notice to read ➔ Clears notification badge automatically.
+  8. Go to **Events** ➔ *General Assembly* ➔ Click **"Going"**.
+
+> 🗣️ **Key Defense Line:**  
+> *"Revision S13 is fully satisfied: drafts are strictly isolated on the server until published, at which point WebSocket broadcasting notifies residents instantly."*
+
+---
+
+### Act 6: Finance, GCash & CSV Export (10:30 - 12:30)
+
+* **📱 Left Window [Resident]:**
+  1. Open **HOA Expenses**: Shows 12 audited expenses (Security ₱25k, Landscaping ₱12k). Click **"View Receipt"** to open PDF receipt.
+  2. Check Balance: Pedro owes **₱500.00**.
+  3. Click **Pay via GCash**: Shows QR code & pending submission (Ref `GCASH-20260616-9988`).
+* **💻 Right Window [Admin]:**
+  4. Go to **Payments Queue**.
+  5. Find Pedro's submission ➔ Click **Validate Payment**.
+  6. *Result:* Pedro's balance on Left turns to **₱0.00** immediately!
+  7. Click **Export to CSV (S11)**: Downloads standard RFC-compliant CSV file.
+
+> 🗣️ **Key Defense Line:**  
+> *"As requested in Revision S11, heavy spreadsheet dependencies were replaced with streaming RFC-compliant CSV exports."*
+
+---
+
+### Act 7: Governance, Chat & Census (12:30 - 14:00)
+
+* **📱 Left Window [Resident]:**
+  1. **Recommendations:** View 10 civic suggestions ➔ Submit: *"Playground Mats"*.
+  2. **Messages:** Send inquiry to Officer over formal messaging channel.
+  3. **Household Members:** Pedro shows occupants: *Lina (Spouse)* & *Ricky (Child)*.
+* **💻 Right Window [Admin]:**
+  4. Go to **Household Members**: Shows complete subdivision census of **15 occupants** across all blocks with relationship filters.
+
+> 🗣️ **Key Defense Line:**  
+> *"Residents can only manage their own household occupants, protected by strict IDOR authorization, while the administration retains a full community census for emergencies."*
+
+---
+
+### Act 8: Backups & ISO 25010 Summary (14:00 - 15:00)
+
+* **💻 Right Window [Admin]:**
+  1. Go to **Settings ➔ System & Security**.
+  2. **Automated Backups:** Point to 14-day rotating MySQL snapshots.
+  3. Click **"Back Up Now"**: Shows live database dump created in real time.
+  4. **Activity Trail:** Review the immutable activity log.
+
+> 🗣️ **Closing Spiel:**  
+> *"SubSync was rigorously evaluated using the ISO 25010 software quality standard across functional suitability, reliability, usability, and security. We are now ready for your questions."*
+
+---
+
+## 🛡️ Panel Revisions Quick Match (Cheat Sheet)
+
+* **S2 (Auto-Priority & Details):** Rule-based auto-priority; built `POST /api/issues/{id}/details` to append photos/notes.
+* **S3 & S4 (Pin & Bounds):** Boundary stored in `map_settings`; Leaflet draggable pin with live coordinate preview and bounds check.
+* **S5 (Templates & Dates):** Predefined announcement templates; native HTML5 datepickers.
+* **S6 (Date Filter):** Server-side auto-swap for reversed date ranges (`IssueController::dateRange`).
+* **S10 ("Delinquent" Removed):** Households are **Occupied / Vacant**; accounts are **Active / Non-Compliant**.
+* **S11 (CSV Standardization):** Replaced SheetJS with streaming RFC-compliant CSV exports.
+* **S13 (Draft Handling):** Draft status is server-isolated from resident feeds until explicitly published.
+* **D1 (Real-Time Docs):** Laravel Reverb WebSocket private channel architecture with SSE fallback.
+
+---
+
+## ❓ Top 4 Defense Questions & Answers
+
+1. **"Why have two financial ledgers (Personal vs. HOA Expenses)?"**  
+   *Answer:* "SubSync intentionally separates individual resident obligations (monthly dues and GCash receipts) from civic transparency. The personal ledger tracks private resident accounts, while the HOA Expenses ledger publicly discloses how association fees are utilized with verifiable PDF receipts."
+
+2. **"How do you prevent Resident A from tampering with Resident B's family members?"**  
+   *Answer:* "In `ResidentController::authorizeMember()`, resident queries are strictly scoped to their authenticated `house_id`. Any attempt to read or modify other households returns an immediate `403 Forbidden`."
+
+3. **"How do you prevent session clash when Admin and Resident open tabs on the same computer?"**  
+   *Answer:* "SubSync utilizes Laravel multi-guard authentication (`admin`, `officer`, `resident`). Separate session cookies (`subsync_admin_session`, `subsync_resident_session`) are resolved by our custom `ResolvePortalSession` middleware before session start."
+
+4. **"What happens if WebSockets fail or are blocked by carrier firewalls?"**  
+   *Answer:* "SubSync uses a dual-layer real-time architecture: it is WebSocket-first using Laravel Reverb for low-latency push, but automatically downgrades to an HTTP-based Server-Sent Events (SSE) stream (`/api/stream/updates`) if WebSocket handshakes fail."

@@ -4718,14 +4718,25 @@ function loadMapData() {
     mapIssuesData = Array.isArray(data) ? data : [];
     const catSel = document.getElementById('heat-category');
     if (catSel && catSel.options.length <= 1) {
-      [...new Set(mapIssuesData.map(i => i.category).filter(Boolean))].sort().forEach(c => {
+      const cats = [...new Set(mapIssuesData.map(i => normalizeHeatmapCategory(i.category)))];
+      if (!cats.includes('Other')) cats.push('Other');
+      cats.sort().forEach(c => {
         const o = document.createElement('option');
-        o.value = c; o.textContent = c;
+        o.value = c;
+        o.textContent = c === 'Other' ? 'Other (Non-General Reports)' : c;
         catSel.appendChild(o);
       });
     }
     renderIssueHeatmap();
   });
+}
+
+function normalizeHeatmapCategory(rawCat) {
+  const cat = String(rawCat || '').trim();
+  if (!cat || cat.toLowerCase() === 'other' || cat.toLowerCase() === 'non-general' || cat.toLowerCase() === 'uncategorized' || cat.toLowerCase() === 'general') {
+    return 'Other';
+  }
+  return cat;
 }
 
 function renderFilteredHouseholds() {
@@ -4776,9 +4787,10 @@ async function renderIssueHeatmap() {
   });
 
   // Calculate overall category frequency across all mapped subdivision issues
-  const overallCategoryCounts = {};
+  // Always include 'Other' so non-general reports always have a dedicated tag and filter option
+  const overallCategoryCounts = { 'Other': 0 };
   allIssues.forEach(i => {
-    const c = i.category || 'Other';
+    const c = normalizeHeatmapCategory(i.category);
     overallCategoryCounts[c] = (overallCategoryCounts[c] || 0) + 1;
   });
 
@@ -4787,6 +4799,7 @@ async function renderIssueHeatmap() {
   const topOverallCategory = sortedOverallCats.length ? sortedOverallCats[0][0] : 'None';
   const topOverallCount = sortedOverallCats.length ? sortedOverallCats[0][1] : 0;
   const topOverallPct = totalMappedIssues ? Math.round((topOverallCount / totalMappedIssues) * 100) : 0;
+  const topOverallLabel = topOverallCategory === 'Other' ? 'Other (Non-General)' : topOverallCategory;
 
   // Sync category dropdown with ranked categories
   if (catEl) {
@@ -4795,7 +4808,11 @@ async function renderIssueHeatmap() {
     sortedOverallCats.forEach(([catName, count], idx) => {
       const opt = document.createElement('option');
       opt.value = catName;
-      opt.textContent = `${idx === 0 ? '★ ' : ''}#${idx + 1} ${catName} (${count}${idx === 0 ? ' — Most Frequent' : ''})`;
+      const isOther = catName === 'Other';
+      const displayLabel = isOther ? 'Other (Non-General Reports)' : catName;
+      const star = (!isOther && idx === 0 && count > 0) ? '★ ' : '';
+      const rank = count > 0 ? `#${idx + 1} ` : '';
+      opt.textContent = `${star}${rank}${displayLabel} (${count}${star ? ' — Most Frequent' : ''})`;
       catEl.appendChild(opt);
     });
     catEl.value = prevVal;
@@ -4812,10 +4829,14 @@ async function renderIssueHeatmap() {
     `;
     sortedOverallCats.forEach(([catName, count], idx) => {
       const isSel = selectedCat === catName;
-      const rankBadge = idx === 0 ? '★ ' : `#${idx + 1} `;
+      const isOther = catName === 'Other';
+      const star = (!isOther && idx === 0 && count > 0) ? '★ ' : '';
+      const rank = count > 0 ? `#${idx + 1} ` : '';
+      const displayLabel = isOther ? 'Other (Non-General)' : catName;
+      const tooltip = isOther ? 'Filter to Other (Non-General Reports)' : `Filter to ${catName}`;
       pillsHtml += `
-        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterHeatmapToCategory('${catName.replace(/'/g, "\\'")}')" title="Filter to ${catName}">
-          ${rankBadge}${escHtml(catName)} <span class="pill-count">${count}</span>
+        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterHeatmapToCategory('${catName.replace(/'/g, "\\'")}')" title="${tooltip}">
+          ${star}${rank}${escHtml(displayLabel)} <span class="pill-count">${count}</span>
         </button>
       `;
     });
@@ -4823,7 +4844,10 @@ async function renderIssueHeatmap() {
   }
 
   // Filter issues if a specific category is chosen
-  const activeIssues = allIssues.filter(i => !selectedCat || i.category === selectedCat);
+  const activeIssues = allIssues.filter(i => {
+    if (!selectedCat) return true;
+    return normalizeHeatmapCategory(i.category) === normalizeHeatmapCategory(selectedCat);
+  });
 
   // 1. Build thermal heat points with intensity ramp-up
   const heatPoints = [];
@@ -4907,14 +4931,14 @@ async function renderIssueHeatmap() {
   if (summaryLine) {
     if (activeIssues.length === 0) {
       summaryLine.innerHTML = selectedCat 
-        ? `No active issues reported for category <strong>${escHtml(selectedCat)}</strong>.`
+        ? `No active issues reported for category <strong>${escHtml(selectedCat === 'Other' ? 'Other (Non-General Reports)' : selectedCat)}</strong>.`
         : 'No issues with coordinates recorded in the subdivision.';
     } else {
-      const filterNotice = selectedCat ? `Filtered to <strong>${escHtml(selectedCat)}</strong> (${activeIssues.length} issues) · ` : '';
+      const filterNotice = selectedCat ? `Filtered to <strong>${escHtml(selectedCat === 'Other' ? 'Other (Non-General Reports)' : selectedCat)}</strong> (${activeIssues.length} issues) · ` : '';
       summaryLine.innerHTML = `
         ${filterNotice}
         🏆 <strong>Subdivision Most Frequent Issue:</strong> 
-        <span style="color:#ef4444;font-weight:800;">${escHtml(topOverallCategory)}</span> 
+        <span style="color:#ef4444;font-weight:800;">${escHtml(topOverallLabel)}</span> 
         (${topOverallCount} of ${totalMappedIssues} reports · ${topOverallPct}%) across <strong>${clusters.length}</strong> active hotspot area${clusters.length > 1 ? 's' : ''}.
       `;
     }
@@ -4925,7 +4949,7 @@ async function renderIssueHeatmap() {
     const total = cl.issues.length;
     const catCounts = {};
     cl.issues.forEach(it => {
-      const c = it.category || 'Other';
+      const c = normalizeHeatmapCategory(it.category);
       catCounts[c] = (catCounts[c] || 0) + 1;
     });
 
@@ -4933,6 +4957,7 @@ async function renderIssueHeatmap() {
     const topCat = sortedCats[0][0];
     const topCount = sortedCats[0][1];
     const topPct = Math.round((topCount / total) * 100);
+    const topCatDisplay = topCat === 'Other' ? 'Other (Non-General)' : topCat;
 
     const severity = total >= 4 ? 'critical' : (total === 3 ? 'high' : (total === 2 ? 'moderate' : 'low'));
     const severityLabel = total >= 4 ? 'Critical Hotspot' : (total === 3 ? 'High Heat Area' : (total === 2 ? 'Moderate Activity' : 'Single Issue Area'));
@@ -4940,10 +4965,10 @@ async function renderIssueHeatmap() {
     const flameIcon = total >= 4 ? '🔥🔥' : (total >= 2 ? '🔥' : '📍');
 
     const badgeHtml = `
-      <div class="sub-hotspot-pill heat-${severity}" title="${severityLabel}: ${escHtml(topCat)} is most frequent (${topCount}/${total})">
+      <div class="sub-hotspot-pill heat-${severity}" title="${severityLabel}: ${escHtml(topCatDisplay)} is most frequent (${topCount}/${total})">
         <span>${flameIcon}</span>
         <span class="hotspot-count">${total}</span>
-        <span class="hotspot-cat">${escHtml(topCat)}</span>
+        <span class="hotspot-cat">${escHtml(topCatDisplay)}</span>
         <span class="hotspot-pct">${topPct}%</span>
       </div>
     `;
@@ -4958,10 +4983,11 @@ async function renderIssueHeatmap() {
     const breakdownRows = sortedCats.map(([cat, cnt]) => {
       const pct = Math.round((cnt / total) * 100);
       const isTop = cat === topCat;
+      const catLabel = cat === 'Other' ? 'Other (Non-General)' : cat;
       return `
         <div class="sub-hotspot-breakdown-row">
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;">
-            <span style="font-weight:${isTop ? '700' : '500'};color:var(--text);">${isTop ? '★ ' : ''}${escHtml(cat)}</span>
+            <span style="font-weight:${isTop ? '700' : '500'};color:var(--text);">${isTop ? '★ ' : ''}${escHtml(catLabel)}</span>
             <span style="font-weight:700;color:var(--text-dim);">${cnt} (${pct}%)</span>
           </div>
           <div class="sub-hotspot-bar-track">
@@ -4990,7 +5016,7 @@ async function renderIssueHeatmap() {
         
         <div class="sub-hotspot-dominant-box">
           <div class="sub-hotspot-dominant-tag">★ Most Frequent Issue Category</div>
-          <div class="sub-hotspot-dominant-title">${escHtml(topCat)}</div>
+          <div class="sub-hotspot-dominant-title">${escHtml(topCatDisplay)}</div>
           <div class="sub-hotspot-dominant-stat">
             <strong>${topCount} of ${total} reports</strong> in this area (${topPct}%)
           </div>
@@ -5007,7 +5033,7 @@ async function renderIssueHeatmap() {
         ` : ''}
 
         <button class="btn btn-sm btn-green" onclick="filterHeatmapToCategory('${topCat.replace(/'/g, "\\'")}')" style="width:100%;font-size:11px;padding:4px 8px;justify-content:center;font-weight:600;">
-          Focus Heatmap on "${escHtml(topCat)}"
+          Focus Heatmap on "${escHtml(topCatDisplay)}"
         </button>
       </div>
     `;

@@ -1186,6 +1186,14 @@ async function ensureResidentLeafletHeat() {
   });
 }
 
+function normalizeResidentHeatmapCategory(rawCat) {
+  const cat = String(rawCat || '').trim();
+  if (!cat || cat.toLowerCase() === 'other' || cat.toLowerCase() === 'non-general' || cat.toLowerCase() === 'uncategorized' || cat.toLowerCase() === 'general') {
+    return 'Other';
+  }
+  return cat;
+}
+
 async function renderResidentHeatmap() {
   if (!resMapInst || !resHeatLayer) return;
   resHeatLayer.clearLayers();
@@ -1207,14 +1215,19 @@ async function renderResidentHeatmap() {
     return !isNaN(lat) && !isNaN(lng);
   });
 
-  const overallCategoryCounts = {};
+  // Calculate overall category frequency across all mapped subdivision issues
+  // Always include 'Other' so non-general reports always have a dedicated tag and filter option
+  const overallCategoryCounts = { 'Other': 0 };
   allIssues.forEach(i => {
-    const c = i.category || 'Other';
+    const c = normalizeResidentHeatmapCategory(i.category);
     overallCategoryCounts[c] = (overallCategoryCounts[c] || 0) + 1;
   });
 
   const sortedOverallCats = Object.entries(overallCategoryCounts).sort((a, b) => b[1] - a[1]);
   const totalMappedIssues = allIssues.length;
+  const topOverallCat = sortedOverallCats.length ? sortedOverallCats[0][0] : 'None';
+  const topOverallCount = sortedOverallCats.length ? sortedOverallCats[0][1] : 0;
+  const topOverallLabel = topOverallCat === 'Other' ? 'Other (Non-General)' : topOverallCat;
 
   if (catEl) {
     const prevVal = catEl.value;
@@ -1222,7 +1235,11 @@ async function renderResidentHeatmap() {
     sortedOverallCats.forEach(([catName, count], idx) => {
       const opt = document.createElement('option');
       opt.value = catName;
-      opt.textContent = `${idx === 0 ? '★ ' : ''}#${idx + 1} ${catName} (${count}${idx === 0 ? ' — Most Frequent' : ''})`;
+      const isOther = catName === 'Other';
+      const displayLabel = isOther ? 'Other (Non-General Reports)' : catName;
+      const star = (!isOther && idx === 0 && count > 0) ? '★ ' : '';
+      const rank = count > 0 ? `#${idx + 1} ` : '';
+      opt.textContent = `${star}${rank}${displayLabel} (${count}${star ? ' — Most Frequent' : ''})`;
       catEl.appendChild(opt);
     });
     catEl.value = prevVal;
@@ -1238,17 +1255,24 @@ async function renderResidentHeatmap() {
     `;
     sortedOverallCats.forEach(([catName, count], idx) => {
       const isSel = selectedCat === catName;
-      const rankBadge = idx === 0 ? '★ ' : `#${idx + 1} `;
+      const isOther = catName === 'Other';
+      const star = (!isOther && idx === 0 && count > 0) ? '★ ' : '';
+      const rank = count > 0 ? `#${idx + 1} ` : '';
+      const displayLabel = isOther ? 'Other (Non-General)' : catName;
+      const tooltip = isOther ? 'Filter to Other (Non-General Reports)' : `Filter to ${catName}`;
       pillsHtml += `
-        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterResidentHeatmapToCategory('${catName.replace(/'/g, "\\'")}')" title="Filter to ${catName}">
-          ${rankBadge}${typeof escHtml === 'function' ? escHtml(catName) : catName} <span class="pill-count">${count}</span>
+        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterResidentHeatmapToCategory('${catName.replace(/'/g, "\\'")}')" title="${tooltip}">
+          ${star}${rank}${typeof escHtml === 'function' ? escHtml(displayLabel) : displayLabel} <span class="pill-count">${count}</span>
         </button>
       `;
     });
     pillsContainer.innerHTML = pillsHtml;
   }
 
-  const activeIssues = allIssues.filter(i => !selectedCat || i.category === selectedCat);
+  const activeIssues = allIssues.filter(i => {
+    if (!selectedCat) return true;
+    return normalizeResidentHeatmapCategory(i.category) === normalizeResidentHeatmapCategory(selectedCat);
+  });
   const heatPoints = [];
   activeIssues.forEach(i => {
     const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
@@ -1286,10 +1310,10 @@ async function renderResidentHeatmap() {
     if (!totalMappedIssues) {
       summaryEl.textContent = 'No reported concerns recorded in the subdivision boundary yet.';
     } else {
-      const topCat = sortedOverallCats.length ? sortedOverallCats[0][0] : 'None';
       const topCount = sortedOverallCats.length ? sortedOverallCats[0][1] : 0;
-      const safeCat = typeof escHtml === 'function' ? escHtml(topCat) : topCat;
-      summaryEl.innerHTML = `<strong>${activeIssues.length} issues</strong> thermal mapped. Most reported category: <strong>${safeCat}</strong> (${topCount} reports).`;
+      const safeCat = typeof escHtml === 'function' ? escHtml(topOverallLabel) : topOverallLabel;
+      const filterNotice = selectedCat ? `Filtered to <strong>${escHtml(selectedCat === 'Other' ? 'Other (Non-General Reports)' : selectedCat)}</strong> · ` : '';
+      summaryEl.innerHTML = `${filterNotice}<strong>${activeIssues.length} issues</strong> thermal mapped. Most reported category: <strong>${safeCat}</strong> (${topCount} reports).`;
     }
   }
 }

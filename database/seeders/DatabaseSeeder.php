@@ -127,7 +127,7 @@ class DatabaseSeeder extends Seeder
             ['block_lot_number' => 'Blk 8 Lot 9',  'status' => 'Vacant',   'latitude' => 10.6232, 'longitude' => 122.9632],
             ['block_lot_number' => 'Blk 9 Lot 12', 'status' => 'Occupied', 'latitude' => 10.6228, 'longitude' => 122.9602],
             ['block_lot_number' => 'Blk 10 Lot 7', 'status' => 'Occupied', 'latitude' => 10.6215, 'longitude' => 122.9622],
-            ['block_lot_number' => 'Blk 11 Lot 15','status' => 'Occupied', 'latitude' => 10.6238, 'longitude' => 122.9605],
+            ['block_lot_number' => 'Blk 11 Lot 15', 'status' => 'Occupied', 'latitude' => 10.6238, 'longitude' => 122.9605],
             ['block_lot_number' => 'Blk 12 Lot 6', 'status' => 'Occupied', 'latitude' => 10.6244, 'longitude' => 122.9618],
         ];
 
@@ -270,10 +270,10 @@ class DatabaseSeeder extends Seeder
             ['house_id' => $households['Blk 6 Lot 1']->id,  'name' => 'Angela Tan',       'relationship' => 'Spouse', 'contact_number' => '09666666666'],
             ['house_id' => $households['Blk 6 Lot 1']->id,  'name' => 'Brian Tan',        'relationship' => 'Child',  'contact_number' => null],
             ['house_id' => $households['Blk 7 Lot 4']->id,  'name' => 'Dennis Ramos',     'relationship' => 'Spouse', 'contact_number' => '09777777777'],
-            ['house_id' => $households['Blk 9 Lot 12']->id, 'name' => 'Miguel Villanueva','relationship' => 'Spouse', 'contact_number' => '09999999999'],
+            ['house_id' => $households['Blk 9 Lot 12']->id, 'name' => 'Miguel Villanueva', 'relationship' => 'Spouse', 'contact_number' => '09999999999'],
             ['house_id' => $households['Blk 9 Lot 12']->id, 'name' => 'Chloe Villanueva', 'relationship' => 'Child',  'contact_number' => null],
             ['house_id' => $households['Blk 10 Lot 7']->id, 'name' => 'Patricia Morales', 'relationship' => 'Spouse', 'contact_number' => '09199999999'],
-            ['house_id' => $households['Blk 11 Lot 15']->id,'name' => 'Dominic Alcantara','relationship' => 'Spouse', 'contact_number' => '09299999999'],
+            ['house_id' => $households['Blk 11 Lot 15']->id, 'name' => 'Dominic Alcantara', 'relationship' => 'Spouse', 'contact_number' => '09299999999'],
             ['house_id' => $households['Blk 12 Lot 6']->id, 'name' => 'Andrea Guanzon',   'relationship' => 'Spouse', 'contact_number' => '09399999999'],
         ];
 
@@ -553,6 +553,19 @@ class DatabaseSeeder extends Seeder
                 'due_date' => null,
                 'resolved_at' => null,
             ],
+            [
+                'resident_id' => $residents['resident3@subsync.com']->id,
+                'category' => 'Other',
+                'title' => 'Low-Hanging Telecom Cable Over Street',
+                'description' => 'Non-general resident report: Unidentified overhead cable sagging low across the roadway between Block 8 and Block 9.',
+                'status' => 'Pending',
+                'priority' => 'Low',
+                'latitude' => 10.6235,
+                'longitude' => 122.9615,
+                'assigned_officer_id' => null,
+                'due_date' => null,
+                'resolved_at' => null,
+            ],
         ];
 
         $issues = [];
@@ -693,8 +706,8 @@ class DatabaseSeeder extends Seeder
             ['resident_id' => $residents['resident8@subsync.com']->id, 'admin_id' => $admin->id, 'record_type' => 'Due',     'amount' => 500.00,  'description' => 'Monthly dues June 2026', 'record_date' => '2026-06-01'],
             ['resident_id' => $residents['resident8@subsync.com']->id, 'admin_id' => $admin->id, 'record_type' => 'Payment', 'amount' => 500.00,  'description' => 'Monthly dues June 2026 - GCash Paid', 'record_date' => '2026-06-12'],
             ['resident_id' => $residents['resident9@subsync.com']->id, 'admin_id' => $admin->id, 'record_type' => 'Due',     'amount' => 500.00,  'description' => 'Monthly dues June 2026', 'record_date' => '2026-06-01'],
-            ['resident_id' => $residents['resident10@subsync.com']->id,'admin_id' => $admin->id, 'record_type' => 'Due',     'amount' => 500.00,  'description' => 'Monthly dues June 2026', 'record_date' => '2026-06-01'],
-            ['resident_id' => $residents['resident10@subsync.com']->id,'admin_id' => $admin->id, 'record_type' => 'Payment', 'amount' => 500.00,  'description' => 'Monthly dues June 2026 - GCash Paid', 'record_date' => '2026-06-14'],
+            ['resident_id' => $residents['resident10@subsync.com']->id, 'admin_id' => $admin->id, 'record_type' => 'Due',     'amount' => 500.00,  'description' => 'Monthly dues June 2026', 'record_date' => '2026-06-01'],
+            ['resident_id' => $residents['resident10@subsync.com']->id, 'admin_id' => $admin->id, 'record_type' => 'Payment', 'amount' => 500.00,  'description' => 'Monthly dues June 2026 - GCash Paid', 'record_date' => '2026-06-14'],
         ];
 
         foreach ($financialRecordsData as $fr) {

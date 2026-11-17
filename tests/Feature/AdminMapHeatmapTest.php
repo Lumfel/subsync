@@ -188,4 +188,46 @@ class AdminMapHeatmapTest extends TestCase
         $this->assertStringContainsString('@keyframes hotspot-pulse-critical', $css);
         $this->assertStringContainsString('.heatmap-pill-btn', $css);
     }
+
+    public function test_heatmap_includes_tag_and_filtering_for_other_non_general_reports(): void
+    {
+        $adminView = file_get_contents(resource_path('views/layouts/admin-dashboard.blade.php'));
+        $this->assertStringContainsString('function normalizeHeatmapCategory', $adminView);
+        $this->assertStringContainsString("'Other (Non-General)'", $adminView);
+        $this->assertStringContainsString("'Other (Non-General Reports)'", $adminView);
+
+        $officerJs = file_get_contents(public_path('js/officer-portal.js'));
+        $this->assertStringContainsString('function normalizeOfficerHeatmapCategory', $officerJs);
+        $this->assertStringContainsString("'Other (Non-General)'", $officerJs);
+        $this->assertStringContainsString("'Other (Non-General Reports)'", $officerJs);
+
+        $residentView = file_get_contents(resource_path('views/layouts/residents.blade.php'));
+        $this->assertStringContainsString('function normalizeResidentHeatmapCategory', $residentView);
+        $this->assertStringContainsString("'Other (Non-General)'", $residentView);
+        $this->assertStringContainsString("'Other (Non-General Reports)'", $residentView);
+
+        // Verify IssueReport model handles 'Other' category priority correctly
+        $resident = $this->resident();
+        $otherIssue = IssueReport::create([
+            'resident_id' => $resident->id,
+            'title' => 'Low-Hanging Private Telecom Cable',
+            'category' => 'Other',
+            'description' => 'Unclassified non-general report',
+            'latitude' => 10.62350,
+            'longitude' => 122.96150,
+            'status' => 'Pending',
+        ]);
+
+        $this->assertSame('Low', $otherIssue->priority);
+
+        $admin = $this->admin();
+        $res = $this->actingAs($admin, 'admin')
+            ->withSession(['admin_id' => $admin->id, 'active_role' => 'admin'])
+            ->getJson('/api/map/issues')
+            ->assertOk();
+
+        $matched = collect($res->json())->firstWhere('id', $otherIssue->id);
+        $this->assertNotNull($matched);
+        $this->assertSame('Other', $matched['category']);
+    }
 }

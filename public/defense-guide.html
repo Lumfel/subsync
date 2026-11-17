@@ -2,552 +2,635 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SubSync — Final Defense Presentation Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SubSync — Defense Cue Cards</title>
   <style>
     :root {
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
+      --bg: #090d16;
+      --card-bg: #131b2e;
+      --card-border: #233252;
+      --primary: #3b82f6;
       --accent: #f59e0b;
-      --bg: #0f172a;
-      --surface: #1e293b;
-      --surface-border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --success: #10b981;
-      --danger: #ef4444;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --green: #10b981;
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: var(--font);
       background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
-      padding: 16px;
-      font-size: 15px;
+      font-family: var(--font);
+      line-height: 1.5;
+      padding-bottom: 60px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .container { max-width: 900px; margin: 0 auto; }
-
-    header {
-      text-align: center;
-      padding: 24px 16px;
-      background: linear-gradient(135deg, #1e293b, #0f172a);
-      border: 1px solid var(--surface-border);
-      border-radius: 16px;
-      margin-bottom: 24px;
-    }
-    .badge {
-      display: inline-block;
-      padding: 4px 12px;
-      background: rgba(37, 99, 235, 0.2);
-      border: 1px solid var(--primary);
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #60a5fa;
-      margin-bottom: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    h1 { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-    .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 16px; }
-    .meta-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-      text-align: left;
-      font-size: 13px;
-      background: rgba(0,0,0,0.2);
-      padding: 12px;
-      border-radius: 10px;
-    }
-    .meta-item strong { color: var(--accent); }
-
-    .print-btn-bar {
+    /* Sticky Top Quick Nav */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      background: rgba(9, 13, 22, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 10px 14px;
       display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin: 16px 0;
+      gap: 8px;
+      overflow-x: auto;
+      z-index: 100;
+      white-space: nowrap;
     }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 10px 18px;
-      background: var(--primary);
-      color: #fff;
+    .top-nav a {
+      color: var(--muted);
       text-decoration: none;
-      border-radius: 8px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
-      border: none;
-      cursor: pointer;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
     }
-    .btn:hover { background: var(--primary-dark); }
-    .btn-secondary { background: var(--surface); border: 1px solid var(--surface-border); }
+    .top-nav a:hover, .top-nav a:active {
+      color: #fff;
+      background: var(--primary);
+      border-color: var(--primary);
+    }
 
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    .wrap {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px;
     }
-    .card-title {
-      font-size: 18px;
+
+    /* Header */
+    .hero {
+      text-align: center;
+      padding: 20px 10px;
+      margin-bottom: 16px;
+    }
+    .hero h1 { font-size: 22px; font-weight: 800; color: #fff; }
+    .hero p { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+    /* Cue Card */
+    .cue-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .cue-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 10px;
+    }
+    .cue-title {
+      font-size: 16px;
       font-weight: 700;
       color: #fff;
-      margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
-      border-bottom: 1px solid var(--surface-border);
-      padding-bottom: 8px;
     }
-    .card-title span.step-num {
-      background: var(--primary);
-      color: #fff;
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      display: inline-flex;
+    .badge-time {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* Window Action Tags */
+    .action-row {
+      margin-bottom: 12px;
+      padding-left: 8px;
+      border-left: 3px solid var(--card-border);
+    }
+    .action-row.res { border-left-color: var(--primary); }
+    .action-row.admin { border-left-color: #a855f7; }
+    .action-row.officer { border-left-color: var(--accent); }
+
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+    .tag-res { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .tag-admin { background: rgba(168, 85, 247, 0.2); color: #c084fc; }
+    .tag-officer { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+    .action-text {
+      font-size: 14px;
+      color: #e2e8f0;
+      line-height: 1.45;
+    }
+    .action-text strong { color: #fff; }
+
+    /* What to Say Bubble */
+    .speech-bubble {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px dashed rgba(245, 158, 11, 0.4);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-top: 14px;
+    }
+    .speech-label {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+      display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 5px;
+    }
+    .speech-quote {
+      font-size: 13.5px;
+      color: #f8fafc;
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    /* Login Copy Box */
+    .cred-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    .cred-card {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cred-info { font-size: 13px; }
+    .cred-name { font-weight: 700; color: #fff; font-size: 14px; }
+    .cred-email { color: #38bdf8; font-family: monospace; font-size: 12.5px; }
+    .cred-pass { color: var(--muted); font-size: 12px; }
+    .copy-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .copy-btn:active { background: var(--primary); }
+
+    /* Summary Matrix */
+    .rev-row {
+      background: rgba(0,0,0,0.25);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .rev-id { font-weight: 800; color: var(--accent); margin-right: 6px; }
+
+    /* Q&A Accordion */
+    details {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+    }
+    summary {
+      font-weight: 700;
+      color: #38bdf8;
+      cursor: pointer;
+      outline: none;
+    }
+    details p {
+      margin-top: 8px;
+      color: #cbd5e1;
+      line-height: 1.5;
       font-size: 13px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 12px 0;
-      font-size: 13.5px;
-    }
-    th, td {
-      padding: 10px 12px;
-      border: 1px solid var(--surface-border);
-      text-align: left;
-    }
-    th { background: rgba(0,0,0,0.3); color: var(--text-muted); font-weight: 600; }
-    td code {
-      background: rgba(0,0,0,0.4);
-      padding: 2px 6px;
-      border-radius: 4px;
-      color: #38bdf8;
-      font-family: monospace;
-      font-size: 12.5px;
-    }
-
-    .pill {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 6px;
-      font-size: 11.5px;
-      font-weight: 600;
-    }
-    .pill-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
-    .pill-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
-    .pill-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; }
-    .pill-info { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
-
-    .script-box {
-      background: rgba(15, 23, 42, 0.6);
-      border-left: 4px solid var(--accent);
-      padding: 12px 16px;
-      border-radius: 0 8px 8px 0;
-      margin: 12px 0;
-      font-style: italic;
-      color: #e2e8f0;
-      font-size: 14px;
-    }
-    .script-speaker {
-      font-weight: 700;
-      color: var(--accent);
-      font-style: normal;
-      display: block;
-      margin-bottom: 4px;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    ol.flow-list { padding-left: 20px; margin: 12px 0; }
-    ol.flow-list li { margin-bottom: 12px; }
-    ol.flow-list li strong { color: #fff; }
-
-    .qa-box {
-      margin-bottom: 14px;
-      background: rgba(0,0,0,0.25);
-      border: 1px solid var(--surface-border);
-      border-radius: 8px;
-      padding: 14px;
-    }
-    .qa-q { font-weight: 700; color: #38bdf8; margin-bottom: 6px; font-size: 14.5px; }
-    .qa-a { font-size: 13.5px; color: #cbd5e1; }
-
     @media print {
-      body { background: #fff; color: #000; font-size: 12pt; }
-      .card { border: 1px solid #ccc; box-shadow: none; page-break-inside: avoid; background: #fff; }
-      .card-title { color: #000; border-bottom: 1px solid #ccc; }
-      .script-box { background: #f8f9fa; color: #222; border-left: 4px solid #f59e0b; }
-      .print-btn-bar { display: none; }
-      th, td { border: 1px solid #ccc; color: #000; }
-      th { background: #f0f0f0; }
-      td code { background: #f0f0f0; color: #000; }
+      .top-nav { display: none; }
+      body { background: #fff; color: #000; padding: 0; }
+      .cue-card { border: 1px solid #ccc; box-shadow: none; background: #fff; page-break-inside: avoid; }
+      .cue-title, .cred-name { color: #000; }
+      .speech-bubble { background: #f8f9fa; border: 1px solid #ccc; color: #000; }
+      .speech-quote { color: #000; }
+      .action-text { color: #222; }
     }
   </style>
 </head>
 <body>
 
-<div class="container">
+  <!-- QUICK JUMP BAR -->
+  <nav class="top-nav">
+    <a href="#logins">🔑 Logins</a>
+    <a href="#act1">1. Intro</a>
+    <a href="#act2">2. Register</a>
+    <a href="#act3">3. Map</a>
+    <a href="#act4">4. Issues</a>
+    <a href="#act5">5. Announce</a>
+    <a href="#act6">6. Finance</a>
+    <a href="#act7">7. Census</a>
+    <a href="#act8">8. Backups</a>
+    <a href="#revisions">🛡️ Revisions</a>
+    <a href="#qa">❓ Q&A</a>
+  </nav>
 
-  <header>
-    <div class="badge">CHMSU BSIT Capstone Final Defense</div>
-    <h1>SubSync: Final Defense Presentation Guide</h1>
-    <div class="subtitle">An Automated Web-Based Platform for Enhancing Community Engagement in Residential Subdivisions</div>
-    <div class="meta-grid">
-      <div class="meta-item"><strong>Institution:</strong> Carlos Hilado Memorial State University</div>
-      <div class="meta-item"><strong>Campus:</strong> Alijis Campus, Bacolod City</div>
-      <div class="meta-item"><strong>Proponents:</strong> Barbas, Guanzon, Salazar, Tibo-oc</div>
-      <div class="meta-item"><strong>Panel:</strong> Dr. Usy, Dr. Yen, Engr. Talaquines (Chair)</div>
+  <div class="wrap">
+
+    <div class="hero">
+      <h1>SubSync Defense Cue Cards</h1>
+      <p>Clean, pocket-friendly demo script for CHMSU Final Defense</p>
     </div>
-  </header>
 
-  <div class="print-btn-bar">
-    <button class="btn" onclick="window.print()">🖨️ Save as PDF / Print Guide</button>
+    <!-- SECTION: LOGINS -->
+    <section id="logins" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">🔑 Demo Accounts (Tap to Copy)</div>
+        <span class="badge-time">Credentials</span>
+      </div>
+      <div class="cred-grid">
+
+        <div class="cred-card">
+          <div class="cred-info">
+            <div class="cred-name">System Administrator</div>
+            <div class="cred-email">admin@subsync.com</div>
+            <div class="cred-pass">Pass: Admin@12345 (URL: /admin-access)</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('admin@subsync.com')">Copy</button>
+        </div>
+
+        <div class="cred-card">
+          <div class="cred-info">
+            <div class="cred-name">Security Officer (Juan)</div>
+            <div class="cred-email">officer1@subsync.com</div>
+            <div class="cred-pass">Pass: Officer@123 (URL: /login)</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('officer1@subsync.com')">Copy</button>
+        </div>
+
+        <div class="cred-card">
+          <div class="cred-info">
+            <div class="cred-name">Resident 1 (Pedro Reyes)</div>
+            <div class="cred-email">resident1@subsync.com</div>
+            <div class="cred-pass">Pass: Resident@123 · Blk 1 Lot 5 · ₱500 due</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('resident1@subsync.com')">Copy</button>
+        </div>
+
+        <div class="cred-card">
+          <div class="cred-info">
+            <div class="cred-name">Resident 2 (Ana Garcia - Clean)</div>
+            <div class="cred-email">resident2@subsync.com</div>
+            <div class="cred-pass">Pass: Resident@123 · Blk 2 Lot 3 · ₱0 balance</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('resident2@subsync.com')">Copy</button>
+        </div>
+
+        <div class="cred-card">
+          <div class="cred-info">
+            <div class="cred-name">Pending Resident (Grace)</div>
+            <div class="cred-email">resident11@subsync.com</div>
+            <div class="cred-pass">Pass: Resident@123 · For Live Approval Demo</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('resident11@subsync.com')">Copy</button>
+        </div>
+
+        <div class="cred-card">
+          <div class="cred-info">
+            <div class="cred-name">Pending Officer (Jaime)</div>
+            <div class="cred-email">officer_pending@subsync.com</div>
+            <div class="cred-pass">Pass: Officer@123 · For Live Officer Approval Demo</div>
+          </div>
+          <button class="copy-btn" onclick="copyText('officer_pending@subsync.com')">Copy</button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ACT 1 -->
+    <section id="act1" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 1: Theoretical Framing & Objectives</div>
+        <span class="badge-time">00:00 - 02:00</span>
+      </div>
+
+      <div class="action-row">
+        <div class="action-text">
+          • Screen: Show Landing Page (<code>http://subsync.test/</code>).<br>
+          • Keep split-screen ready: Left (Resident Login), Right (Admin Login).
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ What to Say (Presenter 1):</span>
+        <div class="speech-quote">
+          "Good day esteemed panel members. We present SubSync: An Automated Web-Based Platform for Enhancing Community Engagement in Residential Subdivisions.<br><br>
+          Traditional HOAs rely on paper records, physical bulletin boards, and manual ledgers. SubSync digitalizes this through 4 core objectives:<br>
+          1. <strong>Communication:</strong> Draft-to-publish notices and formal messaging.<br>
+          2. <strong>Issue Reporting:</strong> Geofenced reporting, auto-priority, and audit trail.<br>
+          3. <strong>Recommendations:</strong> Civic feedback module.<br>
+          4. <strong>Geospatial Mapping:</strong> Leaflet interactive map of facilities and occupancy.<br>
+          Let us show you the live flow."
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 2 -->
+    <section id="act2" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 2: Registration & Multi-Role Approvals</div>
+        <span class="badge-time">02:00 - 04:00</span>
+      </div>
+
+      <div class="action-row res">
+        <span class="tag tag-res">📱 Resident (Left Window)</span>
+        <div class="action-text">
+          1. Point to <strong>Data Privacy Notice</strong> (<code>/privacy</code>) — <em>RA 10173 compliant</em>.<br>
+          2. Click <strong>Register</strong>. Enter: <em>Juan Resident</em>, <em>Blk 3 Lot 14</em>.<br>
+          3. Check the mandatory <strong>Privacy Consent</strong> box. Submit.<br>
+          4. Try logging in immediately: Screen blocks with <strong>"Pending Approval"</strong>.
+        </div>
+      </div>
+
+      <div class="action-row admin">
+        <span class="tag tag-admin">💻 Admin (Right Window)</span>
+        <div class="action-text">
+          5. Login at <code>/admin-access</code>.<br>
+          6. Point out top <strong>Pending Registrations badge</strong>.<br>
+          7. Go to <strong>Households & Users</strong> ➔ Residents ➔ Find <code>resident11@subsync.com</code> (Grace) ➔ Click <strong>Approve</strong>.<br>
+          8. Go to <strong>Officers</strong> ➔ Find <code>officer_pending@subsync.com</code> (Jaime) ➔ Click <strong>Approve</strong>.
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ Key Defense Line:</span>
+        <div class="speech-quote">
+          "Both residents and staff accounts require administrator vetting before entering the system, safeguarding community records."
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 3 -->
+    <section id="act3" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 3: Interactive Map & Facilities</div>
+        <span class="badge-time">04:00 - 06:00</span>
+      </div>
+
+      <div class="action-row admin">
+        <span class="tag tag-admin">💻 Admin / Officer (Right Window)</span>
+        <div class="action-text">
+          1. Open <strong>Interactive Map</strong>.<br>
+          2. <strong>Geofence Range (S4):</strong> Point out boundary bounds in <code>map_settings</code>.<br>
+          3. <strong>Numbered Pins (S3/S18):</strong> Show issues appear as numbered priority pins.<br>
+          4. <strong>Facilities:</strong> Click <em>Clubhouse</em>, <em>Basketball Court</em>, <em>Gate 1</em>, <em>MRF</em>.<br>
+          5. <strong>Occupancy (S10):</strong> Lots are cleanly marked <strong>Occupied</strong> or <strong>Vacant</strong>.
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ Key Defense Line:</span>
+        <div class="speech-quote">
+          "As requested in Revision S10, the term 'delinquent' was completely removed. Lots are simply Occupied or Vacant, and accounts are Active or Non-Compliant."
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 4 -->
+    <section id="act4" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 4: Issue Reporting & Staff Resolution</div>
+        <span class="badge-time">06:00 - 08:30</span>
+      </div>
+
+      <div class="action-row res">
+        <span class="tag tag-res">📱 Resident (Left Window - Pedro Reyes)</span>
+        <div class="action-text">
+          1. Click <strong>Report an Issue</strong>.<br>
+          2. Select Category: <strong>Infrastructure</strong> ➔ Title: <em>Broken Street Light</em>.<br>
+          3. <strong>Auto-Priority (S2):</strong> Shows priority auto-set to <strong>High</strong>.<br>
+          4. <strong>Draggable Pin (S3):</strong> Click inside Block 1. <em>(Quick demo: drag outside border ➔ show out-of-bounds warning)</em>. Submit report.<br>
+          5. <strong>Add Details Later (S2):</strong> Click on the submitted issue ➔ Click <strong>Add Details / Pictures</strong> ➔ Add note: <em>"Bracket is cracked."</em>
+        </div>
+      </div>
+
+      <div class="action-row officer">
+        <span class="tag tag-officer">🛡️ Officer (Right Window - Juan dela Cruz)</span>
+        <div class="action-text">
+          6. Filter by <strong>"Assigned to Me"</strong>: Shows Officer Juan's 3 assigned security tasks.<br>
+          7. Open Pedro's streetlight issue.<br>
+          8. Change status to <strong>In Progress</strong> ➔ then <strong>Resolved</strong>.<br>
+          9. Click <strong>History / Audit Log</strong>: Shows immutable timestamp of who acted.
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ Key Defense Line:</span>
+        <div class="speech-quote">
+          "Per Revision S2, the resident can append extra photos and notes anytime while keeping the original incident report tamper-proof."
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 5 -->
+    <section id="act5" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 5: Announcements & WebSocket Push</div>
+        <span class="badge-time">08:30 - 10:30</span>
+      </div>
+
+      <div class="action-row officer">
+        <span class="tag tag-officer">🛡️ Officer (Right Window)</span>
+        <div class="action-text">
+          1. Go to <strong>Announcements</strong> ➔ Create.<br>
+          2. <strong>Template (S5):</strong> Select <em>"Maintenance Schedule"</em> quick-fill preset.<br>
+          3. <strong>Draft Mode (S13):</strong> Click <strong>Save as Draft</strong>.<br>
+          4. <em>Look at Left Window (Resident):</em> <strong>Draft is completely hidden!</strong><br>
+          5. Back to Officer window ➔ Click <strong>Publish</strong>.
+        </div>
+      </div>
+
+      <div class="action-row res">
+        <span class="tag tag-res">📱 Resident (Left Window)</span>
+        <div class="action-text">
+          6. <strong>Watch screen pop up instantly</strong> via Laravel Reverb (WebSocket) without reloading!<br>
+          7. Click notice to read ➔ Clears notification badge automatically.<br>
+          8. Go to <strong>Events</strong> ➔ <em>General Assembly</em> ➔ Click <strong>"Going"</strong>.
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ Key Defense Line:</span>
+        <div class="speech-quote">
+          "Revision S13 is fully satisfied: drafts are strictly isolated on the server until published, at which point WebSocket broadcasting notifies residents instantly."
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 6 -->
+    <section id="act6" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 6: Finance, GCash & CSV Export</div>
+        <span class="badge-time">10:30 - 12:30</span>
+      </div>
+
+      <div class="action-row res">
+        <span class="tag tag-res">📱 Resident (Left Window)</span>
+        <div class="action-text">
+          1. Open <strong>HOA Expenses</strong>: Shows 12 audited expenses (Security ₱25k, Landscaping ₱12k). Click <strong>"View Receipt"</strong> to open PDF receipt.<br>
+          2. Check Balance: Pedro owes <strong>₱500.00</strong>.<br>
+          3. Click <strong>Pay via GCash</strong>: Shows QR code & pending submission (Ref <code>GCASH-20260616-9988</code>).
+        </div>
+      </div>
+
+      <div class="action-row admin">
+        <span class="tag tag-admin">💻 Admin (Right Window)</span>
+        <div class="action-text">
+          4. Go to <strong>Payments Queue</strong>.<br>
+          5. Find Pedro's submission ➔ Click <strong>Validate Payment</strong>.<br>
+          6. <em>Result:</em> Pedro's balance on Left turns to <strong>₱0.00</strong> immediately!<br>
+          7. Click <strong>Export to CSV (S11)</strong>: Downloads standard RFC-compliant CSV file.
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ Key Defense Line:</span>
+        <div class="speech-quote">
+          "As requested in Revision S11, heavy spreadsheet dependencies were replaced with streaming RFC-compliant CSV exports."
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 7 -->
+    <section id="act7" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 7: Governance, Chat & Census</div>
+        <span class="badge-time">12:30 - 14:00</span>
+      </div>
+
+      <div class="action-row res">
+        <span class="tag tag-res">📱 Resident (Left Window)</span>
+        <div class="action-text">
+          1. <strong>Recommendations:</strong> View 10 civic suggestions ➔ Submit: <em>"Playground Mats"</em>.<br>
+          2. <strong>Messages:</strong> Send inquiry to Officer over formal messaging channel.<br>
+          3. <strong>Household Members:</strong> Pedro shows occupants: <em>Lina (Spouse)</em> & <em>Ricky (Child)</em>.
+        </div>
+      </div>
+
+      <div class="action-row admin">
+        <span class="tag tag-admin">💻 Admin (Right Window)</span>
+        <div class="action-text">
+          4. Go to <strong>Household Members</strong>: Shows complete subdivision census of **15 occupants** across all blocks with relationship filters.
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ Key Defense Line:</span>
+        <div class="speech-quote">
+          "Residents can only manage their own household occupants, protected by strict IDOR authorization, while the administration retains a full community census for emergencies."
+        </div>
+      </div>
+    </section>
+
+    <!-- ACT 8 -->
+    <section id="act8" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">Act 8: Backups & ISO 25010 Summary</div>
+        <span class="badge-time">14:00 - 15:00</span>
+      </div>
+
+      <div class="action-row admin">
+        <span class="tag tag-admin">💻 Admin (Right Window)</span>
+        <div class="action-text">
+          1. Go to <strong>Settings ➔ System & Security</strong>.<br>
+          2. <strong>Automated Backups:</strong> Point to 14-day rotating MySQL snapshots.<br>
+          3. Click <strong>"Back Up Now"</strong>: Shows live database dump created in real time.<br>
+          4. <strong>Activity Trail:</strong> Review the immutable activity log.
+        </div>
+      </div>
+
+      <div class="speech-bubble">
+        <span class="speech-label">🗣️ Closing Spiel:</span>
+        <div class="speech-quote">
+          "SubSync was rigorously evaluated using the ISO 25010 software quality standard across functional suitability, reliability, usability, and security. We are now ready for your questions."
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL REVISIONS SCORECARD -->
+    <section id="revisions" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">🛡️ Panel Revisions Quick Match</div>
+        <span class="badge-time">Cheat Sheet</span>
+      </div>
+
+      <div class="rev-row"><span class="rev-id">S2:</span> Auto-priority + Add details later ➔ Done via <code>POST /api/issues/{id}/details</code>.</div>
+      <div class="rev-row"><span class="rev-id">S3/S4:</span> Accurate Pin + Bounds ➔ Stored in <code>map_settings</code> with geofence validation.</div>
+      <div class="rev-row"><span class="rev-id">S5:</span> Announcement Templates + Datepicker ➔ Quick-fill presets with HTML5 datepicker.</div>
+      <div class="rev-row"><span class="rev-id">S6:</span> Date From-To Filter ➔ Server auto-swaps reversed date ranges.</div>
+      <div class="rev-row"><span class="rev-id">S10:</span> Change "Delinquent" ➔ Changed to Occupied/Vacant & Active/Non-Compliant.</div>
+      <div class="rev-row"><span class="rev-id">S11:</span> Excel to CSV ➔ Removed SheetJS; streaming RFC CSV exports.</div>
+      <div class="rev-row"><span class="rev-id">S13:</span> Announcement Drafts ➔ Draft status hidden from residents until published.</div>
+      <div class="rev-row"><span class="rev-id">D1:</span> Realtime Tracking Docs ➔ Laravel Reverb WebSocket with SSE fallback.</div>
+    </section>
+
+    <!-- ANTICIPATED QA -->
+    <section id="qa" class="cue-card">
+      <div class="cue-header">
+        <div class="cue-title">❓ Top 4 Defense Questions & Answers</div>
+        <span class="badge-time">Q&A Shield</span>
+      </div>
+
+      <details>
+        <summary>1. Why have two financial ledgers (Personal vs. HOA Expenses)?</summary>
+        <p><strong>Answer:</strong> SubSync intentionally separates private resident dues accounting from civic transparency. The personal ledger tracks what an individual owes and validates GCash receipts. The HOA Expenses ledger publicly discloses how association dues are utilized (security, pool, utilities) with verifiable PDF receipts.</p>
+      </details>
+
+      <details>
+        <summary>2. How do you prevent Resident A from seeing Resident B's family members?</summary>
+        <p><strong>Answer:</strong> In <code>ResidentController::authorizeMember()</code>, resident queries are strictly scoped to their authenticated <code>house_id</code>. Any attempt to read or modify other households returns an immediate <code>403 Forbidden</code>.</p>
+      </details>
+
+      <details>
+        <summary>3. How do you prevent session clash when Admin and Resident use the same browser?</summary>
+        <p><strong>Answer:</strong> SubSync utilizes Laravel multi-guard authentication (<code>admin</code>, <code>officer</code>, <code>resident</code>). Separate session cookies (<code>subsync_admin_session</code>, <code>subsync_resident_session</code>) are resolved by our custom <code>ResolvePortalSession</code> middleware before session start.</p>
+      </details>
+
+      <details>
+        <summary>4. What happens if WebSockets are blocked by carrier firewalls?</summary>
+        <p><strong>Answer:</strong> SubSync uses a dual-layer real-time architecture: it is WebSocket-first using Laravel Reverb for low-latency push, but automatically downgrades to an HTTP-based Server-Sent Events (SSE) stream (<code>/api/stream/updates</code>) if WebSocket handshakes fail.</p>
+      </details>
+    </section>
+
   </div>
 
-  <!-- SECTION 0: CREDENTIALS CHEAT SHEET -->
-  <div class="card">
-    <div class="card-title">🔑 Test Accounts Cheat Sheet (All Verified)</div>
-    <p style="font-size:13px; color:var(--text-muted); margin-bottom:10px;">
-      Use split-screen: Resident on the Left (Chrome), Admin/Officer on the Right (Edge/Incognito).
-    </p>
-    <table>
-      <thead>
-        <tr>
-          <th>Role</th>
-          <th>Login Email</th>
-          <th>Password</th>
-          <th>Lot / Status</th>
-          <th>Demo Purpose</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><span class="pill pill-danger">Admin</span></td>
-          <td><code>admin@subsync.com</code></td>
-          <td><code>Admin@12345</code></td>
-          <td>System HQ</td>
-          <td>Approvals, Validation, Backups</td>
-        </tr>
-        <tr>
-          <td><span class="pill pill-warning">Officer</span></td>
-          <td><code>officer1@subsync.com</code></td>
-          <td><code>Officer@123</code></td>
-          <td>Security Head</td>
-          <td>Assigned Tasks, Security Roving</td>
-        </tr>
-        <tr>
-          <td><span class="pill pill-warning">Officer</span></td>
-          <td><code>officer3@subsync.com</code></td>
-          <td><code>Officer@123</code></td>
-          <td>Maintenance Head</td>
-          <td>Repairs, Fire Hydrant, Work Orders</td>
-        </tr>
-        <tr>
-          <td><span class="pill pill-success">Resident 1</span></td>
-          <td><code>resident1@subsync.com</code></td>
-          <td><code>Resident@123</code></td>
-          <td>Blk 1 Lot 5</td>
-          <td>Pedro Reyes: ₱500 balance, issues, GCash</td>
-        </tr>
-        <tr>
-          <td><span class="pill pill-success">Resident 2</span></td>
-          <td><code>resident2@subsync.com</code></td>
-          <td><code>Resident@123</code></td>
-          <td>Blk 2 Lot 3</td>
-          <td>Ana Garcia: ₱0.00 clean balance, resolved noise</td>
-        </tr>
-        <tr>
-          <td><span class="pill pill-danger">Resident 3</span></td>
-          <td><code>resident3@subsync.com</code></td>
-          <td><code>Resident@123</code></td>
-          <td>Blk 3 Lot 8</td>
-          <td>Carlos Bautista: ₱2,500 overdue, non-compliant</td>
-        </tr>
-        <tr>
-          <td><span class="pill pill-info">Pending Res</span></td>
-          <td><code>resident11@subsync.com</code></td>
-          <td><code>Resident@123</code></td>
-          <td>Blk 11 Lot 15</td>
-          <td>Grace Alcantara: <strong>Live Admin Approval Demo</strong></td>
-        </tr>
-        <tr>
-          <td><span class="pill pill-info">Pending Off</span></td>
-          <td><code>officer_pending@subsync.com</code></td>
-          <td><code>Officer@123</code></td>
-          <td>Safety Head</td>
-          <td>Jaime Mercado: <strong>Live Officer Approval Demo</strong></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- SECTION 1: TIMELINE -->
-  <div class="card">
-    <div class="card-title">⏱️ 15-Minute Presentation Schedule</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Time</th>
-          <th>Act / Focus</th>
-          <th>Lead Presenter</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>00:00 - 02:00</td>
-          <td>Act 1: Theoretical Framing & 4 Specific Objectives</td>
-          <td>Presenter 1 (Lead Speaker)</td>
-        </tr>
-        <tr>
-          <td>02:00 - 04:00</td>
-          <td>Act 2: RA 10173 Consent, Registration & Multi-Role Approvals</td>
-          <td>Presenter 1 & Presenter 2</td>
-        </tr>
-        <tr>
-          <td>04:00 - 06:00</td>
-          <td>Act 3: Interactive Dynamic Mapping & Subdivision Facilities</td>
-          <td>Presenter 2 (Screen Operator)</td>
-        </tr>
-        <tr>
-          <td>06:00 - 08:30</td>
-          <td>Act 4: Geofenced Issue Reporting, Auto-Priority & Staff Resolution</td>
-          <td>Presenter 2 & Presenter 3</td>
-        </tr>
-        <tr>
-          <td>08:30 - 10:30</td>
-          <td>Act 5: Announcements Draft-to-Publish & Real-Time WebSocket Push</td>
-          <td>Presenter 3</td>
-        </tr>
-        <tr>
-          <td>10:30 - 12:30</td>
-          <td>Act 6: Financial Transparency, GCash Validation & CSV Export</td>
-          <td>Presenter 3 & Presenter 4</td>
-        </tr>
-        <tr>
-          <td>12:30 - 14:00</td>
-          <td>Act 7: Participatory Governance, Formal Messaging & Household Census</td>
-          <td>Presenter 4</td>
-        </tr>
-        <tr>
-          <td>14:00 - 15:00</td>
-          <td>Act 8: Automated Security, Backups & ISO 25010 Evaluation</td>
-          <td>Presenter 4 & Team Wrap-up</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- SECTION 2: DEMO SCRIPT -->
-  <div class="card">
-    <div class="card-title"><span class="step-num">1</span> Act 1: Opening & Theoretical Framing (2 Mins)</div>
-    <div class="script-box">
-      <span class="script-speaker">Presenter 1 (Opening Spiel):</span>
-      "Good day to our esteemed panel members: Dr. Jayrelle Usy, Dr. Giovanni Yen, and our Chairman, Engr./Prof. Mark Jarus Talaquines. We are the proponents of SubSync: An Automated Web-Based Platform for Enhancing Community Engagement in Residential Subdivisions.<br><br>
-      Traditional homeowners associations suffer from fragmented paper records, unverified announcements, delayed complaint blotters, and opaque finances. SubSync digitalizes subdivision operations around four core specific objectives:<br>
-      1. Integrated Communication with draft-to-publish notices and formal messaging.<br>
-      2. Automated Issue Reporting with geofenced location-pinning, rule-based auto-priority, and immutable audit logs.<br>
-      3. Community Recommendations empowering civic participatory governance.<br>
-      4. Dynamic Geospatial Mapping using Leaflet to visualize facilities, occupancy, and geofenced incidents.<br>
-      Allow us to present the live start-to-finish workflow."
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="step-num">2</span> Act 2: RA 10173 Consent, Registration & Approvals (2 Mins)</div>
-    <ol class="flow-list">
-      <li><strong>Landing Page (<code>/</code>):</strong> Point out the Terra Nova HOA introduction and click the <strong>Privacy Policy (<code>/privacy</code>)</strong> link to show Data Privacy Act of 2012 (RA 10173) compliance.</li>
-      <li><strong>Resident Registration:</strong> Open the registration modal. Fill in: Name (*"Juan Resident"*), Phone (*"09171234567"*), and Block/Lot (*"Blk 3 Lot 14"*). Show the mandatory Data Privacy consent checkbox. Submit.</li>
-      <li><strong>Login Block:</strong> Try logging in immediately to demonstrate that unverified accounts with status <code>Pending</code> are blocked from entering.</li>
-      <li><strong>Admin Resident Approval (Right Window):</strong> Log into <code>/admin-access</code> as <code>admin@subsync.com</code>. Point out the Pending badge, open Residents table, locate <code>resident11@subsync.com</code> (*Grace Alcantara*), and click <strong>Approve</strong>. Her status updates to <code>Active</code> in real time.</li>
-      <li><strong>Admin Officer Approval:</strong> In the Admin Dashboard, click <strong>Officers</strong>. Point to <code>officer_pending@subsync.com</code> (*Jaime Mercado - Safety Officer*). Explain: <em>"Staff accounts require administrator vetting before gaining elevated privileges."</em> Click <strong>Approve</strong>.</li>
-    </ol>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="step-num">3</span> Act 3: Interactive Mapping & Facilities (2 Mins)</div>
-    <ol class="flow-list">
-      <li><strong>Geofenced Boundary (Panel Revision S4):</strong> In the Admin or Officer portal, open the <strong>Interactive Map</strong>. Point out the coordinates boundary for Terra Nova stored in <code>map_settings</code> (10.6195 to 10.6260 Lat, 122.9580 to 122.9650 Lng).</li>
-      <li><strong>10 Subdivision Facilities:</strong> Click on markers:
-        <ul>
-          <li><em>Community Clubhouse</em> (Administrative office & function rooms)</li>
-          <li><em>Outdoor Basketball Court</em> (Covered electronic scoreboard)</li>
-          <li><em>Main Entrance Gate & Guardhouse</em> (24/7 security & RFID lane)</li>
-          <li><em>Community Swimming Pool</em> & <em>Materials Recovery Facility (MRF)</em></li>
-        </ul>
-      </li>
-      <li><strong>Numbered Pins (Panel Revision S3 / S18):</strong> Show that reported issues appear as distinct, numbered priority markers rather than confusing generic heatmaps.</li>
-      <li><strong>Household Occupancy (Panel Revision S10):</strong> Point out lots are categorized strictly as <strong>Occupied</strong> or <strong>Vacant</strong> (delinquent terminology removed).</li>
-    </ol>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="step-num">4</span> Act 4: Geofenced Issue Reporting & Staff Resolution (2.5 Mins)</div>
-    <ol class="flow-list">
-      <li><strong>Resident Reports Issue (Left Window - Pedro Reyes <code>resident1@subsync.com</code>):</strong>
-        <ul>
-          <li>Click <strong>Report an Issue</strong>. Select category <em>"Infrastructure"</em>, Title: <em>"Broken Street Light near Lot 5"</em>.</li>
-          <li><strong>Auto-Priority (Panel Revision S2):</strong> Explain: <em>"The backend algorithmically assigns priority (High) based on safety hazard rules."</em></li>
-          <li><strong>Accurate Geolocation (Panel Revision S3):</strong> Click on the map near Block 1. Show the live coordinates. Attempt to drag the pin outside the subdivision border to demonstrate that out-of-bounds submissions are blocked.</li>
-          <li>Attach a photo and submit.</li>
-        </ul>
-      </li>
-      <li><strong>Adding Post-Submission Details (Panel Revision S2):</strong>
-        <ul>
-          <li>Open the newly filed issue. Click <strong>Add Details / Additional Photos</strong>.</li>
-          <li>Type: <em>"Streetlight bracket is cracked and hanging loose."</em> Attach an additional image.</li>
-          <li>Explain: <em>"Original incident text is immutable for legal auditing; supplementary notes and photos append chronologically."</em></li>
-        </ul>
-      </li>
-      <li><strong>Officer Roving & SLA Resolution (Right Window - Officer Juan <code>officer1@subsync.com</code>):</strong>
-        <ul>
-          <li>Filter by <strong>"Assigned to Me"</strong>: Officer Juan sees his 3 assigned security tickets with clear SLA due date badges.</li>
-          <li>Open the newly reported streetlight ticket.</li>
-          <li>Update Status to <strong>In Progress</strong> with dispatch note: <em>"Electrician dispatched."</em></li>
-          <li>Update Status to <strong>Resolved</strong>.</li>
-          <li>Click <strong>History / Audit Log</strong> to display the immutable timestamp showing who reported, assigned, and resolved the issue.</li>
-        </ul>
-      </li>
-    </ol>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="step-num">5</span> Act 5: Announcements Draft-to-Publish & WebSocket Push (2 Mins)</div>
-    <ol class="flow-list">
-      <li><strong>Predefined Templates (Panel Revision S5):</strong> In Officer Portal, go to <strong>Create Announcement</strong>. Use the template quick-fill to select <em>"Maintenance Schedule"</em>. Use the native HTML5 date picker.</li>
-      <li><strong>Draft Flow (Panel Revision S13):</strong> Click <strong>Save as Draft</strong>. Look at Pedro's resident screen on the left: the draft notice is <strong>completely hidden</strong> from residents.</li>
-      <li><strong>Live Publish & Push:</strong> In Officer Portal, click <strong>Publish</strong>. Look at Pedro's screen: without refreshing, the new announcement card pops up via <strong>Laravel Reverb (WebSocket)</strong>. Pedro views it, which auto-clears his unread alert.</li>
-      <li><strong>Community Events:</strong> Open <strong>Events</strong>. Show the upcoming <em>General Assembly</em> and have Pedro toggle his RSVP to <strong>"Going"</strong>.</li>
-    </ol>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="step-num">6</span> Act 6: HOA Financial Transparency, GCash & CSV Export (2 Mins)</div>
-    <ol class="flow-list">
-      <li><strong>HOA Expenses Transparency:</strong> In Resident Portal, open <strong>HOA Expenses</strong>. Explain: <em>"Residents can see how association dues are utilized."</em> Show 12 audited operational expenses (Security ₱25k, Landscaping ₱12k, Utilities). Click <strong>"View Receipt"</strong> to stream a verified PDF receipt directly from the private disk.</li>
-      <li><strong>Resident Payment Submission:</strong> Pedro checks his balance (₱500.00). Click <strong>Pay via GCash</strong>. Show the official HOA receiving QR code and account details. Point out Pedro's pending submission (Ref <code>GCASH-20260616-9988</code>).</li>
-      <li><strong>Admin Validation Queue:</strong> Switch to Admin Dashboard -> <strong>Payments</strong>. Verify reference code, click <strong>Validate Payment</strong>.
-        <ul>
-          <li>Pedro's personal balance automatically decreases to <strong>₱0.00</strong>.</li>
-          <li>The payment is recorded in the community transparency revenue ledger.</li>
-          <li>An official electronic receipt timestamp is generated.</li>
-        </ul>
-      </li>
-      <li><strong>Standardized CSV Export (Panel Revision S11):</strong> Click <strong>Export to CSV</strong>. Reiterate that heavy spreadsheet dependencies were replaced with RFC-compliant streaming CSV for accounting auditing.</li>
-    </ol>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="step-num">7</span> Act 7: Governance, Formal Messaging & Household Census (1.5 Mins)</div>
-    <ol class="flow-list">
-      <li><strong>Community Recommendations (Objective 1.3):</strong> Resident submits a civic suggestion: <em>"Rubberized Playground Mats"</em>. Admin reviews and marks it <strong>Approved</strong>.</li>
-      <li><strong>Formal Messaging (Objective 1.1):</strong> Open Messages in both windows. Send an inquiry from Pedro to Officer. Explain: <em>"SubSync avoids casual chat stickers in favor of a formal, documented communication log."</em></li>
-      <li><strong>Household Occupants Census:</strong> In Resident Portal, scroll to <strong>Household Members</strong>. Pedro shows his occupants (*Lina Reyes [Spouse]* & *Ricky Reyes [Child]*). In Admin Dashboard -> <strong>Household Members</strong>, show the complete subdivision census of **15 occupants** across all 12 blocks with relationship and block/lot filters.</li>
-    </ol>
-  </div>
-
-  <div class="card">
-    <div class="card-title"><span class="step-num">8</span> Act 8: Security, Automated Backups & Wrap-up (1 Min)</div>
-    <ol class="flow-list">
-      <li><strong>Automated Backups:</strong> In Admin Settings -> <strong>System & Security</strong>, display the daily rotating MySQL database snapshots (retaining 14 days) and click <strong>"Back Up Now"</strong> to create an instant snapshot.</li>
-      <li><strong>Immutable Activity Log:</strong> Review the append-only audit trail recording logins, status updates, and exports.</li>
-      <li><strong>ISO 25010 Evaluation Summary:</strong> Conclude by stating that SubSync was evaluated across Functional Suitability, Performance Efficiency, Usability, Security, and Reliability. Hand the floor over for panel questions.</li>
-    </ol>
-  </div>
-
-  <!-- SECTION 3: PANEL REVISIONS SCORECARD -->
-  <div class="card">
-    <div class="card-title">🛡️ Panel Revisions Defense Scorecard</div>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Panel Revision Request</th>
-          <th>Implementation in SubSync Codebase</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>S2</strong></td>
-          <td>Auto-priority based on details + resident can add details/pictures</td>
-          <td>Rule-based auto-priority on creation; built <code>POST /api/issues/{id}/details</code> for appending notes/photos without tampering with original records.</td>
-        </tr>
-        <tr>
-          <td><strong>S3 & S4</strong></td>
-          <td>Accurate map pin + Database subdivision area range</td>
-          <td><code>map_settings</code> table stores boundary coordinates; draggable Leaflet pin with real-time coordinate preview and geofence rejection.</td>
-        </tr>
-        <tr>
-          <td><strong>S5</strong></td>
-          <td>Pre-templated Announcements + Date Picker</td>
-          <td>Predefined templates (*Notice, Urgent, Maintenance*); all dates enforce native HTML5 date pickers.</td>
-        </tr>
-        <tr>
-          <td><strong>S6</strong></td>
-          <td>Fixed Date From–To filters</td>
-          <td>Server-side date normalization (<code>IssueController::dateRange</code>) with client-side auto-swap for reversed ranges.</td>
-        </tr>
-        <tr>
-          <td><strong>S10</strong></td>
-          <td>Replace the term "Delinquent"</td>
-          <td>Completely replaced: households are **Occupied / Vacant**; accounts are **Active / Non-Compliant**.</td>
-        </tr>
-        <tr>
-          <td><strong>S11</strong></td>
-          <td>Standardize on CSV instead of Excel</td>
-          <td>SheetJS dependencies removed; replaced with RFC-compliant streaming CSV exports.</td>
-        </tr>
-        <tr>
-          <td><strong>S13</strong></td>
-          <td>Announcement Draft handling</td>
-          <td>Added **Draft vs. Active** status. Drafts are strictly isolated from resident feeds until explicitly published.</td>
-        </tr>
-        <tr>
-          <td><strong>D1</strong></td>
-          <td>Real-time tracking documentation</td>
-          <td>Architectural write-up of Laravel Reverb WebSocket private channel with automatic Server-Sent Events (SSE) fallback.</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- SECTION 4: ANTICIPATED Q&A -->
-  <div class="card">
-    <div class="card-title">❓ Anticipated Panel Q&A</div>
-    <div class="qa-box">
-      <div class="qa-q">Q: "Why are there two separate financial ledgers (Personal Balance vs. HOA Expenses)?"</div>
-      <div class="qa-a"><strong>Answer:</strong> "SubSync intentionally separates individual resident accounting from community fiscal transparency. The personal ledger tracks private resident obligations (monthly dues and GCash receipts). The HOA Expenses ledger publicly discloses how association dues are utilized (security payroll, pool chemicals, street lighting) with verifiable PDF receipts, satisfying civic transparency."</div>
-    </div>
-    <div class="qa-box">
-      <div class="qa-q">Q: "How does the system protect against Insecure Direct Object Reference (IDOR) on household members?"</div>
-      <div class="qa-a"><strong>Answer:</strong> "In <code>ResidentController::authorizeMember()</code>, resident requests are strictly scoped to their authenticated <code>house_id</code>. Any attempt by a resident to read, modify, or delete family members belonging to another household returns an immediate 403 Forbidden."</div>
-    </div>
-    <div class="qa-box">
-      <div class="qa-q">Q: "How do you avoid session collisions when Admin and Resident open tabs on the same computer?"</div>
-      <div class="qa-a"><strong>Answer:</strong> "SubSync employs Laravel multi-guard authentication (<code>admin</code>, <code>officer</code>, and <code>resident</code> guards). Custom session cookies (<code>subsync_admin_session</code>, <code>subsync_resident_session</code>) are resolved by our global <code>ResolvePortalSession</code> middleware before session initialization, preventing privilege escalation or accidental session overwrite."</div>
-    </div>
-    <div class="qa-box">
-      <div class="qa-q">Q: "What happens if WebSockets fail or are blocked by carrier firewalls?"</div>
-      <div class="qa-a"><strong>Answer:</strong> "SubSync uses a dual-layer real-time architecture: it is WebSocket-first using Laravel Reverb for low-overhead push, but automatically downgrades to an HTTP-based Server-Sent Events (SSE) stream (<code>/api/stream/updates</code>) if WebSocket handshakes fail."</div>
-    </div>
-  </div>
-
-</div>
+  <script>
+    function copyText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Copied to clipboard: ' + text);
+      });
+    }
+  </script>
 
 </body>
 </html>
