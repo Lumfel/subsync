@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
     <style>
-        :root { --accent:#A07D53; --text:#2B2927; --dim:#7D7975; --border:#E6DFD5; }
+        :root { --accent:#FA7D09; --text:#2B2927; --dim:#7D7975; --border:#E6DFD5; }
         * { box-sizing: border-box; }
         body {
             margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
@@ -32,8 +32,8 @@
         input:focus { border-color: var(--accent); }
         .field { margin-bottom: 16px; }
         .hint { font-size: 12px; color: var(--dim); margin-top: 6px; }
-        button { width: 100%; padding: 13px; font-size: 15px; font-family: inherit; font-weight: 600; color: #fff; background: var(--accent); border: 0; border-radius: 9px; cursor: pointer; margin-top: 6px; }
-        button:hover { filter: brightness(1.05); }
+        button { width: 100%; padding: 13px; font-size: 15px; font-family: inherit; font-weight: 700; color: #FFFFFF; background: var(--accent); border: none; border-radius: 9px; cursor: pointer; margin-top: 6px; box-shadow: 0 4px 14px rgba(250, 125, 9, 0.32); transition: all 0.2s ease; }
+        button:hover { background: #E56F05; color: #FFFFFF; box-shadow: 0 6px 18px rgba(250, 125, 9, 0.42); transform: translateY(-1px); }
         .msg { font-size: 13px; color: #c0392b; margin-bottom: 14px; }
         .note { font-size: 12px; color: var(--dim); margin-top: 16px; text-align: center; line-height: 1.6; }
     </style>

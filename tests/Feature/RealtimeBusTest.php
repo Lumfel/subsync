@@ -6,6 +6,11 @@ use App\Events\SubSyncEvent;
 use App\Models\Admin;
 use App\Models\Event;
 use App\Models\EventRsvp;
+use App\Models\ExpenseRequest;
+use App\Models\Facility;
+use App\Models\Household;
+use App\Models\IssueReport;
+use App\Models\MapSetting;
 use App\Models\Officer;
 use App\Models\OfficerFile;
 use App\Models\PaymentSubmission;
@@ -127,15 +132,94 @@ class RealtimeBusTest extends TestCase
             fn (SubSyncEvent $e) => $e->eventName === 'officer-file' && $e->payload['name'] === 'monthly-report.xlsx'
         );
 
+        ExpenseRequest::create([
+            'officer_id' => $officer->id,
+            'title' => 'Gate repair supplies',
+            'description' => 'Bolts and paint',
+            'amount' => 450.00,
+            'expense_date' => now()->toDateString(),
+            'category' => 'Maintenance',
+            'status' => 'Pending',
+        ]);
+        EventBus::assertDispatched(
+            fn (SubSyncEvent $e) => $e->eventName === 'expense-request'
+                && $e->payload['officerId'] === $officer->id
+                && $e->payload['title'] === 'Gate repair supplies'
+                && $e->payload['status'] === 'Pending'
+        );
+
+        Facility::create([
+            'name' => 'Clubhouse',
+            'latitude' => 10.622,
+            'longitude' => 122.961,
+            'status' => 'Active',
+        ]);
+        EventBus::assertDispatched(
+            fn (SubSyncEvent $e) => $e->eventName === 'facility' && $e->payload['name'] === 'Clubhouse'
+        );
+
+        Household::create([
+            'block_lot_number' => 'Block 2 Lot 5',
+            'latitude' => 10.623,
+            'longitude' => 122.962,
+        ]);
+        EventBus::assertDispatched(
+            fn (SubSyncEvent $e) => $e->eventName === 'household' && $e->payload['blockLot'] === 'Block 2 Lot 5'
+        );
+
+        $setting = MapSetting::current();
+        $setting->update(['zoom' => $setting->zoom === 18 ? 17 : 18]);
+        EventBus::assertDispatched(
+            fn (SubSyncEvent $e) => $e->eventName === 'map-setting' && $e->payload['action'] === 'updated'
+        );
+
         foreach ([
             ['payment_submissions', 'payment'],
             ['recommendations', 'recommendation'],
             ['events', 'event'],
             ['event_rsvps', 'rsvp'],
             ['officer_files', 'officer-file'],
+            ['expense_requests', 'expense-request'],
+            ['facilities', 'facility'],
+            ['households', 'household'],
+            ['map_settings', 'map-setting'],
         ] as [$channel, $eventName]) {
             $this->assertDatabaseHas('sse_events', ['channel' => $channel, 'event' => $eventName]);
         }
+    }
+
+    public function test_issue_response_dispatches_realtime_issue_update(): void
+    {
+        EventBus::fake([SubSyncEvent::class]);
+
+        $resident = $this->resident(['status' => 'Active']);
+        $officer = Officer::create([
+            'name' => 'Officer Two',
+            'email' => 'off2@example.test',
+            'password' => 'Secret@12345',
+            'status' => 'Active',
+        ]);
+
+        $issue = IssueReport::create([
+            'resident_id' => $resident->id,
+            'title' => 'Streetlight flickering',
+            'description' => 'Near post 12',
+            'category' => 'Utilities',
+            'status' => 'Pending',
+        ]);
+
+        $this->actingAs($officer, 'officer')
+            ->withHeader('X-Portal', 'officer')
+            ->postJson("/api/issues/{$issue->id}/respond", [
+                'content' => 'Maintenance team dispatched.',
+            ])
+            ->assertOk();
+
+        EventBus::assertDispatched(
+            fn (SubSyncEvent $e) => $e->eventName === 'issue'
+                && $e->payload['latestId'] === $issue->id
+                && $e->payload['status'] === 'In Progress'
+        );
     }
 
     public function test_clients_subscribe_to_the_new_events(): void
@@ -145,6 +229,12 @@ class RealtimeBusTest extends TestCase
         $this->assertStringContainsString(".listen('.officer'", $admin);
         $this->assertStringContainsString(".listen('.payment'", $admin);
         $this->assertStringContainsString(".listen('.officer-file'", $admin);
+        $this->assertStringContainsString(".listen('.event'", $admin);
+        $this->assertStringContainsString(".listen('.rsvp'", $admin);
+        $this->assertStringContainsString(".listen('.expense-request'", $admin);
+        $this->assertStringContainsString(".listen('.facility'", $admin);
+        $this->assertStringContainsString(".listen('.household'", $admin);
+        $this->assertStringContainsString(".listen('.map-setting'", $admin);
         $this->assertStringContainsString('!_rtWsReady) pollOfficerFiles();', $admin, 'the officer-files poll must be socket-gated');
 
         $residents = file_get_contents(public_path('js/residents.js'));
@@ -152,10 +242,15 @@ class RealtimeBusTest extends TestCase
         $this->assertStringContainsString(".listen('.recommendation'", $residents);
         $this->assertStringContainsString(".listen('.event'", $residents);
         $this->assertStringContainsString(".listen('.rsvp'", $residents);
+        $this->assertStringContainsString(".listen('.facility'", $residents);
+        $this->assertStringContainsString(".listen('.map-setting'", $residents);
         $this->assertStringContainsString('subsync:refresh-alerts', $residents);
 
         $officer = file_get_contents(public_path('js/officer-portal.js'));
         $this->assertStringContainsString(".listen('.event'", $officer);
+        $this->assertStringContainsString(".listen('.expense-request'", $officer);
+        $this->assertStringContainsString(".listen('.facility'", $officer);
+        $this->assertStringContainsString(".listen('.map-setting'", $officer);
         $this->assertStringContainsString('subsync:refresh-alerts', $officer);
 
         $bell = file_get_contents(public_path('js/notifications.js'));

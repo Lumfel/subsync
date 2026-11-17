@@ -88,6 +88,17 @@ class ResolvePortalSession
             return 'resident';
         }
 
+        // When a user opens a link in a new tab (target="_blank" rel="noopener"),
+        // the Referer header is frequently stripped or restricted by the browser.
+        // If exactly one portal session cookie is present, resolve to that portal.
+        $present = array_values(array_filter(
+            ['admin', 'officer', 'resident'],
+            fn ($portal) => $request->hasCookie('subsync_'.$portal.'_session')
+        ));
+        if (count($present) === 1) {
+            return $present[0];
+        }
+
         return 'shared';
     }
 }

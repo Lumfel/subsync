@@ -1,4 +1,60 @@
 /* ══ UTILS ══ */
+/* ── Theme (Light / Dark) ── */
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  setOfficerTheme(next);
+}
+function setOfficerTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-theme-pref', theme);
+  try {
+    localStorage.setItem('subsync.theme', theme);
+    const prefs = JSON.parse(localStorage.getItem('subsync.prefs') || '{}');
+    prefs.theme = theme;
+    localStorage.setItem('subsync.prefs', JSON.stringify(prefs));
+  } catch(e){}
+  updateThemeToggleBtn(theme);
+  try {
+    window.dispatchEvent(new CustomEvent('subsync:theme', { detail: { theme } }));
+  } catch(e){}
+}
+function updateThemeToggleBtn(theme){
+  const el = document.getElementById('themeToggleIcon');
+  if(!el) return;
+  if(theme === 'dark'){
+    el.innerHTML = (window.SubUI && window.SubUI.icon) ? SubUI.icon('sun', 15) : '☀️';
+  } else {
+    el.innerHTML = (window.SubUI && window.SubUI.icon) ? SubUI.icon('moon', 15) : '🌙';
+  }
+}
+function toggleUserMenu(){
+  const pop = document.getElementById('userMenuPopover');
+  const btn = document.getElementById('userMenuButton');
+  if(!pop) return;
+  const isOpen = pop.classList.contains('open');
+  if(isOpen){
+    pop.classList.remove('open');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  } else {
+    pop.classList.add('open');
+    if(btn) btn.setAttribute('aria-expanded', 'true');
+  }
+}
+document.addEventListener('click', function(e){
+  const wrap = document.querySelector('.user-menu-wrap');
+  const pop = document.getElementById('userMenuPopover');
+  if(pop && pop.classList.contains('open') && wrap && !wrap.contains(e.target)){
+    pop.classList.remove('open');
+    const btn = document.getElementById('userMenuButton');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  }
+});
+document.addEventListener('DOMContentLoaded', function(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  updateThemeToggleBtn(cur);
+});
+
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
@@ -13,7 +69,14 @@ function confirmLogout(){
     cancelText: 'Stay signed in',
     danger: true,
     icon: '!'
-  }).then(ok => { if(ok) document.getElementById('logoutForm').submit(); });
+  }).then(ok => {
+    if(ok){
+      try {
+        sessionStorage.removeItem('subsync_active_tab_officer');
+      } catch(e) {}
+      document.getElementById('logoutForm').submit();
+    }
+  });
 }
 function changeImg(id,inp){
   const f=inp.files[0]; if(!f) return;
@@ -41,8 +104,16 @@ function fmtBytes(b){ if(b<1024)return b+'B'; if(b<1048576)return (b/1024).toFix
 function switchTab(name){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  document.getElementById('tab-'+name).classList.add('active');
+  const panel = document.getElementById('panel-'+name);
+  const tab = document.getElementById('tab-'+name);
+  if(panel) panel.classList.add('active');
+  if(tab) tab.classList.add('active');
+  try {
+    sessionStorage.setItem('subsync_active_tab_officer', name);
+    if(window.location.hash !== '#' + name){
+      history.replaceState(null, '', '#' + name);
+    }
+  } catch(e) {}
   if(name==='messages'){
     const b=document.getElementById('badge-messages');
     if(b) b.style.display='none';
@@ -50,7 +121,10 @@ function switchTab(name){
   }
   if(name==='calendar') loadOfficerEvents();
   if(name==='expenses') loadOfficerExpenseRequests();
-  if(name==='map') setTimeout(initOfficerMonitorMap, 80);
+  if(name==='map') setTimeout(function(){ if(typeof window.initOfficerMonitorMap==='function') window.initOfficerMonitorMap(); else if(typeof initOfficerMonitorMap==='function') initOfficerMonitorMap(); }, 80);
+  if(name==='reports') { if(typeof renderOfficerIssues==='function') renderOfficerIssues(); }
+  if(name==='announcements') { if(typeof renderMyAnn==='function') renderMyAnn(); }
+  if(name==='files') { if(typeof renderSentFiles==='function') renderSentFiles(); }
   
   // Auto-close sidebar on mobile
   const sidebar = document.querySelector('.sidebar');
@@ -624,17 +698,39 @@ async function submitOfficerResponse(){
 /* ══ ISSUE LOCATION MAP ══ */
 let officerMapInst=null;
 function loadOfficerLeaflet(){
-  if(window.L) return Promise.resolve();
+  if(window.L && typeof L.heatLayer === 'function') return Promise.resolve();
   return new Promise((resolve,reject)=>{
     const b=(window.APP_BASE||'');
-    const css=document.createElement('link'); css.rel='stylesheet'; css.href=b+'/vendor/leaflet/leaflet.css'; document.head.appendChild(css);
-    const s=document.createElement('script'); s.src=b+'/vendor/leaflet/leaflet.js';
-    s.onload=()=>{ if(window.L&&L.Icon&&L.Icon.Default){L.Icon.Default.mergeOptions({iconUrl:b+'/vendor/leaflet/images/marker-icon.png',iconRetinaUrl:b+'/vendor/leaflet/images/marker-icon-2x.png',shadowUrl:b+'/vendor/leaflet/images/marker-shadow.png'});} resolve(); };
-    s.onerror=reject; document.head.appendChild(s);
+    if(!document.querySelector('link[href*="leaflet.css"]')){
+      const css=document.createElement('link'); css.rel='stylesheet'; css.href=b+'/vendor/leaflet/leaflet.css'; document.head.appendChild(css);
+    }
+    const srcs = [
+      b+'/vendor/leaflet/leaflet.js',
+      b+'/vendor/leaflet/leaflet-heat.js'
+    ];
+    let i=0;
+    (function next(){
+      if(i>=srcs.length){
+        if(window.L&&L.Icon&&L.Icon.Default){
+          L.Icon.Default.mergeOptions({
+            iconUrl:b+'/vendor/leaflet/images/marker-icon.png',
+            iconRetinaUrl:b+'/vendor/leaflet/images/marker-icon-2x.png',
+            shadowUrl:b+'/vendor/leaflet/images/marker-shadow.png'
+          });
+        }
+        resolve(); return;
+      }
+      const s=document.createElement('script');
+      s.src=srcs[i++];
+      s.onload=next;
+      s.onerror=()=>{ s.onerror=null; next(); };
+      document.head.appendChild(s);
+    })();
   });
 }
 /* ══ OFFICER MONITORING MAP ══ */
-let officerMonitorMapInst=null, officerMonitorLayer=null, officerMapSettings=null;
+let officerMonitorMapInst=null, officerMonitorLayer=null, officerFacilitiesLayer=null, officerBlocksLayer=null, officerHeatLayer=null, officerMapSettings=null;
+let officerBlocksData=[], officerActiveBlock='', officerBlockPolygons={};
 async function initOfficerMonitorMap(){
   await loadOfficerLeaflet();
   if(officerMonitorMapInst){ setTimeout(()=>officerMonitorMapInst.invalidateSize(),100); return; }
@@ -647,12 +743,86 @@ async function initOfficerMonitorMap(){
     [parseFloat(b.max_lat)||10.6260, parseFloat(b.max_lng)||122.9650]
   );
   officerMonitorMapInst=L.map('officerMonitorMap',{maxBounds:bounds,maxBoundsViscosity:1.0,minZoom:14,maxZoom:20}).fitBounds(bounds,{padding:[16,16]});
+  if(window.SubUI&&SubUI.enableDynamicPinScaling) SubUI.enableDynamicPinScaling(officerMonitorMapInst);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(officerMonitorMapInst);
+  if(b && b.overlay_enabled !== false && b.overlay_url){
+    const oMinLat = parseFloat(b.overlay_min_lat) || parseFloat(b.min_lat) || 10.6195;
+    const oMaxLat = parseFloat(b.overlay_max_lat) || parseFloat(b.max_lat) || 10.6260;
+    const oMinLng = parseFloat(b.overlay_min_lng) || parseFloat(b.min_lng) || 122.9580;
+    const oMaxLng = parseFloat(b.overlay_max_lng) || parseFloat(b.max_lng) || 122.9650;
+    const oBounds = L.latLngBounds([[oMinLat, oMinLng], [oMaxLat, oMaxLng]]);
+    const offOverlay = L.imageOverlay(b.overlay_url, oBounds, {
+      opacity: typeof b.overlay_opacity === 'number' ? b.overlay_opacity : 0.65,
+      interactive: false,
+      className: 'subdivision-blueprint-overlay'
+    }).addTo(officerMonitorMapInst);
+    if(offOverlay.bringToBack) offOverlay.bringToBack();
+    const applyRot = () => {
+      const el = offOverlay.getElement();
+      if(el && typeof b.overlay_rotation === 'number'){
+        el.style.transformOrigin = 'center center';
+        el.style.rotate = `${b.overlay_rotation}deg`;
+      }
+    };
+    setTimeout(applyRot, 40);
+    officerMonitorMapInst.on('zoomend moveend', applyRot);
+  }
   L.rectangle(bounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.05}).addTo(officerMonitorMapInst);
-  officerMonitorLayer=L.layerGroup().addTo(officerMonitorMapInst);
+  const officerBlocksChecked = Boolean(document.getElementById('officerLayerBlocks')?.checked);
+  officerBlocksLayer = L.layerGroup();
+  if (officerBlocksChecked) officerBlocksLayer.addTo(officerMonitorMapInst);
+
+  const officerFacChecked = document.getElementById('officerLayerFacilities') ? document.getElementById('officerLayerFacilities').checked : true;
+  officerFacilitiesLayer = L.layerGroup();
+  if (officerFacChecked) officerFacilitiesLayer.addTo(officerMonitorMapInst);
+
+  const officerIssuesChecked = document.getElementById('officerLayerIssues') ? document.getElementById('officerLayerIssues').checked : true;
+  officerMonitorLayer = L.layerGroup();
+  if (officerIssuesChecked) officerMonitorLayer.addTo(officerMonitorMapInst);
+
+  officerHeatLayer=L.layerGroup();
+  loadOfficerBlocks();
+  loadOfficerFacilities();
   renderOfficerMapPins();
   setTimeout(()=>officerMonitorMapInst.invalidateSize(),150);
 }
+
+function loadOfficerFacilities(){
+  if(!officerFacilitiesLayer) return;
+  fetch('/api/map/facilities').then(r=>r.json()).then(data=>{
+    officerFacilitiesLayer.clearLayers();
+    (data||[]).forEach(f=>{
+      const lat=parseFloat(f.latitude), lng=parseFloat(f.longitude);
+      if(isNaN(lat)||isNaN(lng)) return;
+      const icon=L.divIcon({className:'',html:'<div class="sub-map-dot" style="width:13px;height:13px;border-radius:50%;background:#4CAF50;border:2px solid rgba(255,255,255,0.85);box-shadow:0 1px 5px rgba(0,0,0,.5);" title="Facility"></div>',iconSize:[13,13],iconAnchor:[6,6],popupAnchor:[0,-9]});
+      let pop = '<strong>'+escHtml(f.name||'')+'</strong>';
+      if(f.description) pop += '<br><small>'+escHtml(f.description)+'</small>';
+      L.marker([lat,lng],{icon}).bindPopup(pop).addTo(officerFacilitiesLayer);
+    });
+  }).catch(()=>{});
+}
+
+function toggleOfficerFacilities(checked){
+  if(!officerMonitorMapInst || !officerFacilitiesLayer) return;
+  if(checked){
+    if(!officerMonitorMapInst.hasLayer(officerFacilitiesLayer)) officerMonitorMapInst.addLayer(officerFacilitiesLayer);
+    loadOfficerFacilities();
+  } else {
+    if(officerMonitorMapInst.hasLayer(officerFacilitiesLayer)) officerMonitorMapInst.removeLayer(officerFacilitiesLayer);
+  }
+}
+
+function toggleOfficerIssues(checked){
+  if(!officerMonitorMapInst || !officerMonitorLayer) return;
+  if(checked){
+    if(!officerMonitorMapInst.hasLayer(officerMonitorLayer)) officerMonitorMapInst.addLayer(officerMonitorLayer);
+    renderOfficerMapPins();
+  } else {
+    if(officerMonitorMapInst.hasLayer(officerMonitorLayer)) officerMonitorMapInst.removeLayer(officerMonitorLayer);
+  }
+}
+window.toggleOfficerFacilities = toggleOfficerFacilities;
+window.toggleOfficerIssues = toggleOfficerIssues;
 function renderOfficerMapPins(){
   if(!officerMonitorMapInst || !officerMonitorLayer) return;
   officerMonitorLayer.clearLayers();
@@ -666,16 +836,454 @@ function renderOfficerMapPins(){
   });
   filtered.forEach((i,idx)=>{
     const color=i.status==='Resolved'?'#888':(i.status==='In Progress'?'#f5a623':'#e05555');
-    const icon=L.divIcon({className:'',html:'<div style="width:26px;height:26px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">'+(idx+1)+'</div>',iconSize:[26,26],iconAnchor:[13,13],popupAnchor:[0,-14]});
+    const num=i.id!=null?i.id:(idx+1);
+    const icon=L.divIcon({className:'',html:'<div class="sub-map-pin" style="width:24px;height:24px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">'+num+'</div>',iconSize:[24,24],iconAnchor:[12,12],popupAnchor:[0,-14]});
     const pri=i.priority?(' · '+escHtml(i.priority)):'';
     L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon})
       .addTo(officerMonitorLayer)
-      .bindPopup('<strong>#'+(idx+1)+' — '+escHtml(i.title||'')+'</strong><br>'+escHtml(i.category||'')+'<br><small>'+escHtml(i.status||'')+pri+' · '+escHtml(i.block_lot||'')+'</small><div style="margin-top:6px;"><button onclick="officerMapRespond('+i.id+')" style="padding:3px 9px;border:1px solid #ccc;border-radius:4px;cursor:pointer;font-size:11px;">Respond</button></div>');
+      .bindPopup('<strong>#'+num+' — '+escHtml(i.title||'')+'</strong><br>'+escHtml(i.category||'')+'<br><small>'+escHtml(i.status||'')+pri+' · '+escHtml(i.block_lot||'')+'</small><div style="margin-top:6px;"><button onclick="officerMapRespond('+i.id+')" style="padding:3px 9px;border:1px solid #ccc;border-radius:4px;cursor:pointer;font-size:11px;">Respond</button></div>');
+  });
+  if(officerHeatLayer && officerMonitorMapInst.hasLayer(officerHeatLayer)){
+    renderOfficerHeatmap();
+  }
+}
+
+function toggleOfficerHeatmap(checked){
+  if(!officerMonitorMapInst) return;
+  if(!officerHeatLayer) officerHeatLayer = L.layerGroup();
+  const card = document.getElementById('officerHeatAnalysisCard');
+  const catSel = document.getElementById('officerHeatCategory');
+  if(checked){
+    if(!officerMonitorMapInst.hasLayer(officerHeatLayer)) officerMonitorMapInst.addLayer(officerHeatLayer);
+    if(card) card.style.display = 'block';
+    if(catSel) catSel.style.display = 'inline-block';
+    renderOfficerHeatmap();
+  } else {
+    officerMonitorMapInst.removeLayer(officerHeatLayer);
+    if(card) card.style.display = 'none';
+    if(catSel) catSel.style.display = 'none';
+  }
+}
+
+function filterOfficerHeatmapToCategory(cat){
+  const catSel = document.getElementById('officerHeatCategory');
+  if(catSel){
+    catSel.value = cat;
+    renderOfficerHeatmap();
+  }
+}
+
+let officerHeatCanvas = null;
+function renderOfficerHeatmap(){
+  if(!officerMonitorMapInst || !officerHeatLayer) return;
+  officerHeatLayer.clearLayers();
+  officerHeatCanvas = null;
+
+  const card = document.getElementById('officerHeatAnalysisCard');
+  if(!officerMonitorMapInst.hasLayer(officerHeatLayer)){
+    if(card) card.style.display = 'none';
+    return;
+  }
+  if(card) card.style.display = 'block';
+
+  const catSel = document.getElementById('officerHeatCategory');
+  const selectedCat = catSel ? catSel.value : '';
+  const allIssues = (officerIssues || []).filter(i => {
+    const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
+    return !isNaN(lat) && !isNaN(lng);
+  });
+
+  const overallCategoryCounts = {};
+  allIssues.forEach(i => {
+    const c = i.category || 'Other';
+    overallCategoryCounts[c] = (overallCategoryCounts[c] || 0) + 1;
+  });
+
+  const sortedOverallCats = Object.entries(overallCategoryCounts).sort((a,b)=>b[1]-a[1]);
+  const totalMappedIssues = allIssues.length;
+  const topOverallCat = sortedOverallCats.length ? sortedOverallCats[0][0] : 'None';
+  const topOverallCount = sortedOverallCats.length ? sortedOverallCats[0][1] : 0;
+  const topOverallPct = totalMappedIssues ? Math.round((topOverallCount / totalMappedIssues) * 100) : 0;
+
+  if(catSel){
+    const prev = catSel.value;
+    catSel.innerHTML = `<option value="">All categories (${totalMappedIssues} total)</option>`;
+    sortedOverallCats.forEach(([c, cnt], idx)=>{
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = `${idx === 0 ? '★ ' : ''}#${idx+1} ${c} (${cnt}${idx === 0 ? ' — Most Frequent' : ''})`;
+      catSel.appendChild(opt);
+    });
+    catSel.value = prev;
+  }
+
+  const pillsContainer = document.getElementById('officerHeatCategoryPills');
+  if(pillsContainer){
+    let html = `
+      <span style="font-size:11px;font-weight:700;color:var(--text-dim);margin-right:4px;">Filter Heatmap:</span>
+      <button class="heatmap-pill-btn ${!selectedCat ? 'active' : ''}" onclick="filterOfficerHeatmapToCategory('')">
+        All Issues <span class="pill-count">${totalMappedIssues}</span>
+      </button>
+    `;
+    sortedOverallCats.forEach(([catName, count], idx)=>{
+      const isSel = selectedCat === catName;
+      const rankBadge = idx === 0 ? '★ ' : `#${idx + 1} `;
+      html += `
+        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterOfficerHeatmapToCategory('${catName.replace(/'/g, "\\'")}')">
+          ${rankBadge}${escHtml(catName)} <span class="pill-count">${count}</span>
+        </button>
+      `;
+    });
+    pillsContainer.innerHTML = html;
+  }
+
+  const activeIssues = allIssues.filter(i => !selectedCat || i.category === selectedCat);
+
+  const heatPoints = [];
+  activeIssues.forEach(i => {
+    const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
+    let intensity = 0.85;
+    const st = (i.status || '').toLowerCase();
+    if(st === 'in progress') intensity = 0.65;
+    else if(st === 'resolved') intensity = 0.28;
+
+    const pr = (i.priority || '').toLowerCase();
+    if(pr === 'critical') intensity *= 1.4;
+    else if(pr === 'high') intensity *= 1.2;
+    else if(pr === 'low') intensity *= 0.8;
+
+    if(i.created_at){
+      const ageDays = (Date.now() - new Date(i.created_at).getTime()) / (1000 * 60 * 60 * 24);
+      if(ageDays <= 3) intensity += 0.20;
+      else if(ageDays <= 7) intensity += 0.10;
+    }
+    heatPoints.push([lat, lng, Math.min(intensity, 1.8)]);
+  });
+
+  if(typeof L.heatLayer === 'function' && heatPoints.length > 0){
+    officerHeatCanvas = L.heatLayer(heatPoints, {
+      radius: 34,
+      blur: 20,
+      maxZoom: 19,
+      max: 2.2,
+      minOpacity: 0.28,
+      gradient: {
+        0.15: '#38bdf8',
+        0.35: '#34d399',
+        0.55: '#facc15',
+        0.75: '#fb923c',
+        0.90: '#f87171',
+        1.00: '#dc2626'
+      }
+    });
+    officerHeatLayer.addLayer(officerHeatCanvas);
+  }
+
+  const CLUSTER_THRESH_DEG = 0.00072;
+  const clusters = [];
+  activeIssues.forEach(issue => {
+    const lat = parseFloat(issue.latitude), lng = parseFloat(issue.longitude);
+    let matched = null;
+    for(const cl of clusters){
+      if(Math.hypot(lat - cl.centerLat, lng - cl.centerLng) <= CLUSTER_THRESH_DEG){
+        matched = cl; break;
+      }
+    }
+    if(matched){
+      matched.issues.push(issue);
+      matched.centerLat = matched.issues.reduce((s,it)=>s+parseFloat(it.latitude),0)/matched.issues.length;
+      matched.centerLng = matched.issues.reduce((s,it)=>s+parseFloat(it.longitude),0)/matched.issues.length;
+    } else {
+      clusters.push({ centerLat: lat, centerLng: lng, issues: [issue] });
+    }
+  });
+
+  const summaryLine = document.getElementById('officerHeatSummaryLine');
+  if(summaryLine){
+    if(activeIssues.length === 0){
+      summaryLine.innerHTML = selectedCat ? `No active issues for category <strong>${escHtml(selectedCat)}</strong>.` : 'No issues mapped in subdivision.';
+    } else {
+      const filterNotice = selectedCat ? `Filtered to <strong>${escHtml(selectedCat)}</strong> (${activeIssues.length} issues) · ` : '';
+      summaryLine.innerHTML = `
+        ${filterNotice}
+        🏆 <strong>Subdivision Most Frequent Issue:</strong> 
+        <span style="color:#ef4444;font-weight:800;">${escHtml(topOverallCat)}</span> 
+        (${topOverallCount} of ${totalMappedIssues} reports · ${topOverallPct}%) across <strong>${clusters.length}</strong> active hotspot area${clusters.length > 1 ? 's' : ''}.
+      `;
+    }
+  }
+
+  clusters.forEach(cl => {
+    const total = cl.issues.length;
+    const catCounts = {};
+    cl.issues.forEach(it => {
+      const c = it.category || 'Other';
+      catCounts[c] = (catCounts[c] || 0) + 1;
+    });
+
+    const sortedCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]);
+    const topCat = sortedCats[0][0];
+    const topCount = sortedCats[0][1];
+    const topPct = Math.round((topCount / total) * 100);
+
+    const severity = total >= 4 ? 'critical' : (total === 3 ? 'high' : (total === 2 ? 'moderate' : 'low'));
+    const severityLabel = total >= 4 ? 'Critical Hotspot' : (total === 3 ? 'High Heat Area' : (total === 2 ? 'Moderate Activity' : 'Single Issue Area'));
+    const severityColor = total >= 4 ? '#dc2626' : (total === 3 ? '#ea580c' : (total === 2 ? '#d97706' : '#0284c7'));
+    const flameIcon = total >= 4 ? '🔥🔥' : (total >= 2 ? '🔥' : '📍');
+
+    const badgeHtml = `
+      <div class="sub-hotspot-pill heat-${severity}" title="${severityLabel}: ${escHtml(topCat)} is most frequent (${topCount}/${total})">
+        <span>${flameIcon}</span>
+        <span class="hotspot-count">${total}</span>
+        <span class="hotspot-cat">${escHtml(topCat)}</span>
+        <span class="hotspot-pct">${topPct}%</span>
+      </div>
+    `;
+
+    const icon = L.divIcon({
+      className: 'sub-hotspot-marker',
+      html: badgeHtml,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+
+    const breakdownRows = sortedCats.map(([cat, cnt]) => {
+      const pct = Math.round((cnt / total) * 100);
+      const isTop = cat === topCat;
+      return `
+        <div class="sub-hotspot-breakdown-row">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;">
+            <span style="font-weight:${isTop ? '700' : '500'};color:var(--text);">${isTop ? '★ ' : ''}${escHtml(cat)}</span>
+            <span style="font-weight:700;color:var(--text-dim);">${cnt} (${pct}%)</span>
+          </div>
+          <div class="sub-hotspot-bar-track">
+            <div class="sub-hotspot-bar-fill" style="width:${pct}%;background:${isTop ? severityColor : '#94a3b8'};"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const popupHtml = `
+      <div class="sub-hotspot-popup">
+        <div class="sub-hotspot-popup-header">
+          <span style="color:${severityColor};font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">${flameIcon} ${severityLabel}</span>
+          <span style="font-size:11px;font-weight:700;background:var(--glass, rgba(0,0,0,0.06));padding:2px 7px;border-radius:10px;">${total} issue${total > 1 ? 's' : ''} nearby</span>
+        </div>
+        
+        <div class="sub-hotspot-dominant-box">
+          <div class="sub-hotspot-dominant-tag">★ Most Frequent Issue Category</div>
+          <div class="sub-hotspot-dominant-title">${escHtml(topCat)}</div>
+          <div class="sub-hotspot-dominant-stat">
+            <strong>${topCount} of ${total} reports</strong> in this area (${topPct}%)
+          </div>
+        </div>
+        
+        <div style="font-size:11px;font-weight:700;color:var(--text-mid);margin-bottom:6px;">Category Breakdown</div>
+        <div class="sub-hotspot-breakdown">
+          ${breakdownRows}
+        </div>
+
+        <button class="btn btn-sm btn-green" onclick="filterOfficerHeatmapToCategory('${topCat.replace(/'/g, "\\'")}')" style="width:100%;font-size:11px;padding:4px 8px;justify-content:center;font-weight:600;">
+          Focus Heatmap on "${escHtml(topCat)}"
+        </button>
+      </div>
+    `;
+
+    const marker = L.marker([cl.centerLat, cl.centerLng], { icon })
+      .bindPopup(popupHtml, { maxWidth: 320 });
+
+    officerHeatLayer.addLayer(marker);
   });
 }
 function officerMapRespond(id){
   switchTab('reports');
   setTimeout(()=>{ if((officerIssues||[]).find(i=>i.id===id)) openOfficerRespond(id); }, 120);
+}
+
+async function loadOfficerBlocks(force = false){
+  if(!force && officerBlocksData && officerBlocksData.length){
+    renderOfficerBlocks();
+    return;
+  }
+  try{
+    const res = await fetch('/api/map/blocks',{headers:{'Accept':'application/json'}});
+    officerBlocksData = await res.json() || [];
+    renderOfficerBlocks();
+  }catch(e){
+    console.warn('Could not load officer blocks:', e);
+  }
+}
+
+function getBlockStartInfo(b){
+  const lbl = String(b.start_label || '').trim();
+  let code = 'N', label = 'North', arrow = '↑';
+  if (/east/i.test(lbl)) { code = 'E'; label = 'East'; arrow = '→'; }
+  else if (/west/i.test(lbl)) { code = 'W'; label = 'West'; arrow = '←'; }
+  else if (/north/i.test(lbl)) { code = 'N'; label = 'North'; arrow = '↑'; }
+  else if (/south/i.test(lbl)) { code = 'S'; label = 'South'; arrow = '↓'; }
+  else if (String(b.block_number) === '1') { code = 'E'; label = 'East'; arrow = '→'; }
+  else if (String(b.block_number) === '2') { code = 'E'; label = 'East'; arrow = '→'; }
+  const matchLot = lbl.match(/Lot\s*(\d+)/i);
+  const startLot = matchLot ? `Lot ${matchLot[1]}` : 'Lot 1';
+  return { code, label, arrow, startLot };
+}
+
+function renderOfficerBlocks(){
+  if(!officerMonitorMapInst || !officerBlocksLayer) return;
+  officerBlocksLayer.clearLayers();
+  officerBlockPolygons = {};
+
+  (officerBlocksData || []).forEach(b => {
+    if(!b.coordinates || !b.coordinates.length) return;
+    const isFiltered = officerActiveBlock && String(officerActiveBlock) !== String(b.block_number);
+    const isBlock3 = String(b.block_number) === '3';
+    const isBlock2 = String(b.block_number) === '2';
+
+    const poly = L.polygon(b.coordinates, {
+      color: b.color || '#2563eb',
+      weight: isFiltered ? 1 : 2.5,
+      dashArray: isBlock3 ? '6 4' : null,
+      opacity: isFiltered ? 0.2 : 0.9,
+      fillColor: b.color || '#2563eb',
+      fillOpacity: isFiltered ? 0.03 : (isBlock3 ? 0.08 : 0.18),
+      className: 'subdivision-block-poly'
+    });
+
+    if(isBlock3 && poly.bringToBack){
+      poly.bringToBack();
+    }
+
+    const center = poly.getBounds().getCenter();
+    const labelPos = (b.label_lat && b.label_lng) ? [b.label_lat, b.label_lng] : center;
+    const blockDisplayName = isBlock2 ? '🏛 Clubhouse & Pool' : b.name;
+    const lotCountText = isBlock2 ? 'Lot 15' : (b.total_lots ? `${b.total_lots} Lots` : '');
+    const labelIcon = L.divIcon({
+      className: 'sub-block-div-icon',
+      html: `<div class="sub-block-pill${isBlock2 ? ' sub-block-pill-clubhouse' : ''}" style="background:${b.color || '#2563eb'};" title="${blockDisplayName}${lotCountText ? ' • ' + lotCountText : ''}"><span class="sub-block-name">${blockDisplayName}</span>${lotCountText ? `<span class="sub-block-count">• ${lotCountText}</span>` : ''}</div>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+    const labelMarker = L.marker(labelPos, { icon: labelIcon, interactive: true });
+    labelMarker.on('click', () => poly.openPopup(labelMarker.getLatLng()));
+
+    let startMarker = null;
+    if(b.start_lat && b.start_lng){
+      const info = getBlockStartInfo(b);
+      const startTitle = `${b.name} • Starting ${info.startLot} (${info.label})`;
+      const startIcon = L.divIcon({
+        className: 'sub-block-div-icon',
+        html: `<div class="sub-start-dir-marker" style="border-color:${b.color || '#ffffff'};" title="${startTitle}"><span class="start-dir-arrow">${info.arrow}</span><span class="start-dir-code">${info.code}</span></div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      });
+      startMarker = L.marker([b.start_lat, b.start_lng], { icon: startIcon, interactive: true, zIndexOffset: 1350 });
+
+      const startPopupHtml = `
+        <div class="sub-start-popup" style="min-width:145px;padding:3px 2px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(148,163,184,0.25);">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${b.color || '#0f172a'};color:#fff;font-size:10px;font-weight:800;">${info.code}</span>
+            <div>
+              <strong style="font-size:12px;color:var(--text, #0f172a);display:block;line-height:1.2;">${b.name}</strong>
+              <span style="font-size:10px;color:var(--text-dim, #64748b);">Starting Point</span>
+            </div>
+          </div>
+          <div style="font-size:11px;line-height:1.5;color:var(--text, #334155);">
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span style="color:var(--text-dim, #64748b);">Starting Lot:</span>
+              <strong style="color:var(--text, #0f172a);">${info.startLot}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;">
+              <span style="color:var(--text-dim, #64748b);">Starting Direction:</span>
+              <strong style="color:var(--text, #0f172a);">${info.label} (${info.code})</strong>
+            </div>
+            ${b.total_lots ? `
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;padding-top:2px;border-top:1px dashed rgba(148,163,184,0.2);">
+              <span style="color:var(--text-dim, #64748b);">Total Lots:</span>
+              <span style="font-weight:600;">${b.total_lots} lots</span>
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+      startMarker.bindPopup(startPopupHtml, { maxWidth: 220, offset: [0, -4] });
+    }
+
+    const lotRangeHtml = b.lot_range 
+      ? `<div style="font-size:12px;font-weight:700;color:#1e293b;margin:4px 0 2px;">Lot Range: <strong>${b.lot_range}</strong> (${b.total_lots || ''} lots)</div>` 
+      : '';
+    const popupContent = `
+      <div style="min-width:180px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="width:12px;height:12px;border-radius:3px;background:${b.color};display:inline-block;"></span>
+          <strong style="font-size:13px;">${b.name}</strong>
+        </div>
+        ${lotRangeHtml}
+        <div style="font-size:11px;color:#64748b;margin-bottom:6px;">${b.description || ''}</div>
+        <div style="font-size:11px;margin-top:6px;padding:4px 0;border-top:1px solid #e2e8f0;">
+          <strong>Households:</strong> ${b.households_count || 0} (${b.occupied_count || 0} Occupied, ${b.vacant_count || 0} Vacant)
+        </div>
+        <div style="font-size:11px;color:#475569;margin-top:2px;">
+          <strong>Numbering:</strong> Starts at ${b.start_label || 'Lot 1'}
+        </div>
+        <button onclick="filterOfficerBlocks('${b.block_number}')" style="margin-top:8px;width:100%;padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid ${b.color};background:${b.color};color:#fff;cursor:pointer;font-weight:700;">Filter to ${b.name}</button>
+      </div>
+    `;
+    poly.bindPopup(popupContent);
+
+    poly.addTo(officerBlocksLayer);
+    if(!isFiltered){
+      labelMarker.addTo(officerBlocksLayer);
+      if(startMarker) startMarker.addTo(officerBlocksLayer);
+    }
+
+    officerBlockPolygons[b.block_number] = poly;
+  });
+
+  const toggle = document.getElementById('officerLayerBlocks');
+  if(toggle && officerMonitorMapInst && officerBlocksLayer){
+    if(toggle.checked){
+      if(!officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.addLayer(officerBlocksLayer);
+    }else{
+      if(officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.removeLayer(officerBlocksLayer);
+    }
+  }
+}
+
+function toggleOfficerBlocks(show){
+  if(!officerMonitorMapInst || !officerBlocksLayer) return;
+  if(show){
+    if(!officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.addLayer(officerBlocksLayer);
+  }else{
+    if(officerMonitorMapInst.hasLayer(officerBlocksLayer)) officerMonitorMapInst.removeLayer(officerBlocksLayer);
+  }
+}
+
+function filterOfficerBlocks(blockNum){
+  officerActiveBlock = blockNum || '';
+  const sel = document.getElementById('officerFilterBlock');
+  if(sel) sel.value = officerActiveBlock;
+
+  if (officerActiveBlock) {
+    const toggle = document.getElementById('officerLayerBlocks');
+    if (toggle && !toggle.checked) {
+      toggle.checked = true;
+      if (officerMonitorMapInst && officerBlocksLayer && !officerMonitorMapInst.hasLayer(officerBlocksLayer)) {
+        officerMonitorMapInst.addLayer(officerBlocksLayer);
+      }
+    }
+  }
+
+  renderOfficerBlocks();
+
+  if(officerActiveBlock && officerBlockPolygons[officerActiveBlock] && officerMonitorMapInst){
+    const b = officerBlockPolygons[officerActiveBlock].getBounds();
+    officerMonitorMapInst.fitBounds(b, { padding: [30, 30], maxZoom: 19 });
+  }else if(officerMonitorMapInst && officerMapSettings){
+    const bounds = L.latLngBounds(
+      [parseFloat(officerMapSettings.min_lat) || 10.6195, parseFloat(officerMapSettings.min_lng) || 122.9580],
+      [parseFloat(officerMapSettings.max_lat) || 10.6260, parseFloat(officerMapSettings.max_lng) || 122.9650]
+    );
+    officerMonitorMapInst.fitBounds(bounds, { padding: [16, 16] });
+  }
 }
 
 function openOfficerIssueMap(id){
@@ -693,9 +1301,10 @@ function openOfficerIssueMap(id){
         return;
       }
       officerMapInst=L.map('officerMapCanvas').setView([lat,lng],18);
+      if(window.SubUI&&SubUI.enableDynamicPinScaling) SubUI.enableDynamicPinScaling(officerMapInst);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(officerMapInst);
       const color=issue.priority==='Critical'?'#e05555':(issue.priority==='High'?'#f08080':'#f5a623');
-      const icon=L.divIcon({className:'',html:'<div style="width:26px;height:26px;border-radius:50%;background:'+color+';border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">'+issue.id+'</div>',iconSize:[26,26],iconAnchor:[13,13]});
+      const icon=L.divIcon({className:'',html:'<div class="sub-map-pin" style="width:24px;height:24px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;">'+issue.id+'</div>',iconSize:[24,24],iconAnchor:[12,12],popupAnchor:[0,-14]});
       L.marker([lat,lng],{icon}).addTo(officerMapInst).bindPopup('<strong>'+issue.title+'</strong><br>'+issue.category).openPopup();
       setTimeout(()=>officerMapInst.invalidateSize(),150);
     },80);
@@ -1126,6 +1735,37 @@ function connectSSE(){
     }catch(err){}
   });
 
+  // ── Block partition / boundary update (live on map) ──────
+  es.addEventListener('block', () => {
+    try{
+      if(typeof loadOfficerBlocks === 'function') loadOfficerBlocks(true);
+    }catch(err){}
+  });
+
+  // ── Community events ─────────────────────────────────────
+  es.addEventListener('event', () => {
+    if(typeof loadOfficerData === 'function') loadOfficerData().catch(()=>{});
+    if(document.getElementById('panel-calendar')?.classList.contains('active')) loadOfficerEvents().catch(()=>{});
+    document.dispatchEvent(new Event('subsync:refresh-alerts'));
+  });
+  es.addEventListener('rsvp', () => {
+    if(document.getElementById('panel-calendar')?.classList.contains('active')) loadOfficerEvents().catch(()=>{});
+  });
+
+  // ── Officer expense claims ───────────────────────────────
+  es.addEventListener('expense-request', () => {
+    if(typeof loadOfficerExpenseRequests === 'function') loadOfficerExpenseRequests();
+    document.dispatchEvent(new Event('subsync:refresh-alerts'));
+  });
+
+  // ── Map updates ──────────────────────────────────────────
+  es.addEventListener('facility', () => {
+    if(typeof loadOfficerData === 'function') loadOfficerData().catch(()=>{});
+  });
+  es.addEventListener('map-setting', () => {
+    if(typeof loadOfficerBlocks === 'function') loadOfficerBlocks(true);
+  });
+
   // ── Server asks client to reconnect ──────────────────────
   es.addEventListener('reconnect', (e) => {
     const evt = JSON.parse(e.data);
@@ -1215,8 +1855,18 @@ setInterval(()=>{
       if(document.getElementById('panel-calendar')?.classList.contains('active')) loadOfficerEvents().catch(function(){});
       document.dispatchEvent(new Event('subsync:refresh-alerts'));
     };
-    ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
+    ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh).listen('.block', () => { if(typeof loadOfficerBlocks === 'function') loadOfficerBlocks(true); });
     ch.listen('.event', refresh).listen('.rsvp', refresh);
+    ch.listen('.expense-request', () => {
+      if(typeof loadOfficerExpenseRequests === 'function') loadOfficerExpenseRequests();
+      document.dispatchEvent(new Event('subsync:refresh-alerts'));
+    });
+    ch.listen('.facility', () => {
+      if(typeof loadOfficerData === 'function') loadOfficerData().catch(()=>{});
+    });
+    ch.listen('.map-setting', () => {
+      if(typeof loadOfficerBlocks === 'function') loadOfficerBlocks(true);
+    });
     ch.listen('.message', (evt) => {
       if(!evt || !evt.conversationId) return;
       const isOpen = String(evt.conversationId) === String(currentThread);
@@ -1258,3 +1908,42 @@ window.addEventListener('orientationchange', function(){ setTimeout(function(){ 
 
 /* Allows the shared global search to navigate panels by name */
 window.PortalNav = { go: function (name) { switchTab(name); } };
+
+/* ══ TAB PERSISTENCE ACROSS REFRESH ══ */
+function normalizeOfficerTab(target){
+  if(!target) return '';
+  const aliases = {
+    'mapping': 'map',
+    'issues': 'reports',
+    'documents': 'files'
+  };
+  return aliases[target] || target;
+}
+function restoreOfficerTab(){
+  try {
+    const rawHash = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    const saved = sessionStorage.getItem('subsync_active_tab_officer');
+    let target = normalizeOfficerTab(rawHash || saved);
+    if(target && document.getElementById('panel-' + target)){
+      switchTab(target);
+      if(target === 'map'){
+        setTimeout(function(){
+          if(typeof initOfficerMonitorMap === 'function') initOfficerMonitorMap();
+        }, 120);
+      }
+    }
+  } catch(e) {}
+}
+restoreOfficerTab();
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', restoreOfficerTab);
+}
+window.addEventListener('hashchange', function(){
+  try {
+    const hash = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    let target = normalizeOfficerTab(hash);
+    if(target && document.getElementById('panel-' + target)){
+      switchTab(target);
+    }
+  } catch(e) {}
+});

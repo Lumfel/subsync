@@ -5,19 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Officer Portal</title>
+<script>
+  (function(){
+    try {
+      var saved = localStorage.getItem('subsync.theme');
+      if (saved === 'dark' || saved === 'light') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch(e){}
+  })();
+</script>
 <script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
 <script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"></noscript>
+<link rel="preload" as="image" href="{{ asset('images/admin_hero_bg_day.jpg') }}">
+<link rel="preload" as="image" href="{{ asset('images/admin_hero_bg_clean.jpg') }}">
 <link rel="stylesheet" href="{{ asset('css/officer-portal.css') . '?v=' . filemtime(public_path('css/officer-portal.css')) }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
-<meta name="theme-color" content="#86653D">
+<meta name="theme-color" content="#FA7D09">
   <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
   <script src="{{ asset('js/pwa.js') . '?v=' . filemtime(public_path('js/pwa.js')) }}" defer></script>
   <script>window.__PORTAL = @json($role ?? ''); window.__PREFS = @json($prefs ?? []); window.__ACTOR = @json($role ?? ''); window.__OFFICER_ID = {{ (int) ($officerId ?? 0) }}; window.__OFFICER_NAME = @json($officerName ?? 'Officer');</script>
@@ -27,7 +39,7 @@
 <body class="officer-body">
 
 <!-- Mobile Responsive Header -->
-<div class="mobile-header" style="position: sticky; top: 0; z-index: 999;">
+<div class="mobile-header" style="display:none;">
   <div style="font-family:'DM Serif Display',serif; font-size:20px; color:#1C1A17; display:flex; align-items:center; gap:8px;">
     <span style="font-size:24px;"><x-icon name="home" size="24"/></span> SubSync
   </div>
@@ -36,16 +48,15 @@
 
 <div class="sidebar-overlay" onclick="toggleMobileSidebar()"></div>
 
-
-
 <!-- Left Sidebar Navigation -->
 <aside class="sidebar">
-  <div class="logo">
-    <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#1C1A17; display:flex; align-items:center; gap:8px;">
-      <span style="font-size:28px;"><x-icon name="shield" size="28"/></span> Officer
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <img src="{{ asset('emblem_1.svg') }}" alt="SubSync">
     </div>
+    <div class="brand-sub">Officer Portal · Terra Nova HOA</div>
   </div>
-  <ul style="margin-top:20px;">
+  <ul>
     <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview"><x-icon name="home" size="15"/> Overview</li>
     <li class="tab-btn" onclick="switchTab('reports')" id="tab-reports"><x-icon name="clipboard" size="15"/> Issues</li>
     <li class="tab-btn" onclick="switchTab('announcements')" id="tab-announcements"><x-icon name="megaphone" size="15"/> Announcements</li>
@@ -57,28 +68,102 @@
   </ul>
 
   <!-- Sidebar tools: search + notifications -->
-  <div class="sidebar-tools">
+  <div class="sidebar-tools" style="display:none;">
     <button type="button" class="nc-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)" aria-label="Search"><x-icon name="search" size="14"/></button>
-    @include('partials.notification-center')
   </div>
 
   <!-- Sidebar Profile Card -->
-  <div class="sidebar-profile" style="text-align:center;">
-    <div class="avatar-wrap" onclick="document.getElementById('avatarInput').click()" style="margin: 0 auto 12px; width:64px;">
-      <img id="avatarPreview" src="{{ $avatar ?: 'https://ui-avatars.com/api/?name='.urlencode($officerName).'&background=2a6acc&color=fff&size=120' }}" alt="Officer" style="width:64px; height:64px; border-radius:50%; border: 2px solid var(--glass-border); object-fit:cover;">
-      <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)" style="display:none;">
+  <div class="sidebar-footer">
+    <div class="sidebar-profile" onclick="toggleUserMenu()" title="{{ $officerName }} (Click for Account Settings)">
+      <div class="avatar-wrap" onclick="event.stopPropagation(); document.getElementById('avatarInput').click()" style="width:38px;height:38px;margin:0;flex-shrink:0;">
+        <img id="avatarPreview" src="{{ $avatar ?: 'https://ui-avatars.com/api/?name='.urlencode($officerName).'&background=2a6acc&color=fff&size=80' }}" alt="Officer" style="width:38px; height:38px; border-radius:50%; object-fit:cover;">
+        <input type="file" id="avatarInput" accept="image/*" onchange="changeImg('avatarPreview',this)" style="display:none;">
+      </div>
+      <div style="flex:1;min-width:0;margin-left:10px;text-align:left;">
+        <div style="font-weight:600; font-size:13px; color:var(--text); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="officerName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $officerName }}</div>
+        <div style="font-size:11.5px; color:var(--text-dim); margin-top:2px;">Subdivision Officer</div>
+      </div>
+      <span class="admin-chevron" style="font-size:10px;color:var(--text-dim);">▼</span>
     </div>
-    <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="officerName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $officerName }}</div>
-    <div style="font-size:13px; color:var(--text-dim); margin-top:2px;">Officer</div>
-    
-    <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'officer' }}"></form>
-    <a href="{{ url('settings') }}?portal={{ $role ?? 'officer' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;"><x-icon name="gear" size="13"/> Settings</a>
-    <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:8px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
 </aside>
 
 <!-- Right Main Workspace -->
 <main class="main">
+  <!-- Topbar Header -->
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menuToggle" onclick="toggleMobileSidebar()"><x-icon name="menu" size="18"/></button>
+      <div>
+        <div class="topbar-title" id="topbarTitle">Officer Portal</div>
+        <div class="topbar-sub" id="topbarSubtitle">Subdivision Operations &amp; Oversight</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <!-- Search shortcut -->
+      <div class="topbar-search-box" onclick="SubUI.openSearch()" title="Search (Ctrl+K)">
+        <span style="color:#8C857B;display:flex;align-items:center;"><x-icon name="search" size="14"/></span>
+        <span style="color:#7D766D;font-size:12.5px;">Search issues, notices, residents…</span>
+      </div>
+
+      <!-- Theme Toggle (Light / Dark Mode) -->
+      <button class="topbar-btn keep-mobile" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light / Dark mode" aria-label="Toggle theme">
+        <span id="themeToggleIcon"><x-icon name="moon" size="15"/></span>
+      </button>
+
+      <!-- Notification Center / Alerts -->
+      <div class="topbar-notif-wrap">
+        @include('partials.notification-center')
+      </div>
+
+      <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'officer' }}"></form>
+
+      <!-- User Profile Dropdown Menu -->
+      <div class="user-menu-wrap" style="position:relative;">
+        <button class="topbar-avatar keep-mobile" id="userMenuButton" aria-expanded="false" aria-controls="userMenuPopover" onclick="toggleUserMenu()" title="{{ $officerName }} (Account menu)">
+          {{ strtoupper(substr($officerName, 0, 2)) }}
+        </button>
+        <div class="user-menu-popover" id="userMenuPopover" role="menu" aria-label="Account menu">
+          <!-- Header: User info -->
+          <div class="user-menu-header">
+            <div class="user-menu-avatar">{{ strtoupper(substr($officerName, 0, 2)) }}</div>
+            <div class="user-menu-info">
+              <div class="user-menu-name">{{ $officerName }}</div>
+              <div class="user-menu-role">Subdivision Officer</div>
+              <div class="user-menu-status"><span class="user-status-dot"></span> Online</div>
+            </div>
+          </div>
+          <div class="user-menu-divider"></div>
+          <!-- Menu items -->
+          <div class="user-menu-items">
+            <a href="{{ url('settings') }}?portal={{ $role ?? 'officer' }}" class="user-menu-item active" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="gear" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Account Settings</div>
+                <div class="user-menu-desc">Profile, account, and preferences</div>
+              </div>
+            </a>
+            <a href="{{ url('settings') }}?portal={{ $role ?? 'officer' }}#notifications" class="user-menu-item" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="bell" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Notification Preferences</div>
+              </div>
+            </a>
+          </div>
+          <div class="user-menu-divider"></div>
+          <div class="user-menu-footer">
+            <button class="user-menu-item logout" onclick="confirmLogout()" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="logout" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Log Out</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
   <!-- Emergency alert banner (shown on critical issues) -->
   <div id="emergencyAlert" style="display:none;">
     <x-icon name="alert" size="16"/> <span id="emergencyAlertText">CRITICAL ISSUE REPORTED</span>
@@ -87,50 +172,86 @@
   </div>
   <!-- ═══════════ OVERVIEW ═══════════ -->
   <div class="tab-panel active" id="panel-overview">
-    <div class="bento-grid">
-      <!-- Greeting card (Span 8) -->
-      <div class="card bento-col-8" style="display:flex; flex-direction:column; justify-content:center;">
-        <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:8px;">Hello, Officer {{ explode(' ', $officerName)[0] }} 👋</h1>
-        <p style="font-size:13px; color:var(--text-dim); line-height:1.6;">Post alerts, communicate with the board, and coordinate with block managers.</p>
+    <!-- 1. HERO BANNER -->
+    <div class="dash-hero-card">
+      <div class="dash-hero-content">
+        <div class="dash-hero-indicator"></div>
+        <div class="dash-hero-body">
+          <h1 class="dash-hero-title">Welcome back, Officer {{ explode(' ', $officerName)[0] }} 👋</h1>
+          <p class="dash-hero-subtitle">Subdivision operations, resident concerns, and notices.</p>
+          <div class="dash-hero-pills">
+            <span class="dash-pill"><x-icon name="calendar" size="14"/> {{ date('M d, Y (D)') }}</span>
+            <span class="dash-pill" id="heroWeatherPill" title="Live Subdivision Weather"><x-icon name="sun" size="14"/><span id="heroWeatherText">29°C Partly Cloudy</span></span>
+            <span class="dash-pill"><x-icon name="shield" size="14"/> Officer on Duty</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 4 OFFICER KPI STAT CARDS ROW -->
+    <div class="dash-kpi-grid">
+      <!-- Open Issues -->
+      <div class="dash-kpi-card" onclick="switchTab('reports')" title="Review open issues">
+        <div class="dash-kpi-icon amber"><x-icon name="clipboard" size="18"/></div>
+        <div class="dash-kpi-label">Open Issues</div>
+        <div class="dash-kpi-val" id="openReportsCount">—</div>
+        <div class="dash-kpi-sub muted">Require attention</div>
       </div>
 
-      <!-- Quick stats (Span 4) -->
-      <div class="bento-col-4" style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-        <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Notices</div>
-          <div style="font-size:22px;font-weight:700;color:var(--blue);" id="annCount">—</div>
-        </div>
-        <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Issues</div>
-          <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="openReportsCount">—</div>
-        </div>
-        <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Excel Sent</div>
-          <div style="font-size:22px;font-weight:700;color:var(--green);" id="filesSentCount">—</div>
-        </div>
-        <div class="card" style="padding:16px 12px; text-align:center;">
-          <div style="font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Verified</div>
-          <div style="font-size:22px;font-weight:700;color:var(--accent);" id="blockResidentsCount">—</div>
-        </div>
+      <!-- Published Notices -->
+      <div class="dash-kpi-card" onclick="switchTab('announcements')" title="Manage announcements">
+        <div class="dash-kpi-icon blue"><x-icon name="megaphone" size="18"/></div>
+        <div class="dash-kpi-label">Published Notices</div>
+        <div class="dash-kpi-val" id="annCount">—</div>
+        <div class="dash-kpi-sub muted">Active bulletins</div>
       </div>
 
-      <!-- Recent Announcements from Admin (Span 8) -->
-      <div class="card bento-col-8">
-        <div class="card-title">Recent Announcements from Admin</div>
-        <div class="card-subtitle">The latest notices posted by the subdivision administration.</div>
-        <div id="overviewAnnList"></div>
+      <!-- Excel / Records Sent -->
+      <div class="dash-kpi-card" onclick="switchTab('files')" title="Inspect dispatched files">
+        <div class="dash-kpi-icon green"><x-icon name="folder" size="18"/></div>
+        <div class="dash-kpi-label">Documents Sent</div>
+        <div class="dash-kpi-val" id="filesSentCount">—</div>
+        <div class="dash-kpi-sub muted">HOA files dispatched</div>
       </div>
 
-      <!-- Quick Actions (Span 4) -->
-      <div class="card bento-col-4">
-        <div class="card-title">Quick Actions</div>
-        <div class="card-subtitle">Jump to the task you need to work on.</div>
-        <div class="quick-stack">
-          <button class="btn btn-full" onclick="switchTab('announcements')"><x-icon name="megaphone" size="15"/> Post Announcement</button>
-          <button class="btn btn-full" onclick="switchTab('reports')"><x-icon name="clipboard" size="15"/> Resolve Issues</button>
-          <button class="btn btn-full" onclick="switchTab('files')"><x-icon name="upload" size="15"/> Send Report File</button>
-        </div>
+      <!-- Verified Residents -->
+      <div class="dash-kpi-card" onclick="switchTab('map')" title="View subdivision map">
+        <div class="dash-kpi-icon orange"><x-icon name="users" size="18"/></div>
+        <div class="dash-kpi-label">Verified Residents</div>
+        <div class="dash-kpi-val" id="blockResidentsCount">—</div>
+        <div class="dash-kpi-sub green">Subdivision members</div>
       </div>
+    </div>
+
+    <!-- 3. QUICK ACTIONS ROW -->
+    <div class="card" style="margin-top:0;padding:20px 24px;">
+      <div class="card-title" style="font-size:15px;margin-bottom:2px;">Quick Actions</div>
+      <div class="card-subtitle" style="margin-bottom:14px;">Jump directly to tasks and operations.</div>
+      <div class="officer-quick-actions-row">
+        <button class="btn btn-full officer-qa-btn orange-accent" onclick="switchTab('announcements')">
+          <x-icon name="megaphone" size="18"/>
+          <span>Post Announcement</span>
+        </button>
+        <button class="btn btn-full officer-qa-btn" onclick="switchTab('reports')">
+          <x-icon name="clipboard" size="18"/>
+          <span>Resolve Issues</span>
+        </button>
+        <button class="btn btn-full officer-qa-btn" onclick="switchTab('files')">
+          <x-icon name="upload" size="18"/>
+          <span>Send Report File</span>
+        </button>
+        <button class="btn btn-full officer-qa-btn" onclick="switchTab('map')">
+          <x-icon name="map" size="18"/>
+          <span>Subdivision Map</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. RECENT ANNOUNCEMENTS FROM ADMIN -->
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title">Recent Announcements from Admin</div>
+      <div class="card-subtitle">The latest notices posted by the subdivision administration.</div>
+      <div id="overviewAnnList"></div>
     </div>
   </div>
 
@@ -310,7 +431,39 @@
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
         <div class="card-title" style="margin:0;">Subdivision Issue Map</div>
       <div class="card-subtitle" style="margin-top:4px;">Numbered pins show reported issues. Tap a pin to view and respond.</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <label class="map-toggle" title="Toggle block partition boundaries">
+            <input type="checkbox" id="officerLayerBlocks" onchange="toggleOfficerBlocks(this.checked)"> Block Partitions
+          </label>
+          <label class="map-toggle" title="Toggle facilities markers">
+            <input type="checkbox" id="officerLayerFacilities" checked onchange="toggleOfficerFacilities(this.checked)"> Facilities
+          </label>
+          <label class="map-toggle" title="Toggle reported issue markers">
+            <input type="checkbox" id="officerLayerIssues" checked onchange="toggleOfficerIssues(this.checked)"> Issue Pins
+          </label>
+          <label class="map-toggle" title="Toggle thermal issue heatmap and frequency categorization">
+            <input type="checkbox" id="officerLayerHeat" onchange="toggleOfficerHeatmap(this.checked)"> Heatmap
+          </label>
+          <select id="officerHeatCategory" onchange="renderOfficerHeatmap()" style="display:none;background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;" title="Filter heatmap by issue category">
+            <option value="">All categories</option>
+          </select>
+          <select id="officerFilterBlock" onchange="filterOfficerBlocks(this.value)" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;" title="Filter map to a specific block">
+            <option value="">All Blocks (1–14)</option>
+            <option value="1">Block 1 — Lots 1–10 (Sky Blue)</option>
+            <option value="2">Block 2 — Clubhouse &amp; Pool (Purple)</option>
+            <option value="3">Block 3 — Perimeter Lots 1–74 (Red)</option>
+            <option value="4">Block 4 — Lots 1–40 (Orange)</option>
+            <option value="5">Block 5 — Lots 1–34 (Purple)</option>
+            <option value="6">Block 6 — Lots 1–28 (Green)</option>
+            <option value="7">Block 7 — Lots 1–24 (Amber)</option>
+            <option value="8">Block 8 — Lots 1–19 (Lime)</option>
+            <option value="9">Block 9 — Lots 1–20 (Rose)</option>
+            <option value="10">Block 10 — Lots 1–18 (Magenta)</option>
+            <option value="11">Block 11 — Lots 1–18 (Indigo)</option>
+            <option value="12">Block 12 — Lots 1–22 (Pink)</option>
+            <option value="13">Block 13 — Lots 1–16 (Gold)</option>
+            <option value="14">Block 14 — Lots 1–14 (Blue)</option>
+          </select>
           <select id="officerMapStatus" onchange="renderOfficerMapPins()" style="background:var(--glass);border:1px solid var(--glass-border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:12px;">
             <option value="">All Statuses</option>
             <option value="Pending">Pending</option>
@@ -326,14 +479,39 @@
           </select>
         </div>
       </div>
+      <!-- Officer Heatmap & Hotspot Analysis Bar -->
+      <div id="officerHeatAnalysisCard" class="card" style="display:none;margin-bottom:12px;padding:12px 16px;background:var(--glass);border-left:4px solid #ef4444;transition:all 0.25s ease;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(239,68,68,0.15);color:#ef4444;font-size:13px;">🔥</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text);">Subdivision Issue Heatmap &amp; Category Frequency</span>
+              <span style="font-size:11px;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;">Live Heat</span>
+            </div>
+            <div id="officerHeatSummaryLine" style="font-size:12px;color:var(--text-mid);margin-top:4px;">
+              Analyzing issue frequency across subdivision...
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);" title="Thermal intensity ramps up as reports cluster">
+              <span>Low (1)</span>
+              <div style="width:100px;height:9px;border-radius:4px;background:linear-gradient(to right, #38bdf8, #34d399, #facc15, #fb923c, #ef4444);box-shadow:inset 0 1px 2px rgba(0,0,0,0.25);"></div>
+              <span style="color:#ef4444;font-weight:700;">Hotspot (4+)</span>
+            </div>
+          </div>
+        </div>
+        <div id="officerHeatCategoryPills" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--glass-border);">
+        </div>
+      </div>
       <div id="officerMonitorMap" style="width:100%;height:520px;border-radius:10px;border:1px solid var(--glass-border);background:#EDE7DC;"></div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-mid);margin-top:10px;align-items:center;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:3px;background:#2563eb;display:inline-block;"></span>Block Partitions</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;display:inline-block;"></span>Pending</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;"></span>In Progress</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#888;display:inline-block;"></span>Resolved</span>
         <span style="margin-left:auto;font-size:12px;color:var(--text-dim);">Pins are numbered by report; click a pin for details and to respond.</span>
       </div>
-      <div style="margin-top:12px;padding:12px 14px;border-left:3px solid var(--accent);background:rgba(160,125,83,0.06);border-radius:0 8px 8px 0;">
+      <div style="margin-top:12px;padding:12px 14px;border-left:3px solid var(--accent);background:rgba(250,125,9,0.06);border-radius:0 8px 8px 0;">
         <div style="font-size:12px;color:var(--text-dim);line-height:1.6;"><strong>Map scope &amp; limitations.</strong> Limited to the Terra Nova subdivision boundary, which is approximate. For precise locations, consult official subdivision plans. Only reported issues inside the boundary are shown.</div>
       </div>
     </div>

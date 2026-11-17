@@ -26,10 +26,27 @@ class HoaExpenseController extends Controller
         $expense = HoaExpense::findOrFail($id);
         abort_unless($expense->receipt_path, 404);
 
-        $disk = Storage::disk('local')->exists($expense->receipt_path) ? 'local' : 'public';
-        abort_unless(Storage::disk($disk)->exists($expense->receipt_path), 404);
+        $path = ltrim($expense->receipt_path, '/\\');
+        $path = preg_replace('#^(public/|storage/)#', '', $path);
 
-        return response()->file(Storage::disk($disk)->path($expense->receipt_path));
+        $disk = null;
+        if (Storage::disk('local')->exists($path)) {
+            $disk = 'local';
+        } elseif (Storage::disk('public')->exists($path)) {
+            $disk = 'public';
+        } elseif (Storage::disk('local')->exists($expense->receipt_path)) {
+            $disk = 'local';
+            $path = $expense->receipt_path;
+        } elseif (Storage::disk('public')->exists($expense->receipt_path)) {
+            $disk = 'public';
+            $path = $expense->receipt_path;
+        }
+
+        abort_unless($disk !== null, 404);
+
+        return response()->file(Storage::disk($disk)->path($path), [
+            'Content-Disposition' => 'inline; filename="'.basename($path).'"',
+        ]);
     }
 
     /** POST /api/hoa-expenses — admin records an expense. */

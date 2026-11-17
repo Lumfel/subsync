@@ -439,7 +439,7 @@ class ResidentController extends Controller
                     'priority' => $a->priority ?? 'Normal',
                     'event_date' => $a->event_date,
                     'posted_by' => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
-                    'created_at' => $a->created_at?->format('M d, Y'),
+                    'created_at' => $a->created_at?->format('M d, Y g:i A'),
                 ])->all();
 
             // My issues (recent 20)
@@ -455,7 +455,7 @@ class ResidentController extends Controller
                     'description' => $i->description,
                     'status' => $i->status,
                     'priority' => $i->priority,
-                    'created_at' => $i->created_at?->format('M d, Y'),
+                    'created_at' => $i->created_at?->format('M d, Y g:i A'),
                     'resolved_at' => $i->resolved_at?->format('Y-m-d'),
                     'response' => $i->responses->first()?->response_content,
                     'media' => $i->media->map(fn ($m) => [
@@ -476,7 +476,7 @@ class ResidentController extends Controller
                     'title' => $r->title,
                     'description' => $r->description,
                     'status' => $r->status,
-                    'created_at' => $r->created_at?->format('M d, Y') ?? now()->format('M d, Y'),
+                    'created_at' => $r->created_at?->format('M d, Y g:i A') ?? now()->format('M d, Y g:i A'),
                 ])->all();
 
             // HOA expenses (recent 30)
@@ -487,10 +487,14 @@ class ResidentController extends Controller
                     'id' => $e->id,
                     'title' => $e->title,
                     'description' => $e->description,
-                    'amount' => $e->amount,
+                    'amount' => (float) $e->amount,
                     'expense_date' => $e->expense_date?->format('Y-m-d'),
                     'category' => $e->category,
                     'status' => $e->status,
+                    'fund' => $e->fund ?: 'Operating',
+                    'issue_id' => $e->issue_id,
+                    'has_receipt' => (bool) $e->receipt_path,
+                    'receipt_url' => $e->receipt_path ? '/api/hoa-expenses/'.$e->id.'/receipt' : null,
                     'created_at' => $e->created_at?->format('M d, Y'),
                 ])->all();
 

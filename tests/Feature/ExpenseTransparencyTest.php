@@ -92,6 +92,33 @@ class ExpenseTransparencyTest extends TestCase
         $this->assertArrayHasKey('receipt_url', $res->json()[0]);
     }
 
+    public function test_resident_can_stream_expense_receipt_but_missing_file_is_404(): void
+    {
+        Storage::fake('local');
+        Storage::fake('public');
+
+        $expense = HoaExpense::create([
+            'title' => 'Guardhouse supplies', 'description' => 'Logbooks.',
+            'amount' => 300, 'expense_date' => '2026-09-01', 'category' => 'Security',
+            'receipt_path' => 'uploads/expenses/guardhouse.pdf',
+        ]);
+        Storage::disk('public')->put('uploads/expenses/guardhouse.pdf', '%PDF-1.4 test');
+
+        $this->actingAs($this->resident(), 'resident')
+            ->get('/api/hoa-expenses/'.$expense->id.'/receipt')
+            ->assertOk();
+
+        $orphan = HoaExpense::create([
+            'title' => 'No receipt', 'description' => 'x',
+            'amount' => 100, 'expense_date' => '2026-09-02', 'category' => 'Other',
+            'receipt_path' => 'uploads/expenses/missing.pdf',
+        ]);
+
+        $this->actingAs($this->resident(), 'resident')
+            ->get('/api/hoa-expenses/'.$orphan->id.'/receipt')
+            ->assertNotFound();
+    }
+
     public function test_non_admin_cannot_create_expense(): void
     {
         $this->postJson('/api/hoa-expenses', [
@@ -118,5 +145,42 @@ class ExpenseTransparencyTest extends TestCase
         $categories = collect($res->json('categories'))->keyBy('category');
         $this->assertSame(500.0, (float) $categories['Maintenance']['total']);
         $this->assertSame(300.0, (float) $categories['Security']['total']);
+    }
+
+    public function test_resident_portal_data_includes_expense_receipt_url(): void
+    {
+        HoaExpense::create([
+            'title' => 'Landscaping',
+            'description' => 'Trimming',
+            'amount' => 500,
+            'expense_date' => '2026-09-01',
+            'category' => 'Maintenance',
+            'receipt_path' => 'uploads/expenses/landscaping.pdf',
+        ]);
+
+        $res = $this->actingAs($this->resident(), 'resident')->getJson('/api/resident/portal-data')->assertOk();
+
+        $this->assertNotEmpty($res->json('expenses'));
+        $expense = $res->json('expenses')[0];
+        $this->assertTrue($expense['has_receipt']);
+        $this->assertStringContainsString('/receipt', $expense['receipt_url']);
+    }
+
+    public function test_expense_receipt_can_resolve_with_portal_query(): void
+    {
+        Storage::fake('public');
+        $expense = HoaExpense::create([
+            'title' => 'Landscaping',
+            'description' => 'Trimming',
+            'amount' => 500,
+            'expense_date' => '2026-09-01',
+            'category' => 'Maintenance',
+            'receipt_path' => 'uploads/expenses/landscaping.pdf',
+        ]);
+        Storage::disk('public')->put('uploads/expenses/landscaping.pdf', '%PDF-1.4 test');
+
+        $this->actingAs($this->resident(), 'resident')
+            ->get('/api/hoa-expenses/'.$expense->id.'/receipt?portal=resident')
+            ->assertOk();
     }
 }

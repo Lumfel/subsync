@@ -53,6 +53,7 @@ class SseStreamTest extends TestCase
         SseEvent::emit('payment_submissions', 'payment', ['latestId' => 2, 'residentId' => $alice->id, 'status' => 'Pending']);
         SseEvent::emit('officer_files', 'officer-file', ['latestId' => 3, 'name' => 'secret-file.xlsx']);
         SseEvent::emit('announcements', 'announcement', ['latestId' => 4, 'title' => 'Community notice']);
+        SseEvent::emit('expense_requests', 'expense-request', ['latestId' => 5, 'officerId' => 1, 'title' => 'Gate repair claim']);
 
         $body = $this->actingAs($alice, 'resident')
             ->get('/api/stream/updates?lastEventId=0&max=1')
@@ -65,5 +66,6 @@ class SseStreamTest extends TestCase
         // …other members' payments and staff-only files do not.
         $this->assertStringNotContainsString('"residentId":'.$bob->id, $body);
         $this->assertStringNotContainsString('secret-file.xlsx', $body);
+        $this->assertStringNotContainsString('Gate repair claim', $body);
     }
 }

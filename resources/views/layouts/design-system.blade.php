@@ -38,7 +38,7 @@
         <h2>Color tokens</h2>
         <div class="ds-row">
             @foreach ([
-                ['--accent', '#86653D'], ['--text', '#26231F'], ['--text-mid', '#45413C'], ['--text-dim', '#5F5A53'],
+                ['--accent', '#FA7D09'], ['--text', '#26231F'], ['--text-mid', '#45413C'], ['--text-dim', '#5F5A53'],
                 ['--blue', '#3E6A8F'], ['--green', '#4F7A57'], ['--yellow', '#946E1E'], ['--purple', '#6E6486'], ['--danger', '#A84545'],
             ] as [$token, $hex])
             <div class="ds-swatch"><i style="background: {{ $hex }}"></i><span>{{ $token }}<br>{{ $hex }}</span></div>
@@ -65,7 +65,7 @@
         <h2>Buttons — app (.btn)</h2>
         <div class="ds-demo ds-row">
             <button class="btn">Default</button>
-            <button class="btn" style="background:var(--accent);border-color:var(--accent);color:#fff;">Accent</button>
+            <button class="btn" style="background:var(--accent);border-color:var(--accent);color:#FFFFFF;font-weight:700;">Accent</button>
             <button class="btn" style="background:#4F7A57;border-color:#4F7A57;color:#fff;">Success</button>
             <button class="btn" style="background:#A84545;border-color:#A84545;color:#fff;">Danger</button>
             <button class="btn" disabled>Disabled</button>

@@ -6,9 +6,13 @@ use App\Events\SubSyncEvent;
 use App\Models\Announcement;
 use App\Models\Event;
 use App\Models\EventRsvp;
+use App\Models\ExpenseRequest;
+use App\Models\Facility;
 use App\Models\HoaExpense;
 use App\Models\HoaPolicy;
+use App\Models\Household;
 use App\Models\IssueReport;
+use App\Models\MapSetting;
 use App\Models\Message;
 use App\Models\Officer;
 use App\Models\OfficerFile;
@@ -16,6 +20,7 @@ use App\Models\PaymentSubmission;
 use App\Models\Recommendation;
 use App\Models\Resident;
 use App\Models\SseEvent;
+use App\Models\SubdivisionBlock;
 
 class SsePublishingObserver
 {
@@ -168,6 +173,53 @@ class SsePublishingObserver
                     'latestId' => $model->id,
                     'action' => $action,
                     'name' => $model->original_name,
+                ],
+            ],
+            // Subdivision block partition and boundary updates.
+            $model instanceof SubdivisionBlock => [
+                'block',
+                [
+                    'latestId' => $model->id,
+                    'action' => $action,
+                    'blockNumber' => $model->block_number,
+                ],
+            ],
+            // Officer reimbursement / expense requests.
+            $model instanceof ExpenseRequest => [
+                'expense-request',
+                [
+                    'latestId' => $model->id,
+                    'action' => $action,
+                    'officerId' => $model->officer_id,
+                    'status' => $model->status,
+                    'amount' => $model->amount,
+                    'title' => $model->title,
+                ],
+            ],
+            // Community facilities / amenities.
+            $model instanceof Facility => [
+                'facility',
+                [
+                    'latestId' => $model->id,
+                    'action' => $action,
+                    'name' => $model->name,
+                ],
+            ],
+            // Household address / lot mapping updates.
+            $model instanceof Household => [
+                'household',
+                [
+                    'latestId' => $model->id,
+                    'action' => $action,
+                    'blockLot' => $model->block_lot_number,
+                ],
+            ],
+            // Subdivision map boundary / blueprint overlay adjustments.
+            $model instanceof MapSetting => [
+                'map-setting',
+                [
+                    'latestId' => $model->id,
+                    'action' => $action,
                 ],
             ],
             default => ['update', ['model' => $model->getTable(), 'action' => $action]],

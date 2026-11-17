@@ -1,4 +1,60 @@
 /* ══ UTILS ══ */
+/* ── Theme (Light / Dark) ── */
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  setResidentTheme(next);
+}
+function setResidentTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-theme-pref', theme);
+  try {
+    localStorage.setItem('subsync.theme', theme);
+    const prefs = JSON.parse(localStorage.getItem('subsync.prefs') || '{}');
+    prefs.theme = theme;
+    localStorage.setItem('subsync.prefs', JSON.stringify(prefs));
+  } catch(e){}
+  updateThemeToggleBtn(theme);
+  try {
+    window.dispatchEvent(new CustomEvent('subsync:theme', { detail: { theme } }));
+  } catch(e){}
+}
+function updateThemeToggleBtn(theme){
+  const el = document.getElementById('themeToggleIcon');
+  if(!el) return;
+  if(theme === 'dark'){
+    el.innerHTML = (window.SubUI && window.SubUI.icon) ? SubUI.icon('sun', 15) : '☀️';
+  } else {
+    el.innerHTML = (window.SubUI && window.SubUI.icon) ? SubUI.icon('moon', 15) : '🌙';
+  }
+}
+function toggleUserMenu(){
+  const pop = document.getElementById('userMenuPopover');
+  const btn = document.getElementById('userMenuButton');
+  if(!pop) return;
+  const isOpen = pop.classList.contains('open');
+  if(isOpen){
+    pop.classList.remove('open');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  } else {
+    pop.classList.add('open');
+    if(btn) btn.setAttribute('aria-expanded', 'true');
+  }
+}
+document.addEventListener('click', function(e){
+  const wrap = document.querySelector('.user-menu-wrap');
+  const pop = document.getElementById('userMenuPopover');
+  if(pop && pop.classList.contains('open') && wrap && !wrap.contains(e.target)){
+    pop.classList.remove('open');
+    const btn = document.getElementById('userMenuButton');
+    if(btn) btn.setAttribute('aria-expanded', 'false');
+  }
+});
+document.addEventListener('DOMContentLoaded', function(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  updateThemeToggleBtn(cur);
+});
+
 function toggleMobileSidebar() {
   const sidebar = document.querySelector('.sidebar');
   const overlay = document.querySelector('.sidebar-overlay');
@@ -13,7 +69,15 @@ function confirmLogout(){
     cancelText: 'Stay signed in',
     danger: true,
     icon: '!'
-  }).then(ok => { if(ok) document.getElementById('logoutForm').submit(); });
+  }).then(ok => {
+    if(ok){
+      try {
+        sessionStorage.removeItem('subsync_active_tab_resident');
+        sessionStorage.removeItem('subsync_pay_tab_resident');
+      } catch(e) {}
+      document.getElementById('logoutForm').submit();
+    }
+  });
 }
 function changeImage(id,inp){
   const f=inp.files[0]; if(!f) return;
@@ -43,16 +107,28 @@ function showToast(msg, type){
 function switchTab(name){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('panel-'+name).classList.add('active');
-  document.getElementById('tab-'+name).classList.add('active');
+  const panel = document.getElementById('panel-'+name);
+  const tab = document.getElementById('tab-'+name);
+  if(panel) panel.classList.add('active');
+  if(tab) tab.classList.add('active');
+  try {
+    sessionStorage.setItem('subsync_active_tab_resident', name);
+    if(window.location.hash !== '#' + name){
+      history.replaceState(null, '', '#' + name);
+    }
+  } catch(e) {}
   if(name==='messages'){
     const b=document.getElementById('badge-messages');
     if(b) b.style.display='none';
     loadResidentThreads();
   }
-  if(name==='map') setTimeout(initResidentMap,80);
+  if(name==='map') setTimeout(function(){ if(typeof window.initResidentMap==='function') window.initResidentMap(); else if(typeof initResidentMap==='function') initResidentMap(); }, 80);
   if(name==='payments') loadPayments();
   if(name==='calendar') loadEvents();
+  if(name==='issues'){ if(typeof loadIssues==='function') loadIssues(); }
+  if(name==='expenses'){ if(typeof loadHOAExpenses==='function') loadHOAExpenses(); }
+  if(name==='recs'){ if(typeof loadRecs==='function') loadRecs(); }
+  if(name==='policies'){ if(typeof loadHOAPolicies==='function') loadHOAPolicies(); }
   
   // Auto-close sidebar on mobile
   const sidebar = document.querySelector('.sidebar');
@@ -691,7 +767,47 @@ window.loadHOAExpenses = loadHOAExpenses;
 /* ═══════════ PAYMENTS (GCash) ═══════════ */
 let myPayments = [];
 let gcashPayInfo = null;
-function payCsrf(){ return document.querySelector('meta[name="csrf-token"]').getAttribute('content'); }
+let currentHistoryFilter = 'all';
+
+function payCsrf(){ return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''; }
+
+function formatPayDate(dStr, withTime = false){
+  if(!dStr) return '—';
+  try {
+    const d = new Date(dStr);
+    if(isNaN(d.getTime())) return dStr;
+    const opts = { year: 'numeric', month: 'short', day: '2-digit' };
+    if(withTime){
+      opts.hour = '2-digit';
+      opts.minute = '2-digit';
+      opts.hour12 = true;
+    }
+    const formatted = d.toLocaleDateString('en-US', opts);
+    if(withTime){
+      return formatted.replace(/,\s(?=\d{1,2}:\d{2})/, ' · ');
+    }
+    return formatted;
+  } catch(e){
+    return dStr;
+  }
+}
+
+function payStatusBadge(status){
+  const st = (status || '').toLowerCase();
+  if(st === 'validated'){
+    return '<span class="pay-status-pill validated"><span class="status-dot"></span> Validated</span>';
+  }
+  if(st === 'pending' || st === 'under review'){
+    return '<span class="pay-status-pill under-review"><span class="status-dot"></span> Under Review</span>';
+  }
+  if(st === 'rejected'){
+    return '<span class="pay-status-pill rejected"><span class="status-dot"></span> Rejected</span>';
+  }
+  if(st === 'needs info'){
+    return '<span class="pay-status-pill needs-info"><span class="status-dot"></span> Needs Info</span>';
+  }
+  return `<span class="pay-status-pill under-review">${escHtml(status || 'Submitted')}</span>`;
+}
 
 async function loadPayments(){
   loadGcashPayInfo();
@@ -707,7 +823,13 @@ async function loadPayments(){
     amtInput.value = Number(window.__RESIDENT.balance).toFixed(2);
   }
   bindReceiptPasteAndDrop();
+  try {
+    const savedPayTab = sessionStorage.getItem('subsync_pay_tab_resident');
+    if(savedPayTab && typeof payTab === 'function') payTab(savedPayTab);
+  } catch(e) {}
 }
+window.loadPayments = loadPayments;
+
 function quickPay(amount){
   switchTab('payments');
   payTab('pay');
@@ -722,28 +844,70 @@ function quickPay(amount){
   if(formCard) formCard.scrollIntoView({behavior:'smooth', block:'center'});
 }
 window.quickPay = quickPay;
+
 function payTab(name, el){
   document.querySelectorAll('#payTabs .fin-tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  else document.querySelectorAll('#payTabs .fin-tab').forEach(t=>{ if(t.textContent.trim().toLowerCase().startsWith(name)) t.classList.add('active'); });
+  else {
+    const btn = document.getElementById('payTabBtn-' + name);
+    if(btn) btn.classList.add('active');
+    else {
+      document.querySelectorAll('#payTabs .fin-tab').forEach(t=>{
+        if(t.textContent.trim().toLowerCase().includes(name.toLowerCase())) t.classList.add('active');
+      });
+    }
+  }
   document.querySelectorAll('#panel-payments .fin-section').forEach(s=>s.classList.toggle('active', s.dataset.pay===name));
+  try {
+    sessionStorage.setItem('subsync_pay_tab_resident', name);
+  } catch(e) {}
 }
+window.payTab = payTab;
+
 async function loadStatement(){
-  const tbl=document.getElementById('statementTable'); if(!tbl) return;
-  let s={balance:0,total_charges:0,total_payments:0,entries:[],aging:{buckets:{}}};
-  try{ s=await fetch('/api/ledger/my',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){}
-  const bal=document.getElementById('statementBalance');
-  if(bal){ const v=Number(s.balance||0); bal.textContent='₱'+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2})+(v<0?' CR':''); bal.style.color=v<0?'var(--green,#6B8E70)':'var(--text)'; }
-  const ag=document.getElementById('statementAging');
+  const tbl = document.getElementById('statementTable');
+  let s = {balance:0,total_charges:0,total_payments:0,entries:[],aging:{buckets:{}}};
+  try{ s = await fetch('/api/ledger/my',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){}
+
+  const v = Number(s.balance || 0);
+  const bal = document.getElementById('statementBalance');
+  if(bal){
+    bal.textContent = '₱' + Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:2}) + (v < 0 ? ' CR' : '');
+    bal.style.color = v < 0 ? 'var(--green,#6B8E70)' : 'var(--text)';
+  }
+
+  // Update Overview KPI Card 1: Outstanding Balance
+  const kpiBal = document.getElementById('payKpiBalance');
+  const kpiBalStatus = document.getElementById('payKpiBalanceStatus');
+  if(kpiBal){
+    kpiBal.textContent = (v <= 0) ? '₱0.00' : '₱' + v.toLocaleString(undefined, {minimumFractionDigits: 2});
+  }
+  if(kpiBalStatus){
+    if(v <= 0){
+      kpiBalStatus.innerHTML = `<span class="status-indicator green" style="display:inline-flex;align-items:center;gap:6px;color:#2E7D32;font-size:12px;font-weight:600;">${typeof SubUI !== 'undefined' ? SubUI.icon('check-circle', 13) : '✓'} No pending balance</span>`;
+    } else {
+      kpiBalStatus.innerHTML = `<span class="status-indicator red" style="display:inline-flex;align-items:center;gap:6px;color:#DC2626;font-size:12px;font-weight:600;">${typeof SubUI !== 'undefined' ? SubUI.icon('alert-circle', 13) : '!'} Payment required</span>`;
+    }
+  }
+
+  // Auto-fill amount input if empty and there is an outstanding balance
+  const amtInput = document.getElementById('payAmount');
+  if(amtInput && !amtInput.value && v > 0){
+    amtInput.value = v.toFixed(2);
+  }
+
+  const ag = document.getElementById('statementAging');
   if(ag){
-    const b=(s.aging&&s.aging.buckets)||{};
-    const cell=(label,val)=>`<div style="flex:1;min-width:88px;"><div style="font-size:12.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;">${label}</div><div style="font-size:16px;font-weight:700;">₱${Number(val||0).toLocaleString(undefined,{minimumFractionDigits:2})}</div></div>`;
+    const b = (s.aging && s.aging.buckets) || {};
+    const cell = (label,val) => `<div style="flex:1;min-width:88px;"><div style="font-size:12.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.04em;">${label}</div><div style="font-size:16px;font-weight:700;">₱${Number(val||0).toLocaleString(undefined,{minimumFractionDigits:2})}</div></div>`;
     ag.innerHTML = cell('Current',b.current)+cell('1–30d',b.d1_30)+cell('31–60d',b.d31_60)+cell('61–90d',b.d61_90)+cell('90d+',b.d90_plus);
   }
-  const entries=(s.entries||[]);
-  if(!entries.length){ tbl.innerHTML='<div class="empty-state">No transactions yet.</div>'; return; }
-  const peso=v=>'₱'+Number(v||0).toLocaleString(undefined,{minimumFractionDigits:2});
-  tbl.innerHTML='<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;">'+
+
+  if(!tbl) return;
+  const entries = (s.entries || []);
+  if(!entries.length){ tbl.innerHTML = '<div class="empty-state">No transactions yet.</div>'; return; }
+  const peso = val => '₱' + Number(val||0).toLocaleString(undefined,{minimumFractionDigits:2});
+  tbl.innerHTML = '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:14px;">'+
     '<thead><tr><th style="text-align:left;padding:8px 10px;font-size:13px;">Date</th><th style="text-align:left;padding:8px 10px;font-size:13px;">Description</th><th style="text-align:right;padding:8px 10px;font-size:13px;">Charge</th><th style="text-align:right;padding:8px 10px;font-size:13px;">Payment</th><th style="text-align:right;padding:8px 10px;font-size:13px;">Balance</th></tr></thead><tbody>'+
     entries.map(e=>`<tr>
       <td style="padding:6px 8px;color:var(--text-dim);white-space:nowrap;">${escHtml(e.date||'')}</td>
@@ -759,17 +923,95 @@ async function loadStatement(){
       <td style="padding:6px 8px;text-align:right;font-weight:700;">${peso(s.balance)}</td>
     </tr></tfoot></table></div>`;
 }
+
 async function loadGcashPayInfo(){
   try{ gcashPayInfo = await fetch('/api/gcash-settings',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){ gcashPayInfo = null; }
-  const qr = document.getElementById('gcashQrBox'), det = document.getElementById('gcashPayDetails');
+  const qr = document.getElementById('gcashQrBox');
+  const det = document.getElementById('gcashPayDetails');
   if(!qr) return;
-  qr.innerHTML = (gcashPayInfo && gcashPayInfo.qr_image_url)
-    ? `<img src="${gcashPayInfo.qr_image_url}" alt="GCash QR" style="max-width:180px;max-height:220px;">`
-    : '<div style="font-size:12px;color:var(--text-dim);">No QR code available. Please contact the HOA office.</div>';
-  det.innerHTML = `${gcashPayInfo?.account_name?`<strong>${escHtml(gcashPayInfo.account_name)}</strong><br>`:''}` +
-    `${gcashPayInfo?.account_number?`GCash Number: ${escHtml(gcashPayInfo.account_number)}<br>`:''}` +
-    `${gcashPayInfo?.instructions?escHtml(gcashPayInfo.instructions):''}`;
+
+  if(gcashPayInfo && gcashPayInfo.qr_image_url){
+    qr.innerHTML = `<img src="${gcashPayInfo.qr_image_url}" alt="GCash QR Code" style="max-width:160px;max-height:160px;display:block;border-radius:8px;">`;
+  } else {
+    qr.innerHTML = '<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:16px;">No QR code available.<br>Please contact the HOA office.</div>';
+  }
+
+  if(det){
+    const copyIcon = typeof SubUI !== 'undefined' ? SubUI.icon('copy', 12) : '';
+    let html = '';
+    if(gcashPayInfo && gcashPayInfo.account_name){
+      html += `<div style="font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700;">Account Name</div>`;
+      html += `<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px;">${escHtml(gcashPayInfo.account_name)}</div>`;
+    }
+    if(gcashPayInfo && gcashPayInfo.account_number){
+      html += `<div style="font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700;">GCash Mobile Number</div>`;
+      html += `<div style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:#F58B1F;font-family:monospace;letter-spacing:0.04em;">` +
+        `<span>${escHtml(gcashPayInfo.account_number)}</span>` +
+        `<button type="button" class="pay-copy-chip" onclick="copyGcashNumber('${escHtml(gcashPayInfo.account_number)}')" title="Copy GCash number">` +
+        `${copyIcon} Copy</button></div>`;
+    }
+    if(gcashPayInfo && gcashPayInfo.instructions){
+      html += `<div style="margin-top:8px;font-size:12px;color:var(--text-dim);line-height:1.4;">${escHtml(gcashPayInfo.instructions)}</div>`;
+    }
+    if(!html){
+      html = '<div style="font-size:12px;color:var(--text-dim);">Official GCash payment information not configured. Please contact the HOA office.</div>';
+    }
+    det.innerHTML = html;
+  }
 }
+
+function copyGcashNumber(num){
+  if(!num) return;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(num).then(() => {
+      showToast('📋 Copied GCash number to clipboard.');
+    }).catch(() => {
+      showToast('GCash number: ' + num);
+    });
+  } else {
+    showToast('GCash number: ' + num);
+  }
+}
+window.copyGcashNumber = copyGcashNumber;
+
+function enlargeGcashQr(){
+  const modal = document.getElementById('modal-gcashQrEnlarge');
+  if(!modal) return;
+  const img = document.getElementById('gcashQrEnlargeImg');
+  const details = document.getElementById('gcashQrModalDetails');
+  const dLink = document.getElementById('gcashQrDownloadLink');
+  const qrUrl = gcashPayInfo?.qr_image_url || '';
+
+  if(!qrUrl){
+    showToast('No QR code image available.');
+    return;
+  }
+  if(img) img.src = qrUrl;
+  if(dLink) dLink.href = qrUrl;
+  if(details){
+    details.innerHTML = `<strong>${escHtml(gcashPayInfo?.account_name || 'Terra Nova HOA')}</strong><br>` +
+      `<span style="color:#F58B1F;font-weight:700;font-family:monospace;">${escHtml(gcashPayInfo?.account_number || '')}</span>`;
+  }
+  modal.classList.add('open');
+}
+window.enlargeGcashQr = enlargeGcashQr;
+
+function downloadGcashQr(){
+  const qrUrl = gcashPayInfo?.qr_image_url;
+  if(!qrUrl){
+    showToast('No QR code image available to download.');
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = qrUrl;
+  a.download = 'HOA_GCash_QR.jpg';
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+window.downloadGcashQr = downloadGcashQr;
+
 function donutSVG(items, size){
   const total = items.reduce((a,i)=>a+(i.value||0),0) || 1;
   const r = size/2, thick = size*0.26, inner = r - thick, cx = r, cy = r;
@@ -791,6 +1033,7 @@ function donutSVG(items, size){
   });
   return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="Expense breakdown">${body}</svg>`;
 }
+
 async function loadTransparency(){
   const el = document.getElementById('transparencySummary'); if(!el) return;
   let s = {collected:0,spent:0,operating:0,reserve:0,net:0,balance:0,categories:[],period:null};
@@ -844,37 +1087,280 @@ async function loadTransparency(){
   }
   el.innerHTML = html;
 }
+
+function updatePaymentKpis(){
+  const list = Array.isArray(myPayments) ? myPayments : [];
+  const pendingCount = list.filter(p => {
+    const st = (p.status || '').toLowerCase();
+    return st === 'pending' || st === 'under review';
+  }).length;
+  const validatedCount = list.filter(p => (p.status || '').toLowerCase() === 'validated').length;
+
+  const pendingEl = document.getElementById('payKpiPending');
+  if(pendingEl) pendingEl.textContent = pendingCount;
+
+  const valEl = document.getElementById('payKpiValidated');
+  if(valEl) valEl.textContent = validatedCount;
+}
+
+function renderRecentPayments(){
+  const tbody = document.getElementById('recentPaymentsTbody');
+  if(!tbody) return;
+  const list = Array.isArray(myPayments) ? myPayments : [];
+  if(!list.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="text-align:center;padding:28px;color:var(--text-dim);">No payment submissions yet.</td></tr>';
+    return;
+  }
+  const top5 = list.slice(0, 5);
+  tbody.innerHTML = top5.map(p => {
+    const amt = '₱' + Number(p.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+    const subDate = formatPayDate(p.created_at, true);
+    const paidDate = formatPayDate(p.paid_at || p.created_at, false);
+    const ref = p.reference_no ? escHtml(p.reference_no) : '—';
+    const remarks = p.admin_response ? escHtml(p.admin_response) : (p.rejection_reason ? `<span style="color:#DC2626;">${escHtml(p.rejection_reason)}</span>` : '—');
+    const eyeIcon = typeof SubUI !== 'undefined' ? SubUI.icon('eye', 14) : '👁';
+    const receiptBtn = p.has_receipt
+      ? `<button type="button" class="pay-eye-btn" onclick="viewReceiptModal(${p.id})" title="View Receipt Screenshot" aria-label="View Receipt">${eyeIcon}</button>`
+      : '<span style="color:var(--text-dim);font-size:12px;">—</span>';
+
+    return `<tr>
+      <td style="white-space:nowrap;font-size:13px;color:var(--text-mid);">${subDate}</td>
+      <td style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text);">${ref}</td>
+      <td style="font-weight:700;color:var(--text);">${amt}</td>
+      <td style="white-space:nowrap;font-size:13px;color:var(--text-mid);">${paidDate}</td>
+      <td>${payStatusBadge(p.status)}</td>
+      <td style="font-size:12.5px;color:var(--text-dim);max-width:240px;overflow:hidden;text-overflow:ellipsis;">${remarks}</td>
+      <td style="text-align:center;">${receiptBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
 async function loadMyPayments(){
   try{ myPayments = await fetch('/api/payments/my',{headers:{'Accept':'application/json'}}).then(r=>r.json()); }catch(e){ myPayments = []; }
+  updatePaymentKpis();
+  renderRecentPayments();
   renderMyPayments();
 }
-function renderMyPayments(){
-  const el = document.getElementById('myPaymentsList'); if(!el) return;
-  if(!Array.isArray(myPayments) || !myPayments.length){ el.innerHTML = '<div class="empty-state">No payments submitted yet.</div>'; return; }
-  const pill = {Pending:'pill-pending',Validated:'pill-resolved',Rejected:'pill-urgent','Needs Info':'pill-progress'};
-  el.innerHTML = myPayments.map(p=>`
-    <div class="report-item" style="margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
-        <div>
-          <div class="report-title">₱${Number(p.amount).toLocaleString(undefined,{minimumFractionDigits:2})}</div>
-          <div style="font-size:12px;color:var(--text-dim);">Ref: ${escHtml(p.reference_no||'—')} · ${escHtml(p.created_at||'')}</div>
-        </div>
-        <span class="pill ${pill[p.status]||'pill-notice'}">${escHtml(p.status)}</span>
-      </div>
-      ${p.admin_response?`<div style="margin-top:8px;font-size:13px;color:var(--text-mid);">Admin: ${escHtml(p.admin_response)}</div>`:''}
-      ${p.rejection_reason?`<div style="margin-top:6px;font-size:13px;color:#c87941;">Reason: ${escHtml(p.rejection_reason)}</div>`:''}
-      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-        ${p.has_receipt?`<a class="btn btn-sm" href="/api/payments/${p.id}/receipt" target="_blank" rel="noopener">My Receipt</a>`:''}
-        ${p.has_official_receipt?`<a class="btn btn-sm" href="/api/payments/${p.id}/official-receipt" target="_blank" rel="noopener">Official Receipt</a>`:''}
-      </div>
-    </div>`).join('');
+window.loadMyPayments = loadMyPayments;
+
+function setHistoryFilter(status, el){
+  currentHistoryFilter = status;
+  document.querySelectorAll('#historyFilterPills .history-pill').forEach(btn => btn.classList.remove('active'));
+  if(el) el.classList.add('active');
+  renderMyPayments();
 }
+window.setHistoryFilter = setHistoryFilter;
+
+function filterPaymentHistory(){
+  renderMyPayments();
+}
+window.filterPaymentHistory = filterPaymentHistory;
+
+function renderMyPayments(){
+  const el = document.getElementById('myPaymentsList');
+  if(!el) return;
+  const list = Array.isArray(myPayments) ? myPayments : [];
+
+  const searchInput = document.getElementById('payHistorySearch');
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+  const filtered = list.filter(p => {
+    // Status filter
+    if(currentHistoryFilter !== 'all'){
+      const st = (p.status || '').toLowerCase();
+      if(currentHistoryFilter === 'Pending' && st !== 'pending' && st !== 'under review') return false;
+      if(currentHistoryFilter === 'Validated' && st !== 'validated') return false;
+      if(currentHistoryFilter === 'Rejected' && st !== 'rejected') return false;
+    }
+    // Search query
+    if(query){
+      const matchRef = (p.reference_no || '').toLowerCase().includes(query);
+      const matchAmt = String(p.amount || '').toLowerCase().includes(query);
+      const matchDate = String(p.paid_at || '').toLowerCase().includes(query) || String(p.created_at || '').toLowerCase().includes(query);
+      const matchRemarks = (p.admin_response || '').toLowerCase().includes(query) || (p.rejection_reason || '').toLowerCase().includes(query);
+      if(!matchRef && !matchAmt && !matchDate && !matchRemarks) return false;
+    }
+    return true;
+  });
+
+  if(!filtered.length){
+    el.innerHTML = `<div class="empty-state" style="text-align:center;padding:36px;color:var(--text-dim);">${query || currentHistoryFilter !== 'all' ? 'No transactions match your search or filter.' : 'No payments submitted yet.'}</div>`;
+    return;
+  }
+
+  const eyeIcon = typeof SubUI !== 'undefined' ? SubUI.icon('eye', 14) : '👁';
+  const fileTextIcon = typeof SubUI !== 'undefined' ? SubUI.icon('file-text', 12) : '';
+  const arrowRightIcon = typeof SubUI !== 'undefined' ? SubUI.icon('arrow-right', 12) : '→';
+
+  el.innerHTML = `<table class="pay-table" id="historyPaymentsTable">
+    <thead>
+      <tr>
+        <th>Date Submitted</th>
+        <th>Reference No.</th>
+        <th>Amount</th>
+        <th>Date Paid</th>
+        <th>Status</th>
+        <th>Remarks & Details</th>
+        <th style="text-align:center;">Receipts</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${filtered.map(p => {
+        const amt = '₱' + Number(p.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+        const subDate = formatPayDate(p.created_at, true);
+        const paidDate = formatPayDate(p.paid_at || p.created_at, false);
+        const ref = p.reference_no ? escHtml(p.reference_no) : '—';
+        const isRejected = (p.status || '').toLowerCase() === 'rejected';
+
+        let remarksHtml = '';
+        if(p.admin_response){
+          remarksHtml += `<div style="font-size:12.5px;color:var(--text);">${escHtml(p.admin_response)}</div>`;
+        }
+        if(isRejected){
+          remarksHtml += `<div class="pay-rejection-callout">
+            <div>
+              <strong>Rejection reason:</strong> ${escHtml(p.rejection_reason || 'Information mismatch')}
+            </div>
+            <button type="button" class="btn-resubmit-link" onclick="resubmitPayment('${escHtml(p.reference_no||'')}', ${Number(p.amount||0)})">
+              ${arrowRightIcon} Correct & Resubmit
+            </button>
+          </div>`;
+        }
+        if(!remarksHtml) remarksHtml = '<span style="color:var(--text-dim);font-size:12px;">—</span>';
+
+        let actionsHtml = '<div style="display:inline-flex;align-items:center;gap:6px;">';
+        if(p.has_receipt){
+          actionsHtml += `<button type="button" class="pay-eye-btn" onclick="viewReceiptModal(${p.id})" title="View Uploaded Receipt" aria-label="View Receipt">${eyeIcon}</button>`;
+        }
+        if(p.has_official_receipt){
+          actionsHtml += `<a href="/api/payments/${p.id}/official-receipt?portal=resident" target="_blank" rel="noopener" class="pay-btn-subtle" style="padding:4px 8px;font-size:11px;" title="Download Official HOA Receipt">${fileTextIcon} Official</a>`;
+        }
+        if(!p.has_receipt && !p.has_official_receipt){
+          actionsHtml += '<span style="color:var(--text-dim);font-size:12px;">—</span>';
+        }
+        actionsHtml += '</div>';
+
+        return `<tr>
+          <td style="white-space:nowrap;font-size:13px;color:var(--text-mid);">${subDate}</td>
+          <td style="font-family:monospace;font-size:13px;font-weight:600;color:var(--text);">${ref}</td>
+          <td style="font-weight:700;color:var(--text);">${amt}</td>
+          <td style="white-space:nowrap;font-size:13px;color:var(--text-mid);">${paidDate}</td>
+          <td>${payStatusBadge(p.status)}</td>
+          <td>${remarksHtml}</td>
+          <td style="text-align:center;">${actionsHtml}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function viewReceiptModal(paymentId){
+  const p = (myPayments || []).find(item => Number(item.id) === Number(paymentId));
+  if(!p) return;
+  const modal = document.getElementById('modal-receiptView');
+  if(!modal) return;
+
+  const titleEl = document.getElementById('receiptModalTitle');
+  const subEl = document.getElementById('receiptModalSubtitle');
+  const imgEl = document.getElementById('receiptModalImg');
+  const loadEl = document.getElementById('receiptModalLoading');
+  const metaEl = document.getElementById('receiptModalMeta');
+  const dBtn = document.getElementById('receiptModalDownloadBtn');
+
+  const amt = '₱' + Number(p.amount || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+  const ref = p.reference_no || '—';
+  const receiptUrl = `/api/payments/${p.id}/receipt?portal=resident`;
+
+  if(titleEl) titleEl.textContent = `Payment Receipt · ${amt}`;
+  if(subEl) subEl.textContent = `Ref: ${ref} · Paid: ${formatPayDate(p.paid_at || p.created_at, false)}`;
+
+  if(loadEl) loadEl.style.display = 'block';
+  if(imgEl){
+    imgEl.style.display = 'none';
+    imgEl.src = receiptUrl;
+  }
+  if(dBtn){
+    dBtn.href = receiptUrl;
+    dBtn.download = `receipt_${ref.replace(/\s+/g, '_')}.jpg`;
+  }
+  if(metaEl){
+    let metaHtml = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">` +
+      `<div>Status: ${payStatusBadge(p.status)}</div>` +
+      `<div style="font-size:12px;color:var(--text-dim);">Submitted: ${formatPayDate(p.created_at, true)}</div>` +
+      `</div>`;
+    if(p.admin_response){
+      metaHtml += `<div style="margin-top:8px;font-size:13px;color:var(--text-mid);"><strong>Admin remarks:</strong> ${escHtml(p.admin_response)}</div>`;
+    }
+    if(p.rejection_reason){
+      metaHtml += `<div style="margin-top:6px;font-size:13px;color:#DC2626;background:rgba(220,38,38,0.08);padding:8px 12px;border-radius:6px;border:1px solid rgba(220,38,38,0.2);"><strong>Rejection reason:</strong> ${escHtml(p.rejection_reason)}</div>`;
+    }
+    metaEl.innerHTML = metaHtml;
+  }
+
+  modal.classList.add('open');
+}
+window.viewReceiptModal = viewReceiptModal;
+
+function resubmitPayment(refNo, amount){
+  payTab('pay');
+  const amtInput = document.getElementById('payAmount');
+  const refInput = document.getElementById('payReference');
+  if(amtInput && amount > 0) amtInput.value = Number(amount).toFixed(2);
+  if(refInput && refNo) refInput.value = refNo;
+  const formCard = document.getElementById('payFormCard');
+  if(formCard) formCard.scrollIntoView({behavior:'smooth', block:'center'});
+  showToast('ℹ️ Please attach your corrected receipt and verify payment details.');
+}
+window.resubmitPayment = resubmitPayment;
+
 async function onReceiptFileSelected(input){
   const file = input?.files?.[0];
   if(!file) return;
+
+  if(file.size > 8 * 1024 * 1024){
+    showToast('⚠ Receipt image file must be 8 MB or less.');
+    input.value = '';
+    return;
+  }
+
+  const dropZone = document.getElementById('receiptDropZone');
+  const previewBox = document.getElementById('receiptPreviewBox');
+  const thumb = document.getElementById('receiptThumbPreview');
+  const nameEl = document.getElementById('receiptFileName');
+  const sizeEl = document.getElementById('receiptFileSize');
+
+  if(nameEl) nameEl.textContent = file.name;
+  if(sizeEl) sizeEl.textContent = (file.size / 1024).toFixed(1) + ' KB';
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if(thumb) thumb.src = e.target.result;
+    if(dropZone) dropZone.style.display = 'none';
+    if(previewBox) previewBox.style.display = 'flex';
+  };
+  reader.readAsDataURL(file);
+
   await runReceiptOcr(file);
 }
 window.onReceiptFileSelected = onReceiptFileSelected;
+
+function clearReceiptUpload(){
+  const inp = document.getElementById('payReceipt');
+  if(inp) inp.value = '';
+  const dropZone = document.getElementById('receiptDropZone');
+  const previewBox = document.getElementById('receiptPreviewBox');
+  const thumb = document.getElementById('receiptThumbPreview');
+  const ocrStatus = document.getElementById('ocrStatus');
+
+  if(dropZone) dropZone.style.display = 'flex';
+  if(previewBox) previewBox.style.display = 'none';
+  if(thumb) thumb.src = '';
+  if(ocrStatus){
+    ocrStatus.style.display = 'none';
+    ocrStatus.innerHTML = '';
+  }
+}
+window.clearReceiptUpload = clearReceiptUpload;
 
 async function runReceiptOcr(file){
   const statusEl = document.getElementById('ocrStatus');
@@ -953,16 +1439,16 @@ async function runReceiptOcr(file){
     // Apply auto-filled values
     const detected = [];
     if(refNo){
-      document.getElementById('payReference').value = refNo;
-      detected.push('Ref: ' + refNo);
+      const refInput = document.getElementById('payReference');
+      if(refInput){ refInput.value = refNo; detected.push('Ref: ' + refNo); }
     }
     if(amount){
-      document.getElementById('payAmount').value = amount.toFixed(2);
-      detected.push('₱' + amount.toLocaleString(undefined, {minimumFractionDigits: 2}));
+      const amtInput = document.getElementById('payAmount');
+      if(amtInput){ amtInput.value = amount.toFixed(2); detected.push('₱' + amount.toLocaleString(undefined, {minimumFractionDigits: 2})); }
     }
     if(dateStr){
-      document.getElementById('payDate').value = dateStr;
-      detected.push('Date: ' + dateStr);
+      const dateInput = document.getElementById('payDate');
+      if(dateInput){ dateInput.value = dateStr; detected.push('Date: ' + dateStr); }
     }
 
     if(detected.length > 0){
@@ -1013,7 +1499,7 @@ function bindReceiptPasteAndDrop(){
   ['dragenter', 'dragover'].forEach(evtName => {
     card.addEventListener(evtName, (e) => {
       e.preventDefault();
-      card.style.borderColor = 'var(--accent)';
+      card.style.borderColor = 'var(--accent, #F58B1F)';
     });
   });
   ['dragleave', 'drop'].forEach(evtName => {
@@ -1038,29 +1524,86 @@ function bindReceiptPasteAndDrop(){
 }
 
 async function submitPayment(){
-  const amount = document.getElementById('payAmount').value;
-  const receipt = document.getElementById('payReceipt').files[0];
-  if(!SubUI.required([[amount,'payAmount','Please enter the amount paid.'],[receipt,'payReceipt','Please attach the GCash receipt.']])) return;
-  if(!amount || !receipt){ showToast('Please enter an amount and attach the receipt.'); return; }
+  const amtEl = document.getElementById('payAmount');
+  const refEl = document.getElementById('payReference');
+  const senderEl = document.getElementById('paySender');
+  const dateEl = document.getElementById('payDate');
+  const receiptInp = document.getElementById('payReceipt');
+
+  const amount = amtEl?.value;
+  const receipt = receiptInp?.files?.[0];
+  const reference = refEl?.value.trim() || '';
+  const gcashSender = senderEl?.value.trim() || '';
+  const datePaid = dateEl?.value || '';
+
+  if(!SubUI.required([
+    [amount, 'payAmount', 'Please enter the amount paid.'],
+    [receipt, 'payReceipt', 'Please attach the GCash receipt.'],
+    [reference, 'payReference', 'Please enter the GCash reference number.'],
+    [gcashSender, 'paySender', 'Please enter the sender name.'],
+    [datePaid, 'payDate', 'Please specify the date paid.']
+  ])) return;
+
+  const numAmt = parseFloat(amount);
+  if(isNaN(numAmt) || numAmt <= 0){
+    showToast('⚠ Please enter a valid payment amount greater than zero.');
+    amtEl.focus();
+    return;
+  }
+
+  const cleanRef = reference.replace(/[\s-]/g, '');
+  if(cleanRef.length < 8){
+    showToast('⚠ Please enter a valid GCash reference number (typically 13 digits).');
+    refEl.focus();
+    return;
+  }
+
   const fd = new FormData();
-  fd.append('amount', amount);
-  fd.append('reference_no', document.getElementById('payReference').value.trim());
-  fd.append('gcash_sender_name', document.getElementById('paySender').value.trim());
-  fd.append('paid_at', document.getElementById('payDate').value);
+  fd.append('amount', numAmt);
+  fd.append('reference_no', reference);
+  fd.append('gcash_sender_name', gcashSender);
+  fd.append('paid_at', datePaid);
   fd.append('receipt', receipt);
+
+  const submitBtn = document.getElementById('paySubmitBtn');
+  const originalBtnHtml = submitBtn ? submitBtn.innerHTML : '';
+  if(submitBtn){
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.7';
+    submitBtn.innerHTML = '<span>⏳ Submitting payment...</span>';
+  }
+
   try{
-    const res = await fetch('/api/payments',{method:'POST',headers:{'Accept':'application/json','X-CSRF-TOKEN':payCsrf()},body:fd});
+    const res = await fetch('/api/payments', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': payCsrf()
+      },
+      body: fd
+    });
     const data = await res.json();
     if(data.success){
-      ['payAmount','payReference','paySender','payDate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-      document.getElementById('payReceipt').value='';
-      const ocrStatus = document.getElementById('ocrStatus');
-      if(ocrStatus){ ocrStatus.style.display = 'none'; ocrStatus.innerHTML = ''; }
+      if(amtEl) amtEl.value = '';
+      if(refEl) refEl.value = '';
+      clearReceiptUpload();
       await loadMyPayments();
-      showToast('✅ Payment submitted for validation.');
-    } else showToast('⚠ '+errMsg(data,'Could not submit payment.'));
-  }catch(e){ showToast('⚠ Could not submit payment.'); }
+      await loadStatement();
+      showToast('✅ Payment submitted successfully! Awaiting administrator verification.');
+    } else {
+      showToast('⚠ ' + errMsg(data, 'Could not submit payment.'));
+    }
+  } catch(e){
+    showToast('⚠ Could not submit payment. Please check your connection and try again.');
+  } finally {
+    if(submitBtn){
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '';
+      submitBtn.innerHTML = originalBtnHtml;
+    }
+  }
 }
+window.submitPayment = submitPayment;
 
 
 function renderHOAExpenses(){
@@ -1072,6 +1615,12 @@ function renderHOAExpenses(){
   }
   let html = '<table class="data-table" style="width:100%;"><thead><tr><th>Date</th><th>Category</th><th>Title</th><th>Amount</th><th>Status</th><th>Receipt</th></tr></thead><tbody>';
   hoaExpenses.forEach(e => {
+    let receiptCell = '—';
+    if(e.receipt_url){
+      const portal = window.__PORTAL || 'resident';
+      const u = e.receipt_url + (e.receipt_url.indexOf('?') < 0 ? '?' : '&') + 'portal=' + portal;
+      receiptCell = `<a href="${u}" target="_blank" rel="noopener">View</a>`;
+    }
     html += `<tr>
       <td>${e.expense_date}</td>
       <td>${e.category}</td>
@@ -1081,7 +1630,7 @@ function renderHOAExpenses(){
       </td>
       <td>₱${parseFloat(e.amount).toLocaleString(undefined, {minimumFractionDigits:2})}</td>
       <td>${e.status}</td>
-      <td>${e.receipt_url?`<a href="${e.receipt_url}" target="_blank" rel="noopener">View</a>`:'—'}</td>
+      <td>${receiptCell}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -1339,6 +1888,25 @@ function connectResidentSSE(){
     loadHOAExpenses();
   });
 
+  // Subdivision block partition / boundary update (live on map)
+  es.addEventListener('block', () => {
+    try{
+      if(typeof loadResidentBlocks === 'function') loadResidentBlocks();
+      else if(typeof renderResidentBlocks === 'function') renderResidentBlocks();
+    }catch(err){}
+  });
+
+  // Community events & RSVPs
+  es.addEventListener('event', () => { if(typeof loadEvents === 'function') loadEvents(); });
+  es.addEventListener('rsvp', () => { if(typeof loadEvents === 'function') loadEvents(); });
+
+  // Interactive map updates: facilities and blueprint settings
+  es.addEventListener('facility', () => { if(typeof refreshResidentMapLayers === 'function') refreshResidentMapLayers(); });
+  es.addEventListener('map-setting', () => {
+    if(typeof refreshResidentMapLayers === 'function') refreshResidentMapLayers();
+    if(typeof loadResidentBlocks === 'function') loadResidentBlocks();
+  });
+
   // Reconnect cycle — server sends lastEventId
   es.addEventListener('reconnect', (e) => {
     try{
@@ -1402,9 +1970,15 @@ if(_nameEl && RESIDENT_ID){
     const ch = window.Echo.private('subsync');
     const refresh = () => {
       loadAnnouncements(); loadIssues(); loadHOAExpenses(); loadHOAPolicies();
+      if(typeof refreshResidentMapLayers === 'function') refreshResidentMapLayers();
       document.dispatchEvent(new Event('subsync:refresh-alerts'));
     };
-    ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
+    ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh).listen('.block', () => { if(typeof loadResidentBlocks === 'function') loadResidentBlocks(); else if(typeof renderResidentBlocks === 'function') renderResidentBlocks(); });
+    ch.listen('.facility', () => { if(typeof refreshResidentMapLayers === 'function') refreshResidentMapLayers(); })
+      .listen('.map-setting', () => {
+        if(typeof refreshResidentMapLayers === 'function') refreshResidentMapLayers();
+        if(typeof loadResidentBlocks === 'function') loadResidentBlocks();
+      });
 
     // Real-time data changes relevant to this resident.
     ch.listen('.payment', (evt) => {
@@ -1491,3 +2065,43 @@ async function rsvpEvent(id,status){
   if(res&&res.success){ const e=communityEvents.find(x=>String(x.id)===String(id)); if(e) e.my_status=status; loadEvents(); }
   else showToast('Could not save your RSVP.');
 }
+
+/* ══ TAB PERSISTENCE ACROSS REFRESH ══ */
+function normalizeResidentTab(target){
+  if(!target) return '';
+  const aliases = {
+    'mapping': 'map',
+    'recommendations': 'recs',
+    'suggestions': 'recs'
+  };
+  return aliases[target] || target;
+}
+function restoreResidentTab(){
+  try {
+    const rawHash = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    const saved = sessionStorage.getItem('subsync_active_tab_resident');
+    let target = normalizeResidentTab(rawHash || saved);
+    if(target && document.getElementById('panel-' + target)){
+      switchTab(target);
+      if(target === 'map'){
+        setTimeout(function(){
+          if(typeof window.initResidentMap === 'function') window.initResidentMap();
+          else if(typeof initResidentMap === 'function') initResidentMap();
+        }, 120);
+      }
+    }
+  } catch(e) {}
+}
+restoreResidentTab();
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', restoreResidentTab);
+}
+window.addEventListener('hashchange', function(){
+  try {
+    const hash = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    let target = normalizeResidentTab(hash);
+    if(target && document.getElementById('panel-' + target)){
+      switchTab(target);
+    }
+  } catch(e) {}
+});

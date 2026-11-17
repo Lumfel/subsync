@@ -171,25 +171,29 @@ body::before {
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(28,26,23,0.04);
 }
-.card.active, .modal-content ul li:hover { background: #FAF6F0; color: #A07D53; }
+.card.active, .modal-content ul li:hover { background: #FFF6ED; color: #FA7D09; }
 
 .cards button, .modal-content button, .manage-modal-box button, .manage-modal-box select, .panel button, .admin-btn{
-    background: #2B2927;
-    border: 1px solid #2B2927;
+    background: #FA7D09;
+    border: 1px solid #FA7D09;
     color: #FFFFFF;
+    font-weight: 700;
     margin-bottom: 15px;
     padding: 12px;
     outline: none;
-    transition: 0.3s;
+    transition: all 0.25s ease;
     border-radius: 12px;
     cursor: pointer;
+    box-shadow: 0 4px 14px rgba(250, 125, 9, 0.32);
 }
 .cards button, .modal-content button, .manage-modal-box button, .manage-modal-box select, .panel button{
     flex: 1;
 }
 button:hover, .admin-btn:hover{
-   background: #4A4744;
-   border-color: #4A4744;
+   background: #E56F05;
+   border-color: #E56F05;
+   color: #FFFFFF;
+   box-shadow: 0 6px 18px rgba(250, 125, 9, 0.42);
 }
 
 .cards input{
@@ -278,18 +282,23 @@ button:hover, .admin-btn:hover{
 /* 📱 RESPONSIVE */
 /* ================= */
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
 
     .sidebar {
         position: fixed;
         left: -100%;
         top: 0;
         height: 100%;
+        max-width: 85vw;
         transition: 0.3s;
     }
 
     .sidebar.active {
         left: 0;
+    }
+
+    .main, .full-map {
+        margin-left: 0 !important;
     }
 
     .menu-toggle {
@@ -638,7 +647,7 @@ receipt modals
 }
 .modal-content input:focus, .manage-modal-box input:focus, .panel input:focus, .panel select:focus  {
     background: #FAF7F2;
-    border-color: #A07D53;
+    border-color: #FA7D09;
 }
 .modal-content p{
     padding: 10px;

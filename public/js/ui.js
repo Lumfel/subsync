@@ -29,6 +29,18 @@
     refresh: '<path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/>',
     trash: '<path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/>',
     archive: '<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/>',
+    'credit-card': '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+    eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+    'file-text': '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>',
+    'bar-chart-2': '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    'check-circle': '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
+    'x-circle': '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
+    'alert-circle': '<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+    'maximize-2': '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>',
+    printer: '<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+    copy: '<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+    'upload-cloud': '<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/>',
+    'arrow-right': '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
     scroll: '<path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 0 2 2H8a2 2 0 0 1-2-2V3Z"/><path d="M10 7h6"/><path d="M10 11h6"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
     alert: '<path d="m10.3 3.9-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
@@ -38,6 +50,14 @@
       'map-pin': '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
       paperclip: '<path d="m21.4 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>',
     info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>',
+    moon: '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>',
+    cloud: '<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>',
+    'cloud-sun': '<path d="M12 2v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="M20 12h2"/><path d="m19.07 4.93-1.41 1.41"/><path d="M15.947 12.65a4 4 0 0 0-5.925-4.128"/><path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z"/>',
+    'cloud-rain': '<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/>',
+    'cloud-lightning': '<path d="M6 16.326A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.973"/><path d="m13 12-3 5h4l-3 5"/>',
+    logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+    switch: '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
   };
   function icon(name, size = 16) {
     const p = ICON_PATHS[name];
@@ -255,6 +275,18 @@
     if (isNaN(d.getTime())) return String(value);
     return d.toLocaleDateString('en-PH', Object.assign({ year: 'numeric', month: 'short', day: 'numeric' }, opts || {}));
   }
+  function dateTimeFmt(value, opts) {
+    if (!value) return '';
+    const d = (value instanceof Date) ? value : new Date(value);
+    if (isNaN(d.getTime())) return String(value);
+    const hasTime = /\d{1,2}:\d{2}/.test(String(value));
+    if (hasTime) {
+      const datePart = d.toLocaleDateString('en-PH', Object.assign({ year: 'numeric', month: 'short', day: 'numeric' }, (opts && opts.date) || {}));
+      const timePart = d.toLocaleTimeString('en-PH', Object.assign({ hour: 'numeric', minute: '2-digit', hour12: true }, (opts && opts.time) || {}));
+      return datePart + ' · ' + timePart;
+    }
+    return d.toLocaleDateString('en-PH', Object.assign({ year: 'numeric', month: 'short', day: 'numeric' }, opts || {}));
+  }
 
   /* ── Deterministic per-person avatar colour ── */
   const AVATAR_PALETTE = [
@@ -409,8 +441,72 @@
     try { window.EventSource = FetchEventSource; } catch (e) {}
   }
 
+  /* Dynamic pin & label scaling on Leaflet maps:
+     Pins, block badges, start pins, and vertex handles scale smoothly with zoom
+     (larger & detailed when zoomed in, compact & uncluttered when zoomed out). */
+  function enableDynamicPinScaling(map) {
+    if (!map) return;
+    if (map._dynamicPinScalingEnabled) {
+      if (typeof map._updatePinScale === 'function') map._updatePinScale();
+      return;
+    }
+    map._dynamicPinScalingEnabled = true;
+    function update() {
+      const z = typeof map.getZoom === 'function' ? map.getZoom() : 17;
+
+      // Pin scale (facilities, issue pins, map dots):
+      const pinScale = Math.max(0.65, Math.min(1.25, 0.75 + (z - 16) * 0.14));
+
+      // Pill scale (block labels & start pills) - wider dynamic range to prevent overlap when zoomed out:
+      // Zoom <= 14: 0.40 | Zoom 15: 0.46 | Zoom 16: 0.64 | Zoom 17: 0.82 | Zoom 18: 1.00 | Zoom 19+: 1.18
+      const pillScale = Math.max(0.40, Math.min(1.25, 1.0 + (z - 18) * 0.18));
+
+      // Handle scale (block vertex dots and midpoint handles when editing):
+      const handleScale = Math.max(0.50, Math.min(1.20, 1.0 + (z - 18) * 0.15));
+
+      const container = typeof map.getContainer === 'function' ? map.getContainer() : null;
+      if (container) {
+        container.style.setProperty('--map-pin-scale', pinScale.toFixed(3));
+        container.style.setProperty('--map-pill-scale', pillScale.toFixed(3));
+        container.style.setProperty('--map-handle-scale', handleScale.toFixed(3));
+        container.setAttribute('data-map-zoom', Math.round(z));
+        container.classList.toggle('map-zoomed-in', z >= 17.5);
+        container.classList.toggle('map-zoomed-out', z < 17.5);
+        container.classList.toggle('map-zoomed-far', z < 16.2);
+      }
+    }
+    map._updatePinScale = update;
+    map.on('zoom', update);
+    map.on('zoomend', update);
+    map.on('viewreset', update);
+    update();
+  }
+
+  /* ── Live Hero Weather Forecast ── */
+  function fetchHeroWeather() {
+    const pill = document.getElementById('heroWeatherPill');
+    if (!pill) return;
+    fetch('/api/weather', { headers: { 'Accept': 'application/json' } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!d || !d.display) return;
+        const iconName = d.icon || 'sun';
+        const iconSvg = icon(iconName, 14);
+        pill.innerHTML = (iconSvg ? iconSvg + ' ' : '') + '<span id="heroWeatherText">' + (d.display.replace(/</g, '&lt;')) + '</span>';
+        if (d.condition) {
+          pill.setAttribute('title', 'Live Weather: ' + d.condition + ' (' + (d.temperature != null ? d.temperature : '') + '°C)');
+        }
+      })
+      .catch(() => {});
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fetchHeroWeather);
+  } else {
+    fetchHeroWeather();
+  }
+
   /* Expose */
-  window.SubUI = { icon, toast, skeleton, showSkeleton, openSearch, closeSearch: close, confirm: confirmDialog, busy, busyClick, required, showFieldError, clearFieldError, money, dateFmt, avatarColor, applyPrefs, loadPrefs, exportCsv };
+  window.SubUI = { icon, toast, skeleton, showSkeleton, openSearch, closeSearch: close, confirm: confirmDialog, busy, busyClick, required, showFieldError, clearFieldError, money, dateFmt, dateTimeFmt, avatarColor, applyPrefs, loadPrefs, exportCsv, enableDynamicPinScaling, refreshWeather: fetchHeroWeather };
 
   /* Keyboard shortcut: Ctrl/Cmd+K or "/" */
   document.addEventListener('keydown', (e) => {

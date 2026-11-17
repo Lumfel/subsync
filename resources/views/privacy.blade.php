@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Data Privacy Notice — SubSync</title>
 <style>
-  :root { --ink:#2B2927; --dim:#5F5A53; --accent:#86653D; --line:#E6DFD5; --bg:#FAF6F0; }
+  :root { --ink:#2B2927; --dim:#5F5A53; --accent:#FA7D09; --line:#E6DFD5; --bg:#FAF6F0; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Inter',-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--ink); line-height:1.7; padding:40px 20px; }
   .wrap { max-width:760px; margin:0 auto; background:#fff; border:1px solid var(--line); border-radius:12px; padding:40px 44px; }

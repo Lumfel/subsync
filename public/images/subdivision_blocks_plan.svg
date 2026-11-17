@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 900" width="100%" height="100%">
+
+<defs>
+  <filter id="blockShadow" x="-10%" y="-10%" width="120%" height="120%">
+    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.18"/>
+  </filter>
+  <filter id="badgeShadow" x="-15%" y="-15%" width="130%" height="130%">
+    <feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
+  </filter>
+  <style>
+    .bg { fill: rgba(248, 250, 252, 0.4); }
+    .road-net { fill: #cbd5e1; fill-opacity: 0.35; stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 4 4; }
+    
+    /* Block partition classes with exact colors from reference */
+    .blk-1  { fill: #0284c7; fill-opacity: 0.28; stroke: #0284c7; stroke-width: 2.5; }
+    .blk-2  { fill: #8b5cf6; fill-opacity: 0.32; stroke: #7c3aed; stroke-width: 2.5; }
+    .blk-3  { fill: #ef4444; fill-opacity: 0.22; stroke: #dc2626; stroke-width: 2.5; }
+    .blk-4  { fill: #f97316; fill-opacity: 0.30; stroke: #ea580c; stroke-width: 2.5; }
+    .blk-5  { fill: #a855f7; fill-opacity: 0.30; stroke: #9333ea; stroke-width: 2.5; }
+    .blk-6  { fill: #22c55e; fill-opacity: 0.32; stroke: #16a34a; stroke-width: 2.5; }
+    .blk-7  { fill: #d97706; fill-opacity: 0.30; stroke: #b45309; stroke-width: 2.5; }
+    .blk-8  { fill: #84cc16; fill-opacity: 0.32; stroke: #65a30d; stroke-width: 2.5; }
+    .blk-9  { fill: #f43f5e; fill-opacity: 0.30; stroke: #e11d48; stroke-width: 2.5; }
+    .blk-10 { fill: #ec4899; fill-opacity: 0.32; stroke: #db2777; stroke-width: 2.5; }
+    .blk-11 { fill: #6366f1; fill-opacity: 0.34; stroke: #4f46e5; stroke-width: 2.5; }
+    .blk-12 { fill: #fb7185; fill-opacity: 0.32; stroke: #e11d48; stroke-width: 2.5; }
+    .blk-13 { fill: #eab308; fill-opacity: 0.34; stroke: #ca8a04; stroke-width: 2.5; }
+    .blk-14 { fill: #3b82f6; fill-opacity: 0.32; stroke: #2563eb; stroke-width: 2.5; }
+
+    /* Badges */
+    .badge-bg { rx: 12; filter: url(#badgeShadow); }
+    .badge-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 11px; font-weight: 800; fill: #ffffff; text-anchor: middle; dominant-baseline: central; letter-spacing: 0.6px; user-select: none; }
+    
+    /* Start markers */
+    .start-flag { rx: 8; fill: #ffffff; stroke: #0f172a; stroke-width: 1.2; filter: url(#badgeShadow); }
+    .start-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 7.5px; font-weight: 800; fill: #0f172a; text-anchor: middle; dominant-baseline: central; }
+    
+    /* Boundary */
+    .subd-geofence { fill: none; stroke: #dc2626; stroke-width: 2.5; stroke-dasharray: 8 4; }
+    .title-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 13px; font-weight: 800; fill: #0f172a; letter-spacing: 0.5px; }
+    .sub-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 8px; font-weight: 600; fill: #64748b; }
+    .street-tag { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 8px; font-weight: 700; fill: #475569; text-anchor: middle; }
+  </style>
+</defs>
+
+<rect width="100%" height="100%" class="bg" rx="10"/>
+
+<!-- Header -->
+<g transform="translate(26, 26)">
+  <text x="0" y="0" class="title-text">TERRA NOVA SUBDIVISION — BLOCK PARTITIONS</text>
+  <text x="0" y="14" class="sub-text">OFFICIAL COLOR-CODED BLOCK BOUNDARIES &amp; NUMBERING START POINTS</text>
+</g>
+
+<!-- ═════ BLOCK 3: PERIMETER RING ═════ -->
+
+<path d="
+  M 28,740 
+  L 28,105 
+  L 575,80 
+  L 592,710 
+  L 525,780 
+  L 180,838 
+  Z
+  M 58,720
+  L 180,808
+  L 495,755
+  L 560,690
+  L 545,108
+  L 58,130
+  Z" 
+  class="blk-3" fill-rule="evenodd" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(42, 420)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#dc2626" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 3</text>
+  </g>
+
+  <g transform="translate(44, 730) rotate(-90)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<text x="320" y="70" class="street-tag">BLOCK 3 (PERIMETER LOTS 1–74)</text>
+<!-- ═════ BLOCK 1 ═════ -->
+
+<path d="M 430,96 C 470,90 515,92 548,102 L 536,120 C 500,112 460,112 425,116 Z" class="blk-1" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(490, 108)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#0284c7" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 1</text>
+  </g>
+
+  <g transform="translate(432, 106) rotate(10)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 8 ═════ -->
+
+<polygon points="100,138 230,132 245,178 120,192" class="blk-8" rx="6" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(170, 162)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#65a30d" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 8</text>
+  </g>
+
+  <g transform="translate(112, 148) rotate(-5)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 4 ═════ -->
+
+<path d="
+  M 215,150 
+  C 310,165 430,165 525,142 
+  L 530,185 
+  C 435,208 310,208 210,190 
+  Z" class="blk-4" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(370, 178)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#ea580c" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 4</text>
+  </g>
+
+  <g transform="translate(218, 170) rotate(10)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 5 ═════ -->
+
+<path d="
+  M 190,210 
+  C 300,240 440,240 540,208 
+  L 545,252 
+  C 440,285 300,285 185,252 
+  Z" class="blk-5" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(365, 248)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#9333ea" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 5</text>
+  </g>
+
+  <g transform="translate(192, 230) rotate(14)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 6 ═════ -->
+
+<path d="
+  M 170,272 
+  C 290,312 440,312 535,274 
+  L 540,318 
+  C 440,356 290,356 165,314 
+  Z" class="blk-6" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(355, 315)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#16a34a" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 6</text>
+  </g>
+
+  <g transform="translate(172, 292) rotate(18)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 7 ═════ -->
+
+<path d="
+  M 180,336 
+  C 285,380 430,380 515,340 
+  L 520,384 
+  C 430,425 285,425 175,378 
+  Z" class="blk-7" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(350, 380)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#b45309" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 7</text>
+  </g>
+
+  <g transform="translate(182, 355) rotate(22)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 2: SWIMMING POOL ═════ -->
+
+<g filter="url(#blockShadow)">
+  <rect x="360" y="415" width="125" height="90" rx="10" class="blk-2"/>
+  <rect x="390" y="430" width="65" height="36" rx="6" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5"/>
+  <text x="422.5" y="449" style="font-size:8px;font-weight:800;fill:#ffffff;text-anchor:middle;">POOL</text>
+</g>
+
+
+  <g transform="translate(422.5, 485)">
+    <rect x="-66.5" y="-11" width="133" height="22" rx="11" fill="#7c3aed" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 2 (POOL)</text>
+  </g>
+
+  <g transform="translate(366, 425) rotate(0)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Entrance</text>
+  </g>
+<!-- ═════ BLOCK 9 & 10 ═════ -->
+
+<rect x="88" y="210" width="36" height="340" rx="6" class="blk-9" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(106, 380)">
+    <rect x="-40.25" y="-11" width="80.5" height="22" rx="11" fill="#e11d48" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 9</text>
+  </g>
+
+  <g transform="translate(106, 222) rotate(0)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+
+<rect x="136" y="210" width="36" height="340" rx="6" class="blk-10" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(154, 380)">
+    <rect x="-44" y="-11" width="88" height="22" rx="11" fill="#db2777" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 10</text>
+  </g>
+
+  <g transform="translate(154, 222) rotate(0)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 13 & 14 ═════ -->
+
+<path d="
+  M 205,395 
+  C 260,450 285,505 315,570 
+  L 280,578 
+  C 255,515 230,460 178,410 
+  Z" class="blk-13" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(245, 485)">
+    <rect x="-44" y="-11" width="88" height="22" rx="11" fill="#ca8a04" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 13</text>
+  </g>
+
+  <g transform="translate(200, 405) rotate(45)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+
+<path d="
+  M 325,430 
+  C 355,480 370,520 380,575 
+  L 345,580 
+  C 335,530 320,490 295,445 
+  Z" class="blk-14" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(345, 520)">
+    <rect x="-44" y="-11" width="88" height="22" rx="11" fill="#2563eb" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 14</text>
+  </g>
+
+  <g transform="translate(320, 440) rotate(55)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+<!-- ═════ BLOCK 12 & 11 ═════ -->
+
+<polygon points="175,595 490,595 500,642 165,642" class="blk-12" rx="6" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(335, 618)">
+    <rect x="-44" y="-11" width="88" height="22" rx="11" fill="#e11d48" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 12</text>
+  </g>
+
+  <g transform="translate(178, 618) rotate(0)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+
+<polygon points="150,660 510,660 485,715 155,715" class="blk-11" rx="6" filter="url(#blockShadow)"/>
+
+
+  <g transform="translate(330, 688)">
+    <rect x="-44" y="-11" width="88" height="22" rx="11" fill="#4f46e5" class="badge-bg"/>
+    <text x="0" y="0" class="badge-text">BLOCK 11</text>
+  </g>
+
+  <g transform="translate(162, 688) rotate(0)">
+    <rect x="-34" y="-8" width="68" height="16" rx="8" class="start-flag"/>
+    <circle cx="-27" cy="0" r="3" fill="#ef4444"/>
+    <text x="3" y="0" class="start-text">START ➔ Lot 1</text>
+  </g>
+
+<g transform="translate(435, 688)">
+  <circle cx="0" cy="0" r="10" fill="#ffffff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="0" y="3" style="font-size:7px;font-weight:900;fill:#4f46e5;text-anchor:middle;">18</text>
+  <rect x="-35" y="-24" width="70" height="15" rx="4" fill="#0f172a"/>
+  <text x="0" y="-14" style="font-size:7px;font-weight:700;fill:#ffffff;text-anchor:middle;">Blk 11 Lot 18</text>
+</g>
+
+
+<!-- Red Outer Geofence Line -->
+<polygon points="26,742 26,103 577,78 594,712 526,782 178,840" class="subd-geofence" />
+
+<!-- Annotations & Gates -->
+<g id="landmarks">
+  <g transform="translate(100, 785) rotate(-28)">
+    <rect x="-50" y="-10" width="100" height="20" rx="5" fill="#0f172a"/>
+    <text x="0" y="3" style="font-size:8px;font-weight:800;fill:#ffffff;text-anchor:middle;">MAIN GATE ENTRANCE</text>
+  </g>
+  <text x="350" y="55" class="street-tag" style="font-size:9px;font-weight:800;">SAMPAGUITA STREET (NORTH ACCESS)</text>
+  <text x="595" y="420" class="street-tag" transform="rotate(90, 595, 420)">WATER TANK / EAST PERIMETER</text>
+  <text x="14" y="420" class="street-tag" transform="rotate(-90, 14, 420)">BEGONIA STREET / WEST PERIMETER</text>
+  <text x="350" y="745" class="street-tag" style="font-size:9px;font-weight:800;fill:#4f46e5;">TERRANOVA SUBD ALIJIS (SOUTH ACCESS)</text>
+</g>
+
+<!-- Compact Bottom Legend -->
+<g transform="translate(30, 845)">
+  <rect x="0" y="0" width="580" height="42" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.2" filter="url(#badgeShadow)"/>
+  <text x="14" y="16" style="font-size:8px;font-weight:800;fill:#0f172a;">BLOCK DIRECTORY:</text>
+  <text x="14" y="30" style="font-size:7.5px;font-weight:600;fill:#64748b;">
+    Blk 1 (Sky) · Blk 2 (Pool) · Blk 3 (Perimeter) · Blk 4 (Orange) · Blk 5 (Purple) · Blk 6 (Green) · Blk 7 (Amber) · Blk 8 (Lime) · Blk 9 (Rose) · Blk 10 (Magenta) · Blk 11 (Indigo) · Blk 12 (Pink) · Blk 13 (Gold) · Blk 14 (Blue)
+  </text>
+</g>
+
+</svg>

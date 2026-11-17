@@ -293,6 +293,12 @@ class FrontendRegressionTest extends TestCase
 
         $this->assertStringContainsString('html[data-theme="dark"] .sidebar .tab-badge', $ui);
         $this->assertStringContainsString('[style*="background:#fff"]', $ui);
+        $this->assertStringContainsString('html[data-theme="dark"] .res-qa-btn.orange-accent', $ui);
+        $this->assertStringContainsString('html[data-theme="dark"] .res-qa-btn.emergency', $ui);
+
+        $resCss = $this->css('residents.css');
+        $this->assertStringContainsString('html[data-theme="dark"] .res-qa-btn.orange-accent', $resCss);
+        $this->assertStringContainsString('html[data-theme="dark"] .res-qa-btn.emergency', $resCss);
     }
 
     public function test_realtime_retry_is_bounded(): void
@@ -408,6 +414,20 @@ class FrontendRegressionTest extends TestCase
         $this->assertStringNotContainsString('::-webkit-scrollbar { width: 6px; background: rgba(0,0,0,0.2); }', $admin);
     }
 
+    public function test_sidebar_is_fully_offscreen_on_mobile(): void
+    {
+        $ui = $this->css('ui-polish.css');
+        $this->assertStringContainsString('left: -100% !important;', $ui);
+
+        $officer = $this->css('officer-portal.css');
+        $this->assertStringNotContainsString('left: -250px;', $officer);
+        $this->assertStringContainsString('left: -100%;', $officer);
+
+        $residents = $this->css('residents.css');
+        $this->assertStringNotContainsString('left: -250px;', $residents);
+        $this->assertStringContainsString('left: -100%;', $residents);
+    }
+
     public function test_emergency_and_camera_reporting_are_wired(): void
     {
         $residents = file_get_contents(resource_path('views/layouts/residents.blade.php'));
@@ -516,5 +536,50 @@ class FrontendRegressionTest extends TestCase
         // Map picker pin must not rely on Leaflet's default marker image
         $this->assertStringContainsString('function pickerPinIcon', $layout);
         $this->assertStringContainsString('icon:pickerPinIcon()', $layout);
+    }
+
+    public function test_portal_tab_persistence_and_map_refresh_retention(): void
+    {
+        $adminJs = $this->js('admin-dashboard.js');
+        $this->assertStringContainsString('subsync_active_tab_admin', $adminJs);
+        $this->assertStringContainsString('subsync_fin_tab_admin', $adminJs);
+        $this->assertStringContainsString('subsync_archive_tab_admin', $adminJs);
+        $this->assertStringContainsString('function normalizeAdminTab', $adminJs);
+        $this->assertStringContainsString('function restoreAdminTab', $adminJs);
+        $this->assertStringContainsString("window.addEventListener('hashchange'", $adminJs);
+
+        $officerJs = $this->js('officer-portal.js');
+        $this->assertStringContainsString('subsync_active_tab_officer', $officerJs);
+        $this->assertStringContainsString('function normalizeOfficerTab', $officerJs);
+        $this->assertStringContainsString('function restoreOfficerTab', $officerJs);
+        $this->assertStringContainsString("window.addEventListener('hashchange'", $officerJs);
+
+        $residentJs = $this->js('residents.js');
+        $this->assertStringContainsString('subsync_active_tab_resident', $residentJs);
+        $this->assertStringContainsString('subsync_pay_tab_resident', $residentJs);
+        $this->assertStringContainsString('function normalizeResidentTab', $residentJs);
+        $this->assertStringContainsString('function restoreResidentTab', $residentJs);
+        $this->assertStringContainsString("window.addEventListener('hashchange'", $residentJs);
+    }
+
+    public function test_portal_views_and_js_files_have_valid_syntax(): void
+    {
+        $scriptPath = base_path('scripts/validate_js_syntax.cjs');
+        $output = shell_exec("node \"{$scriptPath}\" 2>&1");
+        $this->assertStringContainsString('ALL_JS_SYNTAX_VALID', (string) $output, "JavaScript syntax validation failed:\n".$output);
+    }
+
+    public function test_admin_profile_card_is_compact_and_horizontal(): void
+    {
+        $adminView = file_get_contents(resource_path('views/layouts/admin-dashboard.blade.php'));
+        $this->assertStringContainsString('class="sidebar-profile admin-profile"', $adminView);
+        $this->assertStringContainsString('class="admin-avatar"', $adminView);
+        $this->assertStringContainsString('border-radius:50%', $adminView);
+
+        $ui = $this->css('ui-polish.css');
+        $this->assertStringContainsString('.sidebar .admin-profile {', $ui);
+        $this->assertStringContainsString('flex-direction: row !important;', $ui);
+        $this->assertStringContainsString('.sidebar .admin-profile .admin-avatar {', $ui);
+        $this->assertStringContainsString('border-radius: 50% !important;', $ui);
     }
 }

@@ -69,7 +69,7 @@ class DashboardController extends Controller
                     'priority' => $a->priority ?? 'Normal',
                     'event_date' => $a->event_date,
                     'posted_by' => $a->admin?->name ?? $a->officer?->name ?? 'Admin',
-                    'created_at' => $a->created_at?->format('M d, Y'),
+                    'created_at' => $a->created_at?->format('M d, Y g:i A'),
                 ])->all();
 
             // Issues
@@ -86,7 +86,7 @@ class DashboardController extends Controller
                     'priority' => $i->priority,
                     'latitude' => $i->latitude,
                     'longitude' => $i->longitude,
-                    'created_at' => $i->created_at?->format('M d, Y'),
+                    'created_at' => $i->created_at?->format('M d, Y g:i A'),
                     'resolved_at' => $i->resolved_at?->format('Y-m-d'),
                     'resident' => $i->resident?->name ?? '-',
                     'block_lot' => $i->resident?->household?->block_lot_number ?? '-',
@@ -117,7 +117,7 @@ class DashboardController extends Controller
                     'title' => $rec->title,
                     'description' => $rec->description,
                     'status' => $rec->status,
-                    'created_at' => $rec->created_at?->format('M d, Y'),
+                    'created_at' => $rec->created_at?->format('M d, Y g:i A'),
                 ])->all();
 
             // HOA expenses (for analytics transparency)
@@ -132,7 +132,7 @@ class DashboardController extends Controller
                     'amount' => (float) $e->amount,
                     'status' => $e->status,
                     'expense_date' => $e->expense_date?->format('Y-m-d'),
-                    'created_at' => $e->created_at?->format('M d, Y'),
+                    'created_at' => $e->created_at?->format('M d, Y g:i A'),
                 ])->all();
 
             // Families

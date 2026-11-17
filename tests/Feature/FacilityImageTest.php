@@ -127,4 +127,46 @@ class FacilityImageTest extends TestCase
         $this->assertTrue(Storage::disk('public')->exists($path));
         Storage::disk('public')->delete($path); // cleanup
     }
+
+    public function test_admin_can_reposition_facility(): void
+    {
+        $facility = Facility::create([
+            'name' => 'Clubhouse',
+            'status' => 'Active',
+            'latitude' => 10.62269,
+            'longitude' => 122.96134,
+        ]);
+
+        $this->withSession(['admin_id' => $this->admin()->id])
+            ->withHeaders(['Accept' => 'application/json'])
+            ->putJson("/api/map/facility/{$facility->id}", [
+                'latitude' => 10.62315,
+                'longitude' => 122.96180,
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        $this->assertEqualsWithDelta(10.62315, $facility->fresh()->latitude, 0.00001);
+        $this->assertEqualsWithDelta(122.96180, $facility->fresh()->longitude, 0.00001);
+    }
+
+    public function test_facility_cannot_be_repositioned_outside_subdivision_area(): void
+    {
+        $facility = Facility::create([
+            'name' => 'Basketball Court',
+            'status' => 'Active',
+            'latitude' => 10.62269,
+            'longitude' => 122.96134,
+        ]);
+
+        $this->withSession(['admin_id' => $this->admin()->id])
+            ->withHeaders(['Accept' => 'application/json'])
+            ->putJson("/api/map/facility/{$facility->id}", [
+                'latitude' => 14.5995, // Outside Terra Nova
+                'longitude' => 120.9842,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('message', 'Facilities must be located within the fixed subdivision area.');
+    }
 }

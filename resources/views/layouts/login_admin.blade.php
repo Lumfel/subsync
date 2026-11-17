@@ -71,7 +71,7 @@
             position: absolute;
             top: 0; left: 20%; right: 20%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, #A07D53, transparent);
+            background: linear-gradient(90deg, transparent, #FA7D09, transparent);
             border-radius: 2px;
         }
 
@@ -141,19 +141,24 @@
             background: #FAF6F0;
             border: 1px solid #E6DFD5;
             color: #2B2927;
-            padding: 13px 16px 13px 44px;
+            padding: 13px 16px 13px 44px !important;
             border-radius: 11px;
             outline: none;
-            font-size: 14px;
+            font-size: 14px !important;
             font-family: "Segoe UI", sans-serif;
             transition: all 0.22s;
             letter-spacing: 0.02em;
             margin-bottom: 0;
+            box-sizing: border-box;
+        }
+        .input-group:has(.eye-btn) input,
+        .input-group input[type="password"] {
+            padding-right: 44px !important;
         }
         .input-group input:focus {
             background: #FFFFFF;
-            border-color: #A07D53;
-            box-shadow: 0 0 0 3px rgba(160, 125, 83, 0.08);
+            border-color: #FA7D09;
+            box-shadow: 0 0 0 3px rgba(250, 125, 9, 0.15);
         }
         .input-group input::placeholder { color: #9C9790; font-size: 13px; }
         .input-icon {
@@ -161,6 +166,12 @@
             transform: translateY(-50%);
             font-size: 16px; opacity: 0.5; pointer-events: none;
             color: #7D7975;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            z-index: 2;
         }
         .eye-btn {
             position: absolute; right: 14px; top: 50%;
@@ -170,6 +181,10 @@
             font-size: 15px; padding: 0 !important;
             margin: 0 !important; width: auto !important;
             transition: color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
         }
         .eye-btn:hover { color: #2B2927 !important; background: none !important; box-shadow: none !important; }
     .eye-btn .eye-off { display: none; }
@@ -180,24 +195,24 @@
         .admin-btn {
             width: 100%;
             padding: 14px;
-            border-radius: 11px;
+            border-radius: 12px;
             border: none;
-            background: #2B2927;
-            color: white;
+            background: #FA7D09;
+            color: #FFFFFF;
             font-size: 14px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.25s;
-            letter-spacing: 0.05em;
+            transition: all 0.22s ease;
+            letter-spacing: 0.04em;
             margin-top: 4px;
-            box-shadow: none;
+            box-shadow: 0 4px 14px rgba(250, 125, 9, 0.32);
             position: relative;
             overflow: hidden;
         }
         .admin-btn::after { content:''; position:absolute; inset:0; background:rgba(255,255,255,0); transition:background 0.2s; }
         .admin-btn:hover::after { background:rgba(255,255,255,0.08); }
-        .admin-btn:hover { background: #4A4744; transform: translateY(-1px); }
-        .admin-btn:active { transform: scale(0.98); }
+        .admin-btn:hover { background: #E56F05; color: #FFFFFF; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(250, 125, 9, 0.42); }
+        .admin-btn:active { transform: scale(0.98); background: #D46603; }
 
         /* Loading state */
         .admin-btn.loading { pointer-events:none; }
@@ -208,8 +223,8 @@
             display:block; position:absolute; top:50%; left:50%;
             transform:translate(-50%,-50%);
             width:20px; height:20px;
-            border:2px solid rgba(255,255,255,0.3);
-            border-top-color:#fff; border-radius:50%;
+            border:2px solid rgba(255,255,255,0.35);
+            border-top-color:#FFFFFF; border-radius:50%;
             animation:spin 0.7s linear infinite;
         }
         @keyframes spin { to{transform:translate(-50%,-50%) rotate(360deg)} }
@@ -231,10 +246,10 @@
         }
         .back-link {
             display:inline-flex; align-items:center; justify-content:center; gap:6px;
-            font-size:12px; color: #A07D53;
+            font-size:12px; color: #FA7D09;
             text-decoration:none; transition:color 0.2s;
         }
-        .back-link:hover { color: #B6966E; }
+        .back-link:hover { color: #E56F05; }
         .legal-note {
             font-size:11px; color: #7D7975;
             line-height:1.5;
@@ -289,7 +304,7 @@
     </div>
 
     <div style="text-align:right; margin:-6px 0 16px;">
-        <a href="#" style="font-size:12px;color:#A07D53;text-decoration:none;"
+        <a href="#" style="font-size:12px;color:#FA7D09;text-decoration:none;"
            onclick="showMsg('Contact the system administrator to reset your password.','error');return false;">
             Forgot password?
         </a>

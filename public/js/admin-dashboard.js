@@ -11,7 +11,17 @@ function confirmLogout(){
     cancelText: 'Stay signed in',
     danger: true,
     icon: '!'
-  }).then(ok => { if(ok) document.getElementById('logoutForm').submit(); });
+  }).then(ok => {
+    if(ok){
+      try {
+        sessionStorage.removeItem('subsync_active_tab_admin');
+        sessionStorage.removeItem('subsync_fin_tab_admin');
+        sessionStorage.removeItem('subsync_archive_tab_admin');
+        sessionStorage.removeItem('subsync_manage_table_admin');
+      } catch(e) {}
+      document.getElementById('logoutForm').submit();
+    }
+  });
 }
 
 function showToast(msg){
@@ -20,10 +30,73 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2800);
 }
 
+/* ── THEME TOGGLE (LIGHT / DARK) ── */
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  setAdminTheme(next);
+}
+
+function setAdminTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  document.documentElement.setAttribute('data-theme-pref', theme);
+  try {
+    localStorage.setItem('subsync.theme', theme);
+    const prefs = JSON.parse(localStorage.getItem('subsync.prefs') || '{}');
+    prefs.theme = theme;
+    localStorage.setItem('subsync.prefs', JSON.stringify(prefs));
+  } catch(e){}
+  updateThemeToggleBtn(theme);
+  try {
+    window.dispatchEvent(new CustomEvent('subsync:theme', { detail: { theme } }));
+  } catch(e){}
+}
+
+function updateThemeToggleBtn(theme){
+  const el = document.getElementById('themeToggleIcon');
+  const btn = document.getElementById('themeToggleBtn');
+  if(!el || !btn) return;
+  if(theme === 'dark'){
+    el.innerHTML = SubUI.icon('sun', 15);
+    btn.setAttribute('title', 'Switch to Light Mode');
+    btn.setAttribute('aria-label', 'Switch to Light Mode');
+  } else {
+    el.innerHTML = SubUI.icon('moon', 15);
+    btn.setAttribute('title', 'Switch to Dark Mode');
+    btn.setAttribute('aria-label', 'Switch to Dark Mode');
+  }
+}
+window.toggleTheme = toggleTheme;
+window.setAdminTheme = setAdminTheme;
+window.updateThemeToggleBtn = updateThemeToggleBtn;
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', () => {
+    const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    updateThemeToggleBtn(curTheme);
+  });
+} else {
+  const curTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  updateThemeToggleBtn(curTheme);
+}
+
 function formatAlertTime(value){
   const date=new Date(value);
   if(Number.isNaN(date.getTime())) return '';
   return date.toLocaleString('en-PH',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+}
+function formatActivityTime(value){
+  if(window.SubUI && typeof window.SubUI.dateTimeFmt === 'function') return window.SubUI.dateTimeFmt(value);
+  if(!value) return '';
+  const d = new Date(value);
+  if(isNaN(d.getTime())) return String(value);
+  const hasTime = /\d{1,2}:\d{2}/.test(String(value));
+  if(hasTime){
+    const datePart = d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${datePart} · ${timePart}`;
+  }
+  return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 function alertTab(tab){
   const item=document.querySelector(`.nav-item[onclick*="nav('${tab}'"]`);
@@ -53,13 +126,37 @@ function toggleAlerts(){
   if(!popover||!button) return;
   const open=popover.classList.toggle('open');
   button.setAttribute('aria-expanded',open?'true':'false');
-  if(open) loadAlerts();
+  if(open) {
+    document.getElementById('userMenuPopover')?.classList.remove('open');
+    document.getElementById('userMenuButton')?.setAttribute('aria-expanded', 'false');
+    loadAlerts();
+  }
 }
+
+function toggleUserMenu(){
+  const popover = document.getElementById('userMenuPopover');
+  const button = document.getElementById('userMenuButton');
+  if(!popover) return;
+  const open = popover.classList.toggle('open');
+  if(button) button.setAttribute('aria-expanded', open ? 'true' : 'false');
+  if(open){
+    document.getElementById('alertsPopover')?.classList.remove('open');
+    document.getElementById('alertsButton')?.setAttribute('aria-expanded', 'false');
+  }
+}
+window.toggleUserMenu = toggleUserMenu;
+
 document.addEventListener('click',event=>{
   const wrap=document.querySelector('.alerts-wrap');
   if(wrap&&!wrap.contains(event.target)){
     document.getElementById('alertsPopover')?.classList.remove('open');
     document.getElementById('alertsButton')?.setAttribute('aria-expanded','false');
+  }
+  const userWrap = document.querySelector('.user-menu-wrap');
+  const adminProfile = document.querySelector('.admin-profile');
+  if(userWrap && !userWrap.contains(event.target) && (!adminProfile || !adminProfile.contains(event.target))){
+    document.getElementById('userMenuPopover')?.classList.remove('open');
+    document.getElementById('userMenuButton')?.setAttribute('aria-expanded', 'false');
   }
 });
 function openModal(id){
@@ -101,6 +198,12 @@ function nav(name, el){
     if((n.getAttribute('onclick')||'').indexOf("nav('"+name+"'") !== -1 || n.textContent.trim().toLowerCase().indexOf(name) !== -1) n.classList.add('active');
   });
   document.getElementById('topbarTitle').textContent = panelTitles[name]||name;
+  try {
+    sessionStorage.setItem('subsync_active_tab_admin', name);
+    if(window.location.hash !== '#' + name){
+      history.replaceState(null, '', '#' + name);
+    }
+  } catch(e) {}
   if(name==='messages'){
     document.getElementById('msgBadge').style.display='none';
     loadThreads();
@@ -114,15 +217,42 @@ function nav(name, el){
       }, 10000);
     }
   }
+  if(name==='dashboard'){
+    setTimeout(function(){
+      if(typeof dashMiniMap!=='undefined' && dashMiniMap){
+        dashMiniMap.invalidateSize();
+        if(typeof mapSettings!=='undefined' && mapSettings){
+          const b = mapSettings;
+          dashMiniMap.fitBounds([[b.min_lat,b.min_lng],[b.max_lat,b.max_lng]],{padding:[6,6],animate:false});
+        }
+      } else if(typeof initDashboardMiniMap === 'function'){
+        initDashboardMiniMap();
+      }
+    }, 60);
+  }
   if(name==='issues') renderIssues();
   if(name==='members') renderMembers();
     if(name==='analytics') loadD3().then(function(){ setTimeout(function(){ renderAnalytics(); loadAnalyticsSecurityLogs(); }, 30); }).catch(function(){});
   if(name==='reports'){ renderReports(); loadReportTemplatesAdmin(); loadIssueData(); }
   if(name==='announcements') loadAdminEvents();
-  if(name==='mapping') setTimeout(initMap, 80);
-  if(name==='gcash'){ loadGcashSettings(); loadPaymentsQueue(); loadAdminExpenses(); if(typeof loadAdminExpenseRequests==='function') loadAdminExpenseRequests(); loadAssessments(); loadAging(); loadBudgets(); financeTab('overview'); loadFinanceOverview(); }
+  if(name==='mapping') setTimeout(function(){ if(typeof window.initMap === 'function') window.initMap(); else if(typeof initMap === 'function') initMap(); }, 80);
+  if(name==='gcash'){
+    loadGcashSettings();
+    loadPaymentsQueue();
+    loadAdminExpenses();
+    if(typeof loadAdminExpenseRequests==='function') loadAdminExpenseRequests();
+    loadAssessments();
+    loadAging();
+    loadBudgets();
+    const savedFinTab = sessionStorage.getItem('subsync_fin_tab_admin') || 'overview';
+    if(typeof financeTab === 'function') financeTab(savedFinTab);
+    else if(typeof loadFinanceOverview === 'function') loadFinanceOverview();
+  }
   if(name==='policies') loadAdminPolicies();
-  if(name==='archives') loadArchives('issues');
+  if(name==='archives'){
+    const savedArch = sessionStorage.getItem('subsync_archive_tab_admin') || 'issues';
+    loadArchives(savedArch);
+  }
   if(name==='manageusers') loadManageData();
 }
 
@@ -179,11 +309,23 @@ recommendations = d.recommendations||[];
 
   // update stat cards
   if(document.getElementById('statResidents')) document.getElementById('statResidents').textContent = residents.length;
-  if(document.getElementById('statActive'))    document.getElementById('statActive').textContent    = residents.filter(r=>r.status==='Active').length;
+  const activeCount = residents.filter(r=>r.status==='Active').length;
+  if(document.getElementById('statActive'))    document.getElementById('statActive').textContent    = activeCount;
+  if(document.getElementById('statVerifiedPct')) {
+    const verifiedPct = residents.length > 0 ? ((activeCount / residents.length) * 100).toFixed(1) : '100.0';
+    document.getElementById('statVerifiedPct').textContent = `${verifiedPct}%`;
+  }
   if(document.getElementById('statPaymentStatus'))    document.getElementById('statPaymentStatus').textContent    = paymentStatuses.length;
   if(document.getElementById('paymentStatusBadge'))     document.getElementById('paymentStatusBadge').textContent    = paymentStatuses.length;
   const pendingCount = residents.filter(r=>r.status==='Pending').length;
   if(document.getElementById('statPending'))      document.getElementById('statPending').textContent = pendingCount;
+  if(document.getElementById('statRecs')) {
+    const pendingRecs = recommendations.filter(r => r.status === 'Pending' || r.status === 'Open' || !r.status).length;
+    document.getElementById('statRecs').textContent = pendingRecs;
+  }
+  if(document.getElementById('statAnnouncements')) {
+    document.getElementById('statAnnouncements').textContent = announcements.length;
+  }
   if(document.getElementById('pendingNoticeCount')) document.getElementById('pendingNoticeCount').textContent = pendingCount;
   const notice = document.getElementById('pendingNotice');
   if(notice) notice.style.display = pendingCount > 0 ? 'flex' : 'none';
@@ -238,6 +380,23 @@ recommendations = d.recommendations||[];
   renderOfficers();
   renderRecommendations();
   renderManageTables();
+  if(typeof loadAdminEvents === 'function') loadAdminEvents();
+
+  // If user refreshed on an async panel, ensure its data is rendered once loadAllData finishes
+  const activePanel = document.querySelector('.panel.active');
+  const activeId = activePanel ? activePanel.id.replace(/^panel-/, '') : '';
+  if(activeId === 'analytics'){
+    if(typeof renderAnalytics === 'function') renderAnalytics();
+    if(typeof loadAnalyticsSecurityLogs === 'function') loadAnalyticsSecurityLogs();
+  } else if(activeId === 'gcash'){
+    if(typeof loadFinanceOverview === 'function') loadFinanceOverview();
+  } else if(activeId === 'manageusers'){
+    if((!muHouseholds || !muHouseholds.length) && typeof loadManageData === 'function') loadManageData();
+  } else if(activeId === 'reports'){
+    if(typeof renderReports === 'function') renderReports();
+  } else if(activeId === 'mapping'){
+    if(typeof loadMapData === 'function') loadMapData();
+  }
 
   // Baseline for real-time polls — set AFTER initial render so polls won't trigger on existing data
   if(announcements.length) _adminLastAnnId = announcements[0].id;
@@ -247,31 +406,158 @@ recommendations = d.recommendations||[];
 /* ══════════════ RENDER FUNCTIONS ══════════════ */
 
 function renderDashboard(){
-  const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
+  // Hidden compatibility hook
   const recent=issues.slice(0,2);
-  document.getElementById('dashIssueList').innerHTML=recent.length?recent.map(i=>`
-    <div onclick="nav('issues');setTimeout(()=>openIssueDetail(${i.id}),300)" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer;transition:background .15s;border-radius:4px;padding-left:4px;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background=''" title="Click to view issue details">
-      <div>
-        <div style="font-size:13px;font-weight:500;">${i.title}</div>
-        <div style="font-size:11px;color:var(--text-dim);">${i.resident} · ${i.block_lot}</div>
-      </div>
-      ${statusPill[i.status]||''}
-    </div>`).join(''):'<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">No issues yet.</div>';
+  const statusPill={Pending:'<span class="pill pill-pending">Pending</span>','In Progress':'<span class="pill pill-progress">In Progress</span>',Resolved:'<span class="pill pill-resolved">Resolved</span>'};
+  const dashIssEl = document.getElementById('dashIssueList');
+  if(dashIssEl){
+    dashIssEl.innerHTML=recent.length?recent.map(i=>`
+      <div onclick="nav('issues');setTimeout(()=>openIssueDetail(${i.id}),300)">
+        <div>${escHtml(i.title)} · ${escHtml(i.resident||'')}</div>
+        ${statusPill[i.status]||''}
+      </div>`).join(''):'<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">No issues yet.</div>';
+  }
 
-  document.getElementById('activityFeed').innerHTML=(()=>{
-    const events=[];
-    issues.slice(0,3).forEach(i=>events.push({ts:i.created_at||'',icon:'alert',color:'var(--yellow)',text:`<b>${i.resident||'A resident'}</b> filed an issue: <i>${i.title}</i>`,pill:i.status==='Resolved'?'<span class="pill pill-resolved">Resolved</span>':i.status==='In Progress'?'<span class="pill pill-progress">In Progress</span>':'<span class="pill pill-pending">Pending</span>'  }));
-    announcements.slice(0,2).forEach(a=>events.push({ts:a.created_at||'',icon:'megaphone',color:'var(--accent)',text:`Announcement posted: <b>${a.title||a.message?.substring(0,50)+'...'}</b>`,pill:''}));
-    finRecs.slice(0,3).forEach(f=>events.push({ts:f.record_date||'',icon:f.record_type==='Payment'?'coins':'file',color:f.record_type==='Payment'?'var(--green)':'#f08080',text:`<b>${f.resident||'Resident'}</b> — ${f.record_type}: ₱${Number(f.amount).toLocaleString()}`,pill:''}));
-    if(!events.length) return '<div style="color:var(--text-dim);font-size:13px;padding:10px 0;">No recent activity.</div>';
-    return events.slice(0,6).map(e=>`
-      <div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05);">
-        <span style="flex-shrink:0;color:${e.color};">${SubUI.icon(e.icon,17)}</span>
-        <div style="flex:1;font-size:12px;color:var(--text-mid);line-height:1.5;">${e.text}</div>
-        ${e.pill}
-      </div>`).join('');
-  })();
+  // 1. Issue Status Donut Chart & Legend
+  const openCount = issues.filter(i=>i.status==='Pending'||i.status==='Open').length;
+  const inProgCount = issues.filter(i=>i.status==='In Progress').length;
+  const resCount = issues.filter(i=>i.status==='Resolved').length;
+  const totalCount = issues.length;
+
+  const totalEl = document.getElementById('donutTotalIssues');
+  if(totalEl) totalEl.textContent = totalCount;
+
+  const openPct = totalCount > 0 ? Math.round((openCount / totalCount) * 100) : 0;
+  const inProgPct = totalCount > 0 ? Math.round((inProgCount / totalCount) * 100) : 0;
+  const resPct = totalCount > 0 ? Math.max(0, 100 - openPct - inProgPct) : 0;
+
+  if(document.getElementById('donutOpenCount')) document.getElementById('donutOpenCount').textContent = `${openCount} (${openPct}%)`;
+  if(document.getElementById('donutProgCount')) document.getElementById('donutProgCount').textContent = `${inProgCount} (${inProgPct}%)`;
+  if(document.getElementById('donutResCount')) document.getElementById('donutResCount').textContent = `${resCount} (${resPct}%)`;
+
+  const C = 238.761; // 2 * Math.PI * 38
+  const segRes = document.getElementById('donutSegmentResolved');
+  const segProg = document.getElementById('donutSegmentProgress');
+  const segOpen = document.getElementById('donutSegmentOpen');
+
+  if(segRes && segProg && segOpen){
+    if(totalCount === 0){
+      segRes.setAttribute('stroke-dasharray', `0 ${C}`);
+      segProg.setAttribute('stroke-dasharray', `0 ${C}`);
+      segOpen.setAttribute('stroke-dasharray', `0 ${C}`);
+    } else {
+      const lenRes = (resCount / totalCount) * C;
+      const lenProg = (inProgCount / totalCount) * C;
+      const lenOpen = (openCount / totalCount) * C;
+
+      segRes.setAttribute('stroke-dasharray', `${lenRes.toFixed(2)} ${C.toFixed(2)}`);
+      segRes.setAttribute('stroke-dashoffset', '0');
+
+      segProg.setAttribute('stroke-dasharray', `${lenProg.toFixed(2)} ${C.toFixed(2)}`);
+      segProg.setAttribute('stroke-dashoffset', `-${lenRes.toFixed(2)}`);
+
+      segOpen.setAttribute('stroke-dasharray', `${lenOpen.toFixed(2)} ${C.toFixed(2)}`);
+      segOpen.setAttribute('stroke-dashoffset', `-${(lenRes + lenProg).toFixed(2)}`);
+    }
+  }
+
+  // 2. Aggregate Activity Feed
+  const events = [];
+
+  (announcements || []).forEach(a => {
+    events.push({
+      type: 'announcement',
+      ts: a.created_at || a.publish_date || '',
+      icon: 'megaphone',
+      title: `Announcement posted: ${a.title || (a.content||a.message||'').substring(0, 45) || 'Community notice'}`,
+      badgeLabel: 'Announcement',
+      badgeClass: 'announcement',
+      onclick: "nav('announcements', null)"
+    });
+  });
+
+  (residents || []).forEach(r => {
+    events.push({
+      type: 'registration',
+      ts: r.created_at || '',
+      icon: 'users',
+      title: `New resident registered: ${r.name || 'Resident'}`,
+      badgeLabel: 'Registration',
+      badgeClass: 'registration',
+      onclick: "nav('residents', null)"
+    });
+  });
+
+  (issues || []).forEach(i => {
+    events.push({
+      type: 'issue',
+      ts: i.created_at || '',
+      icon: 'alert',
+      title: `${i.resident || 'A resident'} filed an issue: ${i.title || 'Concern'}`,
+      badgeLabel: 'Issue Report',
+      badgeClass: 'issue',
+      onclick: `nav('issues', null); setTimeout(() => openIssueDetail(${i.id}), 300)`
+    });
+  });
+
+  (recommendations || []).forEach(r => {
+    const authorName = r.resident_name || r.resident || (r.resident_id ? 'Resident #' + r.resident_id : 'A resident');
+    events.push({
+      type: 'recommendation',
+      ts: r.created_at || '',
+      icon: 'lightbulb',
+      title: `${authorName} submitted a recommendation: ${r.title || (r.content||'').substring(0, 40) || 'Community idea'}`,
+      badgeLabel: 'Recommendation',
+      badgeClass: 'recommendation',
+      onclick: "nav('recommendations', null)"
+    });
+  });
+
+  events.sort((a, b) => {
+    const ta = a.ts ? new Date(a.ts).getTime() : 0;
+    const tb = b.ts ? new Date(b.ts).getTime() : 0;
+    return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta);
+  });
+
+  window.__adminDashboardActivities = events;
+
+  const currentFilter = (document.getElementById('feedFilterSelect') || {}).value || 'all';
+  renderActivityFeedItems(currentFilter);
 }
+
+function renderActivityFeedItems(filter){
+  const feedEl = document.getElementById('activityFeed');
+  if(!feedEl) return;
+
+  const allEvents = window.__adminDashboardActivities || [];
+  const filtered = (filter === 'all' || !filter)
+    ? allEvents
+    : allEvents.filter(e => e.type === filter);
+
+  if(!filtered.length){
+    feedEl.innerHTML = `<div style="color:var(--text-dim);font-size:12.5px;padding:24px 8px;text-align:center;">No ${filter === 'all' ? 'recent' : filter} activities found.</div>`;
+    return;
+  }
+
+  feedEl.innerHTML = filtered.slice(0, 6).map(e => {
+    const timeStr = formatActivityTime(e.ts) || 'Recently';
+    return `
+      <div class="dash-activity-row" onclick="${e.onclick || ''}" style="cursor:pointer;" title="Click to view details">
+        <div class="dash-activity-icon ${e.badgeClass}">
+          ${SubUI.icon(e.icon, 15)}
+        </div>
+        <div class="dash-activity-main">
+          <div class="dash-activity-title">${escHtml(e.title)}</div>
+          <div class="dash-activity-time">${timeStr}</div>
+        </div>
+        <span class="dash-badge-pill ${e.badgeClass}">${e.badgeLabel}</span>
+      </div>`;
+  }).join('');
+}
+
+window.filterActivityFeed = function(type){
+  renderActivityFeedItems(type);
+};
 
 function renderResidents(){
   const q=(document.getElementById('residentSearch')||{}).value||'';
@@ -331,9 +617,9 @@ function renderResidents(){
         <button type="button" class="btn btn-sm" style="padding:1px 9px;font-size:12px;" title="View this resident's ledger statement"
           onclick="event.stopPropagation();openLedgerModal(${r.id})">${SubUI.money(r.current_balance)} ${SubUI.icon('scroll',12)}</button>
       </div>
-      <div style="margin-top:10px;display:flex;gap:8px;">
-        <button class="btn btn-sm" onclick="event.stopPropagation();SubUI.exportCsv('/api/residents/${r.id}/statement')">${SubUI.icon('download',13)} Statement</button>
-        <button class="btn btn-sm" onclick="event.stopPropagation();remindResident(${r.id})">${SubUI.icon('bell',13)} Remind</button>
+      <div class="resident-card-actions" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-sm" onclick="event.stopPropagation();SubUI.exportCsv('/api/residents/${r.id}/statement')">${SubUI.icon('download',12)} Statement</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();remindResident(${r.id})">${SubUI.icon('bell',12)} Remind</button>
       </div>
     </div>`).join(''):'<div class="empty-state">' + SubUI.icon('home', 28) + 'No residents found.</div>';
   if(_more>0){ document.getElementById('residentGrid').insertAdjacentHTML('beforeend', `<div style="grid-column:1/-1;text-align:center;padding:12px;"><button class="btn btn-sm" onclick="residentCap+=24;renderResidents();">Show ${Math.min(_more,24)} more (${_more} remaining)</button></div>`); }
@@ -845,6 +1131,10 @@ function renderIssues(){
       </div>
     </div>`}).join(''):'<div class="empty-state">' + SubUI.icon('clipboard', 28) + 'No issues match the selected filters.</div>';
   if(_more>0){ document.getElementById('issueList').insertAdjacentHTML('beforeend', `<div style="text-align:center;padding:12px;"><button class="btn btn-sm" onclick="issueCap+=30;renderIssues();">Show ${Math.min(_more,30)} more (${_more} remaining)</button></div>`); }
+  if(detailIssueId && document.getElementById('modal-issueDetail')?.classList.contains('open')){
+    const current = issues.find(x => x.id === detailIssueId);
+    if(current) openIssueDetail(detailIssueId);
+  }
 }
 async function bulkArchiveSelected(){
   const ids=[...document.querySelectorAll('.issue-check:checked')].map(c=>Number(c.value));
@@ -1054,10 +1344,12 @@ async function saveEditOfficer(){
 async function openEditHousehold(id){
   const h=muHouseholds.find(x=>x.id===id);
   if(!h) return;
+  const resList=muResidents.filter(r=>r.house_id===id);
   document.getElementById('editHIdx').value=id;
   document.getElementById('editHLoc').value=h.block_lot_number||'';
   document.getElementById('editHStatus').value=h.status||'Occupied';
   document.getElementById('editHFamily').value=h.family?.family_name||'';
+  document.getElementById('editHFamily').placeholder=resList.length ? `e.g. ${resList[0].name} Family` : 'e.g. Santos Family';
   document.getElementById('editHMembers').value=h.family?.members||'';
   openModal('muEditHousehold');
 }
@@ -1138,9 +1430,71 @@ function openChangeStatusModal(id){
   document.getElementById('statusHIdx').value=id;
   document.getElementById('statusHName').textContent=h.block_lot_number;
   document.getElementById('statusHLoc').textContent='Current status: '+(h.status||'Occupied');
-  document.getElementById('statusHNew').value=h.status||'Occupied';
+  document.getElementById('statusHNew').value=(h.status==='Occupied'?'Vacant':'Occupied');
   document.getElementById('statusHRemarks').value='';
   openModal('muChangeStatus');
+}
+
+function openHouseholdDetail(id){
+  const h=muHouseholds.find(x=>x.id===id);
+  if(!h) return;
+  const resList=muResidents.filter(r=>r.house_id===id);
+  const memList=muMembers.filter(m=>m.house_id===id);
+  const totalOccupants=resList.length+memList.length;
+
+  document.getElementById('houseD-location').textContent=h.block_lot_number||'—';
+  const statusEl=document.getElementById('houseD-status');
+  statusEl.textContent=h.status||'Occupied';
+  statusEl.className='pill '+(h.status==='Occupied'?'pill-active':'pill-inactive');
+
+  document.getElementById('houseD-family').textContent=h.family?.family_name||(resList.length?resList[0].name+' Household':'Unassigned');
+  document.getElementById('houseD-occupants').textContent=String(totalOccupants);
+
+  const resContainer=document.getElementById('houseD-residents');
+  if(resList.length){
+    resContainer.innerHTML=resList.map(r=>`
+      <div style="padding:10px 12px;background:rgba(255,255,255,0.04);border-radius:var(--radius-sm);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">${escHtml(r.name)}</div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${escHtml(r.email||'No email')}${r.contact_number?' • '+escHtml(r.contact_number):''}</div>
+        </div>
+        <span class="pill ${r.status==='Active'?'pill-active':'pill-inactive'}" style="font-size:10px;">${escHtml(r.status||'Active')}</span>
+      </div>
+    `).join('');
+  } else {
+    resContainer.innerHTML='<div style="font-size:12px;color:var(--text-dim);padding:8px 0;">No registered resident accounts for this lot.</div>';
+  }
+
+  const memContainer=document.getElementById('houseD-members');
+  if(memList.length){
+    memContainer.innerHTML=memList.map(m=>`
+      <div style="padding:8px 12px;background:rgba(255,255,255,0.02);border-radius:var(--radius-sm);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:500;font-size:13px;">${escHtml(m.name)}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${escHtml(m.relationship||'Dependent')}${m.contact_number?' • '+escHtml(m.contact_number):''}</div>
+        </div>
+      </div>
+    `).join('');
+  } else {
+    memContainer.innerHTML='<div style="font-size:12px;color:var(--text-dim);padding:8px 0;">No household members/dependents listed.</div>';
+  }
+
+  const editBtn=document.getElementById('houseD-editBtn');
+  if(editBtn){
+    editBtn.onclick=()=>{
+      closeModal('householdDetail');
+      openEditHousehold(id);
+    };
+  }
+  const statusBtn=document.getElementById('houseD-statusBtn');
+  if(statusBtn){
+    statusBtn.onclick=()=>{
+      closeModal('householdDetail');
+      openChangeStatusModal(id);
+    };
+  }
+
+  openModal('householdDetail');
 }
 
 function filterThreads(q){
@@ -1490,33 +1844,101 @@ let muMembers=[];
 let muFamilies=[];
 
 async function loadManageData(){
-  const [h,r,m,f]=await Promise.all([
-    apiGet('/api/households'),
-    apiGet('/api/residents'),
-    apiGet('/api/household-members'),
-    apiGet('/api/families').catch(()=>[]),
-  ]);
-  muHouseholds=h;
-  muResidents=r;
-  muMembers=m;
-  muFamilies=Array.isArray(f)?f:[];
+  try {
+    const [h,r,m,f]=await Promise.all([
+      apiGet('/api/households').catch(()=>null),
+      apiGet('/api/residents').catch(()=>null),
+      apiGet('/api/household-members').catch(()=>null),
+      apiGet('/api/families').catch(()=>null),
+    ]);
+    if(Array.isArray(h) && h.length) muHouseholds = h;
+    else if(!Array.isArray(muHouseholds) || !muHouseholds.length){
+      if(Array.isArray(h)) muHouseholds = h;
+      else if(Array.isArray(households) && households.length) muHouseholds = households;
+    }
+    if(Array.isArray(r) && r.length) muResidents = r;
+    else if(!Array.isArray(muResidents) || !muResidents.length){
+      if(Array.isArray(r)) muResidents = r;
+      else if(Array.isArray(residents) && residents.length) muResidents = residents;
+    }
+    if(Array.isArray(m) && m.length) muMembers = m;
+    else if(!Array.isArray(muMembers) || !muMembers.length){
+      if(Array.isArray(m)) muMembers = m;
+      else if(Array.isArray(hhMembers) && hhMembers.length) muMembers = hhMembers;
+    }
+    if(Array.isArray(f)) muFamilies = f;
+  } catch(e) {
+    console.warn('Error loading manage data:', e);
+  }
   renderManageTables();
 }
 
 function renderManageTables(){
-  if(document.getElementById('householdTbody'))
-    document.getElementById('householdTbody').innerHTML=muHouseholds.map((h,i)=>{const mc=muMembers.filter(m=>m.house_id===h.id).length;return `
+  if(document.getElementById('householdTbody')){
+    const list = (Array.isArray(muHouseholds) && muHouseholds.length)
+      ? muHouseholds
+      : (Array.isArray(households) && households.length ? households : []);
+    const resArr = (Array.isArray(muResidents) && muResidents.length)
+      ? muResidents
+      : (Array.isArray(residents) ? residents : []);
+    const memArr = (Array.isArray(muMembers) && muMembers.length)
+      ? muMembers
+      : (Array.isArray(hhMembers) ? hhMembers : []);
+
+    const hRows = list.length ? list.map(h=>{
+      const resList = resArr.filter(r => r.house_id === h.id);
+      const memList = memArr.filter(m => m.house_id === h.id);
+      const totalOccupants = resList.length + memList.length;
+
+      // Family / Resident display
+      let familyDisplay = '—';
+      if (h.family?.family_name) {
+        familyDisplay = escHtml(h.family.family_name);
+      } else if (resList.length > 0) {
+        const primary = escHtml(resList[0].name);
+        familyDisplay = resList.length > 1
+          ? `<span title="${escHtml(resList.map(r => r.name).join(', '))}">${primary} <span style="font-size:11px;color:var(--text-dim);">(+${resList.length - 1})</span></span>`
+          : primary;
+      } else if (memList.length > 0) {
+        familyDisplay = `<span style="color:var(--text-mid);">${escHtml(memList[0].name)} <span style="font-size:11px;color:var(--text-dim);">(Occupant)</span></span>`;
+      } else {
+        familyDisplay = '<span style="color:var(--text-dim);">Unassigned</span>';
+      }
+
+      // Occupants count display
+      let membersDisplay = '—';
+      if (totalOccupants > 0) {
+        const breakdown = [];
+        if (resList.length) breakdown.push(`${resList.length} resident account${resList.length > 1 ? 's' : ''}`);
+        if (memList.length) breakdown.push(`${memList.length} dependent${memList.length > 1 ? 's' : ''}`);
+        membersDisplay = `<span title="${escHtml(breakdown.join(', '))}" style="font-weight:600;">${totalOccupants}</span>`;
+      } else if (h.family?.members) {
+        membersDisplay = escHtml(String(h.family.members));
+      } else {
+        membersDisplay = h.status === 'Occupied'
+          ? '<span style="color:var(--text-dim);" title="Marked Occupied with 0 registered occupants">0</span>'
+          : '—';
+      }
+
+      return `
       <tr>
-        <td>${h.id}</td><td>${h.block_lot_number}</td><td>${h.family?.family_name||'—'}</td><td>${mc||h.family?.members||'—'}</td>
-        <td><span class="pill ${h.status==='Occupied'?'pill-active':'pill-inactive'}">${h.status}</span></td>
+        <td>${h.id}</td>
+        <td><strong>${escHtml(h.block_lot_number)}</strong></td>
+        <td>${familyDisplay}</td>
+        <td>${membersDisplay}</td>
+        <td><span class="pill ${h.status==='Occupied'?'pill-active':'pill-inactive'}">${escHtml(h.status)}</span></td>
         <td>
           <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="openHouseholdDetail(${h.id})" title="View household details & occupants">View</button>
             <button class="btn btn-sm btn-blue" onclick="openEditHousehold(${h.id})">Edit</button>
             <button class="btn btn-sm" onclick="openChangeStatusModal(${h.id})">Status</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteHousehold(${h.id})">Deactivate</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteHousehold(${h.id})" title="Delete household record">Delete</button>
           </div>
         </td>
-      </tr>`}).join('');
+      </tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--text-dim);">No households yet.</td></tr>';
+    document.getElementById('householdTbody').innerHTML = hRows;
+  }
 
   if(document.getElementById('userTbody'))
     document.getElementById('userTbody').innerHTML=muResidents.map((u,i)=>`
@@ -1554,9 +1976,28 @@ function renderManageTables(){
       :'<tr><td colspan="5" style="text-align:center;color:var(--text-dim);">No families yet.</td></tr>';
     document.getElementById('familyTbody').innerHTML=fRows;
   }
+  try {
+    const savedTable = sessionStorage.getItem('subsync_manage_table_admin');
+    if(savedTable && document.getElementById(savedTable)){
+      const sel = document.getElementById('tableSelector');
+      if(sel && sel.value !== savedTable){
+        sel.value = savedTable;
+        switchManagePanel();
+      }
+    }
+  } catch(e) {}
 }
 
-async function deleteHousehold(id){ if(!(await SubUI.confirm({title:'Mark household Vacant?',message:'The household will be marked Vacant.',confirmText:'Mark Vacant',danger:true,icon:'!'}))) return; await apiPut('/api/households/'+id,{status:'Vacant'}); await loadManageData(); showToast('✅ Household deactivated.'); }
+async function deleteHousehold(id){
+  if(!(await SubUI.confirm({title:'Delete household?',message:'Permanently delete this household record? This will remove the lot from the system.',confirmText:'Delete',danger:true,icon:'!'}))) return;
+  const res=await apiDelete('/api/households/'+id);
+  if(res&&res.success){
+    await loadManageData();
+    showToast('✅ Household deleted.');
+  } else {
+    showToast('⚠ '+(res?.message||'Could not delete household.'));
+  }
+}
 async function deactivateResident(id){ if(!(await SubUI.confirm({title:'Deactivate resident?',message:'The resident account will be deactivated and unable to log in.',confirmText:'Deactivate',danger:true,icon:'!'}))) return; await apiDelete('/api/residents/'+id); await loadManageData(); loadAllData(); showToast('✅ Resident deactivated.'); }
 
 async function approveRegistration(id){
@@ -1576,7 +2017,11 @@ async function deleteFamily(id){ if(!(await SubUI.confirm({title:'Remove family?
 function switchManagePanel(){
   const val=document.getElementById('tableSelector').value;
   document.querySelectorAll('.table-panel').forEach(p=>p.classList.remove('visible'));
-  document.getElementById(val).classList.add('visible');
+  const target = document.getElementById(val);
+  if(target) target.classList.add('visible');
+  try {
+    sessionStorage.setItem('subsync_manage_table_admin', val);
+  } catch(e) {}
 }
 function filterManageTable(){
   const q=document.getElementById('manageSearch').value.toLowerCase();
@@ -2127,6 +2572,35 @@ function connectAdminSSE(){
     }catch(err){}
   });
 
+  // ── Block partition / boundary update (live on map) ──────
+  es.addEventListener('block', async () => {
+    try{
+      if(typeof editingBlocks !== 'undefined' && editingBlocks) return;
+      if(typeof loadBlocksData === 'function') await loadBlocksData();
+    }catch(err){}
+  });
+
+  // ── Community events & RSVPs ─────────────────────────────
+  es.addEventListener('event', () => { if(typeof loadAdminEvents === 'function') loadAdminEvents(); });
+  es.addEventListener('rsvp', () => { if(typeof loadAdminEvents === 'function') loadAdminEvents(); });
+
+  // ── Officer reimbursement expense claims ─────────────────
+  es.addEventListener('expense-request', () => {
+    if(typeof loadAdminExpenseRequests === 'function') loadAdminExpenseRequests();
+    loadAlerts();
+  });
+
+  // ── Interactive map: facilities, households, settings ────
+  es.addEventListener('facility', () => { if(typeof loadMapData === 'function') loadMapData(); if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData(); });
+  es.addEventListener('block', () => { if(typeof loadBlocksData === 'function') loadBlocksData(); if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData(); });
+  es.addEventListener('household', () => {
+    if(typeof loadMapData === 'function') loadMapData();
+    if(typeof loadAllData === 'function' && ['residents','manageusers'].some(id => document.getElementById('panel-'+id)?.classList.contains('active'))) loadAllData().catch(()=>{});
+  });
+  es.addEventListener('map-setting', () => {
+    if(typeof fetchMapSettings === 'function') fetchMapSettings().then(() => { if(typeof loadMapData === 'function') loadMapData(); if(typeof refreshDashboardMiniMap === 'function') refreshDashboardMiniMap(); });
+  });
+
   // ── Reconnect cycle ──────────────────────────────────────
   es.addEventListener('reconnect', (e) => {
     const evt = JSON.parse(e.data);
@@ -2192,6 +2666,8 @@ loadAllData().then(() => {
   _adminSseAnnId   = _adminLastAnnId;
   _adminSseIssueId = issues[0]?.id || 0;
   connectAdminSSE();
+  if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData();
+  else if(typeof initDashboardMiniMap === 'function') initDashboardMiniMap();
 });
 loadAlerts();
 setInterval(function(){ if(!document.hidden) loadAlerts(); }, 30000);
@@ -2205,8 +2681,25 @@ setInterval(function(){ if(!document.hidden) loadAlerts(); }, 30000);
   }
   try {
     const ch = window.Echo.private('subsync');
-    const refresh = () => { if(typeof loadAllData === 'function') loadAllData().catch(function(){}); };
-    ch.listen('.announcement', refresh).listen('.issue', refresh).listen('.policy', refresh).listen('.hoa-expense', refresh);
+    const refresh = () => {
+      if(typeof loadAllData === 'function') loadAllData().catch(function(){});
+      if(typeof loadMapData === 'function' && (document.getElementById('panel-mapping') || document.getElementById('panel-map'))?.classList.contains('active')) loadMapData();
+    };
+    ch.listen('.announcement', refresh).listen('.issue', () => { refresh(); if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData(); }).listen('.policy', refresh).listen('.hoa-expense', refresh).listen('.block', () => { if(typeof editingBlocks !== 'undefined' && editingBlocks) return; if(typeof loadBlocksData === 'function') loadBlocksData(); if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData(); });
+    ch.listen('.event', () => { if(typeof loadAdminEvents === 'function') loadAdminEvents(); })
+      .listen('.rsvp', () => { if(typeof loadAdminEvents === 'function') loadAdminEvents(); });
+    ch.listen('.expense-request', () => {
+      if(typeof loadAdminExpenseRequests === 'function') loadAdminExpenseRequests();
+      loadAlerts();
+    });
+    ch.listen('.facility', () => { if(typeof loadMapData === 'function') loadMapData(); if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData(); })
+      .listen('.household', () => {
+        if(typeof loadMapData === 'function') loadMapData();
+        if(typeof loadAllData === 'function' && ['residents','manageusers'].some(id => document.getElementById('panel-'+id)?.classList.contains('active'))) loadAllData().catch(()=>{});
+      })
+      .listen('.map-setting', () => {
+        if(typeof fetchMapSettings === 'function') fetchMapSettings().then(() => { if(typeof loadMapData === 'function') loadMapData(); if(typeof refreshDashboardMiniMap === 'function') refreshDashboardMiniMap(); });
+      });
     ch.listen('.message', (evt) => {
       if(!evt || !evt.conversationId) return;
       const isOpen = String(evt.conversationId) === String(currentThread);
@@ -2266,9 +2759,10 @@ window.addEventListener('resize', function(){
   window.__mapResizeT = setTimeout(function(){
     try{ if(typeof mapInst!=='undefined' && mapInst) mapInst.invalidateSize(); }catch(e){}
     try{ if(typeof analyticsMapInst!=='undefined' && analyticsMapInst) analyticsMapInst.invalidateSize(); }catch(e){}
+    try{ if(typeof dashMiniMap!=='undefined' && dashMiniMap) dashMiniMap.invalidateSize(); }catch(e){}
   }, 200);
 });
-window.addEventListener('orientationchange', function(){ setTimeout(function(){ try{ if(mapInst) mapInst.invalidateSize(); }catch(e){} }, 300); });
+window.addEventListener('orientationchange', function(){ setTimeout(function(){ try{ if(mapInst) mapInst.invalidateSize(); }catch(e){} try{ if(dashMiniMap) dashMiniMap.invalidateSize(); }catch(e){} }, 300); });
 
 /* ══════════════ ARCHIVES ══════════════ */
 let archiveKind='issues';
@@ -2276,7 +2770,10 @@ function archiveTab(){
   ['issues','files','announcements','policies'].forEach(x=>{const b=document.getElementById('arch-tab-'+x); if(b) b.className='btn btn-sm'+(x===archiveKind?' btn-primary':'');});
 }
 async function loadArchives(kind){
-  archiveKind=kind||'issues';
+  archiveKind=kind||sessionStorage.getItem('subsync_archive_tab_admin')||'issues';
+  try {
+    sessionStorage.setItem('subsync_archive_tab_admin', archiveKind);
+  } catch(e) {}
   archiveTab();
   const el=document.getElementById('archiveList'); if(!el) return;
   el.innerHTML='<div class="empty-state" style="padding:12px;">Loading…</div>';
@@ -2430,15 +2927,41 @@ async function importResidents(){
 let adminEvents=[];
 async function loadAdminEvents(){
   const box=document.getElementById('adminEventList');
-  if(!box) return;
+  const dashBox=document.getElementById('dashEventsList');
   const data=await apiGet('/api/events').catch(()=>[]);
   adminEvents=Array.isArray(data)?data:[];
-  if(!adminEvents.length){ box.innerHTML='<div class="empty-state" style="padding:12px;">No upcoming events.</div>'; return; }
-  box.innerHTML=adminEvents.map(e=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-border);">
-      <div><div style="font-weight:600;font-size:13px;">${escHtml(e.title)}</div>
-      <div style="font-size:11px;color:var(--text-dim);">${escHtml(e.starts_at||'')}${e.location?' &middot; '+escHtml(e.location):''} &middot; ${e.going} going</div></div>
-      <button class="btn btn-sm btn-danger" onclick="deleteEvent(${e.id})">Delete</button>
-    </div>`).join('');
+  if(box){
+    if(!adminEvents.length){ box.innerHTML='<div class="empty-state" style="padding:12px;">No upcoming events.</div>'; }
+    else {
+      box.innerHTML=adminEvents.map(e=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--glass-border);">
+          <div><div style="font-weight:600;font-size:13px;">${escHtml(e.title)}</div>
+          <div style="font-size:11px;color:var(--text-dim);">${escHtml(e.starts_at||'')}${e.location?' &middot; '+escHtml(e.location):''} &middot; ${e.going} going</div></div>
+          <button class="btn btn-sm btn-danger" onclick="deleteEvent(${e.id})">Delete</button>
+        </div>`).join('');
+    }
+  }
+  if(dashBox && adminEvents.length){
+    dashBox.innerHTML = adminEvents.slice(0, 3).map(e => {
+      const dt = e.starts_at ? new Date(e.starts_at) : new Date();
+      const monthStr = dt.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+      const dayStr = dt.getDate();
+      const timeStr = dt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+      return `
+        <div class="dash-event-item">
+          <div class="dash-event-date">
+            <span class="dash-event-month">${monthStr}</span>
+            <span class="dash-event-day">${dayStr}</span>
+          </div>
+          <div class="dash-event-info">
+            <div class="dash-event-title">${escHtml(e.title)}</div>
+            <div class="dash-event-meta">
+              <span>${SubUI.icon('clock', 12)} ${timeStr}</span>
+              ${e.location ? `<span>${SubUI.icon('map', 12)} ${escHtml(e.location)}</span>` : ''}
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
 }
 async function saveEvent(){
   const title=(document.getElementById('evTitle')||{}).value?.trim();
@@ -2458,4 +2981,49 @@ async function deleteEvent(id){
   const res=await apiDelete('/api/events/'+id);
   if(res&&res.success){ showToast('Event deleted.'); loadAdminEvents(); } else showToast('Could not delete the event.');
 }
+
+/* ══ TAB PERSISTENCE ACROSS REFRESH ══ */
+function normalizeAdminTab(target){
+  if(!target) return '';
+  const aliases = {
+    'map': 'mapping',
+    'finance': 'gcash',
+    'documents': 'reports',
+    'users': 'manageusers',
+    'households': 'manageusers',
+    'suggestions': 'recommendations'
+  };
+  return aliases[target] || target;
+}
+function restoreAdminTab(){
+  try {
+    const rawHash = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    const saved = sessionStorage.getItem('subsync_active_tab_admin');
+    let target = normalizeAdminTab(rawHash || saved);
+    if(target && document.getElementById('panel-' + target)){
+      if(typeof window.nav === 'function') window.nav(target);
+      else if(typeof nav === 'function') nav(target);
+      if(target === 'mapping'){
+        setTimeout(function(){
+          if(typeof window.initMap === 'function') window.initMap();
+          else if(typeof initMap === 'function') initMap();
+        }, 120);
+      }
+    }
+  } catch(e) {}
+}
+restoreAdminTab();
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', restoreAdminTab);
+}
+window.addEventListener('hashchange', function(){
+  try {
+    const hash = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    let target = normalizeAdminTab(hash);
+    if(target && document.getElementById('panel-' + target)){
+      if(typeof window.nav === 'function') window.nav(target);
+      else if(typeof nav === 'function') nav(target);
+    }
+  } catch(e) {}
+});
 

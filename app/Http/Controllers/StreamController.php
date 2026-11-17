@@ -154,7 +154,7 @@ class StreamController extends Controller
         }
 
         return match ($event) {
-            'officer', 'officer-file' => false,
+            'officer', 'officer-file', 'expense-request' => false,
             'payment', 'recommendation' => (int) ($payload['residentId'] ?? 0) === $me['id'],
             'resident' => (int) ($payload['latestId'] ?? 0) === $me['id'],
             default => true,

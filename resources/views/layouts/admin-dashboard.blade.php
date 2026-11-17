@@ -1,10 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>SubSync — Admin Dashboard</title>
+<script>
+  (function(){
+    try {
+      var saved = localStorage.getItem('subsync.theme');
+      if (saved === 'dark' || saved === 'light') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch(e){}
+  })();
+</script>
 <script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
 <script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,12 +22,14 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap"></noscript>
 <link rel="stylesheet" href="{{ asset('css/admin-dashboard.css') . '?v=' . filemtime(public_path('css/admin-dashboard.css')) }}">
+<link rel="preload" as="image" href="{{ asset('images/admin_hero_bg_day.jpg') }}">
+<link rel="preload" as="image" href="{{ asset('images/admin_hero_bg_clean.jpg') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
-<meta name="theme-color" content="#86653D">
+<meta name="theme-color" content="#FA7D09">
   <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
   <script src="{{ asset('js/pwa.js') . '?v=' . filemtime(public_path('js/pwa.js')) }}" defer></script>
   <script>window.__PORTAL = @json($role ?? ''); window.__PREFS = @json($prefs ?? []); window.__ACTOR = @json($role ?? '');</script>
@@ -36,43 +48,47 @@
     <div class="brand-sub">Terra Nova Homeowners Association</div>
   </div>
   <div style="padding:10px 14px 2px;">
-    <button class="qa-btn" style="width:100%;justify-content:flex-start;background:#FAF6F0;" onclick="SubUI.openSearch()">
-      <span class="qa-icon"><x-icon name="search" size="16"/></span> Search… <kbd style="margin-left:auto;background:#E6DFD5;border-radius:4px;padding:1px 6px;font-size:11px;">Ctrl K</kbd>
+    <button class="qa-btn sidebar-search-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)">
+      <span class="qa-icon"><x-icon name="search" size="15"/></span> Search… <kbd class="sidebar-search-kbd">Ctrl K</kbd>
     </button>
   </div>
   <nav class="sidebar-nav">
     <div class="nav-section-label">Overview</div>
-    <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon"><x-icon name="chart-bar" size="17"/></span> Dashboard</div>
-    <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon"><x-icon name="chart-line" size="17"/></span> Analytics</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon"><x-icon name="home" size="17"/></span> Dashboard</div>
+    <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon"><x-icon name="chart-bar" size="17"/></span> Analytics</div>
 
     <div class="nav-section-label">Community</div>
     <div class="nav-item" onclick="nav('residents',this)"><span class="nav-icon"><x-icon name="users" size="17"/></span> Residents <span class="nav-badge" id="pendingBadge" style="display:none;background:#f59e0b;">0</span></div>
     <div class="nav-item" onclick="nav('members',this)"><span class="nav-icon"><x-icon name="user" size="17"/></span> Household Members</div>
     <div class="nav-item" onclick="nav('officers',this)"><span class="nav-icon"><x-icon name="shield" size="17"/></span> Officers</div>
 
-    <div class="nav-section-label">Operations</div>
-    <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon"><x-icon name="wrench" size="17"/></span> Issues <span class="nav-badge" id="issueBadge">0</span></div>
-    <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon"><x-icon name="map" size="17"/></span> Map</div>
+    <div class="nav-section-label">Communication</div>
     <div class="nav-item" onclick="nav('announcements',this)"><span class="nav-icon"><x-icon name="megaphone" size="17"/></span> Announcements</div>
-    <div class="nav-item" onclick="nav('policies',this)"><span class="nav-icon"><x-icon name="scroll" size="17"/></span> Policies</div>
-
-    <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon"><x-icon name="folder" size="17"/></span> Documents <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
-    <div class="nav-item" onclick="nav('archives',this)"><span class="nav-icon"><x-icon name="archive" size="17"/></span> Archives</div>
-    <div class="nav-item" onclick="nav('gcash',this)"><span class="nav-icon"><x-icon name="credit-card" size="17"/></span> Finance</div>
-
-    <div class="nav-section-label">Communication &amp; System</div>
     <div class="nav-item" onclick="nav('messages',this)"><span class="nav-icon"><x-icon name="message" size="17"/></span> Messages <span class="nav-badge" id="msgBadge">5</span></div>
-    <div class="nav-item" onclick="nav('recommendations',this)"><span class="nav-icon"><x-icon name="lightbulb" size="17"/></span> Suggestions</div>
-    <div class="nav-item" onclick="nav('manageusers',this)"><span class="nav-icon"><x-icon name="gear" size="17"/></span> Households &amp; Users</div>
-    <div class="nav-item" id="navSettings" onclick="window.location='{{ url('settings') }}?portal={{ $role ?? 'admin' }}'"><span class="nav-icon"><x-icon name="sliders" size="17"/></span> Settings</div>
+
+    <div class="nav-section-label">Operations</div>
+    <div class="nav-item" onclick="nav('issues',this)"><span class="nav-icon"><x-icon name="alert" size="17"/></span> Issues <span class="nav-badge" id="issueBadge" style="background:#F58B1F;color:#fff;">3</span></div>
+    <div class="nav-item" onclick="nav('recommendations',this)"><span class="nav-icon"><x-icon name="lightbulb" size="17"/></span> Recommendations</div>
+
+    <div class="nav-section-label">Location</div>
+    <div class="nav-item" onclick="nav('mapping',this)"><span class="nav-icon"><x-icon name="map" size="17"/></span> Subdivision Map</div>
+
+    <div class="nav-section-label">Administration</div>
+    <div class="nav-item" id="navSettings" onclick="window.location='{{ url('settings') }}?portal={{ $role ?? 'admin' }}'"><span class="nav-icon"><x-icon name="gear" size="17"/></span> System Settings</div>
+    <div class="nav-item" onclick="nav('archives',this)"><span class="nav-icon"><x-icon name="archive" size="17"/></span> Audit Logs</div>
+    <div class="nav-item" onclick="nav('reports',this)"><span class="nav-icon"><x-icon name="folder" size="17"/></span> Documents <span class="nav-badge" id="reportsBadge" style="display:none;">0</span></div>
+    <div class="nav-item" onclick="nav('policies',this)"><span class="nav-icon"><x-icon name="scroll" size="17"/></span> Policies</div>
+    <div class="nav-item" onclick="nav('gcash',this)"><span class="nav-icon"><x-icon name="credit-card" size="17"/></span> Finance</div>
+    <div class="nav-item" onclick="nav('manageusers',this)"><span class="nav-icon"><x-icon name="users" size="17"/></span> Households &amp; Users</div>
   </nav>
   <div class="sidebar-footer">
-    <div class="admin-profile">
-      <div class="admin-avatar">{{ strtoupper(substr($adminName, 0, 2)) }}</div>
-      <div>
-        <div class="admin-name">{{ $adminName }}</div>
-        <div class="admin-role">Subdivision Admin</div>
+    <div class="sidebar-profile admin-profile" onclick="toggleUserMenu()" title="{{ $adminName }} (Click for Account Settings)">
+      <div class="admin-avatar" style="width:38px;height:38px;border-radius:50%;background:#c87941;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;">{{ strtoupper(substr($adminName, 0, 2)) }}</div>
+      <div style="flex:1;min-width:0;margin-left:10px;text-align:left;">
+        <div class="admin-name" style="font-weight:600;font-size:13px;color:var(--text);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ $adminName }}</div>
+        <div class="admin-role" style="font-size:11.5px;color:var(--text-dim);margin-top:2px;">Subdivision Admin</div>
       </div>
+      <span class="admin-chevron" style="font-size:10px;color:var(--text-dim);margin-left:auto;">▼</span>
     </div>
   </div>
 </aside>
@@ -109,11 +125,25 @@
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:12px;">
       <button class="menu-toggle" id="menuToggle" onclick="toggleSidebar()"><x-icon name="menu" size="18"/></button>
-      <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
+      <div>
+        <div class="topbar-title" id="topbarTitle">Dashboard Overview</div>
+        <div class="topbar-sub" id="topbarSubtitle" style="font-size:11.5px;color:#8C857B;margin-top:2px;">Manage the subdivision's residents, announcements, concerns, and recommendations.</div>
+      </div>
     </div>
     <div class="topbar-actions">
+      <!-- Search input matching mockup -->
+      <div class="topbar-search-box" onclick="SubUI.openSearch()" title="Search residents, issues, or announcements (Ctrl+K)">
+        <span style="color:#8C857B;display:flex;align-items:center;"><x-icon name="search" size="14"/></span>
+        <span style="color:#7D766D;font-size:12.5px;">Search residents, issues, or announcements…</span>
+      </div>
+
+      <!-- Theme Toggle (Light / Dark Mode) -->
+      <button class="topbar-btn keep-mobile" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light / Dark mode" aria-label="Toggle theme">
+        <span id="themeToggleIcon"><x-icon name="moon" size="15"/></span>
+      </button>
+
       <div class="alerts-wrap">
-        <button class="topbar-btn keep-mobile" id="alertsButton" aria-expanded="false" aria-controls="alertsPopover" onclick="toggleAlerts()"><x-icon name="bell" size="15"/> Alerts <span class="alerts-badge" id="alertsBadge">0</span></button>
+        <button class="topbar-btn keep-mobile" id="alertsButton" aria-expanded="false" aria-controls="alertsPopover" onclick="toggleAlerts()"><x-icon name="bell" size="15"/> <span class="alerts-badge" id="alertsBadge">3</span></button>
         <section class="alerts-popover" id="alertsPopover" aria-label="System alerts">
           <div class="alerts-popover-head"><strong>System alerts</strong><button class="alerts-refresh" onclick="loadAlerts(true)">Refresh</button></div>
           <div id="alertsList"><div class="alerts-empty">Loading alerts…</div></div>
@@ -121,7 +151,48 @@
       </div>
       <button class="topbar-btn primary" onclick="openModal('ann')">+ New Announcement</button>
       <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'admin' }}"></form>
-      <button class="topbar-btn keep-mobile" onclick="confirmLogout()" style="color:#f08080;border-color:rgba(240,128,128,0.3);">⏻ Log Out</button>
+      <div class="user-menu-wrap" style="position:relative;">
+        <button class="topbar-avatar keep-mobile" id="userMenuButton" aria-expanded="false" aria-controls="userMenuPopover" onclick="toggleUserMenu()" title="{{ $adminName }} (Account menu)">
+          {{ strtoupper(substr($adminName, 0, 2)) }}
+        </button>
+        <div class="user-menu-popover" id="userMenuPopover" role="menu" aria-label="Account menu">
+          <!-- Header: User info -->
+          <div class="user-menu-header">
+            <div class="user-menu-avatar">{{ strtoupper(substr($adminName, 0, 2)) }}</div>
+            <div class="user-menu-info">
+              <div class="user-menu-name">{{ $adminName }}</div>
+              <div class="user-menu-role">Subdivision Admin</div>
+              <div class="user-menu-status"><span class="user-status-dot"></span> Online</div>
+            </div>
+          </div>
+          <div class="user-menu-divider"></div>
+          <!-- Menu items -->
+          <div class="user-menu-items">
+            <a href="{{ url('settings') }}?portal={{ $role ?? 'admin' }}" class="user-menu-item active" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="gear" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Account Settings</div>
+                <div class="user-menu-desc">Profile, account, and preferences</div>
+              </div>
+            </a>
+            <a href="{{ url('settings') }}?portal={{ $role ?? 'admin' }}#notifications" class="user-menu-item" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="bell" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Notification Preferences</div>
+              </div>
+            </a>
+          </div>
+          <div class="user-menu-divider"></div>
+          <div class="user-menu-footer">
+            <button class="user-menu-item logout" onclick="confirmLogout()" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="logout" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Log Out</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -130,7 +201,7 @@
     <!-- ══════════ DASHBOARD ══════════ -->
     <div class="panel active" id="panel-dashboard">
       <!-- Daily Action Center (displays when registrations, payments, or critical issues need triage) -->
-      <div id="adminActionCenter" style="display:none;background:linear-gradient(135deg,rgba(245,158,11,0.08),rgba(134,101,61,0.08));border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:14px 18px;margin-bottom:16px;">
+      <div id="adminActionCenter" style="display:none;background:linear-gradient(135deg,rgba(250,125,9,0.08),rgba(245,158,11,0.08));border:1px solid rgba(250,125,9,0.3);border-radius:12px;padding:14px 18px;margin-bottom:16px;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);">
             <x-icon name="bell" size="16"/> Action Center · Items Requiring Attention
@@ -175,59 +246,257 @@
       </div>
       <div id="pendingNotice" style="display:none;"><span id="pendingNoticeCount">0</span></div>
 
-      <!-- BENTO GRID (officer-portal rhythm) -->
-      <div class="bento-grid">
-        <!-- Greeting (Span 8) -->
-        <div class="card bento-col-8" style="display:flex; flex-direction:column; justify-content:center;">
-          <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:8px;">Hello, {{ explode(' ', $adminName)[0] }} 👋</h1>
-          <p style="font-size:13px; color:var(--text-dim); line-height:1.6;">Manage residents, resolve issues, monitor finances, and communicate with your community.</p>
-        </div>
+      <!-- Hidden hook for JS recent issue list to maintain compatibility -->
+      <div id="dashIssueList" style="display:none;"></div>
 
-        <!-- Quick stats (Span 4, 2x2 like the officer portal) -->
-        <div class="bento-col-4" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:16px;">
-          <div class="card" onclick="nav('residents',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
-            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Residents</div>
-            <div style="font-size:22px;font-weight:700;color:var(--blue);" id="statResidents">—</div>
-          </div>
-          <div class="card" onclick="nav('residents',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
-            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Verified</div>
-            <div style="font-size:22px;font-weight:700;color:var(--green);" id="statActive">—</div>
-          </div>
-          <div class="card" onclick="nav('issues',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
-            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Open Issues</div>
-            <div style="font-size:22px;font-weight:700;color:var(--yellow);" id="statIssues">—</div>
-          </div>
-          <div class="card" onclick="nav('residents',null)" style="padding:16px 12px; text-align:center; cursor:pointer;">
-            <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);margin-bottom:4px;">Pending</div>
-            <div style="font-size:22px;font-weight:700;color:var(--accent);" id="statPending">0</div>
+      <div class="dash-overview">
+        <!-- 1. HERO BANNER -->
+        <div class="dash-hero-card">
+          <div class="dash-hero-content">
+            <div class="dash-hero-indicator"></div>
+            <div class="dash-hero-body">
+              <h1 class="dash-hero-title">
+                <span class="dash-hero-greeting-light">Hello, {{ $adminName ?? 'System Admin' }} 👋</span>
+                <span class="dash-hero-greeting-dark">Welcome back, {{ $adminName ?? 'System Admin' }} 👋</span>
+              </h1>
+              <p class="dash-hero-subtitle">Here's what's happening in Terra Nova today.</p>
+              <div class="dash-hero-pills">
+                <span class="dash-pill"><x-icon name="calendar" size="14"/> {{ date('M d, Y (D)') }}</span>
+                <span class="dash-pill" id="heroWeatherPill" title="Live Subdivision Weather"><x-icon name="sun" size="14"/><span id="heroWeatherText">29°C Partly Cloudy</span></span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Recent Activity Feed (Span 8) -->
-        <div class="card bento-col-8">
-          <div class="card-title">Recent Activity Feed</div>
-          <div class="card-subtitle">The latest actions across the subdivision.</div>
-          <div id="activityFeed"></div>
-        </div>
+        <!-- 2. 6 KPI STAT CARDS ROW -->
+        <div class="dash-kpi-grid">
+          <!-- Total Residents -->
+          <div class="dash-kpi-card" onclick="nav('residents',null)" title="View all residents">
+            <div class="dash-kpi-icon orange"><x-icon name="users" size="18"/></div>
+            <div class="dash-kpi-label">Total Residents</div>
+            <div class="dash-kpi-val" id="statResidents">—</div>
+            <div class="dash-kpi-sub green">↑ +4 this month</div>
+          </div>
 
-        <!-- Quick Actions (Span 4) -->
-        <div class="card bento-col-4">
-          <div class="card-title">Quick Actions</div>
-          <div class="card-subtitle">Jump to the task you need to work on.</div>
-          <div class="quick-stack">
-            <button class="btn btn-full" onclick="nav('announcements',null)"><x-icon name="megaphone" size="15"/> Post Announcement</button>
-            <button class="btn btn-full" onclick="nav('residents',null)"><x-icon name="users" size="15"/> Approve Residents</button>
-            <button class="btn btn-full" onclick="nav('issues',null)"><x-icon name="wrench" size="15"/> Respond to Issues</button>
-            <button class="btn btn-full" onclick="SubUI.openSearch()"><x-icon name="search" size="15"/> Quick Search</button>
+          <!-- Verified Residents -->
+          <div class="dash-kpi-card" onclick="nav('residents',null)" title="View verified residents">
+            <div class="dash-kpi-icon green"><x-icon name="shield" size="18"/></div>
+            <div class="dash-kpi-label">Verified Residents</div>
+            <div class="dash-kpi-val" id="statActive">—</div>
+            <div class="dash-kpi-sub muted">✓ <span id="statVerifiedPct">95.5%</span> verified</div>
+          </div>
+
+          <!-- Pending Approvals -->
+          <div class="dash-kpi-card" onclick="nav('residents',null)" title="Review pending registrations">
+            <div class="dash-kpi-icon amber"><x-icon name="clock" size="18"/></div>
+            <div class="dash-kpi-label">Pending Approvals</div>
+            <div class="dash-kpi-val" id="statPending">0</div>
+            <div class="dash-kpi-sub muted">⏱ Require review</div>
+          </div>
+
+          <!-- Open Issues -->
+          <div class="dash-kpi-card" onclick="nav('issues',null)" title="View open issues">
+            <div class="dash-kpi-icon red"><x-icon name="alert" size="18"/></div>
+            <div class="dash-kpi-label">Open Issues</div>
+            <div class="dash-kpi-val" id="statIssues">—</div>
+            <div class="dash-kpi-sub red">↓ -2 from last week</div>
+          </div>
+
+          <!-- Pending Recommendations -->
+          <div class="dash-kpi-card" onclick="nav('recommendations',null)" title="Review recommendations">
+            <div class="dash-kpi-icon amber"><x-icon name="lightbulb" size="18"/></div>
+            <div class="dash-kpi-label">Pending Recommendations</div>
+            <div class="dash-kpi-val" id="statRecs">0</div>
+            <div class="dash-kpi-sub amber">⏱ For review</div>
+          </div>
+
+          <!-- Active Announcements -->
+          <div class="dash-kpi-card" onclick="nav('announcements',null)" title="View announcements">
+            <div class="dash-kpi-icon orange"><x-icon name="megaphone" size="18"/></div>
+            <div class="dash-kpi-label">Active Announcements</div>
+            <div class="dash-kpi-val" id="statAnnouncements">0</div>
+            <div class="dash-kpi-sub green">↑ Currently published</div>
           </div>
         </div>
 
-        <!-- Recent Issues (Span 12) -->
-        <div class="card bento-col-12">
-          <div class="card-title">Recent Issues</div>
-          <div class="card-subtitle">Newest resident reports that may need attention.</div>
-          <div id="dashIssueList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card"></div></div>
-          <button class="btn btn-sm" style="margin-top:16px;" onclick="nav('issues',null)">View All Issues</button>
+        <!-- 3. MIDDLE ROW (3 COLUMNS: Activity Feed, Issue Status, Subdivision Map) -->
+        <div class="dash-mid-grid">
+          <!-- Recent Activity Feed -->
+          <div class="dash-card dash-activity-card">
+            <div class="dash-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="dash-header-icon amber"><x-icon name="folder" size="17"/></span>
+                <div>
+                  <div class="dash-card-title">Recent Activity Feed</div>
+                  <div class="dash-card-subtitle">The latest actions across the subdivision.</div>
+                </div>
+              </div>
+              <div class="dash-feed-filter">
+                <select id="feedFilterSelect" onchange="filterActivityFeed(this.value)">
+                  <option value="all">All Activities</option>
+                  <option value="announcement">Announcements</option>
+                  <option value="issue">Issue Reports</option>
+                  <option value="registration">Registrations</option>
+                  <option value="recommendation">Recommendations</option>
+                </select>
+              </div>
+            </div>
+            <div class="dash-feed-list" id="activityFeed">
+              <!-- Rendered dynamically by renderDashboard() in admin-dashboard.js -->
+            </div>
+          </div>
+
+          <!-- Issue Status Donut Card -->
+          <div class="dash-card dash-status-card">
+            <div class="dash-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="dash-header-icon orange"><x-icon name="sliders" size="17"/></span>
+                <div class="dash-card-title">Issue Status</div>
+              </div>
+            </div>
+            <div class="dash-donut-wrap">
+              <div class="dash-donut-chart">
+                <svg viewBox="0 0 100 100" width="130" height="130" class="dash-donut-svg">
+                  <!-- Background ring -->
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#2B2724" stroke-width="12"/>
+                  <!-- Resolved segment (Green #22C55E) -->
+                  <circle id="donutSegmentResolved" cx="50" cy="50" r="38" fill="none" stroke="#22C55E" stroke-width="12" stroke-dasharray="119.38 238.76" stroke-dashoffset="0" transform="rotate(-90 50 50)"/>
+                  <!-- In Progress segment (Blue #3B82F6) -->
+                  <circle id="donutSegmentProgress" cx="50" cy="50" r="38" fill="none" stroke="#3B82F6" stroke-width="12" stroke-dasharray="59.69 238.76" stroke-dashoffset="-119.38" transform="rotate(-90 50 50)"/>
+                  <!-- Open segment (Orange #F58B1F) -->
+                  <circle id="donutSegmentOpen" cx="50" cy="50" r="38" fill="none" stroke="#F58B1F" stroke-width="12" stroke-dasharray="59.69 238.76" stroke-dashoffset="-179.07" transform="rotate(-90 50 50)"/>
+                </svg>
+                <div class="dash-donut-center">
+                  <span class="dash-donut-num" id="donutTotalIssues">4</span>
+                  <span class="dash-donut-txt">Total Issues</span>
+                </div>
+              </div>
+              <div class="dash-donut-legend">
+                <div class="dash-legend-row">
+                  <span class="dash-legend-dot orange"></span>
+                  <span class="dash-legend-name">Open</span>
+                  <span class="dash-legend-val" id="donutOpenCount">1 (25%)</span>
+                </div>
+                <div class="dash-legend-row">
+                  <span class="dash-legend-dot blue"></span>
+                  <span class="dash-legend-name">In Progress</span>
+                  <span class="dash-legend-val" id="donutProgCount">1 (25%)</span>
+                </div>
+                <div class="dash-legend-row">
+                  <span class="dash-legend-dot green"></span>
+                  <span class="dash-legend-name">Resolved</span>
+                  <span class="dash-legend-val" id="donutResCount">2 (50%)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subdivision Map Preview Card -->
+          <div class="dash-card dash-map-card">
+            <div class="dash-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="dash-header-icon orange"><x-icon name="map" size="17"/></span>
+                <div>
+                  <div class="dash-card-title">Subdivision Map</div>
+                  <div class="dash-card-subtitle">View colored blocks and live issue heatmap.</div>
+                </div>
+              </div>
+            </div>
+            <div class="dash-map-preview-wrap" onclick="nav('mapping',null)" title="Open interactive subdivision map">
+              <div id="dash-mini-map" class="dash-mini-map">
+                <div class="dash-mini-map-loading">
+                  <x-icon name="map" size="18"/>
+                  <span>Loading subdivision map...</span>
+                </div>
+              </div>
+              <div class="dash-map-overlay">
+                <span class="dash-map-badge"><x-icon name="map" size="12"/> View Only</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+              <button class="btn btn-sm btn-map-view" onclick="nav('mapping',null)">View Map &rarr;</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. BOTTOM ROW (2 COLUMNS: Upcoming Events, Quick Actions) -->
+        <div class="dash-bottom-grid">
+          <!-- Upcoming Community Events -->
+          <div class="dash-card dash-events-card">
+            <div class="dash-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="dash-header-icon orange"><x-icon name="calendar" size="17"/></span>
+                <div>
+                  <div class="dash-card-title">Upcoming Community Events</div>
+                  <div class="dash-card-subtitle">Subdivision activities and important dates.</div>
+                </div>
+              </div>
+              <a href="javascript:void(0)" onclick="nav('announcements',null)" class="dash-card-link">View Calendar &rarr;</a>
+            </div>
+            <div class="dash-events-list" id="dashEventsList">
+              <div class="dash-event-item">
+                <div class="dash-event-date">
+                  <span class="dash-event-month">NOV</span>
+                  <span class="dash-event-day">20</span>
+                </div>
+                <div class="dash-event-info">
+                  <div class="dash-event-title">Homeowners' Association Meeting</div>
+                  <div class="dash-event-meta">
+                    <span><x-icon name="clock" size="12"/> 6:00 PM</span>
+                    <span><x-icon name="map" size="12"/> Clubhouse</span>
+                  </div>
+                </div>
+              </div>
+              <div class="dash-event-item">
+                <div class="dash-event-date">
+                  <span class="dash-event-month">NOV</span>
+                  <span class="dash-event-day">27</span>
+                </div>
+                <div class="dash-event-info">
+                  <div class="dash-event-title">Subdivision Clean-Up Drive</div>
+                  <div class="dash-event-meta">
+                    <span><x-icon name="clock" size="12"/> 7:00 AM</span>
+                    <span><x-icon name="map" size="12"/> Main Entrance</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="dash-card dash-qa-card">
+            <div class="dash-card-header">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="dash-header-icon orange"><x-icon name="zap" size="17"/></span>
+                <div>
+                  <div class="dash-card-title">Quick Actions</div>
+                  <div class="dash-card-subtitle">Frequently used functions for community management.</div>
+                </div>
+              </div>
+            </div>
+            <div class="dash-qa-grid">
+              <button class="dash-qa-btn active" onclick="openModal('ann')" title="Post Announcement">
+                <span class="dash-qa-icon orange"><x-icon name="megaphone" size="20"/></span>
+                <span class="dash-qa-text">Post Announcement</span>
+              </button>
+              <button class="dash-qa-btn" onclick="nav('residents',null)" title="Review Resident Applications">
+                <span class="dash-qa-icon"><x-icon name="users" size="20"/></span>
+                <span class="dash-qa-text">Review Applications</span>
+              </button>
+              <button class="dash-qa-btn" onclick="nav('issues',null)" title="Manage Issues">
+                <span class="dash-qa-icon"><x-icon name="alert" size="20"/></span>
+                <span class="dash-qa-text">Manage Issues</span>
+              </button>
+              <button class="dash-qa-btn" onclick="nav('recommendations',null)" title="Review Recommendations">
+                <span class="dash-qa-icon"><x-icon name="lightbulb" size="20"/></span>
+                <span class="dash-qa-text">Review Recommendations</span>
+              </button>
+              <button class="dash-qa-btn" onclick="nav('mapping',null)" title="View Subdivision Map">
+                <span class="dash-qa-icon"><x-icon name="map" size="20"/></span>
+                <span class="dash-qa-text">View Subdivision Map</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -452,7 +721,7 @@
         <div id="householdsPanel" class="table-panel visible">
           <div class="card-title">Households</div>
           <table class="panel-table" id="householdTable">
-            <thead><tr><th>ID</th><th>Location</th><th>Family</th><th>Members</th><th>Status</th><th>Actions</th></tr></thead>
+            <thead><tr><th>ID</th><th>Location</th><th>Family / Resident</th><th>Occupants</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="householdTbody"></tbody>
           </table>
         </div>
@@ -572,28 +841,81 @@
         <div class="map-toolbar">
           <div>
             <span style="font-size:14px;font-weight:600;color:var(--text);">Terra Nova Subdivision</span>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Issue pins are numbered by report sequence. Map is limited to the Terra Nova subdivision boundary. The heatmap shows issue density per area (green → amber → red).</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Issue pins are numbered by report sequence. Map is limited to the Terra Nova subdivision boundary. The heatmap reveals thermal density and dominant issue categories per area.</div>
           </div>
           <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <label class="map-toggle"><input type="checkbox" id="layer-households" checked> Households</label>
-            <label class="map-toggle"><input type="checkbox" id="layer-facilities" checked> Facilities</label>
-            <label class="map-toggle"><input type="checkbox" id="layer-issues" checked> Issue Pins</label>
-            <label class="map-toggle"><input type="checkbox" id="layer-heat"> Heatmap</label>
+            <div class="map-mode-switch" style="display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--glass-border);background:var(--glass);" title="Toggle between View-Only exploration and Map Editing">
+              <button type="button" id="btn-map-mode-view" class="btn btn-sm" onclick="setMapInteractiveMode('view')" style="padding:4px 10px;font-size:12px;font-weight:700;background:var(--accent);color:#fff;border-radius:0;">
+                <x-icon name="eye" size="13"/> View Only
+              </button>
+              <button type="button" id="btn-map-mode-edit" class="btn btn-sm" onclick="setMapInteractiveMode('edit')" style="padding:4px 10px;font-size:12px;font-weight:600;background:transparent;color:var(--text);border-radius:0;">
+                <x-icon name="pencil" size="13"/> Edit Mode
+              </button>
+            </div>
+            <label class="map-toggle" title="Toggle block partition boundaries"><input type="checkbox" id="layer-blocks" onchange="toggleMapBlocks(this.checked)"> Block Partitions</label>
+            <select id="filter-block-select" onchange="filterMapByBlock(this.value)" class="btn btn-sm" style="padding:4px 8px;font-size:12px;font-weight:600;" title="Filter map to a specific block">
+              <option value="">All Blocks (1–14 · 338 Lots)</option>
+              <option value="1">Block 1 — Lots 1–10 (Sky Blue)</option>
+              <option value="2">Block 2 — Clubhouse &amp; Pool (Purple)</option>
+              <option value="3">Block 3 — Perimeter Lots 1–74 (Red)</option>
+              <option value="4">Block 4 — Lots 1–40 (Orange)</option>
+              <option value="5">Block 5 — Lots 1–34 (Purple)</option>
+              <option value="6">Block 6 — Lots 1–28 (Green)</option>
+              <option value="7">Block 7 — Lots 1–24 (Amber)</option>
+              <option value="8">Block 8 — Lots 1–19 (Lime)</option>
+              <option value="9">Block 9 — Lots 1–20 (Rose)</option>
+              <option value="10">Block 10 — Lots 1–18 (Magenta)</option>
+              <option value="11">Block 11 — Lots 1–18 (Indigo)</option>
+              <option value="12">Block 12 — Lots 1–22 (Pink)</option>
+              <option value="13">Block 13 — Lots 1–16 (Gold)</option>
+              <option value="14">Block 14 — Lots 1–14 (Blue)</option>
+            </select>
+            <label class="map-toggle" title="Toggle facilities markers"><input type="checkbox" id="layer-facilities" checked onchange="toggleMapFacilities(this.checked)"> Facilities</label>
+            <label class="map-toggle" title="Toggle reported issue markers"><input type="checkbox" id="layer-issues" checked onchange="toggleMapIssues(this.checked)"> Issue Pins</label>
+            <label class="map-toggle" title="Toggle thermal issue heatmap and frequency categorization"><input type="checkbox" id="layer-heat" onchange="toggleMapHeatmap(this.checked)"> Heatmap</label>
             <select id="heat-category" class="btn btn-sm" style="padding:4px 8px;font-size:12px;" title="Filter the heatmap by issue category">
               <option value="">All categories</option>
             </select>
-            <button class="btn btn-sm btn-green" onclick="enterAddFacilityMode()">+ Add Facility</button>
+            <span id="map-edit-actions" style="display:none;align-items:center;gap:6px;">
+              <button class="btn btn-sm btn-green" onclick="enterAddFacilityMode()">+ Add Facility</button>
+            </span>
             <button class="btn btn-sm" onclick="if(mapInst)mapInst.setView([10.62269,122.96134],17)">⌖ Reset View</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Heatmap & Hotspot Analysis Bar (Active when Heatmap layer is toggled on) -->
+      <div id="heatmap-analysis-card" class="card" style="display:none;margin-bottom:12px;padding:12px 16px;background:var(--glass);border-left:4px solid #ef4444;transition:all 0.25s ease;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(239,68,68,0.15);color:#ef4444;font-size:13px;">🔥</span>
+              <span style="font-size:13px;font-weight:700;color:var(--text);">Subdivision Issue Heatmap &amp; Category Frequency</span>
+              <span id="heatmap-status-badge" style="font-size:11px;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;">Live Heat</span>
+            </div>
+            <div id="heatmap-summary-line" style="font-size:12px;color:var(--text-mid);margin-top:4px;">
+              Analyzing issue frequency across subdivision...
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <!-- Thermal Gradient Scale -->
+            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);" title="Thermal intensity ramps up as reports cluster in that area">
+              <span>Low (1)</span>
+              <div style="width:100px;height:9px;border-radius:4px;background:linear-gradient(to right, #38bdf8, #34d399, #facc15, #fb923c, #ef4444);box-shadow:inset 0 1px 2px rgba(0,0,0,0.25);"></div>
+              <span style="color:#ef4444;font-weight:700;">Hotspot (4+)</span>
+            </div>
+          </div>
+        </div>
+        <!-- Ranked category frequency filter pills -->
+        <div id="heatmap-category-pills" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--glass-border);">
         </div>
       </div>
 
       <!-- Legend -->
       <div class="card" style="margin-bottom:12px;padding:8px 16px;">
         <div class="map-legend">
+          <span><span class="sub-start-dir-marker is-sample" style="display:inline-flex;position:static;vertical-align:middle;margin-right:4px;transform:none;"><span class="start-dir-arrow">↑</span><span class="start-dir-code">N</span></span>Lot 1 Start Point</span>
           <span><span class="map-dot" style="background:#4CAF50;"></span>Facility</span>
-          <span><span class="map-dot" style="background:#4287f5;"></span>Household (Active)</span>
-          <span><span class="map-dot" style="background:#f08080;"></span>Household (Vacant)</span>
           <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#e05555;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">1</span>Issue (Pending)</span>
           <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#f5a623;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">2</span>Issue (In Progress)</span>
           <span><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:#888;color:#fff;font-size:9px;font-weight:700;margin-right:4px;">3</span>Issue (Resolved)</span>
@@ -602,9 +924,32 @@
       </div>
 
       <!-- Map -->
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+      <div id="map-edit-bar-btns" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+        <button class="btn btn-sm" onclick="enterEditBlocksMode()" id="btn-edit-blocks" title="Reshape individual block boundaries directly on the map"><x-icon name="edit" size="14"/> Edit Blocks</button>
         <button class="btn btn-sm" onclick="enterCustomizeArea()" id="btn-customize-area"><x-icon name="pencil" size="14"/> Customize Area</button>
         <span id="map-customize-hint" style="display:none;font-size:12px;color:var(--accent);">Drag handles to freely adjust the border. Drag <strong>Move Area</strong> to reposition, or click <strong>Draw New Border</strong>.</span>
+      </div>
+      <div>
+        
+        <!-- Block Editing Toolbar -->
+        <span style="margin-left:auto;display:none;gap:8px;align-items:center;flex-wrap:wrap;" id="map-blocks-toolbar">
+          <span style="font-size:12px;color:#16a34a;font-weight:600;"><x-icon name="edit" size="13"/> Editing Blocks</span>
+          <div style="display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border);" title="Switch between point editing or 4-corner scale resize">
+            <button class="btn btn-sm" id="btn-block-mode-points" onclick="setBlockEditorMode('points')" style="padding:3px 8px;font-size:11px;font-weight:700;background:var(--accent);color:#fff;">∿ Edit Points</button>
+            <button class="btn btn-sm" id="btn-block-mode-scale" onclick="setBlockEditorMode('scale')" style="padding:3px 8px;font-size:11px;font-weight:600;background:transparent;color:var(--text);">⊡ 4-Corner Scale</button>
+          </div>
+          <div style="display:inline-flex;border-radius:6px;overflow:hidden;border:1px solid var(--border);" title="Quick scale block size">
+            <button class="btn btn-sm" id="btn-shrink-block" onclick="scaleSelectedBlock(0.85)" style="padding:3px 8px;font-size:11px;" title="Make selected block 15% smaller">⊖ Shrink</button>
+            <button class="btn btn-sm" id="btn-enlarge-block" onclick="scaleSelectedBlock(1.15)" style="padding:3px 8px;font-size:11px;" title="Make selected block 15% larger">⊕ Enlarge</button>
+          </div>
+          <button class="btn btn-sm" id="btn-edit-block-info" onclick="openSelectedBlockInfoModal()" title="Edit Name, Lot Range, START Label, and Color for selected block"><x-icon name="edit" size="13"/> Edit Block Info</button>
+          <span style="font-size:11px;color:var(--text-dim);" id="block-edit-hint">Drag any of the 4 corners to scale. Drag the Block Label or START pill to reposition them.</span>
+          <button class="btn btn-sm" onclick="subdivideBlockPoints()" id="btn-subdivide-block" title="Subdivide edges to add more points of movement"><x-icon name="plus" size="13"/> + Add More Points</button>
+          <button class="btn btn-sm btn-green" onclick="saveBlockPolygons()"><x-icon name="save" size="13"/> Save Blocks</button>
+          <button class="btn btn-sm" onclick="cancelEditBlocks()">✕ Cancel</button>
+        </span>
+        
+        <!-- Area Toolbar -->
         <span style="margin-left:auto;display:none;gap:8px;align-items:center;flex-wrap:wrap;" id="map-area-toolbar">
           <button class="btn btn-sm" onclick="toggleDrawAreaMode()" id="btn-draw-area" title="Click and drag on the map to draw a new border box"><x-icon name="plus" size="14"/> <span id="btn-draw-area-text">Draw New Border</span></button>
           <button class="btn btn-sm btn-green" onclick="saveMapArea()" id="btn-save-area"><x-icon name="save" size="14"/> Save Area</button>
@@ -612,13 +957,14 @@
           <button class="btn btn-sm" onclick="resetMapArea()" id="btn-reset-area">↺ Reset</button>
         </span>
       </div>
-      <div id="map-container"></div>
 
-      <!-- Add-facility mode banner -->
-      <div id="map-add-banner">
-        <span><x-icon name="map-pin" size="14"/> Click anywhere within the Terra Nova boundary to place the facility pin</span>
-        <button class="btn btn-sm" style="margin-left:auto;" onclick="cancelAddFacilityMode()">Cancel</button>
+      <!-- Add-facility mode banner (visible directly above map) -->
+      <div id="map-add-banner" style="display:none;margin-bottom:10px;padding:10px 14px;background:rgba(16,185,129,0.12);border:1px solid #10b981;border-radius:8px;font-size:12px;color:var(--text);align-items:center;gap:10px;">
+        <span><x-icon name="map-pin" size="14"/> <strong>Add Facility Mode:</strong> Click anywhere on the map or drag the green pin to position the facility.</span>
+        <button class="btn btn-sm" style="margin-left:auto;" onclick="cancelAddFacilityMode()">✕ Cancel</button>
       </div>
+
+      <div id="map-container"></div>
 
       <!-- Map Disclaimer -->
       <div style="margin-top:10px;padding:10px 14px;background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--radius-sm);font-size:12px;color:var(--text-dim);">
@@ -1280,6 +1626,37 @@
 
 <!-- ═══ MANAGE USERS MODALS ═══ -->
 
+<!-- Household Detail Modal -->
+<div class="modal-overlay" id="modal-householdDetail" onclick="if(event.target===this)closeModal('householdDetail')">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title" style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px;">
+      <div>
+        <div id="houseD-location" style="font-size:17px;font-weight:700;">—</div>
+        <div id="houseD-family" style="font-size:12px;color:var(--text-dim);margin-top:2px;">—</div>
+      </div>
+      <span id="houseD-status" class="pill">—</span>
+    </div>
+
+    <div style="margin:14px 0 10px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:8px;">Registered Residents (<span id="houseD-occupants">0</span> Total Occupants)</div>
+      <div id="houseD-residents"></div>
+    </div>
+
+    <div style="margin:12px 0 16px;">
+      <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);margin-bottom:8px;">Household Members / Dependents</div>
+      <div id="houseD-members"></div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:space-between;gap:8px;">
+      <button class="modal-close-btn" onclick="closeModal('householdDetail')">Close</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm" id="houseD-statusBtn"><x-icon name="alert" size="13"/> Status</button>
+        <button class="btn btn-sm btn-blue" id="houseD-editBtn"><x-icon name="pencil" size="13"/> Edit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Add Household -->
 <div class="modal-overlay" id="modal-muAddHousehold">
   <div class="modal-box">
@@ -1530,19 +1907,20 @@
 </div>
 
 <!-- Add Facility Modal -->
-<div class="modal-overlay" id="modal-addFacility">
+<div class="modal-overlay" id="modal-addFacility" onclick="if(event.target===this){closeModal('addFacility');cancelAddFacilityMode();}">
   <div class="modal-box">
     <div class="modal-title">Add Facility</div>
-    <div class="f-row"><div class="f-field"><span class="f-label">Facility Name</span><input type="text" id="fac-name" placeholder="e.g. Clubhouse, Basketball Court"></div></div>
+    <div class="f-row"><div class="f-field"><span class="f-label">Facility Name <span style="color:#e05555;">*</span></span><input type="text" id="fac-name" placeholder="e.g. Clubhouse, Basketball Court"></div></div>
     <div class="f-row"><div class="f-field"><span class="f-label">Description</span><textarea id="fac-desc" placeholder="Short description (optional)"></textarea></div></div>
     <div class="f-row"><div class="f-field"><span class="f-label">Photo (optional)</span>
       <input type="file" id="fac-image" accept="image/*" onchange="previewImage(this,'fac-image-preview')">
       <img id="fac-image-preview" alt="preview" style="display:none;margin-top:8px;max-width:100%;max-height:170px;border-radius:8px;border:1px solid var(--glass-border);">
     </div></div>
     <div class="f-row">
-      <div class="f-field"><span class="f-label">Latitude</span><input type="text" id="fac-lat" readonly placeholder="Set by clicking map"></div>
-      <div class="f-field"><span class="f-label">Longitude</span><input type="text" id="fac-lng" readonly placeholder="Set by clicking map"></div>
+      <div class="f-field"><span class="f-label">Latitude</span><input type="text" id="fac-lat" readonly style="background:var(--glass-hover);font-size:12px;" placeholder="Click map or drag pin"></div>
+      <div class="f-field"><span class="f-label">Longitude</span><input type="text" id="fac-lng" readonly style="background:var(--glass-hover);font-size:12px;" placeholder="Click map or drag pin"></div>
     </div>
+    <div style="font-size:11px;color:var(--text-dim);margin:-2px 0 10px;">💡 Tip: A green pin was placed on the map. You can drag the pin on the map or click anywhere on the map to change its position.</div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('addFacility');cancelAddFacilityMode()">Cancel</button>
       <button class="btn btn-sm btn-green" onclick="saveNewFacility()">Save Facility</button>
@@ -1564,6 +1942,11 @@
     <div class="f-row"><div class="f-field"><span class="f-label">Status</span>
       <select id="edit-fac-status"><option value="Active">Active</option><option value="Inactive">Inactive</option></select>
     </div></div>
+    <div class="f-row">
+      <div class="f-field"><span class="f-label">Latitude</span><input type="text" id="edit-fac-lat" readonly style="background:var(--glass-hover);font-size:12px;" title="Reposition by dragging the pin on the map"></div>
+      <div class="f-field"><span class="f-label">Longitude</span><input type="text" id="edit-fac-lng" readonly style="background:var(--glass-hover);font-size:12px;" title="Reposition by dragging the pin on the map"></div>
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);margin:-2px 0 10px;">💡 Tip: You can drag the green facility pin directly on the map to reposition it.</div>
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('editFacility')">Cancel</button>
       <button class="btn btn-sm" onclick="saveEditFacility()">Save Changes</button>
@@ -1590,11 +1973,12 @@ function loadD3(){
 
 /* ══ LAZY LEAFLET LOADER — Leaflet loads from local origin only when the map is opened ══ */
 let _leafletLoaded = false;
+let _leafletPromise = null;
 function loadLeaflet(){
-  if(_leafletLoaded) return Promise.resolve();
-  _leafletLoaded = true;
+  if(window.L && L.map) return Promise.resolve();
+  if(_leafletPromise) return _leafletPromise;
   const AB = window.APP_BASE || '';
-  return new Promise((resolve) => {
+  _leafletPromise = new Promise((resolve) => {
     if(!document.querySelector('link[href*="leaflet.css"]')){
       const l = document.createElement('link');
       l.rel = 'stylesheet';
@@ -1603,10 +1987,12 @@ function loadLeaflet(){
     }
     const srcs = [
       AB + '/vendor/leaflet/leaflet.js',
+      AB + '/vendor/leaflet/leaflet-heat.js',
     ];
     let i = 0;
     (function next(){
       if(i >= srcs.length){
+        _leafletLoaded = true;
         if(window.L && L.Icon && L.Icon.Default){
           L.Icon.Default.mergeOptions({
             iconUrl: AB + '/vendor/leaflet/images/marker-icon.png',
@@ -1622,6 +2008,19 @@ function loadLeaflet(){
       s.onerror = () => { s.onerror = null; next(); };
       document.body.appendChild(s);
     })();
+  });
+  return _leafletPromise;
+}
+
+function ensureLeafletHeat(){
+  if(window.L && typeof L.heatLayer === 'function') return Promise.resolve();
+  const AB = window.APP_BASE || '';
+  return new Promise((resolve) => {
+    const s = document.createElement('script');
+    s.src = AB + '/vendor/leaflet/leaflet-heat.js';
+    s.onload = () => resolve();
+    s.onerror = () => { console.warn('Could not load leaflet-heat.js'); resolve(); };
+    document.body.appendChild(s);
   });
 }
 </script>
@@ -1640,6 +2039,185 @@ function closeSidebar(){
   document.getElementById('sidebarOverlay').classList.remove('show');
   document.getElementById('menuToggle').innerHTML = '<x-icon name="menu" size="18"/>';
 }
+/* ══════════════ DASHBOARD MINI-MAP (VIEW-ONLY) ══════════════ */
+let dashMiniMap = null;
+let dashMiniBlocksLayer = null;
+let dashMiniHeatLayer = null;
+let dashMiniFacilitiesLayer = null;
+let dashMiniIssuesLayer = null;
+let dashMiniAreaRect = null;
+let _dashMiniMapLoading = false;
+
+async function initDashboardMiniMap() {
+  const container = document.getElementById('dash-mini-map');
+  if (!container) return;
+  const isDashActive = document.getElementById('panel-dashboard')?.classList.contains('active');
+  if (dashMiniMap) {
+    if (isDashActive) {
+      setTimeout(() => {
+        dashMiniMap.invalidateSize();
+        if (mapSettings) {
+          const b = mapSettings;
+          dashMiniMap.fitBounds([[b.min_lat, b.min_lng], [b.max_lat, b.max_lng]], { padding: [6, 6], animate: false });
+        }
+      }, 60);
+    }
+    return;
+  }
+  if (_dashMiniMapLoading) return;
+  _dashMiniMapLoading = true;
+
+  try {
+    await loadLeaflet();
+    if (!mapSettings) {
+      await fetchMapSettings();
+    }
+    const b = mapSettings || { min_lat: 10.6195, max_lat: 10.6260, min_lng: 122.9580, max_lng: 122.9650, center_lat: 10.62269, center_lng: 122.96134, zoom: 17 };
+    const areaBounds = L.latLngBounds([[b.min_lat, b.min_lng], [b.max_lat, b.max_lng]]);
+
+    container.innerHTML = '';
+
+    dashMiniMap = L.map(container, {
+      zoomControl: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      dragging: false,
+      boxZoom: false,
+      keyboard: false,
+      attributionControl: false
+    }).fitBounds(areaBounds, { padding: [6, 6], animate: false });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 20
+    }).addTo(dashMiniMap);
+
+    dashMiniAreaRect = L.rectangle(areaBounds, {
+      color: '#FA7D09',
+      weight: 1.5,
+      dashArray: '5 3',
+      fillColor: '#FA7D09',
+      fillOpacity: 0.04,
+      interactive: false
+    }).addTo(dashMiniMap);
+
+    dashMiniBlocksLayer = L.layerGroup().addTo(dashMiniMap);
+    dashMiniHeatLayer = L.layerGroup().addTo(dashMiniMap);
+    dashMiniFacilitiesLayer = L.layerGroup();
+    dashMiniIssuesLayer = L.layerGroup();
+
+    await refreshDashboardMiniMapData();
+
+    setTimeout(() => {
+      if (dashMiniMap) {
+        dashMiniMap.invalidateSize();
+        dashMiniMap.fitBounds(areaBounds, { padding: [6, 6], animate: false });
+      }
+    }, 150);
+  } catch (err) {
+    console.warn('Could not initialize dashboard mini-map:', err);
+  } finally {
+    _dashMiniMapLoading = false;
+  }
+}
+
+async function refreshDashboardMiniMapData() {
+  if (!dashMiniMap) return;
+  try {
+    const res = await fetch('/api/map/all', { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // 1. Render colored block boundaries only (no letter labels, no text pills)
+    if (dashMiniBlocksLayer) {
+      dashMiniBlocksLayer.clearLayers();
+      (data.blocks || []).forEach(b => {
+        if (!b.coordinates || !b.coordinates.length) return;
+        L.polygon(b.coordinates, {
+          color: b.color || '#2563eb',
+          weight: 1.5,
+          opacity: 0.9,
+          fillColor: b.color || '#2563eb',
+          fillOpacity: 0.32,
+          interactive: false
+        }).addTo(dashMiniBlocksLayer);
+      });
+    }
+
+    // 2. Render thermal issue heatmap (pins and labels omitted per user request)
+    await ensureLeafletHeat();
+    if (dashMiniHeatLayer) {
+      dashMiniHeatLayer.clearLayers();
+      const issueList = (data.issues && data.issues.length) ? data.issues : (window.issues || []);
+      const heatPoints = [];
+      issueList.forEach(i => {
+        const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
+        if (isNaN(lat) || isNaN(lng)) return;
+        let intensity = 0.9;
+        const st = (i.status || '').toLowerCase();
+        if (st === 'in progress') intensity = 0.65;
+        else if (st === 'resolved') intensity = 0.28;
+        const pr = (i.priority || '').toLowerCase();
+        if (pr === 'critical') intensity *= 1.4;
+        else if (pr === 'high') intensity *= 1.2;
+        heatPoints.push([lat, lng, intensity]);
+      });
+
+      if (typeof L.heatLayer === 'function' && heatPoints.length > 0) {
+        const miniHeat = L.heatLayer(heatPoints, {
+          radius: 28,
+          blur: 18,
+          maxZoom: 18,
+          max: 1.4,
+          minOpacity: 0.38,
+          gradient: {
+            0.2: '#38bdf8',
+            0.45: '#34d399',
+            0.65: '#facc15',
+            0.82: '#fb923c',
+            1.0: '#ef4444'
+          }
+        });
+        dashMiniHeatLayer.addLayer(miniHeat);
+      }
+    }
+
+    if (dashMiniFacilitiesLayer) dashMiniFacilitiesLayer.clearLayers();
+    if (dashMiniIssuesLayer) dashMiniIssuesLayer.clearLayers();
+  } catch (e) {
+    console.warn('Could not refresh dashboard mini map data:', e);
+  }
+}
+
+async function refreshDashboardMiniMap() {
+  if (!dashMiniMap) return;
+  await fetchMapSettings();
+  const b = mapSettings || { min_lat: 10.6195, max_lat: 10.6260, min_lng: 122.9580, max_lng: 122.9650 };
+  const areaBounds = L.latLngBounds([[b.min_lat, b.min_lng], [b.max_lat, b.max_lng]]);
+  if (dashMiniAreaRect) {
+    dashMiniAreaRect.setBounds(areaBounds);
+  }
+  dashMiniMap.fitBounds(areaBounds, { padding: [6, 6], animate: false });
+  await refreshDashboardMiniMapData();
+}
+
+window.initDashboardMiniMap = initDashboardMiniMap;
+window.refreshDashboardMiniMap = refreshDashboardMiniMap;
+window.refreshDashboardMiniMapData = refreshDashboardMiniMapData;
+
+/* Auto-initialize dashboard mini map when DOM is ready */
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.getElementById('panel-dashboard')?.classList.contains('active')) {
+      initDashboardMiniMap();
+    }
+  });
+} else {
+  if (document.getElementById('panel-dashboard')?.classList.contains('active')) {
+    initDashboardMiniMap();
+  }
+}
+
 /* ══════════════ LEAFLET MAP ══════════════ */
 let mapInst = null, layerHouseholds, layerFacilities, layerIssues, layerHeat;
 let mapIssuesData = [];
@@ -1647,20 +2225,82 @@ let analyticsMapInst = null;
 let addFacilityMode = false, pendingPin = null;
 let editFacilityId = null;
 let issueMarkerCount = 0;
+let mapInteractiveMode = 'view';
+let adminFacilityMarkers = [];
 
-function makeCircleIcon(color) {
+function makeCircleIcon(color, isDraggable = false) {
+  const pinClass = isDraggable ? 'facility-marker-pin' : '';
+  const pinTitle = isDraggable ? ' title="Drag to move facility"' : ' title="Facility"';
   return L.divIcon({
     className: '',
-    html: `<div style="width:13px;height:13px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.85);box-shadow:0 1px 5px rgba(0,0,0,0.5);"></div>`,
-    iconSize: [13, 13], iconAnchor: [6, 6], popupAnchor: [0, -9]
+    html: `<div class="sub-map-dot ${pinClass}" style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.95);box-shadow:0 1px 6px rgba(0,0,0,0.5);"${pinTitle}></div>`,
+    iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -10]
   });
 }
+
+function setMapInteractiveMode(mode) {
+  mapInteractiveMode = mode === 'edit' ? 'edit' : 'view';
+  const isView = mapInteractiveMode === 'view';
+
+  const btnView = document.getElementById('btn-map-mode-view');
+  const btnEdit = document.getElementById('btn-map-mode-edit');
+  if (btnView && btnEdit) {
+    if (isView) {
+      btnView.style.background = 'var(--accent)';
+      btnView.style.color = '#fff';
+      btnView.style.fontWeight = '700';
+      btnEdit.style.background = 'transparent';
+      btnEdit.style.color = 'var(--text)';
+      btnEdit.style.fontWeight = '600';
+    } else {
+      btnEdit.style.background = 'var(--accent)';
+      btnEdit.style.color = '#fff';
+      btnEdit.style.fontWeight = '700';
+      btnView.style.background = 'transparent';
+      btnView.style.color = 'var(--text)';
+      btnView.style.fontWeight = '600';
+    }
+  }
+
+  const editActions = document.getElementById('map-edit-actions');
+  if (editActions) editActions.style.display = isView ? 'none' : 'inline-flex';
+
+  const editBarBtns = document.getElementById('map-edit-bar-btns');
+  if (editBarBtns) editBarBtns.style.display = isView ? 'none' : 'inline-flex';
+
+  const mapContainer = document.getElementById('map-container');
+  if (mapContainer) {
+    if (isView) mapContainer.classList.add('map-view-only');
+    else mapContainer.classList.remove('map-view-only');
+  }
+
+  (adminFacilityMarkers || []).forEach(item => {
+    if (item && item.marker) {
+      if (isView) {
+        if (item.marker.dragging) item.marker.dragging.disable();
+        const el = item.marker.getElement();
+        if (el) {
+          const dot = el.querySelector('.sub-map-dot');
+          if (dot) dot.classList.remove('facility-marker-pin');
+        }
+      } else {
+        if (item.marker.dragging) item.marker.dragging.enable();
+        const el = item.marker.getElement();
+        if (el) {
+          const dot = el.querySelector('.sub-map-dot');
+          if (dot) dot.classList.add('facility-marker-pin');
+        }
+      }
+    }
+  });
+}
+window.setMapInteractiveMode = setMapInteractiveMode;
 
 function makeNumberedIcon(color, num) {
   return L.divIcon({
     className: '',
-    html: `<div style="width:26px;height:26px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
-    iconSize: [26, 26], iconAnchor: [13, 13], popupAnchor: [0, -14]
+    html: `<div class="sub-map-pin" style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.9);box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
+    iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
   });
 }
 
@@ -1699,7 +2339,7 @@ function applyMapArea(){
   }
   if(areaRect) areaRect.remove();
   if(mapInst) {
-    areaRect = L.rectangle(bounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.06}).addTo(mapInst);
+    areaRect = L.rectangle(bounds,{color:'#FA7D09',weight:2,dashArray:'6 4',fillColor:'#FA7D09',fillOpacity:0.06,interactive:false}).addTo(mapInst);
   }
 }
 
@@ -1969,6 +2609,7 @@ function enterCustomizeArea(){
   if(typeof cancelAddFacilityMode === 'function' && addFacilityMode) cancelAddFacilityMode();
   customizingArea = true;
   document.getElementById('btn-customize-area').style.display='none';
+  const bBlocks = document.getElementById('btn-edit-blocks'); if (bBlocks) bBlocks.style.display = 'none';
   document.getElementById('map-area-toolbar').style.display='flex';
   document.getElementById('map-customize-hint').style.display='inline-block';
   document.getElementById('btn-save-area').disabled = false;
@@ -2011,15 +2652,16 @@ function exitCustomizeArea(saved = false){
   destroyAreaHandles();
   customizingArea = false;
   document.getElementById('btn-customize-area').style.display='inline-flex';
+  const bBlocks = document.getElementById('btn-edit-blocks'); if (bBlocks) bBlocks.style.display = 'inline-flex';
   document.getElementById('map-area-toolbar').style.display='none';
   document.getElementById('map-customize-hint').style.display='none';
 
   if (areaRect) {
     areaRect.setStyle({
-      color: '#A07D53',
+      color: '#FA7D09',
       weight: 2,
       dashArray: '6 4',
-      fillColor: '#A07D53',
+      fillColor: '#FA7D09',
       fillOpacity: 0.06
     });
   }
@@ -2062,6 +2704,7 @@ function saveMapArea(){
     applyMapArea();
     showToast('✅ Map border updated.');
     if(typeof loadMapData === 'function') loadMapData();
+    if(typeof refreshDashboardMiniMap === 'function') refreshDashboardMiniMap();
   }).catch(()=>showToast('⚠ Could not save map border.'));
 }
 
@@ -2091,7 +2734,1175 @@ async function resetMapArea(){
     }
     showToast('✅ Map border reset to default.');
     if(typeof loadMapData === 'function') loadMapData();
+    if(typeof refreshDashboardMiniMap === 'function') refreshDashboardMiniMap();
   }).catch(()=>showToast('⚠ Could not reset map area.'));
+}
+
+/* ══════════════ SUBDIVISION BLOCK PARTITIONS & EDITING ══════════════ */
+let layerBlocks = null;
+let blocksData = [];
+let blockPolygons = {}; // key: block_number => L.polygon
+let blockLabelMarkers = {}; // key: block_number => L.marker
+let blockStartMarkers = {}; // key: block_number => L.marker
+let editingBlocks = false;
+let blockEditorMode = 'scale'; // 'scale' (Word document 4-corner resizing) or 'points' (vertex movement)
+let selectedBlockNumber = null;
+let blockVertexMarkers = [];
+let blockScaleHandles = {}; // nw, ne, se, sw, n, s, e, w, center
+let blockScaleRect = null;
+let scaleDragSnapshot = null;
+let activeFilterBlock = '';
+
+async function loadBlocksData() {
+  try {
+    const data = await apiGet('/api/map/blocks');
+    blocksData = Array.isArray(data) ? data : [];
+    if (mapInst && !layerBlocks) {
+      layerBlocks = L.layerGroup();
+      if (document.getElementById('layer-blocks')?.checked) {
+        layerBlocks.addTo(mapInst);
+      }
+    }
+    renderBlockPolygons();
+  } catch(e) {
+    console.error('Failed to load blocks:', e);
+  }
+}
+
+function getBlockStartInfo(b) {
+  const lbl = String(b.start_label || '').trim();
+  let code = 'N';
+  let label = 'North';
+  let arrow = '↑';
+
+  if (/east/i.test(lbl)) {
+    code = 'E';
+    label = 'East';
+    arrow = '→';
+  } else if (/west/i.test(lbl)) {
+    code = 'W';
+    label = 'West';
+    arrow = '←';
+  } else if (/north/i.test(lbl)) {
+    code = 'N';
+    label = 'North';
+    arrow = '↑';
+  } else if (/south/i.test(lbl)) {
+    code = 'S';
+    label = 'South';
+    arrow = '↓';
+  } else if (String(b.block_number) === '1') {
+    code = 'E';
+    label = 'East';
+    arrow = '→';
+  } else if (String(b.block_number) === '2') {
+    code = 'E';
+    label = 'East';
+    arrow = '→';
+  }
+
+  const matchLot = lbl.match(/Lot\s*(\d+)/i);
+  const startLot = matchLot ? `Lot ${matchLot[1]}` : 'Lot 1';
+
+  return { code, label, arrow, startLot };
+}
+
+/* ── MAP LAYER TOGGLE HANDLERS (ADMIN) ── */
+function toggleMapBlocks(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('layer-blocks')?.checked);
+  const toggle = document.getElementById('layer-blocks');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!mapInst) return;
+  if (!layerBlocks) {
+    layerBlocks = L.layerGroup();
+  }
+  if (isChecked) {
+    if (!mapInst.hasLayer(layerBlocks)) mapInst.addLayer(layerBlocks);
+    if (!blocksData || !blocksData.length) loadBlocksData();
+  } else {
+    if (mapInst.hasLayer(layerBlocks)) mapInst.removeLayer(layerBlocks);
+  }
+}
+
+function toggleMapFacilities(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('layer-facilities')?.checked);
+  const toggle = document.getElementById('layer-facilities');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!mapInst) return;
+  if (!layerFacilities) {
+    layerFacilities = L.layerGroup();
+  }
+  if (isChecked) {
+    if (!mapInst.hasLayer(layerFacilities)) mapInst.addLayer(layerFacilities);
+  } else {
+    if (mapInst.hasLayer(layerFacilities)) mapInst.removeLayer(layerFacilities);
+  }
+}
+
+function toggleMapIssues(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('layer-issues')?.checked);
+  const toggle = document.getElementById('layer-issues');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!mapInst) return;
+  if (!layerIssues) {
+    layerIssues = L.layerGroup();
+  }
+  if (isChecked) {
+    if (!mapInst.hasLayer(layerIssues)) mapInst.addLayer(layerIssues);
+  } else {
+    if (mapInst.hasLayer(layerIssues)) mapInst.removeLayer(layerIssues);
+  }
+}
+
+function toggleMapHeatmap(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('layer-heat')?.checked);
+  const toggle = document.getElementById('layer-heat');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  const analysisCard = document.getElementById('heatmap-analysis-card');
+  if (!mapInst) return;
+  if (!layerHeat) {
+    layerHeat = L.layerGroup();
+  }
+  if (isChecked) {
+    if (!mapInst.hasLayer(layerHeat)) mapInst.addLayer(layerHeat);
+    if (analysisCard) analysisCard.style.display = 'block';
+    renderIssueHeatmap();
+  } else {
+    if (mapInst.hasLayer(layerHeat)) mapInst.removeLayer(layerHeat);
+    if (analysisCard) analysisCard.style.display = 'none';
+  }
+}
+
+window.toggleMapBlocks = toggleMapBlocks;
+window.toggleMapFacilities = toggleMapFacilities;
+window.toggleMapIssues = toggleMapIssues;
+window.toggleMapHeatmap = toggleMapHeatmap;
+
+function renderBlockPolygons() {
+  if (!mapInst) return;
+  if (window.SubUI && SubUI.enableDynamicPinScaling) SubUI.enableDynamicPinScaling(mapInst);
+  if (!layerBlocks) {
+    layerBlocks = L.layerGroup();
+    if (document.getElementById('layer-blocks')?.checked && mapInst) {
+      layerBlocks.addTo(mapInst);
+    }
+  }
+  layerBlocks.clearLayers();
+  blockPolygons = {};
+  blockLabelMarkers = {};
+  blockStartMarkers = {};
+
+  blocksData.forEach(b => {
+    if (!b.coordinates || !b.coordinates.length) return;
+    const isFiltered = activeFilterBlock && String(activeFilterBlock) !== String(b.block_number);
+    const isBlock3 = String(b.block_number) === '3';
+    const isBlock2 = String(b.block_number) === '2';
+
+    const poly = L.polygon(b.coordinates, {
+      color: b.color || '#2563eb',
+      weight: isFiltered ? 1 : (isBlock3 ? 2.5 : 2.5),
+      dashArray: isBlock3 ? '6 4' : null,
+      opacity: isFiltered ? 0.2 : 0.9,
+      fillColor: b.color || '#2563eb',
+      fillOpacity: isFiltered ? 0.03 : (isBlock3 ? 0.08 : 0.18),
+      className: 'subdivision-block-poly'
+    });
+
+    if (isBlock3 && poly.bringToBack) {
+      poly.bringToBack();
+    }
+
+    const center = poly.getBounds().getCenter();
+    const labelPos = (b.label_lat && b.label_lng) ? [b.label_lat, b.label_lng] : center;
+    b.label_lat = labelPos.lat !== undefined ? +labelPos.lat.toFixed(7) : +labelPos[0].toFixed(7);
+    b.label_lng = labelPos.lng !== undefined ? +labelPos.lng.toFixed(7) : +labelPos[1].toFixed(7);
+
+    // Centered block label badge
+    const blockDisplayName = isBlock2 ? '🏛 Clubhouse & Pool' : b.name;
+    const lotCountText = isBlock2 ? 'Lot 15' : (b.total_lots ? `${b.total_lots} Lots` : '');
+    const labelTitle = editingBlocks
+      ? `${blockDisplayName}&#10;• Drag to move label&#10;• Click to edit block details`
+      : `${blockDisplayName}${lotCountText ? ' • ' + lotCountText : ''}&#10;• Click to view block details`;
+
+    const labelIcon = L.divIcon({
+      className: 'sub-block-div-icon',
+      html: `<div class="sub-block-pill${isBlock2 ? ' sub-block-pill-clubhouse' : ''}" style="background:${b.color || '#2563eb'};" title="${labelTitle}"><span class="sub-block-name">${blockDisplayName}</span>${lotCountText ? `<span class="sub-block-count">• ${lotCountText}</span>` : ''}</div>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+    const labelMarker = L.marker([b.label_lat, b.label_lng], {
+      icon: labelIcon,
+      draggable: editingBlocks,
+      zIndexOffset: 1200
+    });
+
+    labelMarker.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+      if (editingBlocks) {
+        if (blockEditorMode === 'scale') {
+          selectBlockForScale(b.block_number);
+        }
+        openEditBlockModal(b.block_number);
+      } else {
+        poly.openPopup(labelMarker.getLatLng());
+      }
+    });
+
+    if (editingBlocks) {
+      labelMarker.on('drag', function(ev) {
+        const pos = ev.target.getLatLng();
+        b.label_lat = +pos.lat.toFixed(7);
+        b.label_lng = +pos.lng.toFixed(7);
+      });
+      labelMarker.on('dragend', function() {
+        showToast(`Moved ${b.name} label.`);
+      });
+    }
+
+    // Starting point directional marker (N, E, or W arrow)
+    let startMarker = null;
+    if (b.start_lat && b.start_lng) {
+      const info = getBlockStartInfo(b);
+      const startTitle = editingBlocks
+        ? `${b.name} Starting Point: ${info.startLot} (${info.label})&#10;• Drag to move START point&#10;• Click to edit details`
+        : `${b.name} • Starting ${info.startLot} (${info.label})`;
+
+      const startIcon = L.divIcon({
+        className: 'sub-block-div-icon',
+        html: `<div class="sub-start-dir-marker" style="border-color:${b.color || '#ffffff'};" title="${startTitle}"><span class="start-dir-arrow">${info.arrow}</span><span class="start-dir-code">${info.code}</span></div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      });
+
+      startMarker = L.marker([b.start_lat, b.start_lng], {
+        icon: startIcon,
+        draggable: editingBlocks,
+        zIndexOffset: 1350
+      });
+
+      const startPopupHtml = `
+        <div class="sub-start-popup" style="min-width:145px;padding:3px 2px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(148,163,184,0.25);">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${b.color || '#0f172a'};color:#fff;font-size:10px;font-weight:800;">${info.code}</span>
+            <div>
+              <strong style="font-size:12px;color:var(--text, #0f172a);display:block;line-height:1.2;">${b.name}</strong>
+              <span style="font-size:10px;color:var(--text-dim, #64748b);">Starting Point</span>
+            </div>
+          </div>
+          <div style="font-size:11px;line-height:1.5;color:var(--text, #334155);">
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span style="color:var(--text-dim, #64748b);">Starting Lot:</span>
+              <strong style="color:var(--text, #0f172a);">${info.startLot}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;">
+              <span style="color:var(--text-dim, #64748b);">Starting Direction:</span>
+              <strong style="color:var(--text, #0f172a);">${info.label} (${info.code})</strong>
+            </div>
+            ${b.total_lots ? `
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;padding-top:2px;border-top:1px dashed rgba(148,163,184,0.2);">
+              <span style="color:var(--text-dim, #64748b);">Total Lots:</span>
+              <span style="font-weight:600;">${b.total_lots} lots</span>
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+      startMarker.bindPopup(startPopupHtml, { maxWidth: 220, offset: [0, -4] });
+
+      startMarker.on('click', function(e) {
+        if (editingBlocks) {
+          L.DomEvent.stopPropagation(e);
+          if (blockEditorMode === 'scale') {
+            selectBlockForScale(b.block_number);
+          }
+          openEditBlockModal(b.block_number);
+        }
+      });
+
+      if (editingBlocks) {
+        startMarker.on('drag', function(ev) {
+          const pos = ev.target.getLatLng();
+          b.start_lat = +pos.lat.toFixed(7);
+          b.start_lng = +pos.lng.toFixed(7);
+        });
+        startMarker.on('dragend', function() {
+          showToast(`Moved START point for ${b.name}.`);
+        });
+      }
+    }
+
+    // Popup content
+    const lotRangeHtml = b.lot_range 
+      ? `<div style="font-size:12px;font-weight:700;color:#1e293b;margin:4px 0 2px;">Lot Range: <strong>${b.lot_range}</strong> (${b.total_lots || b.households_count} total lots)</div>` 
+      : '';
+    const popupContent = `
+      <div style="min-width:190px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="width:12px;height:12px;border-radius:3px;background:${b.color};display:inline-block;"></span>
+          <strong style="font-size:13px;">${b.name}</strong>
+        </div>
+        ${lotRangeHtml}
+        <div style="font-size:11px;color:#64748b;margin-bottom:6px;">${b.description || ''}</div>
+        <div style="font-size:11px;margin-top:6px;padding:4px 0;border-top:1px solid #e2e8f0;">
+          <strong>SubSync Households:</strong> ${b.households_count} (${b.occupied_count} Occupied, ${b.vacant_count} Vacant)
+        </div>
+        <div style="font-size:11px;color:#475569;margin-top:2px;">
+          <strong>Numbering:</strong> Starts at ${b.start_label || 'Lot 1'}
+        </div>
+        <button onclick="openEditBlockModal('${b.block_number}')" style="margin-top:6px;width:100%;padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid #0284c7;background:#0284c7;color:#fff;cursor:pointer;font-weight:700;">✎ Edit Block & START Details</button>
+        <button onclick="filterMapByBlock('${b.block_number}')" style="margin-top:6px;width:100%;padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid ${b.color};background:${b.color};color:#fff;cursor:pointer;font-weight:700;">Filter to Lots in ${b.name}</button>
+      </div>
+    `;
+    poly.bindPopup(popupContent);
+
+    poly.on('click', function(e) {
+      if (addFacilityMode || document.getElementById('modal-addFacility')?.classList.contains('open')) {
+        if (poly.closePopup) poly.closePopup();
+        handleMapClickForFacility(e.latlng);
+        return;
+      }
+      if (!editingBlocks) return;
+      L.DomEvent.stopPropagation(e);
+      if (poly.closePopup) poly.closePopup();
+
+      if (blockEditorMode === 'scale') {
+        selectBlockForScale(b.block_number);
+        return;
+      }
+
+      const clicked = e.latlng;
+      const bestIdx = findClosestSegment(clicked, b.coordinates);
+      const newPt = [+clicked.lat.toFixed(7), +clicked.lng.toFixed(7)];
+      b.coordinates.splice(bestIdx + 1, 0, newPt);
+      poly.setLatLngs(b.coordinates);
+      createBlockVertexHandles();
+      showToast(`+ Added movement point to ${b.name} (${b.coordinates.length} total points)`);
+    });
+
+    poly.addTo(layerBlocks);
+    if (!isFiltered) {
+      labelMarker.addTo(layerBlocks);
+      if (startMarker) startMarker.addTo(layerBlocks);
+    }
+
+    blockPolygons[b.block_number] = poly;
+    blockLabelMarkers[b.block_number] = labelMarker;
+    if (startMarker) blockStartMarkers[b.block_number] = startMarker;
+  });
+
+  const blockToggle = document.getElementById('layer-blocks');
+  if (blockToggle && mapInst && layerBlocks) {
+    if (blockToggle.checked) {
+      if (!mapInst.hasLayer(layerBlocks)) mapInst.addLayer(layerBlocks);
+    } else {
+      if (mapInst.hasLayer(layerBlocks)) mapInst.removeLayer(layerBlocks);
+    }
+  }
+}
+
+function findClosestSegment(latlng, coords) {
+  let minDist = Infinity;
+  let bestIdx = 0;
+  const n = coords.length;
+  for (let i = 0; i < n; i++) {
+    const p1 = coords[i];
+    const p2 = coords[(i + 1) % n];
+    const dy = p2[0] - p1[0];
+    const dx = p2[1] - p1[1];
+    const lenSq = dy * dy + dx * dx;
+    let t = lenSq === 0 ? 0 : ((latlng.lat - p1[0]) * dy + (latlng.lng - p1[1]) * dx) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const projLat = p1[0] + t * dy;
+    const projLng = p1[1] + t * dx;
+    const dist = Math.hypot(latlng.lat - projLat, latlng.lng - projLng);
+    if (dist < minDist) {
+      minDist = dist;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+function filterMapByBlock(blockNum) {
+  activeFilterBlock = blockNum || '';
+  const sel = document.getElementById('filter-block-select');
+  if (sel) sel.value = activeFilterBlock;
+
+  // Auto-check and display block partitions when filtering to a specific block
+  if (activeFilterBlock) {
+    const blockToggle = document.getElementById('layer-blocks');
+    if (blockToggle && !blockToggle.checked) {
+      blockToggle.checked = true;
+      if (layerBlocks && mapInst && !mapInst.hasLayer(layerBlocks)) {
+        mapInst.addLayer(layerBlocks);
+      }
+    }
+  }
+
+  renderBlockPolygons();
+  if (typeof renderFilteredHouseholds === 'function') {
+    renderFilteredHouseholds();
+  }
+
+  if (editingBlocks) {
+    if (activeFilterBlock) {
+      selectedBlockNumber = activeFilterBlock;
+    }
+    if (blockEditorMode === 'scale') {
+      createBlockTransformHandles();
+    } else {
+      createBlockVertexHandles();
+    }
+  }
+
+  if (activeFilterBlock && blockPolygons[activeFilterBlock]) {
+    const b = blockPolygons[activeFilterBlock].getBounds();
+    mapInst.fitBounds(b, { padding: [40, 40], maxZoom: 19 });
+  } else if (areaRect) {
+    mapInst.fitBounds(areaRect.getBounds(), { padding: [20, 20] });
+  }
+}
+
+function enterEditBlocksMode() {
+  if (typeof cancelCustomizeArea === 'function' && customizingArea) cancelCustomizeArea();
+  if (typeof cancelAddFacilityMode === 'function' && addFacilityMode) cancelAddFacilityMode();
+
+  editingBlocks = true;
+  document.getElementById('btn-edit-blocks').style.display = 'none';
+  document.getElementById('btn-customize-area').style.display = 'none';
+  document.getElementById('map-blocks-toolbar').style.display = 'flex';
+
+  if (mapInst) {
+    mapInst.setMaxBounds(null);
+    mapInst.getContainer().classList.add('editing-blocks-active');
+  }
+
+  const blockToggle = document.getElementById('layer-blocks');
+  if (blockToggle && !blockToggle.checked) {
+    blockToggle.checked = true;
+    if (layerBlocks && mapInst && !mapInst.hasLayer(layerBlocks)) mapInst.addLayer(layerBlocks);
+  }
+
+  renderBlockPolygons();
+  setBlockEditorMode('points');
+  showToast('Edit Blocks: Drag points to reshape, click (+) to add points. Drag labels or START pins to move them.');
+}
+
+function createBlockVertexHandles() {
+  destroyBlockVertexHandles();
+
+  const targets = activeFilterBlock
+    ? blocksData.filter(b => String(b.block_number) === String(activeFilterBlock))
+    : blocksData;
+
+  targets.forEach(b => {
+    if (!b.coordinates || b.coordinates.length < 3) return;
+    const n = b.coordinates.length;
+
+    // 1. Draggable Vertex Movement Handles
+    b.coordinates.forEach((pt, vertexIdx) => {
+      const handleIcon = L.divIcon({
+        className: 'sub-block-div-icon',
+        html: `<div class="block-vertex-handle" title="${b.name} (Point #${vertexIdx + 1} of ${n})&#10;• Drag to move point&#10;• Right-click or double-click to delete point" style="background:${b.color};"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      const m = L.marker([pt[0], pt[1]], {
+        icon: handleIcon,
+        draggable: true,
+        zIndexOffset: 1600
+      }).addTo(mapInst);
+
+      m.on('drag', function(ev) {
+        const newPos = ev.target.getLatLng();
+        pt[0] = +newPos.lat.toFixed(7);
+        pt[1] = +newPos.lng.toFixed(7);
+        if (blockPolygons[b.block_number]) {
+          blockPolygons[b.block_number].setLatLngs(b.coordinates);
+        }
+      });
+
+      m.on('dragend', function() {
+        createBlockVertexHandles();
+      });
+
+      const deletePoint = function(ev) {
+        if (ev) {
+          L.DomEvent.stopPropagation(ev);
+          if (ev.originalEvent) ev.originalEvent.preventDefault();
+        }
+        if (b.coordinates.length <= 3) {
+          showToast('⚠ A block polygon must have at least 3 points.');
+          return;
+        }
+        b.coordinates.splice(vertexIdx, 1);
+        if (blockPolygons[b.block_number]) {
+          blockPolygons[b.block_number].setLatLngs(b.coordinates);
+        }
+        createBlockVertexHandles();
+        showToast(`Point removed from ${b.name} (${b.coordinates.length} points remaining).`);
+      };
+
+      m.on('contextmenu', deletePoint);
+      m.on('dblclick', deletePoint);
+
+      blockVertexMarkers.push(m);
+    });
+
+    // 2. Midpoint "+" Handles Between Consecutive Vertices
+    for (let i = 0; i < n; i++) {
+      const p1 = b.coordinates[i];
+      const p2 = b.coordinates[(i + 1) % n];
+      const midLat = (p1[0] + p2[0]) / 2;
+      const midLng = (p1[1] + p2[1]) / 2;
+      const nextIdx = (i + 1) % n;
+
+      const midIcon = L.divIcon({
+        className: 'sub-block-div-icon',
+        html: `<div class="block-midpoint-handle" title="Click to add a point between #${i + 1} and #${nextIdx + 1}" style="border-color:${b.color}; color:${b.color};"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+
+      const midMarker = L.marker([midLat, midLng], {
+        icon: midIcon,
+        zIndexOffset: 1400
+      }).addTo(mapInst);
+
+      midMarker.on('click', function(ev) {
+        L.DomEvent.stopPropagation(ev);
+        const insertIdx = i + 1;
+        b.coordinates.splice(insertIdx, 0, [+midLat.toFixed(7), +midLng.toFixed(7)]);
+        if (blockPolygons[b.block_number]) {
+          blockPolygons[b.block_number].setLatLngs(b.coordinates);
+        }
+        createBlockVertexHandles();
+        showToast(`+ Added movement point to ${b.name} (now ${b.coordinates.length} points)`);
+      });
+
+      blockVertexMarkers.push(midMarker);
+    }
+  });
+}
+
+function destroyBlockVertexHandles() {
+  blockVertexMarkers.forEach(m => {
+    try { m.remove(); } catch(e){}
+  });
+  blockVertexMarkers = [];
+}
+
+function setBlockEditorMode(mode) {
+  blockEditorMode = mode || 'points';
+  const btnScale = document.getElementById('btn-block-mode-scale');
+  const btnPoints = document.getElementById('btn-block-mode-points');
+  const hint = document.getElementById('block-edit-hint');
+  const btnSubdivide = document.getElementById('btn-subdivide-block');
+
+  if (blockEditorMode === 'scale') {
+    if (btnScale) {
+      btnScale.style.background = 'var(--accent)';
+      btnScale.style.color = '#fff';
+      btnScale.style.fontWeight = '700';
+    }
+    if (btnPoints) {
+      btnPoints.style.background = 'transparent';
+      btnPoints.style.color = 'var(--text)';
+      btnPoints.style.fontWeight = '600';
+    }
+    if (hint) {
+      hint.textContent = 'Drag any of the 4 corners to scale smaller/larger. Click any block to select it.';
+    }
+    if (btnSubdivide) btnSubdivide.style.display = 'none';
+    destroyBlockVertexHandles();
+    createBlockTransformHandles();
+  } else {
+    if (btnPoints) {
+      btnPoints.style.background = 'var(--accent)';
+      btnPoints.style.color = '#fff';
+      btnPoints.style.fontWeight = '700';
+    }
+    if (btnScale) {
+      btnScale.style.background = 'transparent';
+      btnScale.style.color = 'var(--text)';
+      btnScale.style.fontWeight = '600';
+    }
+    if (hint) {
+      hint.textContent = 'Drag movement points, click midpoint (+) handles to add points, right-click to delete.';
+    }
+    if (btnSubdivide) btnSubdivide.style.display = 'inline-flex';
+    destroyBlockTransformHandles();
+    createBlockVertexHandles();
+  }
+}
+
+function selectBlockForScale(blockNum) {
+  selectedBlockNumber = String(blockNum);
+  const target = blocksData.find(b => String(b.block_number) === String(blockNum));
+  createBlockTransformHandles();
+  if (target) {
+    showToast(`Selected ${target.name} (drag 4 corners to scale)`);
+  }
+}
+
+function createBlockTransformHandles() {
+  destroyBlockTransformHandles();
+  if (!mapInst || !editingBlocks || blockEditorMode !== 'scale') return;
+
+  if (!selectedBlockNumber) {
+    selectedBlockNumber = activeFilterBlock || (blocksData[0] ? String(blocksData[0].block_number) : null);
+  }
+
+  const b = blocksData.find(item => String(item.block_number) === String(selectedBlockNumber));
+  if (!b || !b.coordinates || b.coordinates.length < 3) return;
+
+  const color = b.color || '#2563eb';
+  const coords = b.coordinates;
+  let minLat = Infinity, maxLat = -Infinity;
+  let minLng = Infinity, maxLng = -Infinity;
+  for (let i = 0; i < coords.length; i++) {
+    if (coords[i][0] < minLat) minLat = coords[i][0];
+    if (coords[i][0] > maxLat) maxLat = coords[i][0];
+    if (coords[i][1] < minLng) minLng = coords[i][1];
+    if (coords[i][1] > maxLng) maxLng = coords[i][1];
+  }
+  const midLat = (minLat + maxLat) / 2;
+  const midLng = (minLng + maxLng) / 2;
+
+  // Bounding box outline rectangle
+  blockScaleRect = L.rectangle([[minLat, minLng], [maxLat, maxLng]], {
+    color: color,
+    weight: 1.5,
+    dashArray: '5 4',
+    fillColor: color,
+    fillOpacity: 0.04,
+    interactive: false
+  }).addTo(mapInst);
+
+  function makeHandle(lat, lng, html, iconSize, iconAnchor, handleType) {
+    const icon = L.divIcon({
+      className: 'sub-block-div-icon',
+      html: html,
+      iconSize: iconSize,
+      iconAnchor: iconAnchor
+    });
+    const marker = L.marker([lat, lng], {
+      icon: icon,
+      draggable: true,
+      zIndexOffset: handleType === 'center' ? 1800 : 2000
+    }).addTo(mapInst);
+
+    marker.on('dragstart', function() {
+      startScaleDrag(handleType, b);
+    });
+
+    marker.on('drag', function(ev) {
+      if (!scaleDragSnapshot) return;
+      handleScaleDrag(ev, handleType);
+    });
+
+    marker.on('dragend', function() {
+      if (scaleDragSnapshot) {
+        updateScaleHandlePositions(b);
+        scaleDragSnapshot = null;
+        showToast(`Resized ${b.name}`);
+      }
+    });
+
+    return marker;
+  }
+
+  // 4 Corner scaling handles (Word document style)
+  blockScaleHandles.nw = makeHandle(
+    maxLat, minLng,
+    `<div class="block-scale-handle block-scale-handle-corner" style="cursor:nwse-resize;border-color:${color};" title="Drag to scale ${b.name} (NW corner)"></div>`,
+    [14, 14], [7, 7], 'nw'
+  );
+
+  blockScaleHandles.ne = makeHandle(
+    maxLat, maxLng,
+    `<div class="block-scale-handle block-scale-handle-corner" style="cursor:nesw-resize;border-color:${color};" title="Drag to scale ${b.name} (NE corner)"></div>`,
+    [14, 14], [7, 7], 'ne'
+  );
+
+  blockScaleHandles.se = makeHandle(
+    minLat, maxLng,
+    `<div class="block-scale-handle block-scale-handle-corner" style="cursor:nwse-resize;border-color:${color};" title="Drag to scale ${b.name} (SE corner)"></div>`,
+    [14, 14], [7, 7], 'se'
+  );
+
+  blockScaleHandles.sw = makeHandle(
+    minLat, minLng,
+    `<div class="block-scale-handle block-scale-handle-corner" style="cursor:nesw-resize;border-color:${color};" title="Drag to scale ${b.name} (SW corner)"></div>`,
+    [14, 14], [7, 7], 'sw'
+  );
+
+  // 4 Edge stretch handles (N, S, E, W)
+  blockScaleHandles.n = makeHandle(
+    maxLat, midLng,
+    `<div class="block-scale-handle block-scale-handle-edge-ns" style="cursor:ns-resize;border-color:${color};" title="Drag to scale height (North edge)"></div>`,
+    [20, 9], [10, 4.5], 'n'
+  );
+
+  blockScaleHandles.s = makeHandle(
+    minLat, midLng,
+    `<div class="block-scale-handle block-scale-handle-edge-ns" style="cursor:ns-resize;border-color:${color};" title="Drag to scale height (South edge)"></div>`,
+    [20, 9], [10, 4.5], 's'
+  );
+
+  blockScaleHandles.e = makeHandle(
+    midLat, maxLng,
+    `<div class="block-scale-handle block-scale-handle-edge-ew" style="cursor:ew-resize;border-color:${color};" title="Drag to scale width (East edge)"></div>`,
+    [9, 20], [4.5, 10], 'e'
+  );
+
+  blockScaleHandles.w = makeHandle(
+    midLat, minLng,
+    `<div class="block-scale-handle block-scale-handle-edge-ew" style="cursor:ew-resize;border-color:${color};" title="Drag to scale width (West edge)"></div>`,
+    [9, 20], [4.5, 10], 'w'
+  );
+
+  // Center move/translation handle
+  blockScaleHandles.center = makeHandle(
+    midLat, midLng,
+    `<div class="block-scale-center" style="background:${color};" title="Drag to move entire ${b.name}"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px;"><polyline points="5 9 2 12 5 15"></polyline><polyline points="9 5 12 2 15 5"></polyline><polyline points="15 19 12 22 9 19"></polyline><polyline points="19 9 22 12 19 15"></polyline><line x1="2" y1="12" x2="22" y2="12"></line><line x1="12" y1="2" x2="12" y2="22"></line></svg>${b.name} (Move)</div>`,
+    [120, 22], [60, 11], 'center'
+  );
+}
+
+function startScaleDrag(handleType, b) {
+  const coords = b.coordinates;
+  let minLat = Infinity, maxLat = -Infinity;
+  let minLng = Infinity, maxLng = -Infinity;
+  for (let i = 0; i < coords.length; i++) {
+    if (coords[i][0] < minLat) minLat = coords[i][0];
+    if (coords[i][0] > maxLat) maxLat = coords[i][0];
+    if (coords[i][1] < minLng) minLng = coords[i][1];
+    if (coords[i][1] > maxLng) maxLng = coords[i][1];
+  }
+  const width = Math.max(maxLng - minLng, 0.00001);
+  const height = Math.max(maxLat - minLat, 0.00001);
+
+  const normalized = coords.map(pt => [
+    (pt[1] - minLng) / width,
+    (pt[0] - minLat) / height
+  ]);
+
+  let startNormalized = null;
+  if (b.start_lat && b.start_lng) {
+    startNormalized = [
+      (b.start_lng - minLng) / width,
+      (b.start_lat - minLat) / height
+    ];
+  }
+
+  const curLabelLat = (b.label_lat !== undefined && b.label_lat !== null) ? b.label_lat : ((minLat + maxLat) / 2);
+  const curLabelLng = (b.label_lng !== undefined && b.label_lng !== null) ? b.label_lng : ((minLng + maxLng) / 2);
+  const labelNormalized = [
+    (curLabelLng - minLng) / width,
+    (curLabelLat - minLat) / height
+  ];
+
+  scaleDragSnapshot = {
+    handleType,
+    block: b,
+    origMinLat: minLat,
+    origMaxLat: maxLat,
+    origMinLng: minLng,
+    origMaxLng: maxLng,
+    origWidth: width,
+    origHeight: height,
+    normalized,
+    startNormalized,
+    labelNormalized,
+    origCenter: [(minLat + maxLat) / 2, (minLng + maxLng) / 2]
+  };
+}
+
+function handleScaleDrag(ev, handleType) {
+  const snap = scaleDragSnapshot;
+  if (!snap) return;
+
+  const curPos = ev.target.getLatLng();
+  const curLat = curPos.lat;
+  const curLng = curPos.lng;
+
+  let newMinLat = snap.origMinLat;
+  let newMaxLat = snap.origMaxLat;
+  let newMinLng = snap.origMinLng;
+  let newMaxLng = snap.origMaxLng;
+
+  const minSpan = 0.00003; // ~3m minimum dimension
+
+  switch (handleType) {
+    case 'se':
+      newMinLat = Math.min(curLat, snap.origMaxLat - minSpan);
+      newMaxLng = Math.max(curLng, snap.origMinLng + minSpan);
+      break;
+    case 'nw':
+      newMaxLat = Math.max(curLat, snap.origMinLat + minSpan);
+      newMinLng = Math.min(curLng, snap.origMaxLng - minSpan);
+      break;
+    case 'ne':
+      newMaxLat = Math.max(curLat, snap.origMinLat + minSpan);
+      newMaxLng = Math.max(curLng, snap.origMinLng + minSpan);
+      break;
+    case 'sw':
+      newMinLat = Math.min(curLat, snap.origMaxLat - minSpan);
+      newMinLng = Math.min(curLng, snap.origMaxLng - minSpan);
+      break;
+    case 'n':
+      newMaxLat = Math.max(curLat, snap.origMinLat + minSpan);
+      break;
+    case 's':
+      newMinLat = Math.min(curLat, snap.origMaxLat - minSpan);
+      break;
+    case 'e':
+      newMaxLng = Math.max(curLng, snap.origMinLng + minSpan);
+      break;
+    case 'w':
+      newMinLng = Math.min(curLng, snap.origMaxLng - minSpan);
+      break;
+    case 'center':
+      const dLat = curLat - snap.origCenter[0];
+      const dLng = curLng - snap.origCenter[1];
+      newMinLat = snap.origMinLat + dLat;
+      newMaxLat = snap.origMaxLat + dLat;
+      newMinLng = snap.origMinLng + dLng;
+      newMaxLng = snap.origMaxLng + dLng;
+      break;
+  }
+
+  const newWidth = Math.max(newMaxLng - newMinLng, minSpan);
+  const newHeight = Math.max(newMaxLat - newMinLat, minSpan);
+
+  for (let i = 0; i < snap.normalized.length; i++) {
+    const u = snap.normalized[i][0];
+    const v = snap.normalized[i][1];
+    snap.block.coordinates[i] = [
+      +(newMinLat + v * newHeight).toFixed(7),
+      +(newMinLng + u * newWidth).toFixed(7)
+    ];
+  }
+
+  if (snap.startNormalized) {
+    snap.block.start_lat = +(newMinLat + snap.startNormalized[1] * newHeight).toFixed(7);
+    snap.block.start_lng = +(newMinLng + snap.startNormalized[0] * newWidth).toFixed(7);
+    if (blockStartMarkers[snap.block.block_number]) {
+      blockStartMarkers[snap.block.block_number].setLatLng([snap.block.start_lat, snap.block.start_lng]);
+    }
+  }
+
+  if (snap.labelNormalized) {
+    snap.block.label_lat = +(newMinLat + snap.labelNormalized[1] * newHeight).toFixed(7);
+    snap.block.label_lng = +(newMinLng + snap.labelNormalized[0] * newWidth).toFixed(7);
+    if (blockLabelMarkers[snap.block.block_number]) {
+      blockLabelMarkers[snap.block.block_number].setLatLng([snap.block.label_lat, snap.block.label_lng]);
+    }
+  }
+
+  if (blockPolygons[snap.block.block_number]) {
+    blockPolygons[snap.block.block_number].setLatLngs(snap.block.coordinates);
+  }
+
+  if (blockScaleRect) {
+    blockScaleRect.setBounds([[newMinLat, newMinLng], [newMaxLat, newMaxLng]]);
+  }
+
+  const midLat = (newMinLat + newMaxLat) / 2;
+  const midLng = (newMinLng + newMaxLng) / 2;
+  if (handleType !== 'nw' && blockScaleHandles.nw) blockScaleHandles.nw.setLatLng([newMaxLat, newMinLng]);
+  if (handleType !== 'ne' && blockScaleHandles.ne) blockScaleHandles.ne.setLatLng([newMaxLat, newMaxLng]);
+  if (handleType !== 'se' && blockScaleHandles.se) blockScaleHandles.se.setLatLng([newMinLat, newMaxLng]);
+  if (handleType !== 'sw' && blockScaleHandles.sw) blockScaleHandles.sw.setLatLng([newMinLat, newMinLng]);
+  if (handleType !== 'n' && blockScaleHandles.n) blockScaleHandles.n.setLatLng([newMaxLat, midLng]);
+  if (handleType !== 's' && blockScaleHandles.s) blockScaleHandles.s.setLatLng([newMinLat, midLng]);
+  if (handleType !== 'e' && blockScaleHandles.e) blockScaleHandles.e.setLatLng([midLat, newMaxLng]);
+  if (handleType !== 'w' && blockScaleHandles.w) blockScaleHandles.w.setLatLng([midLat, newMinLng]);
+  if (handleType !== 'center' && blockScaleHandles.center) blockScaleHandles.center.setLatLng([midLat, midLng]);
+}
+
+function updateScaleHandlePositions(b) {
+  if (!b || !b.coordinates || !b.coordinates.length) return;
+  const coords = b.coordinates;
+  let minLat = Infinity, maxLat = -Infinity;
+  let minLng = Infinity, maxLng = -Infinity;
+  for (let i = 0; i < coords.length; i++) {
+    if (coords[i][0] < minLat) minLat = coords[i][0];
+    if (coords[i][0] > maxLat) maxLat = coords[i][0];
+    if (coords[i][1] < minLng) minLng = coords[i][1];
+    if (coords[i][1] > maxLng) maxLng = coords[i][1];
+  }
+  const midLat = (minLat + maxLat) / 2;
+  const midLng = (minLng + maxLng) / 2;
+
+  if (blockScaleHandles.nw) blockScaleHandles.nw.setLatLng([maxLat, minLng]);
+  if (blockScaleHandles.ne) blockScaleHandles.ne.setLatLng([maxLat, maxLng]);
+  if (blockScaleHandles.se) blockScaleHandles.se.setLatLng([minLat, maxLng]);
+  if (blockScaleHandles.sw) blockScaleHandles.sw.setLatLng([minLat, minLng]);
+  if (blockScaleHandles.n) blockScaleHandles.n.setLatLng([maxLat, midLng]);
+  if (blockScaleHandles.s) blockScaleHandles.s.setLatLng([minLat, midLng]);
+  if (blockScaleHandles.e) blockScaleHandles.e.setLatLng([midLat, maxLng]);
+  if (blockScaleHandles.w) blockScaleHandles.w.setLatLng([midLat, minLng]);
+  if (blockScaleHandles.center) blockScaleHandles.center.setLatLng([midLat, midLng]);
+
+  if (blockScaleRect) {
+    blockScaleRect.setBounds([[minLat, minLng], [maxLat, maxLng]]);
+  }
+}
+
+function destroyBlockTransformHandles() {
+  Object.values(blockScaleHandles).forEach(m => {
+    try { if (m) m.remove(); } catch(e){}
+  });
+  blockScaleHandles = {};
+  if (blockScaleRect) {
+    try { blockScaleRect.remove(); } catch(e){}
+    blockScaleRect = null;
+  }
+}
+
+function subdivideBlockPoints() {
+  if (!editingBlocks) return;
+  const targets = activeFilterBlock
+    ? blocksData.filter(b => String(b.block_number) === String(activeFilterBlock))
+    : blocksData;
+
+  if (!targets.length) return;
+
+  targets.forEach(b => {
+    if (!b.coordinates || b.coordinates.length < 3) return;
+    const n = b.coordinates.length;
+    const newCoords = [];
+    for (let i = 0; i < n; i++) {
+      const p1 = b.coordinates[i];
+      const p2 = b.coordinates[(i + 1) % n];
+      newCoords.push(p1);
+      newCoords.push([
+        +((p1[0] + p2[0]) / 2).toFixed(7),
+        +((p1[1] + p2[1]) / 2).toFixed(7)
+      ]);
+    }
+    b.coordinates = newCoords;
+    if (blockPolygons[b.block_number]) {
+      blockPolygons[b.block_number].setLatLngs(b.coordinates);
+    }
+  });
+
+  createBlockVertexHandles();
+  const label = activeFilterBlock ? `Block ${activeFilterBlock}` : 'All blocks';
+  showToast(`✅ Subdivided ${label}: added more points of movement!`);
+}
+
+function scaleSelectedBlock(factor) {
+  if (!editingBlocks) return;
+  const targetNum = selectedBlockNumber || activeFilterBlock || (blocksData[0] ? blocksData[0].block_number : null);
+  if (!targetNum) {
+    showToast('Select a block first to scale it.');
+    return;
+  }
+  const b = blocksData.find(item => String(item.block_number) === String(targetNum));
+  if (!b || !b.coordinates || !b.coordinates.length) return;
+
+  applyScaleToBlock(b, factor);
+  if (blockEditorMode === 'scale') {
+    createBlockTransformHandles();
+  } else {
+    createBlockVertexHandles();
+  }
+  showToast(`${factor < 1 ? 'Shrank' : 'Enlarged'} ${b.name} (${Math.round(factor * 100)}%)`);
+}
+
+function shrinkAllBlocks() {
+  if (!editingBlocks) return;
+  blocksData.forEach(b => {
+    applyScaleToBlock(b, 0.80);
+  });
+  if (blockEditorMode === 'scale') {
+    createBlockTransformHandles();
+  } else {
+    createBlockVertexHandles();
+  }
+  showToast('Shrank all blocks by 20% to leave room between streets.');
+}
+
+function applyScaleToBlock(b, factor) {
+  const coords = b.coordinates;
+  const n = coords.length;
+  let sumLat = 0, sumLng = 0;
+  for (let i = 0; i < n; i++) {
+    sumLat += coords[i][0];
+    sumLng += coords[i][1];
+  }
+  const cLat = sumLat / n;
+  const cLng = sumLng / n;
+
+  b.coordinates = coords.map(pt => [
+    +(cLat + factor * (pt[0] - cLat)).toFixed(7),
+    +(cLng + factor * (pt[1] - cLng)).toFixed(7)
+  ]);
+
+  if (b.start_lat && b.start_lng) {
+    b.start_lat = +(cLat + factor * (b.start_lat - cLat)).toFixed(7);
+    b.start_lng = +(cLng + factor * (b.start_lng - cLng)).toFixed(7);
+  }
+
+  if (b.label_lat && b.label_lng) {
+    b.label_lat = +(cLat + factor * (b.label_lat - cLat)).toFixed(7);
+    b.label_lng = +(cLng + factor * (b.label_lng - cLng)).toFixed(7);
+  }
+
+  if (blockPolygons[b.block_number]) {
+    blockPolygons[b.block_number].setLatLngs(b.coordinates);
+  }
+  if (blockStartMarkers[b.block_number] && b.start_lat && b.start_lng) {
+    blockStartMarkers[b.block_number].setLatLng([b.start_lat, b.start_lng]);
+  }
+  if (blockLabelMarkers[b.block_number] && b.label_lat && b.label_lng) {
+    blockLabelMarkers[b.block_number].setLatLng([b.label_lat, b.label_lng]);
+  }
+}
+
+function exitEditBlocksMode() {
+  destroyBlockVertexHandles();
+  destroyBlockTransformHandles();
+  editingBlocks = false;
+  selectedBlockNumber = null;
+  if (mapInst) {
+    mapInst.getContainer().classList.remove('editing-blocks-active');
+  }
+  document.getElementById('btn-edit-blocks').style.display = 'inline-flex';
+  document.getElementById('btn-customize-area').style.display = 'inline-flex';
+  document.getElementById('map-blocks-toolbar').style.display = 'none';
+  renderBlockPolygons();
+  applyMapArea();
+}
+
+function cancelEditBlocks() {
+  exitEditBlocksMode();
+  loadBlocksData();
+  showToast('Block editing cancelled.');
+}
+
+async function saveBlockPolygons() {
+  const payload = {
+    blocks: blocksData.map(b => ({
+      id: b.id,
+      coordinates: b.coordinates,
+      start_lat: b.start_lat,
+      start_lng: b.start_lng,
+      label_lat: b.label_lat,
+      label_lng: b.label_lng,
+      name: b.name,
+      lot_range: b.lot_range,
+      total_lots: b.total_lots,
+      start_label: b.start_label,
+      color: b.color,
+      description: b.description
+    }))
+  };
+
+  try {
+    const res = await apiPut('/api/map/blocks', payload);
+    if (res && res.success) {
+      exitEditBlocksMode();
+      renderBlockPolygons();
+      showToast('✅ All block partitions saved successfully!');
+    } else {
+      showToast('⚠ Failed to save blocks.');
+    }
+  } catch(e) {
+    showToast('⚠ Error saving blocks.');
+  }
+}
+
+function openSelectedBlockInfoModal() {
+  const targetNum = selectedBlockNumber || activeFilterBlock || (blocksData[0] ? blocksData[0].block_number : null);
+  if (!targetNum) {
+    showToast('Select a block first to edit its info.');
+    return;
+  }
+  openEditBlockModal(targetNum);
+}
+
+function openEditBlockModal(blockNum) {
+  const b = blocksData.find(item => String(item.block_number) === String(blockNum));
+  if (!b) return;
+
+  selectedBlockNumber = String(blockNum);
+  if (editingBlocks && blockEditorMode === 'scale') {
+    createBlockTransformHandles();
+  }
+
+  document.getElementById('editBlockId').value = b.id;
+  document.getElementById('editBlockNum').value = b.block_number;
+  document.getElementById('editBlockModalTitle').textContent = `Edit ${b.name} Details`;
+  document.getElementById('editBlockName').value = b.name || '';
+  document.getElementById('editBlockColor').value = b.color || '#2563eb';
+  document.getElementById('editBlockLotRange').value = b.lot_range || '';
+  document.getElementById('editBlockTotalLots').value = b.total_lots || 0;
+  document.getElementById('editBlockStartLabel').value = b.start_label || 'Lot 1';
+  document.getElementById('editBlockDescription').value = b.description || '';
+  document.getElementById('editBlockMsg').textContent = '';
+
+  const modal = document.getElementById('modal-editBlock');
+  if (modal) modal.classList.add('open');
+}
+
+async function saveBlockDetails() {
+  const blockId = document.getElementById('editBlockId').value;
+  const blockNum = document.getElementById('editBlockNum').value;
+  const b = blocksData.find(item => String(item.id) === String(blockId) || String(item.block_number) === String(blockNum));
+  if (!b) return;
+
+  const newName = document.getElementById('editBlockName').value.trim() || b.name;
+  const newColor = document.getElementById('editBlockColor').value || b.color;
+  const newLotRange = document.getElementById('editBlockLotRange').value.trim();
+  const newTotalLots = parseInt(document.getElementById('editBlockTotalLots').value, 10) || 0;
+  const newStartLabel = document.getElementById('editBlockStartLabel').value.trim() || 'Lot 1';
+  const newDesc = document.getElementById('editBlockDescription').value.trim();
+
+  b.name = newName;
+  b.color = newColor;
+  b.lot_range = newLotRange;
+  b.total_lots = newTotalLots;
+  b.start_label = newStartLabel;
+  b.description = newDesc;
+
+  renderBlockPolygons();
+  if (editingBlocks) {
+    if (blockEditorMode === 'scale') {
+      createBlockTransformHandles();
+    } else {
+      createBlockVertexHandles();
+    }
+  }
+
+  try {
+    const payload = {
+      name: b.name,
+      color: b.color,
+      lot_range: b.lot_range,
+      total_lots: b.total_lots,
+      start_label: b.start_label,
+      description: b.description,
+      start_lat: b.start_lat,
+      start_lng: b.start_lng,
+      label_lat: b.label_lat,
+      label_lng: b.label_lng,
+      coordinates: b.coordinates
+    };
+    const res = await apiPut(`/api/map/block/${b.id}`, payload);
+    if (res && res.success) {
+      closeModal('editBlock');
+      showToast(`✅ Saved details for ${b.name}`);
+      if (typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData();
+    } else {
+      document.getElementById('editBlockMsg').textContent = 'Failed to save block details.';
+    }
+  } catch(e) {
+    document.getElementById('editBlockMsg').textContent = 'Error saving block details.';
+  }
 }
 
 /* ══════════════ GCASH SETTINGS ══════════════ */
@@ -2266,7 +4077,7 @@ function renderAdminExpenses(){
       <td>${escHtml(e.fund||'Operating')}</td>
       <td>${escHtml(e.title)}</td>
       <td>₱${Number(e.amount).toLocaleString(undefined,{minimumFractionDigits:2})}</td>
-      <td>${e.receipt_url?`<a href="${e.receipt_url}" target="_blank" rel="noopener">View</a>`:'—'}</td>
+      <td>${e.receipt_url?`<a href="${e.receipt_url + (e.receipt_url.indexOf('?') < 0 ? '?' : '&') + 'portal=admin'}" target="_blank" rel="noopener">View</a>`:'—'}</td>
       <td style="text-align:right;white-space:nowrap;">
         <button class="btn btn-sm" onclick="openExpenseModal(${e.id})">Edit</button>
         <button class="btn btn-sm btn-danger" onclick="deleteExpense(${e.id})">Delete</button>
@@ -2374,7 +4185,7 @@ function renderAdminExpenseRequests(){
       <td style="font-weight:600;color:#c87941;">${peso(r.amount)}</td>
       <td>${r.issue_id ? `<span class="pill pill-progress" title="${escHtml(r.issue_title||'')}">#${r.issue_id}</span>` : '—'}</td>
       <td>${statusBadge(r.status)}</td>
-      <td>${r.receipt_url ? `<a href="${r.receipt_url}" target="_blank" rel="noopener">View</a>` : '—'}</td>
+      <td>${r.receipt_url ? `<a href="${r.receipt_url + (r.receipt_url.indexOf('?') < 0 ? '?' : '&') + 'portal=admin'}" target="_blank" rel="noopener">View</a>` : '—'}</td>
       <td style="text-align:right;white-space:nowrap;">
         <button class="btn btn-sm" onclick="openReviewExpenseRequest(${r.id})">${r.status==='Pending' ? 'Review & Approve' : 'Details'}</button>
       </td>
@@ -2570,6 +4381,9 @@ function financeTab(name, el){
   if(el) el.classList.add('active');
   else document.querySelectorAll('#finTabs .fin-tab').forEach(t=>{ if(t.textContent.trim().toLowerCase().startsWith(name)) t.classList.add('active'); });
   document.querySelectorAll('#panel-gcash .fin-section').forEach(s=>s.classList.toggle('active', s.dataset.fin===name));
+  try {
+    sessionStorage.setItem('subsync_fin_tab_admin', name);
+  } catch(e) {}
   if(name==='overview') loadFinanceOverview();
   if(name==='requests') loadAdminExpenseRequests();
 }
@@ -2652,7 +4466,18 @@ async function deletePolicy(id){
 
 function initMap() {
   loadLeaflet().then(async ()=>{
-  if (mapInst) { setTimeout(() => mapInst.invalidateSize(), 100); return; }
+  if (mapInst) {
+    setTimeout(() => mapInst.invalidateSize(), 100);
+    if (!layerBlocks) {
+      layerBlocks = L.layerGroup();
+      if (document.getElementById('layer-blocks')?.checked) {
+        layerBlocks.addTo(mapInst);
+      }
+    }
+    loadBlocksData();
+    loadMapData();
+    return;
+  }
   await fetchMapSettings();
   const b = mapSettings;
   const areaBounds = L.latLngBounds([[b.min_lat,b.min_lng],[b.max_lat,b.max_lng]]);
@@ -2662,92 +4487,135 @@ function initMap() {
     maxBounds: typeof areaBounds.pad === 'function' ? areaBounds.pad(0.08) : areaBounds,
     maxBoundsViscosity: 0.8,
   }).fitBounds(areaBounds, {padding:[20,20]});
-  areaRect = L.rectangle(areaBounds,{color:'#A07D53',weight:2,dashArray:'6 4',fillColor:'#A07D53',fillOpacity:0.06}).addTo(mapInst);
+  if (window.SubUI && SubUI.enableDynamicPinScaling) SubUI.enableDynamicPinScaling(mapInst);
+  areaRect = L.rectangle(areaBounds,{color:'#FA7D09',weight:2,dashArray:'6 4',fillColor:'#FA7D09',fillOpacity:0.06,interactive:false}).addTo(mapInst);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 20,
   }).addTo(mapInst);
 
-  layerHouseholds = L.layerGroup().addTo(mapInst);
-  layerFacilities = L.layerGroup().addTo(mapInst);
-  layerIssues     = L.layerGroup().addTo(mapInst);
-  layerHeat       = L.layerGroup(); // off by default — toggled by the Heatmap checkbox
+  const blockInitChecked = Boolean(document.getElementById('layer-blocks')?.checked);
+  const facInitChecked = document.getElementById('layer-facilities') ? document.getElementById('layer-facilities').checked : true;
+  const issueInitChecked = document.getElementById('layer-issues') ? document.getElementById('layer-issues').checked : true;
+  const heatInitChecked = Boolean(document.getElementById('layer-heat')?.checked);
 
+  layerBlocks     = L.layerGroup();
+  if (blockInitChecked) layerBlocks.addTo(mapInst);
+
+  layerHouseholds = L.layerGroup(); // individual lot dots removed per simplified subdivision map
+
+  layerFacilities = L.layerGroup();
+  if (facInitChecked) layerFacilities.addTo(mapInst);
+
+  layerIssues     = L.layerGroup();
+  if (issueInitChecked) layerIssues.addTo(mapInst);
+
+  layerHeat       = L.layerGroup(); // off by default — toggled by the Heatmap checkbox
+  if (heatInitChecked) layerHeat.addTo(mapInst);
+
+  loadBlocksData();
   loadMapData();
+  setTimeout(() => { if (mapInst) mapInst.invalidateSize(); }, 200);
 
   mapInst.on('click', function(e) {
-    if (!addFacilityMode || customizingArea) return;
-    const { lat, lng } = e.latlng;
-    if (pendingPin) pendingPin.remove();
-    // Explicit divIcon: Leaflet's default marker image can fail to resolve (broken pin).
-    pendingPin = L.marker([lat, lng], { icon: L.divIcon({
-      className: '',
-      html: '<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#4CAF50;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
-      iconSize: [20, 20], iconAnchor: [10, 20]
-    }) }).addTo(mapInst);
-    document.getElementById('fac-lat').value = lat.toFixed(7);
-    document.getElementById('fac-lng').value = lng.toFixed(7);
-    openModal('addFacility');
+    if (customizingArea || editingBlocks) return;
+    if (addFacilityMode || document.getElementById('modal-addFacility')?.classList.contains('open')) {
+      handleMapClickForFacility(e.latlng);
+    }
   });
 
-  document.getElementById('layer-households').addEventListener('change', function() {
-    this.checked ? mapInst.addLayer(layerHouseholds) : mapInst.removeLayer(layerHouseholds);
-  });
-  document.getElementById('layer-facilities').addEventListener('change', function() {
-    this.checked ? mapInst.addLayer(layerFacilities) : mapInst.removeLayer(layerFacilities);
-  });
-  document.getElementById('layer-issues').addEventListener('change', function() {
-    this.checked ? mapInst.addLayer(layerIssues) : mapInst.removeLayer(layerIssues);
-  });
+  const blocksToggle = document.getElementById('layer-blocks');
+  if (blocksToggle) {
+    blocksToggle.onchange = function() { toggleMapBlocks(this.checked); };
+  }
+  const facToggle = document.getElementById('layer-facilities');
+  if (facToggle) {
+    facToggle.onchange = function() { toggleMapFacilities(this.checked); };
+  }
+  const issuesToggle = document.getElementById('layer-issues');
+  if (issuesToggle) {
+    issuesToggle.onchange = function() { toggleMapIssues(this.checked); };
+  }
   const heatToggle = document.getElementById('layer-heat');
-  if (heatToggle) heatToggle.addEventListener('change', function() {
-    if (this.checked) { if (!mapInst.hasLayer(layerHeat)) mapInst.addLayer(layerHeat); renderIssueHeatmap(); }
-    else { mapInst.removeLayer(layerHeat); }
-  });
+  if (heatToggle) {
+    heatToggle.onchange = function() { toggleMapHeatmap(this.checked); };
+  }
   const heatCat = document.getElementById('heat-category');
-  if (heatCat) heatCat.addEventListener('change', renderIssueHeatmap);
+  if (heatCat) heatCat.onchange = renderIssueHeatmap;
+  setMapInteractiveMode(mapInteractiveMode);
   });
 }
 
+let mapHouseholdsData = [];
+
 function loadMapData() {
   fetch('/api/map/households').then(r => r.json()).then(data => {
-    layerHouseholds.clearLayers();
-    data.forEach(h => {
-      const color = h.status === 'Vacant' ? '#f08080' : '#4287f5';
-      const marker = L.marker([parseFloat(h.latitude), parseFloat(h.longitude)], {
-        icon: makeCircleIcon(color),
-        draggable: true,
-        title: 'Drag to move ' + h.block_lot_number
-      })
-        .bindPopup(`<strong>${h.block_lot_number}</strong><br>Status: ${h.status}<br><small style="color:#888;">Drag to reposition</small>`)
-        .addTo(layerHouseholds);
-      marker.on('dragend', async function(ev) {
-        const { lat, lng } = ev.target.getLatLng();
-        const res = await apiPut('/api/map/household/' + h.id + '/location', { latitude: lat, longitude: lng });
-        if (res && res.success) {
-          showToast(h.block_lot_number + ' location updated.');
-        } else {
-          showToast('⚠ Failed to save location.');
-          ev.target.setLatLng([parseFloat(h.latitude), parseFloat(h.longitude)]); // revert
-        }
-      });
-    });
+    mapHouseholdsData = Array.isArray(data) ? data : [];
+    renderFilteredHouseholds();
   });
 
   fetch('/api/map/facilities').then(r => r.json()).then(data => {
     layerFacilities.clearLayers();
-    data.forEach(f => {
-      L.marker([parseFloat(f.latitude), parseFloat(f.longitude)], {icon: makeCircleIcon('#4CAF50')})
-        .bindPopup(
-          (f.image_url ? `<img src="${f.image_url}" alt="${f.name}" style="max-width:210px;width:100%;border-radius:6px;margin-bottom:6px;display:block;">` : '') +
-          `<strong>${f.name}</strong>${f.description ? '<br><small>' + f.description + '</small>' : ''}<br>` +
-          `<small style="color:#888;">${f.status}</small><br>` +
-          `<div style="margin-top:5px;display:flex;gap:4px;">` +
-          `<button onclick="editFacility(${f.id})" style="padding:2px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;cursor:pointer;">Edit</button>` +
-          `<button onclick="deleteFacilityById(${f.id})" style="padding:2px 7px;font-size:11px;border:1px solid #f88;color:#c00;border-radius:3px;cursor:pointer;">Delete</button>` +
-          `</div>`
-        ).addTo(layerFacilities);
+    adminFacilityMarkers = [];
+    (data || []).forEach(f => {
+      const lat = parseFloat(f.latitude);
+      const lng = parseFloat(f.longitude);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      const isEdit = mapInteractiveMode === 'edit';
+      const marker = L.marker([lat, lng], {
+        icon: makeCircleIcon('#4CAF50', isEdit),
+        draggable: isEdit,
+        title: isEdit ? `${f.name} (Drag to reposition)` : f.name
+      });
+      adminFacilityMarkers.push({ marker, f });
+
+      marker.bindPopup(
+        (f.image_url ? `<img src="${f.image_url}" alt="${f.name}" style="max-width:210px;width:100%;border-radius:6px;margin-bottom:6px;display:block;">` : '') +
+        `<strong>${f.name}</strong>${f.description ? '<br><small>' + f.description + '</small>' : ''}<br>` +
+        `<small style="color:#888;">${f.status} • Drag pin to reposition</small><br>` +
+        `<div style="margin-top:5px;display:flex;gap:4px;">` +
+        `<button onclick="editFacility(${f.id})" style="padding:2px 7px;font-size:11px;border:1px solid #ccc;border-radius:3px;cursor:pointer;">Edit</button>` +
+        `<button onclick="deleteFacilityById(${f.id})" style="padding:2px 7px;font-size:11px;border:1px solid #f88;color:#c00;border-radius:3px;cursor:pointer;">Delete</button>` +
+        `</div>`
+      );
+
+      marker.on('dragstart', function() {
+        marker._origLatLng = marker.getLatLng();
+        if (marker.closePopup) marker.closePopup();
+      });
+
+      marker.on('dragend', async function(e) {
+        const p = e.target.getLatLng();
+        const newLat = +p.lat.toFixed(7);
+        const newLng = +p.lng.toFixed(7);
+
+        try {
+          const res = await updateFacilityLocation(f.id, newLat, newLng);
+          if (res && res.success) {
+            f.latitude = newLat;
+            f.longitude = newLng;
+            marker._origLatLng = p;
+            showToast(`📍 Moved ${f.name} to new position.`);
+            if (typeof refreshDashboardMiniMapData === 'function') {
+              refreshDashboardMiniMapData();
+            }
+          } else {
+            showToast('⚠ ' + (res && res.message ? res.message : 'Could not reposition facility.'));
+            if (marker._origLatLng) {
+              marker.setLatLng(marker._origLatLng);
+            }
+          }
+        } catch (err) {
+          showToast('⚠ Error repositioning facility.');
+          if (marker._origLatLng) {
+            marker.setLatLng(marker._origLatLng);
+          }
+        }
+      });
+
+      marker.addTo(layerFacilities);
     });
   });
 
@@ -2757,8 +4625,9 @@ function loadMapData() {
     data.forEach((i, idx) => {
       const color = i.status === 'Resolved' ? '#888' : (i.status === 'In Progress' ? '#f5a623' : '#e05555');
       issueMarkerCount++;
-      L.marker([parseFloat(i.latitude), parseFloat(i.longitude)], {icon: makeNumberedIcon(color, idx + 1)})
-        .bindPopup(`<strong>Report #${idx + 1} - ${i.title}</strong><br>${i.category}<br><small>Status: ${i.status}</small>`)
+      const num = i.id != null ? i.id : (idx + 1);
+      L.marker([parseFloat(i.latitude), parseFloat(i.longitude)], {icon: makeNumberedIcon(color, num)})
+        .bindPopup(`<strong>Report #${num} - ${i.title}</strong><br>${i.category}<br><small>Status: ${i.status}</small>`)
         .addTo(layerIssues);
     });
 
@@ -2776,50 +4645,373 @@ function loadMapData() {
   });
 }
 
-/* Issue-density heatmap: groups the plotted issues into ~110 m grid cells and
-   draws a circle per cell — green (1) → amber (2) → red (3+) — optionally
-   filtered by issue category. Pure Leaflet, no extra plugins. */
-function renderIssueHeatmap() {
+function renderFilteredHouseholds() {
+  if (!mapInst || !layerHouseholds) return;
+  layerHouseholds.clearLayers();
+  // Individual household lot pins removed to keep the subdivision map clean and focused
+  // on block boundaries, lot counts, directional Lot 1 starting points, and landmarks.
+}
+
+let heatCanvasLayer = null;
+
+function filterHeatmapToCategory(category) {
+  const catSel = document.getElementById('heat-category');
+  if (catSel) {
+    catSel.value = category;
+    renderIssueHeatmap();
+  }
+}
+
+/* Subdivision Issue Heatmap:
+   1. Renders an authentic continuous thermal canvas heatmap (via Leaflet.heat) that
+      ramps up in heat (cool sky blue/green → amber → orange → scorching red)
+      when issues occur or cluster in that part of the subdivision.
+   2. Geographically clusters nearby issues (~80m / 0.00072 deg) into distinct subdivision
+      hotspots and categorizes which sort of issue is most frequent in that area.
+   3. Badges each hotspot with interactive pills and rich breakdown popups.
+   4. Synchronizes the top analysis card and category filters with ranked frequency metrics. */
+async function renderIssueHeatmap() {
   if (!mapInst || !layerHeat) return;
   layerHeat.clearLayers();
-  if (!mapInst.hasLayer(layerHeat)) return;
+  heatCanvasLayer = null;
+
+  const analysisCard = document.getElementById('heatmap-analysis-card');
+  if (!mapInst.hasLayer(layerHeat)) {
+    if (analysisCard) analysisCard.style.display = 'none';
+    return;
+  }
+  if (analysisCard) analysisCard.style.display = 'block';
+
+  // Ensure Leaflet.heat is loaded
+  await ensureLeafletHeat();
 
   const catEl = document.getElementById('heat-category');
-  const cat = catEl ? catEl.value : '';
-  const pts = (mapIssuesData || []).filter(i => !cat || i.category === cat);
-
-  const cells = {};
-  pts.forEach(i => {
+  const selectedCat = catEl ? catEl.value : '';
+  const allIssues = (mapIssuesData || []).filter(i => {
     const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
-    if (isNaN(lat) || isNaN(lng)) return;
-    const key = lat.toFixed(3) + '|' + lng.toFixed(3); // ~110 m grid
-    const c = cells[key] = cells[key] || { latSum: 0, lngSum: 0, n: 0, cats: {} };
-    c.latSum += lat; c.lngSum += lng; c.n++;
-    const cc = i.category || 'Other';
-    c.cats[cc] = (c.cats[cc] || 0) + 1;
+    return !isNaN(lat) && !isNaN(lng);
   });
 
-  const colorFor = n => n >= 3 ? '#c0392b' : n === 2 ? '#e08a2e' : '#4F7A57';
-  Object.values(cells).forEach(c => {
-    const breakdown = Object.entries(c.cats).map(([k, v]) => k + ': ' + v).join(' · ');
-    L.circle([c.latSum / c.n, c.lngSum / c.n], {
-      radius: 45 + c.n * 22,
-      color: colorFor(c.n),
-      weight: 1,
-      opacity: 0.7,
-      fillColor: colorFor(c.n),
-      fillOpacity: 0.32,
-    }).bindPopup(`<strong>${c.n} issue${c.n > 1 ? 's' : ''} nearby</strong><br><small>${breakdown}</small>`)
-      .addTo(layerHeat);
+  // Calculate overall category frequency across all mapped subdivision issues
+  const overallCategoryCounts = {};
+  allIssues.forEach(i => {
+    const c = i.category || 'Other';
+    overallCategoryCounts[c] = (overallCategoryCounts[c] || 0) + 1;
   });
+
+  const sortedOverallCats = Object.entries(overallCategoryCounts).sort((a, b) => b[1] - a[1]);
+  const totalMappedIssues = allIssues.length;
+  const topOverallCategory = sortedOverallCats.length ? sortedOverallCats[0][0] : 'None';
+  const topOverallCount = sortedOverallCats.length ? sortedOverallCats[0][1] : 0;
+  const topOverallPct = totalMappedIssues ? Math.round((topOverallCount / totalMappedIssues) * 100) : 0;
+
+  // Sync category dropdown with ranked categories
+  if (catEl) {
+    const prevVal = catEl.value;
+    catEl.innerHTML = `<option value="">All categories (${totalMappedIssues} total)</option>`;
+    sortedOverallCats.forEach(([catName, count], idx) => {
+      const opt = document.createElement('option');
+      opt.value = catName;
+      opt.textContent = `${idx === 0 ? '★ ' : ''}#${idx + 1} ${catName} (${count}${idx === 0 ? ' — Most Frequent' : ''})`;
+      catEl.appendChild(opt);
+    });
+    catEl.value = prevVal;
+  }
+
+  // Update category filter pills in the analysis card
+  const pillsContainer = document.getElementById('heatmap-category-pills');
+  if (pillsContainer) {
+    let pillsHtml = `
+      <span style="font-size:11px;font-weight:700;color:var(--text-dim);margin-right:4px;">Filter Heatmap:</span>
+      <button class="heatmap-pill-btn ${!selectedCat ? 'active' : ''}" onclick="filterHeatmapToCategory('')" title="Show all issue categories">
+        All Issues <span class="pill-count">${totalMappedIssues}</span>
+      </button>
+    `;
+    sortedOverallCats.forEach(([catName, count], idx) => {
+      const isSel = selectedCat === catName;
+      const rankBadge = idx === 0 ? '★ ' : `#${idx + 1} `;
+      pillsHtml += `
+        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterHeatmapToCategory('${catName.replace(/'/g, "\\'")}')" title="Filter to ${catName}">
+          ${rankBadge}${escHtml(catName)} <span class="pill-count">${count}</span>
+        </button>
+      `;
+    });
+    pillsContainer.innerHTML = pillsHtml;
+  }
+
+  // Filter issues if a specific category is chosen
+  const activeIssues = allIssues.filter(i => !selectedCat || i.category === selectedCat);
+
+  // 1. Build thermal heat points with intensity ramp-up
+  const heatPoints = [];
+  activeIssues.forEach(i => {
+    const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
+
+    // Status thermal weighting: Unresolved/Pending burns hot, In Progress is warm, Resolved cool
+    let intensity = 0.85;
+    const st = (i.status || '').toLowerCase();
+    if (st === 'in progress') intensity = 0.65;
+    else if (st === 'resolved') intensity = 0.28;
+
+    // Priority multiplier
+    const pr = (i.priority || '').toLowerCase();
+    if (pr === 'critical') intensity *= 1.4;
+    else if (pr === 'high') intensity *= 1.2;
+    else if (pr === 'low') intensity *= 0.8;
+
+    // Freshness boost: fresh reports (< 7 days) burn hotter
+    if (i.created_at) {
+      const ageDays = (Date.now() - new Date(i.created_at).getTime()) / (1000 * 60 * 60 * 24);
+      if (ageDays <= 3) intensity += 0.20;
+      else if (ageDays <= 7) intensity += 0.10;
+    }
+
+    heatPoints.push([lat, lng, Math.min(intensity, 1.8)]);
+  });
+
+  // Render authentic thermal canvas heatmap via Leaflet.heat
+  if (typeof L.heatLayer === 'function' && heatPoints.length > 0) {
+    heatCanvasLayer = L.heatLayer(heatPoints, {
+      radius: 34,
+      blur: 20,
+      maxZoom: 19,
+      max: 2.2,
+      minOpacity: 0.28,
+      gradient: {
+        0.15: '#38bdf8', // Cool Sky Blue (isolated / minor report)
+        0.35: '#34d399', // Emerald Green (mild warmth)
+        0.55: '#facc15', // Amber Yellow (warming cluster / 2 issues)
+        0.75: '#fb923c', // Vibrant Orange (escalating hotspot / 3 issues)
+        0.90: '#f87171', // Hot Coral (critical density / 4+ issues)
+        1.00: '#dc2626'  // Deep Crimson (intense focal heat)
+      }
+    });
+    layerHeat.addLayer(heatCanvasLayer);
+  }
+
+  // 2. Spatial Clustering & Hotspot Categorization
+  // Cluster nearby issues (~80m / 0.00072 deg) to discover subdivision problem zones
+  const CLUSTER_THRESH_DEG = 0.00072;
+  const clusters = [];
+
+  activeIssues.forEach(issue => {
+    const lat = parseFloat(issue.latitude), lng = parseFloat(issue.longitude);
+    let matchedCluster = null;
+
+    for (const cl of clusters) {
+      const dist = Math.hypot(lat - cl.centerLat, lng - cl.centerLng);
+      if (dist <= CLUSTER_THRESH_DEG) {
+        matchedCluster = cl;
+        break;
+      }
+    }
+
+    if (matchedCluster) {
+      matchedCluster.issues.push(issue);
+      matchedCluster.centerLat = matchedCluster.issues.reduce((s, it) => s + parseFloat(it.latitude), 0) / matchedCluster.issues.length;
+      matchedCluster.centerLng = matchedCluster.issues.reduce((s, it) => s + parseFloat(it.longitude), 0) / matchedCluster.issues.length;
+    } else {
+      clusters.push({
+        centerLat: lat,
+        centerLng: lng,
+        issues: [issue]
+      });
+    }
+  });
+
+  // Update summary line in analysis card
+  const summaryLine = document.getElementById('heatmap-summary-line');
+  if (summaryLine) {
+    if (activeIssues.length === 0) {
+      summaryLine.innerHTML = selectedCat 
+        ? `No active issues reported for category <strong>${escHtml(selectedCat)}</strong>.`
+        : 'No issues with coordinates recorded in the subdivision.';
+    } else {
+      const filterNotice = selectedCat ? `Filtered to <strong>${escHtml(selectedCat)}</strong> (${activeIssues.length} issues) · ` : '';
+      summaryLine.innerHTML = `
+        ${filterNotice}
+        🏆 <strong>Subdivision Most Frequent Issue:</strong> 
+        <span style="color:#ef4444;font-weight:800;">${escHtml(topOverallCategory)}</span> 
+        (${topOverallCount} of ${totalMappedIssues} reports · ${topOverallPct}%) across <strong>${clusters.length}</strong> active hotspot area${clusters.length > 1 ? 's' : ''}.
+      `;
+    }
+  }
+
+  // Render Hotspot Badges & Categorization popups
+  clusters.forEach(cl => {
+    const total = cl.issues.length;
+    const catCounts = {};
+    cl.issues.forEach(it => {
+      const c = it.category || 'Other';
+      catCounts[c] = (catCounts[c] || 0) + 1;
+    });
+
+    const sortedCats = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+    const topCat = sortedCats[0][0];
+    const topCount = sortedCats[0][1];
+    const topPct = Math.round((topCount / total) * 100);
+
+    const severity = total >= 4 ? 'critical' : (total === 3 ? 'high' : (total === 2 ? 'moderate' : 'low'));
+    const severityLabel = total >= 4 ? 'Critical Hotspot' : (total === 3 ? 'High Heat Area' : (total === 2 ? 'Moderate Activity' : 'Single Issue Area'));
+    const severityColor = total >= 4 ? '#dc2626' : (total === 3 ? '#ea580c' : (total === 2 ? '#d97706' : '#0284c7'));
+    const flameIcon = total >= 4 ? '🔥🔥' : (total >= 2 ? '🔥' : '📍');
+
+    const badgeHtml = `
+      <div class="sub-hotspot-pill heat-${severity}" title="${severityLabel}: ${escHtml(topCat)} is most frequent (${topCount}/${total})">
+        <span>${flameIcon}</span>
+        <span class="hotspot-count">${total}</span>
+        <span class="hotspot-cat">${escHtml(topCat)}</span>
+        <span class="hotspot-pct">${topPct}%</span>
+      </div>
+    `;
+
+    const icon = L.divIcon({
+      className: 'sub-hotspot-marker',
+      html: badgeHtml,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+
+    const breakdownRows = sortedCats.map(([cat, cnt]) => {
+      const pct = Math.round((cnt / total) * 100);
+      const isTop = cat === topCat;
+      return `
+        <div class="sub-hotspot-breakdown-row">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;">
+            <span style="font-weight:${isTop ? '700' : '500'};color:var(--text);">${isTop ? '★ ' : ''}${escHtml(cat)}</span>
+            <span style="font-weight:700;color:var(--text-dim);">${cnt} (${pct}%)</span>
+          </div>
+          <div class="sub-hotspot-bar-track">
+            <div class="sub-hotspot-bar-fill" style="width:${pct}%;background:${isTop ? severityColor : '#94a3b8'};"></div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const recentIssuesHtml = cl.issues.slice(0, 3).map(it => {
+      const stColor = it.status === 'Resolved' ? '#64748b' : (it.status === 'In Progress' ? '#d97706' : '#dc2626');
+      return `
+        <div style="display:flex;align-items:center;justify-content:space-between;font-size:10.5px;padding:3px 0;border-bottom:1px solid rgba(148,163,184,0.15);">
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;" title="${escHtml(it.title)}">#${it.id || ''} ${escHtml(it.title || 'Issue')}</span>
+          <span style="color:${stColor};font-weight:700;font-size:10px;">${escHtml(it.status || '')}</span>
+        </div>
+      `;
+    }).join('');
+
+    const popupHtml = `
+      <div class="sub-hotspot-popup">
+        <div class="sub-hotspot-popup-header">
+          <span style="color:${severityColor};font-weight:800;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">${flameIcon} ${severityLabel}</span>
+          <span style="font-size:11px;font-weight:700;background:var(--glass, rgba(0,0,0,0.06));padding:2px 7px;border-radius:10px;">${total} issue${total > 1 ? 's' : ''} nearby</span>
+        </div>
+        
+        <div class="sub-hotspot-dominant-box">
+          <div class="sub-hotspot-dominant-tag">★ Most Frequent Issue Category</div>
+          <div class="sub-hotspot-dominant-title">${escHtml(topCat)}</div>
+          <div class="sub-hotspot-dominant-stat">
+            <strong>${topCount} of ${total} reports</strong> in this area (${topPct}%)
+          </div>
+        </div>
+        
+        <div style="font-size:11px;font-weight:700;color:var(--text-mid);margin-bottom:6px;">Category Breakdown</div>
+        <div class="sub-hotspot-breakdown">
+          ${breakdownRows}
+        </div>
+
+        ${recentIssuesHtml ? `
+          <div style="font-size:10px;font-weight:700;color:var(--text-dim);margin:8px 0 4px;text-transform:uppercase;">Recent Reports in this Area</div>
+          <div style="margin-bottom:10px;">${recentIssuesHtml}</div>
+        ` : ''}
+
+        <button class="btn btn-sm btn-green" onclick="filterHeatmapToCategory('${topCat.replace(/'/g, "\\'")}')" style="width:100%;font-size:11px;padding:4px 8px;justify-content:center;font-weight:600;">
+          Focus Heatmap on "${escHtml(topCat)}"
+        </button>
+      </div>
+    `;
+
+    const marker = L.marker([cl.centerLat, cl.centerLng], { icon })
+      .bindPopup(popupHtml, { maxWidth: 320 });
+
+    layerHeat.addLayer(marker);
+  });
+}
+
+function handleMapClickForFacility(latlng) {
+  if (!latlng) return;
+  const rawLat = latlng.lat !== undefined ? latlng.lat : latlng[0];
+  const rawLng = latlng.lng !== undefined ? latlng.lng : latlng[1];
+  if (rawLat === undefined || rawLng === undefined) return;
+
+  const lat = +parseFloat(rawLat).toFixed(7);
+  const lng = +parseFloat(rawLng).toFixed(7);
+
+  const latInput = document.getElementById('fac-lat');
+  const lngInput = document.getElementById('fac-lng');
+  if (latInput) latInput.value = lat;
+  if (lngInput) lngInput.value = lng;
+
+  if (pendingPin) {
+    pendingPin.setLatLng([lat, lng]);
+  } else if (mapInst) {
+    pendingPin = L.marker([lat, lng], {
+      draggable: true,
+      zIndexOffset: 1000,
+      icon: L.divIcon({
+        className: '',
+        html: '<div class="facility-marker-pin" style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#4CAF50;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);" title="Drag to adjust position"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 20]
+      })
+    }).addTo(mapInst);
+
+    pendingPin.on('dragend', function(ev) {
+      const p = ev.target.getLatLng();
+      if (latInput) latInput.value = p.lat.toFixed(7);
+      if (lngInput) lngInput.value = p.lng.toFixed(7);
+    });
+  }
+
+  const modal = document.getElementById('modal-addFacility');
+  if (modal && !modal.classList.contains('open')) {
+    openModal('addFacility');
+  }
 }
 
 function enterAddFacilityMode() {
   if (!mapInst) { showToast('Map not loaded yet.'); return; }
   addFacilityMode = true;
-  document.getElementById('map-add-banner').style.display = 'flex';
+
+  // Make sure facilities layer is visible
+  const facToggle = document.getElementById('layer-facilities');
+  if (facToggle && !facToggle.checked) {
+    facToggle.checked = true;
+    if (layerFacilities && mapInst && !mapInst.hasLayer(layerFacilities)) {
+      mapInst.addLayer(layerFacilities);
+    }
+  }
+
+  // Pre-fill location to center of subdivision map if not already set
+  let lat = document.getElementById('fac-lat')?.value;
+  let lng = document.getElementById('fac-lng')?.value;
+  if (!lat || !lng) {
+    const center = (mapSettings && mapSettings.center_lat && mapSettings.center_lng)
+      ? [parseFloat(mapSettings.center_lat), parseFloat(mapSettings.center_lng)]
+      : mapInst.getCenter();
+    lat = +(center.lat !== undefined ? center.lat : center[0]).toFixed(7);
+    lng = +(center.lng !== undefined ? center.lng : center[1]).toFixed(7);
+  }
+
+  handleMapClickForFacility({ lat, lng });
+
+  const banner = document.getElementById('map-add-banner');
+  if (banner) banner.style.display = 'flex';
   mapInst.getContainer().style.cursor = 'crosshair';
+
+  openModal('addFacility');
 }
+
+window.enterAddFacilityMode = enterAddFacilityMode;
+window.handleMapClickForFacility = handleMapClickForFacility;
 
 function cancelAddFacilityMode() {
   addFacilityMode = false;
@@ -2827,6 +5019,18 @@ function cancelAddFacilityMode() {
   if (banner) banner.style.display = 'none';
   if (mapInst) mapInst.getContainer().style.cursor = '';
   if (pendingPin) { pendingPin.remove(); pendingPin = null; }
+  const nameEl = document.getElementById('fac-name');
+  if (nameEl) nameEl.value = '';
+  const descEl = document.getElementById('fac-desc');
+  if (descEl) descEl.value = '';
+  const latEl = document.getElementById('fac-lat');
+  if (latEl) latEl.value = '';
+  const lngEl = document.getElementById('fac-lng');
+  if (lngEl) lngEl.value = '';
+  const imgEl = document.getElementById('fac-image');
+  if (imgEl) imgEl.value = '';
+  const prev = document.getElementById('fac-image-preview');
+  if (prev) { prev.style.display = 'none'; prev.removeAttribute('src'); }
 }
 
 function previewImage(input, previewId){
@@ -2838,10 +5042,21 @@ function previewImage(input, previewId){
 
 function saveNewFacility() {
   const name = document.getElementById('fac-name').value.trim();
-  const lat  = document.getElementById('fac-lat').value;
-  const lng  = document.getElementById('fac-lng').value;
+  let lat  = document.getElementById('fac-lat').value;
+  let lng  = document.getElementById('fac-lng').value;
   if (!name) { showToast('Please enter a facility name.'); return; }
-  if (!lat || !lng) { showToast('Click the map to pin a location first.'); return; }
+  if (!lat || !lng) {
+    if (mapInst) {
+      const center = mapInst.getCenter();
+      lat = center.lat.toFixed(7);
+      lng = center.lng.toFixed(7);
+      document.getElementById('fac-lat').value = lat;
+      document.getElementById('fac-lng').value = lng;
+    } else {
+      showToast('Click the map to pin a location first.');
+      return;
+    }
+  }
 
   const fd = new FormData();
   fd.append('name', name);
@@ -2861,16 +5076,30 @@ function saveNewFacility() {
     if (d.success) {
       cancelAddFacilityMode();
       closeModal('addFacility');
-      document.getElementById('fac-name').value = '';
-      document.getElementById('fac-desc').value = '';
-      document.getElementById('fac-image').value = '';
-      previewImage(document.getElementById('fac-image'), 'fac-image-preview');
       loadMapData();
-      showToast('Facility pinned!');
+      if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData();
+      showToast('✅ Facility added successfully!');
     } else {
       showToast('⚠ ' + (d.message || 'Could not save facility.'));
     }
+  })
+  .catch(err => {
+    showToast('⚠ Network error saving facility.');
   });
+}
+
+async function updateFacilityLocation(id, lat, lng) {
+  const token = document.querySelector('meta[name="csrf-token"]')?.content || '';
+  const r = await fetch(`/api/map/facility/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': token
+    },
+    body: JSON.stringify({ latitude: lat, longitude: lng })
+  });
+  return r.json();
 }
 
 function editFacility(id) {
@@ -2881,6 +5110,10 @@ function editFacility(id) {
     document.getElementById('edit-fac-name').value   = f.name;
     document.getElementById('edit-fac-desc').value   = f.description || '';
     document.getElementById('edit-fac-status').value = f.status;
+    const latEl = document.getElementById('edit-fac-lat');
+    const lngEl = document.getElementById('edit-fac-lng');
+    if (latEl) latEl.value = f.latitude != null ? parseFloat(f.latitude).toFixed(7) : '';
+    if (lngEl) lngEl.value = f.longitude != null ? parseFloat(f.longitude).toFixed(7) : '';
     const prev = document.getElementById('edit-fac-preview');
     if (f.image_url) { prev.src = f.image_url; prev.style.display = 'block'; }
     else { prev.style.display = 'none'; prev.removeAttribute('src'); }
@@ -2896,6 +5129,12 @@ function saveEditFacility() {
   fd.append('name', document.getElementById('edit-fac-name').value.trim());
   fd.append('description', document.getElementById('edit-fac-desc').value.trim());
   fd.append('status', document.getElementById('edit-fac-status').value);
+  const latVal = document.getElementById('edit-fac-lat')?.value;
+  const lngVal = document.getElementById('edit-fac-lng')?.value;
+  if (latVal && lngVal) {
+    fd.append('latitude', latVal);
+    fd.append('longitude', lngVal);
+  }
   const file = document.getElementById('edit-fac-image').files[0];
   if (file) fd.append('image', file);
   if (document.getElementById('edit-fac-remove-image').checked) fd.append('remove_image', '1');
@@ -2906,7 +5145,7 @@ function saveEditFacility() {
     body: fd,
   })
   .then(r => r.json())
-  .then(d => { if (d.success) { closeModal('editFacility'); loadMapData(); showToast('Facility updated.'); } else showToast('⚠ ' + (d.message || 'Could not update facility.')); });
+  .then(d => { if (d.success) { closeModal('editFacility'); loadMapData(); if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData(); showToast('Facility updated.'); } else showToast('⚠ ' + (d.message || 'Could not update facility.')); });
 }
 
 async function deleteFacilityById(id) {
@@ -2916,7 +5155,7 @@ async function deleteFacilityById(id) {
     headers: {'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content},
   })
   .then(r => r.json())
-  .then(d => { if (d.success) { loadMapData(); showToast('Facility removed.'); } });
+  .then(d => { if (d.success) { loadMapData(); if(typeof refreshDashboardMiniMapData === 'function') refreshDashboardMiniMapData(); showToast('Facility removed.'); } });
 }
 </script>
 
@@ -3103,6 +5342,55 @@ async function deleteFacilityById(id) {
     <div class="modal-actions">
       <button class="modal-close-btn" onclick="closeModal('addMember')">Cancel</button>
       <button class="btn btn-sm" onclick="addMemberSubmit()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Block Details Modal -->
+<div class="modal-overlay" id="modal-editBlock" onclick="if(event.target===this)closeModal('editBlock')">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title" id="editBlockModalTitle">Edit Block Details</div>
+    <input type="hidden" id="editBlockId">
+    <input type="hidden" id="editBlockNum">
+    <div class="f-row">
+      <div class="f-field">
+        <span class="f-label">Block Name</span>
+        <input type="text" id="editBlockName" placeholder="e.g. Block 4">
+      </div>
+      <div class="f-field">
+        <span class="f-label">Color</span>
+        <input type="color" id="editBlockColor" style="height:38px;padding:2px 4px;cursor:pointer;">
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="f-field">
+        <span class="f-label">Lot Range</span>
+        <input type="text" id="editBlockLotRange" placeholder="e.g. Lots 1–40">
+      </div>
+      <div class="f-field">
+        <span class="f-label">Total Lots</span>
+        <input type="number" id="editBlockTotalLots" placeholder="40" min="0">
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="f-field">
+        <span class="f-label">START Label (Where Numbering Starts)</span>
+        <input type="text" id="editBlockStartLabel" placeholder="e.g. Lot 1 (East)">
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="f-field">
+        <span class="f-label">Description / Notes</span>
+        <textarea id="editBlockDescription" rows="2" placeholder="Optional notes for this block"></textarea>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;line-height:1.4;">
+      💡 Tip: In <strong>Edit Blocks</strong> mode, you can also drag the <strong>Block Label</strong> and <strong>START Pin</strong> directly on the map to position them anywhere.
+    </div>
+    <div style="font-size:12px;color:#f08080;margin-bottom:8px;" id="editBlockMsg"></div>
+    <div class="modal-actions" style="display:flex;gap:8px;justify-content:flex-end;">
+      <button class="modal-close-btn" onclick="closeModal('editBlock')">Cancel</button>
+      <button class="btn btn-sm btn-green" onclick="saveBlockDetails()"><x-icon name="save" size="13"/> Save Details</button>
     </div>
   </div>
 </div>

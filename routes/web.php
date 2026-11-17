@@ -30,6 +30,7 @@ use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StreamController;
+use App\Http\Controllers\WeatherController;
 use App\Models\Household;
 use App\Support\Actor;
 use Illuminate\Support\Facades\Auth;
@@ -150,6 +151,7 @@ Route::middleware('portal.role:admin,officer')->group(function () {
 // Server-Sent Events — instant push for announcements & issues (admin + officer + resident)
 Route::middleware('portal.role:admin,officer,resident')->group(function () {
     Route::get('/api/stream/updates', [StreamController::class, 'updates']);
+    Route::get('/api/weather', [WeatherController::class, 'current']);
 });
 
 // System tools (admin only) — database backups + activity trail
@@ -164,6 +166,7 @@ Route::middleware('portal.role:admin,officer,resident')->group(function () {
     Route::prefix('api/map')->group(function () {
         Route::get('/settings', [MapController::class, 'settings']);
         Route::get('/all', [MapController::class, 'all']);
+        Route::get('/blocks', [MapController::class, 'blocks']);
         Route::get('/households', [MapController::class, 'households']);
         Route::get('/facilities', [MapController::class, 'facilities']);
         Route::get('/issues', [MapController::class, 'issues']);
@@ -172,6 +175,9 @@ Route::middleware('portal.role:admin,officer,resident')->group(function () {
 Route::middleware('portal.role:admin')->group(function () {
     Route::prefix('api/map')->group(function () {
         Route::put('/settings', [MapController::class, 'updateSettings']);
+        Route::post('/overlay/upload', [MapController::class, 'uploadOverlay']);
+        Route::put('/block/{id}', [MapController::class, 'updateBlock']);
+        Route::put('/blocks', [MapController::class, 'bulkUpdateBlocks']);
         Route::post('/facility', [MapController::class, 'storeFacility']);
         Route::put('/facility/{id}', [MapController::class, 'updateFacility']);
         Route::delete('/facility/{id}', [MapController::class, 'deleteFacility']);

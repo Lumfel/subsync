@@ -113,7 +113,7 @@ class IssueController extends Controller
             'priority' => $i->priority,
             'latitude' => $i->latitude,
             'longitude' => $i->longitude,
-            'created_at' => $i->created_at?->format('M d, Y'),
+            'created_at' => $i->created_at?->format('M d, Y g:i A'),
             'resolved_at' => $i->resolved_at?->format('Y-m-d'),
             'resident' => $i->resident?->name ?? '—',
             'block_lot' => $i->resident?->household?->block_lot_number ?? '—',
@@ -158,7 +158,7 @@ class IssueController extends Controller
                 'description' => $i->description,
                 'status' => $i->status,
                 'priority' => $i->priority,
-                'created_at' => $i->created_at?->format('M d, Y'),
+                'created_at' => $i->created_at?->format('M d, Y g:i A'),
                 'resolved_at' => $i->resolved_at?->format('Y-m-d'),
                 'archived_at' => $i->archived_at?->format('Y-m-d'),
                 'assigned_officer' => $i->assignee?->name,
@@ -249,7 +249,7 @@ class IssueController extends Controller
             'description' => $issue->description,
             'status' => $issue->status,
             'priority' => $issue->priority,
-            'created_at' => $issue->created_at->format('M d, Y'),
+            'created_at' => $issue->created_at->format('M d, Y g:i A'),
             'response' => null,
             'media' => $issue->media->map(fn ($m) => [
                 'id' => $m->id,
@@ -577,7 +577,7 @@ class IssueController extends Controller
             'content' => 'required|string',
         ]);
 
-        IssueReport::findOrFail($id); // ensure it exists
+        $issue = IssueReport::findOrFail($id);
 
         $responseData = ['response_content' => $data['content'], 'issue_id' => $id];
 
@@ -591,9 +591,14 @@ class IssueController extends Controller
 
         $response = IssueResponse::create($responseData);
 
-        // Auto-update status to In Progress if still Pending
-        IssueReport::where('id', $id)->where('status', 'Pending')
-            ->update(['status' => 'In Progress']);
+        // Auto-update status to In Progress if still Pending, and touch the issue so
+        // Eloquent 'updated' fires and broadcasts the real-time event to residents & staff.
+        if ($issue->status === 'Pending') {
+            $issue->status = 'In Progress';
+            $issue->save();
+        } else {
+            $issue->touch();
+        }
 
         return response()->json(['success' => true, 'response' => $response]);
     }

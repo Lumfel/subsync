@@ -7,6 +7,7 @@ use App\Models\Assessment;
 use App\Models\Budget;
 use App\Models\Event;
 use App\Models\EventRsvp;
+use App\Models\ExpenseRequest;
 use App\Models\Facility;
 use App\Models\FinancialRecord;
 use App\Models\HoaExpense;
@@ -14,6 +15,7 @@ use App\Models\HoaPolicy;
 use App\Models\Household;
 use App\Models\HouseholdMember;
 use App\Models\IssueReport;
+use App\Models\MapSetting;
 use App\Models\Media;
 use App\Models\Message;
 use App\Models\Officer;
@@ -23,6 +25,7 @@ use App\Models\Recommendation;
 use App\Models\Report;
 use App\Models\ReportTemplate;
 use App\Models\Resident;
+use App\Models\SubdivisionBlock;
 use App\Observers\ActivityLogObserver;
 use App\Observers\DashboardCacheObserver;
 use App\Observers\SsePublishingObserver;
@@ -97,6 +100,9 @@ class AppServiceProvider extends ServiceProvider
             HoaPolicy::class,
             Facility::class,
             Media::class,
+            SubdivisionBlock::class,
+            ExpenseRequest::class,
+            MapSetting::class,
         ];
 
         foreach ($models as $model) {
@@ -117,6 +123,11 @@ class AppServiceProvider extends ServiceProvider
             Event::class,
             EventRsvp::class,
             OfficerFile::class,
+            SubdivisionBlock::class,
+            ExpenseRequest::class,
+            Facility::class,
+            Household::class,
+            MapSetting::class,
         ];
 
         foreach ($sseModels as $model) {

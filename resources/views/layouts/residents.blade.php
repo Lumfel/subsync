@@ -5,19 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>Resident Portal</title>
+<script>
+  (function(){
+    try {
+      var saved = localStorage.getItem('subsync.theme');
+      if (saved === 'dark' || saved === 'light') {
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch(e){}
+  })();
+</script>
 <script>window.APP_BASE = '{{ request()->getBaseUrl() }}';</script>
 <script src="{{ asset('js/portal-context.js') . '?v=' . filemtime(public_path('js/portal-context.js')) }}"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&display=swap"></noscript>
+<link rel="preload" as="image" href="{{ asset('images/admin_hero_bg_day.jpg') }}">
+<link rel="preload" as="image" href="{{ asset('images/admin_hero_bg_clean.jpg') }}">
 <link rel="stylesheet" href="{{ asset('css/residents.css') . '?v=' . filemtime(public_path('css/residents.css')) }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"></noscript>
 <link rel="stylesheet" href="{{ asset('css/ui-polish.css') . '?v=' . filemtime(public_path('css/ui-polish.css')) }}">
-<meta name="theme-color" content="#86653D">
+<meta name="theme-color" content="#FA7D09">
   <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
   <script src="{{ asset('js/pwa.js') . '?v=' . filemtime(public_path('js/pwa.js')) }}" defer></script>
   <script>window.__PORTAL = @json($role ?? ''); window.__PREFS = @json($prefs ?? []); window.__ACTOR = @json($role ?? '');</script>
@@ -27,7 +39,7 @@
 <body class="residents-body">
 
 <!-- Mobile Responsive Header -->
-<div class="mobile-header">
+<div class="mobile-header" style="display:none;">
   <div style="font-family:'DM Serif Display',serif; font-size:20px; color:#1C1A17; display:flex; align-items:center; gap:8px;">
     <span style="font-size:24px;"><x-icon name="home" size="24"/></span> SubSync
   </div>
@@ -38,12 +50,13 @@
 
 <!-- Left Sidebar Navigation -->
 <aside class="sidebar">
-  <div class="logo">
-    <div style="font-family:'DM Serif Display',serif; font-size:24px; font-weight:400; color:#1C1A17; display:flex; align-items:center; gap:8px;">
-      <span style="font-size:28px;"><x-icon name="home" size="28"/></span> SubSync
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <img src="{{ asset('emblem_1.svg') }}" alt="SubSync">
     </div>
+    <div class="brand-sub">Terra Nova Homeowners Association</div>
   </div>
-  <ul style="margin-top:20px;">
+  <ul>
     <li class="tab-btn active" onclick="switchTab('overview')" id="tab-overview"><x-icon name="home" size="15"/> Overview</li>
     <li class="tab-btn" onclick="switchTab('payments')" id="tab-payments"><x-icon name="credit-card" size="15"/> Payments</li>
     <li class="tab-btn" onclick="switchTab('issues')" id="tab-issues"><x-icon name="wrench" size="15"/> Issues</li>
@@ -56,75 +69,207 @@
   </ul>
 
   <!-- Sidebar tools: search + notifications -->
-  <div class="sidebar-tools">
+  <div class="sidebar-tools" style="display:none;">
     <button type="button" class="nc-btn" onclick="SubUI.openSearch()" title="Search (Ctrl+K)" aria-label="Search"><x-icon name="search" size="14"/></button>
-    @include('partials.notification-center')
   </div>
 
   <!-- Sidebar Profile Card -->
-  <div class="sidebar-profile" style="text-align:center;">
-    <div class="avatar-wrap" onclick="document.getElementById('profileInput').click()" style="margin: 0 auto 12px; width:64px;">
-        <img id="profilePreview" src="{{ $avatar ?: 'https://ui-avatars.com/api/?name='.urlencode($residentName).'&background=c87941&color=fff&size=120&font-size=0.4' }}" alt="Profile" style="width:64px; height:64px; border-radius:50%; border: 2px solid var(--glass-border); object-fit:cover;">
-      <input type="file" id="profileInput" accept="image/*" onchange="changeImage('profilePreview',this)" style="display:none;">
+  <div class="sidebar-footer">
+    <div class="sidebar-profile" onclick="toggleUserMenu()" title="{{ $residentName }} (Click for Account Settings)">
+      <div class="avatar-wrap" onclick="event.stopPropagation(); document.getElementById('profileInput').click()" style="width:38px;height:38px;margin:0;flex-shrink:0;">
+        <img id="profilePreview" src="{{ $avatar ?: 'https://ui-avatars.com/api/?name='.urlencode($residentName).'&background=c87941&color=fff&size=80&font-size=0.4' }}" alt="Profile" style="width:38px; height:38px; border-radius:50%; object-fit:cover;">
+        <input type="file" id="profileInput" accept="image/*" onchange="changeImage('profilePreview',this)" style="display:none;">
+      </div>
+      <div style="flex:1;min-width:0;margin-left:10px;text-align:left;">
+        <div style="font-weight:600; font-size:13px; color:var(--text); max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="householdName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $residentName }}</div>
+        <div style="font-size:11.5px; color:var(--text-dim); margin-top:2px;" id="locationText">Block/Lot: {{ $blockLot }}</div>
+      </div>
+      <span class="admin-chevron" style="font-size:10px;color:var(--text-dim);">▼</span>
     </div>
-    <div style="font-weight:600; font-size:14px; color:#2B2927; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" id="householdName" contenteditable="true" spellcheck="false" title="Click to edit name">{{ $residentName }}</div>
-    <div style="font-size:13px; color:var(--text-dim); margin-top:2px;">Block/Lot: <span id="locationText" style="font-weight:600;color:var(--text);">{{ $blockLot }}</span></div>
-    
-    <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'resident' }}"></form>
-    <a href="{{ url('settings') }}?portal={{ $role ?? 'resident' }}" class="btn btn-sm btn-full" style="margin-top:14px; display:block;"><x-icon name="gear" size="13"/> Settings</a>
-    <button onclick="confirmLogout()" class="btn btn-sm btn-full" style="margin-top:8px; background:rgba(240,128,128,0.1); border:1px solid rgba(240,128,128,0.25); color:#f08080;">⏻ Log Out</button>
   </div>
 </aside>
 
 <!-- Right Main Workspace -->
 <main class="main">
+  <!-- Topbar Header -->
+  <header class="topbar">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button class="menu-toggle" id="menuToggle" onclick="toggleMobileSidebar()"><x-icon name="menu" size="18"/></button>
+      <div>
+        <div class="topbar-title" id="topbarTitle">Resident Portal</div>
+        <div class="topbar-sub" id="topbarSubtitle">Terra Nova Homeowners Association</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <!-- Search shortcut -->
+      <div class="topbar-search-box" onclick="SubUI.openSearch()" title="Search (Ctrl+K)">
+        <span style="color:#8C857B;display:flex;align-items:center;"><x-icon name="search" size="14"/></span>
+        <span style="color:#7D766D;font-size:12.5px;">Search announcements, policies, dues…</span>
+      </div>
+
+      <!-- Theme Toggle (Light / Dark Mode) -->
+      <button class="topbar-btn keep-mobile" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle Light / Dark mode" aria-label="Toggle theme">
+        <span id="themeToggleIcon"><x-icon name="moon" size="15"/></span>
+      </button>
+
+      <!-- Notification Center / Alerts -->
+      <div class="topbar-notif-wrap">
+        @include('partials.notification-center')
+      </div>
+
+      <form id="logoutForm" action="{{ url('logout') }}" method="POST" style="display:none;">@csrf<input type="hidden" name="portal" value="{{ $role ?? 'resident' }}"></form>
+
+      <!-- User Profile Dropdown Menu -->
+      <div class="user-menu-wrap" style="position:relative;">
+        <button class="topbar-avatar keep-mobile" id="userMenuButton" aria-expanded="false" aria-controls="userMenuPopover" onclick="toggleUserMenu()" title="{{ $residentName }} (Account menu)">
+          {{ strtoupper(substr($residentName, 0, 2)) }}
+        </button>
+        <div class="user-menu-popover" id="userMenuPopover" role="menu" aria-label="Account menu">
+          <!-- Header: User info -->
+          <div class="user-menu-header">
+            <div class="user-menu-avatar">{{ strtoupper(substr($residentName, 0, 2)) }}</div>
+            <div class="user-menu-info">
+              <div class="user-menu-name">{{ $residentName }}</div>
+              <div class="user-menu-role">Resident · {{ $blockLot }}</div>
+              <div class="user-menu-status"><span class="user-status-dot"></span> Online</div>
+            </div>
+          </div>
+          <div class="user-menu-divider"></div>
+          <!-- Menu items -->
+          <div class="user-menu-items">
+            <a href="{{ url('settings') }}?portal={{ $role ?? 'resident' }}" class="user-menu-item active" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="gear" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Account Settings</div>
+                <div class="user-menu-desc">Profile, account, and preferences</div>
+              </div>
+            </a>
+            <a href="{{ url('settings') }}?portal={{ $role ?? 'resident' }}#notifications" class="user-menu-item" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="bell" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Notification Preferences</div>
+              </div>
+            </a>
+          </div>
+          <div class="user-menu-divider"></div>
+          <div class="user-menu-footer">
+            <button class="user-menu-item logout" onclick="confirmLogout()" role="menuitem">
+              <span class="user-menu-ic"><x-icon name="logout" size="16"/></span>
+              <div class="user-menu-text">
+                <div class="user-menu-title">Log Out</div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
   <!-- ═══════════ OVERVIEW ═══════════ -->
   <div class="tab-panel active" id="panel-overview">
+    <!-- 1. HERO BANNER -->
+    <div class="dash-hero-card">
+      <div class="dash-hero-content">
+        <div class="dash-hero-indicator"></div>
+        <div class="dash-hero-body">
+          <h1 class="dash-hero-title">
+            <span id="greetingText">Welcome back, {{ explode(' ', $residentName)[0] }} 👋</span>
+          </h1>
+          <p class="dash-hero-subtitle">Here's what's happening in Terra Nova today.</p>
+          <div class="dash-hero-pills">
+            <span class="dash-pill"><x-icon name="calendar" size="14"/> {{ date('M d, Y (D)') }}</span>
+            <span class="dash-pill" id="heroWeatherPill" title="Live Subdivision Weather"><x-icon name="sun" size="14"/><span id="heroWeatherText">29°C Partly Cloudy</span></span>
+            <span class="dash-pill"><x-icon name="home" size="14"/> Block/Lot: {{ $blockLot }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      (function(){
+        const hrs = new Date().getHours();
+        let greet = "Welcome back";
+        if (hrs < 12) greet = "Good morning";
+        else if (hrs < 18) greet = "Good afternoon";
+        else greet = "Good evening";
+        document.addEventListener("DOMContentLoaded", () => {
+          const gEl = document.getElementById("greetingText");
+          if(gEl) gEl.innerHTML = `${greet}, {{ explode(' ', $residentName)[0] }} 👋`;
+        });
+      })();
+    </script>
+
+    <!-- 2. 4 CONCISE HIGHLIGHT CARDS ("Except a bit less") -->
+    <div class="dash-kpi-grid">
+      <!-- Dues / Balance -->
+      <div class="dash-kpi-card" onclick="switchTab('payments')" title="View dues & payments">
+        <div class="dash-kpi-icon orange"><x-icon name="credit-card" size="18"/></div>
+        <div class="dash-kpi-label">Outstanding Balance</div>
+        <div class="dash-kpi-val" id="residentBalance">₱{{ number_format((float)($balance ?? 0), 2) }}</div>
+        <div class="dash-kpi-sub green" style="display:flex;align-items:center;justify-content:space-between;width:100%;margin-top:6px;">
+          <span>Settle via GCash</span>
+          <button class="btn btn-sm btn-orange" style="padding:2px 8px;font-size:11px;" onclick="event.stopPropagation();quickPay();">Pay</button>
+        </div>
+      </div>
+
+      <!-- Maintenance / Issues -->
+      <div class="dash-kpi-card" onclick="switchTab('issues')" title="Report or track maintenance concerns">
+        <div class="dash-kpi-icon amber"><x-icon name="wrench" size="18"/></div>
+        <div class="dash-kpi-label">Maintenance &amp; Issues</div>
+        <div class="dash-kpi-val" style="font-size:20px;font-weight:700;">Report Issue</div>
+        <div class="dash-kpi-sub muted">Fixes, lighting, &amp; drainage</div>
+      </div>
+
+      <!-- Bulletins & Notices -->
+      <div class="dash-kpi-card" onclick="document.getElementById('announcementList').closest('.card').scrollIntoView({behavior:'smooth'})" title="Read neighborhood announcements">
+        <div class="dash-kpi-icon blue"><x-icon name="megaphone" size="18"/></div>
+        <div class="dash-kpi-label">Community Notices</div>
+        <div class="dash-kpi-val" style="font-size:20px;font-weight:700;">Bulletins</div>
+        <div class="dash-kpi-sub muted">Official HOA announcements</div>
+      </div>
+
+      <!-- Calendar & Events -->
+      <div class="dash-kpi-card" onclick="switchTab('calendar')" title="View community calendar">
+        <div class="dash-kpi-icon green"><x-icon name="calendar" size="18"/></div>
+        <div class="dash-kpi-label">Community Events</div>
+        <div class="dash-kpi-val" style="font-size:20px;font-weight:700;">Calendar</div>
+        <div class="dash-kpi-sub muted">HOA meetings &amp; drives</div>
+      </div>
+    </div>
+
+    <!-- 3. ELDER-FRIENDLY QUICK ACTIONS -->
+    <div class="card" id="residentQuickActions" style="margin-top:0;padding:20px 24px;">
+      <div class="card-title" style="font-size:15px;margin-bottom:2px;">Quick Actions</div>
+      <div class="card-subtitle" style="margin-bottom:14px;">Common community tasks, one tap away.</div>
+      <div class="res-quick-actions-row">
+        <button class="btn btn-full res-qa-btn orange-accent" onclick="switchTab('payments')">
+          <x-icon name="credit-card" size="18"/>
+          <span>Pay My Dues</span>
+        </button>
+        <button class="btn btn-full res-qa-btn" onclick="switchTab('issues')">
+          <x-icon name="megaphone" size="18"/>
+          <span>Report a Problem</span>
+        </button>
+        <button class="btn btn-full res-qa-btn emergency" onclick="switchTab('issues'); setTimeout(startEmergency, 200);">
+          <x-icon name="alert" size="18"/>
+          <span>Emergency Alert</span>
+        </button>
+        <button class="btn btn-full res-qa-btn" onclick="switchTab('messages')">
+          <x-icon name="mail" size="18"/>
+          <span>Message the HOA</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. ANNOUNCEMENTS & HOUSEHOLD MEMBERS -->
     <div class="bento-grid">
-      <!-- Greeting card (Span 8) -->
-      <div class="card bento-col-8" style="display:flex; flex-direction:column; justify-content:center;">
-        <h1 style="font-family:'DM Serif Display',serif; font-size:32px; font-weight:400; color:#2B2927; margin-bottom:8px;" id="greetingText">Welcome back, {{ explode(' ', $residentName)[0] }} 👋</h1>
-        <p style="font-size:13px; color:var(--text-dim); line-height:1.6;">Manage household members, report issues, and check account balances from here.</p>
-        <script>
-          (function(){
-            const hrs = new Date().getHours();
-            let greet = "Welcome back";
-            if (hrs < 12) greet = "Good morning";
-            else if (hrs < 18) greet = "Good afternoon";
-            else greet = "Good evening";
-            document.addEventListener("DOMContentLoaded", () => {
-              const gEl = document.getElementById("greetingText");
-              if(gEl) gEl.innerHTML = `${greet}, {{ explode(' ', $residentName)[0] }} 👋`;
-            });
-          })();
-        </script>
-      </div>
-
-      <!-- Account balance (Span 4) -->
-      <div class="card bento-col-4 res-balance-card">
-        <div class="balance-label">Outstanding Balance</div>
-        <div class="balance-val" id="residentBalance">₱{{ number_format((float)($balance ?? 0), 2) }}</div>
-        <div style="font-size:13.5px; color:var(--text-dim); margin-top:6px;">Settle your dues via the Payments tab.</div>
-        <button class="btn btn-sm" style="margin-top:12px; background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.22); color:#fff;" onclick="quickPay()">Pay via GCash</button>
-      </div>
-
       <!-- Announcements Box (Span 8 - Front & Center) -->
       <div class="card bento-col-8">
-        <div class="card-title">Announcements</div>
-        <div class="card-subtitle">Neighborhood notices and community calendar events.</div>
-        <div id="announcementList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card" style="margin-bottom:10px;"></div></div>
-      </div>
-
-      <!-- Quick Actions (Span 4, stacked like the officer portal) -->
-      <div class="card bento-col-4" id="residentQuickActions">
-        <div class="card-title">Quick Actions</div>
-        <div class="card-subtitle">Common tasks, one tap away.</div>
-        <div class="quick-stack">
-          <button class="btn btn-full" onclick="switchTab('payments')"><x-icon name="credit-card" size="15"/> Pay My Dues</button>
-          <button class="btn btn-full" onclick="switchTab('issues')"><x-icon name="megaphone" size="15"/> Report a Problem</button>
-          <button class="btn btn-full" style="background:#e05555;border-color:#e05555;color:#fff;" onclick="switchTab('issues'); setTimeout(startEmergency, 200);"><x-icon name="alert" size="15"/> Emergency</button>
-          <button class="btn btn-full" onclick="switchTab('messages')"><x-icon name="mail" size="15"/> Message the HOA</button>
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Community Announcements</span>
+          <span style="font-size:11.5px;color:var(--text-dim);font-weight:normal;">Latest bulletins</span>
         </div>
+        <div class="card-subtitle">Neighborhood notices and official community updates.</div>
+        <div id="announcementList"><div class="skeleton sk-card" style="margin-bottom:10px;"></div><div class="skeleton sk-card" style="margin-bottom:10px;"></div></div>
       </div>
 
       <!-- Household Members (Span 4) -->
@@ -148,19 +293,19 @@
           </div>
           <div class="card-subtitle">Essential guidelines for property maintenance, sanitation, security, and peaceful community living.</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:14px;">
-            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+            <div style="padding:14px;background:rgba(250,125,9,0.06);border:1px solid rgba(250,125,9,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
               <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">1. Membership &amp; Community Conduct</div>
               <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Resident rights, good-neighbor conduct, and community etiquette.</div>
             </div>
-            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+            <div style="padding:14px;background:rgba(250,125,9,0.06);border:1px solid rgba(250,125,9,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
               <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">2. Property Use &amp; Structural Guidelines</div>
               <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Architectural guidelines, lawn upkeep, and construction clearance permits.</div>
             </div>
-            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+            <div style="padding:14px;background:rgba(250,125,9,0.06);border:1px solid rgba(250,125,9,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
               <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">3. Noise, Conduct &amp; Community Standards</div>
               <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Standard quiet hours (10:00 PM – 6:00 AM) and social gathering guidelines.</div>
             </div>
-            <div style="padding:14px;background:rgba(160,125,83,0.06);border:1px solid rgba(160,125,83,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
+            <div style="padding:14px;background:rgba(250,125,9,0.06);border:1px solid rgba(250,125,9,0.2);border-radius:var(--radius-sm);cursor:pointer;" onclick="switchTab('policies')">
               <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">4. Waste Management &amp; Sanitation</div>
               <div style="font-size:12px;color:var(--text-mid);line-height:1.5;">Garbage segregation, scheduled collection, and sanitation responsibilities.</div>
             </div>
@@ -375,13 +520,82 @@
 
   <!-- ═══════════ MAP ═══════════ -->
   <div class="tab-panel" id="panel-map">
+    <div class="card" style="margin-bottom:12px;padding:10px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div>
+          <span style="font-size:14px;font-weight:600;color:var(--text);">Terra Nova Subdivision Map</span>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:2px;">View community facilities, households, and reported neighborhood issues. The heatmap reveals thermal density and dominant issue categories per area.</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <label class="map-toggle" title="Toggle block partition boundaries">
+            <input type="checkbox" id="res-layer-blocks" onchange="toggleResidentBlocks(this.checked)"> Block Partitions
+          </label>
+          <select id="res-filter-block" onchange="filterResidentBlocks(this.value)" class="btn btn-sm" style="padding:4px 8px;font-size:12px;font-weight:600;" title="Filter map to a specific block">
+            <option value="">All Blocks (1–14 · 338 Lots)</option>
+            <option value="1">Block 1 — Lots 1–10 (Sky Blue)</option>
+            <option value="2">Block 2 — Clubhouse &amp; Pool (Purple)</option>
+            <option value="3">Block 3 — Perimeter Lots 1–74 (Red)</option>
+            <option value="4">Block 4 — Lots 1–40 (Orange)</option>
+            <option value="5">Block 5 — Lots 1–34 (Purple)</option>
+            <option value="6">Block 6 — Lots 1–28 (Green)</option>
+            <option value="7">Block 7 — Lots 1–24 (Amber)</option>
+            <option value="8">Block 8 — Lots 1–19 (Lime)</option>
+            <option value="9">Block 9 — Lots 1–20 (Rose)</option>
+            <option value="10">Block 10 — Lots 1–18 (Magenta)</option>
+            <option value="11">Block 11 — Lots 1–18 (Indigo)</option>
+            <option value="12">Block 12 — Lots 1–22 (Pink)</option>
+            <option value="13">Block 13 — Lots 1–16 (Gold)</option>
+            <option value="14">Block 14 — Lots 1–14 (Blue)</option>
+          </select>
+          <label class="map-toggle" title="Toggle facilities markers">
+            <input type="checkbox" id="res-layer-facilities" checked onchange="toggleResidentFacilities(this.checked)"> Facilities
+          </label>
+          <label class="map-toggle" title="Toggle reported issue markers">
+            <input type="checkbox" id="res-layer-issues" checked onchange="toggleResidentIssues(this.checked)"> Issue Pins
+          </label>
+          <label class="map-toggle" title="Toggle thermal issue heatmap and frequency categorization">
+            <input type="checkbox" id="res-layer-heat" onchange="toggleResidentHeatmap(this.checked)"> Heatmap
+          </label>
+          <select id="res-heat-category" onchange="renderResidentHeatmap()" class="btn btn-sm" style="display:none;padding:4px 8px;font-size:12px;" title="Filter the heatmap by issue category">
+            <option value="">All categories</option>
+          </select>
+          <button class="btn btn-sm" onclick="if(resMapInst)resMapInst.setView(RES_CENTER,17)">⌖ Reset View</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resident Heatmap & Hotspot Analysis Bar -->
+    <div id="res-heatmap-analysis-card" class="card" style="display:none;margin-bottom:12px;padding:12px 16px;background:var(--glass);border-left:4px solid #ef4444;transition:all 0.25s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:rgba(239,68,68,0.15);color:#ef4444;font-size:13px;">🔥</span>
+            <span style="font-size:13px;font-weight:700;color:var(--text);">Subdivision Issue Heatmap &amp; Category Frequency</span>
+            <span style="font-size:11px;padding:2px 8px;border-radius:12px;background:rgba(239,68,68,0.15);color:#ef4444;font-weight:700;">Live Heat</span>
+          </div>
+          <div id="res-heatmap-summary-line" style="font-size:12px;color:var(--text-mid);margin-top:4px;">
+            Analyzing issue frequency across subdivision...
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-dim);" title="Thermal intensity ramps up as reports cluster in that area">
+            <span>Low (1)</span>
+            <div style="width:100px;height:9px;border-radius:4px;background:linear-gradient(to right, #38bdf8, #34d399, #facc15, #fb923c, #ef4444);box-shadow:inset 0 1px 2px rgba(0,0,0,0.25);"></div>
+            <span style="color:#ef4444;font-weight:700;">Hotspot (4+)</span>
+          </div>
+        </div>
+      </div>
+      <div id="res-heatmap-category-pills" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:8px;border-top:1px solid var(--glass-border);">
+      </div>
+    </div>
     <div class="card" style="padding:0;overflow:hidden;margin-top:0;">
       <div id="resident-map" style="width:100%;height:480px;"></div>
     </div>
     <div class="card" style="margin-top:12px;">
       <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--text-mid);align-items:center;">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:3px;background:#2563eb;display:inline-block;"></span>Block Partitions</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span class="sub-start-dir-marker is-sample" style="display:inline-flex;position:static;vertical-align:middle;margin-right:4px;transform:none;"><span class="start-dir-arrow">↑</span><span class="start-dir-code">N</span></span>Lot 1 Start Point</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#4CAF50;display:inline-block;"></span>Facility</span>
-        <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#4287f5;display:inline-block;"></span>My Household</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#e05555;display:inline-block;"></span>Issue (Pending)</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#f5a623;display:inline-block;"></span>Issue (In Progress)</span>
         <span style="display:flex;align-items:center;gap:5px;"><span style="width:11px;height:11px;border-radius:50%;background:#888;display:inline-block;"></span>Issue (Resolved, ≤7d)</span>
@@ -407,72 +621,313 @@
 
   <!-- ═══════════ PAYMENTS (GCash) ═══════════ -->
   <div class="tab-panel" id="panel-payments">
-    <div class="fin-tabs" id="payTabs">
-      <button class="fin-tab active" onclick="payTab('pay',this)">Pay</button>
-      <button class="fin-tab" onclick="payTab('statement',this)">My Statement</button>
-      <button class="fin-tab" onclick="payTab('transparency',this)">Transparency</button>
-      <button class="fin-tab" onclick="payTab('history',this)">History</button>
+    <!-- Top Hero Banner Card -->
+    <div class="pay-hero-banner">
+      <div class="pay-hero-content">
+        <div class="pay-hero-icon-box">
+          <x-icon name="credit-card" size="24"/>
+        </div>
+        <div>
+          <h2 class="pay-hero-title">Payments</h2>
+          <p class="pay-hero-subtitle">Submit payments, view your statements, and track your transaction history.</p>
+        </div>
+      </div>
+      <div class="pay-hero-bg-visual" aria-hidden="true"></div>
     </div>
 
+    <!-- Navigation Tabs Bar -->
+    <div class="pay-tabs-bar" id="payTabs">
+      <button class="pay-tab fin-tab active" onclick="payTab('pay',this)" id="payTabBtn-pay">
+        <x-icon name="credit-card" size="15"/> Pay
+      </button>
+      <button class="pay-tab fin-tab" onclick="payTab('statement',this)" id="payTabBtn-statement">
+        <x-icon name="file-text" size="15"/> My Statement
+      </button>
+      <button class="pay-tab fin-tab" onclick="payTab('transparency',this)" id="payTabBtn-transparency">
+        <x-icon name="bar-chart-2" size="15"/> Transparency
+      </button>
+      <button class="pay-tab fin-tab" onclick="payTab('history',this)" id="payTabBtn-history">
+        <x-icon name="clock" size="15"/> History
+      </button>
+    </div>
+
+    <!-- 3 Overview KPI Cards -->
+    <div class="pay-kpi-grid">
+      <!-- Card 1: Outstanding Balance -->
+      <div class="pay-kpi-card" id="cardKpiBalance">
+        <div class="pay-kpi-icon-wrap peach">
+          <x-icon name="credit-card" size="22"/>
+        </div>
+        <div class="pay-kpi-body">
+          <div class="pay-kpi-label">Outstanding Balance</div>
+          <div class="pay-kpi-val" id="payKpiBalance">₱0.00</div>
+          <div class="pay-kpi-status" id="payKpiBalanceStatus">
+            <span class="status-indicator green" style="display:inline-flex;align-items:center;gap:6px;color:#2E7D32;font-size:12px;font-weight:600;"><x-icon name="check-circle" size="13"/> No pending balance</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2: Pending Payments -->
+      <div class="pay-kpi-card" id="cardKpiPending">
+        <div class="pay-kpi-icon-wrap amber">
+          <x-icon name="clock" size="22"/>
+        </div>
+        <div class="pay-kpi-body">
+          <div class="pay-kpi-label">Pending Payments</div>
+          <div class="pay-kpi-val" id="payKpiPending">0</div>
+          <div class="pay-kpi-status">
+            <span class="pay-status-pill under-review"><x-icon name="clock" size="11"/> Under Review</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Validated Payments -->
+      <div class="pay-kpi-card" id="cardKpiValidated">
+        <div class="pay-kpi-icon-wrap green">
+          <x-icon name="check-circle" size="22"/>
+        </div>
+        <div class="pay-kpi-body">
+          <div class="pay-kpi-label">Validated Payments</div>
+          <div class="pay-kpi-val" id="payKpiValidated">0</div>
+          <div class="pay-kpi-status">
+            <span class="pay-kpi-subtext">Total verified transactions</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TAB 1: PAY ── -->
     <div class="fin-section active" data-pay="pay">
-    <div class="card" style="margin-bottom:12px;">
-      <div class="card-title" style="margin:0 0 12px;">Pay via GCash</div>
-      <div class="card-subtitle" style="margin:-6px 0 12px;">Scan the QR code or send to the number below, then submit the reference number for validation.</div>
-      <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;">
-        <div id="gcashQrBox" style="text-align:center;border:1px dashed var(--glass-border);border-radius:8px;padding:12px;min-height:180px;display:flex;align-items:center;justify-content:center;background:#fff;">
-          <div style="font-size:12px;color:var(--text-dim);">Loading…</div>
+      <div class="pay-main-grid">
+        <!-- Left: Pay via GCash Card -->
+        <div class="pay-card">
+          <div class="pay-card-header">
+            <div class="pay-card-icon gcash-blue">G</div>
+            <div class="pay-card-title-wrap">
+              <h3 class="pay-card-title">Pay via GCash</h3>
+              <p class="pay-card-sub">Scan the QR code or send to the official HOA GCash account.</p>
+            </div>
+          </div>
+          <div class="pay-gcash-inner">
+            <div class="gcash-qr-col">
+              <div class="gcash-logo-badge"><span class="g-icon">G</span> GCash</div>
+              <div class="gcash-qr-frame" id="gcashQrBox">
+                <div style="font-size:12px;color:var(--text-dim);">Loading QR code…</div>
+              </div>
+              <div class="gcash-qr-actions">
+                <button type="button" class="pay-btn-subtle" onclick="enlargeGcashQr()">
+                  <x-icon name="maximize-2" size="13"/> Enlarge
+                </button>
+                <button type="button" class="pay-btn-subtle" onclick="downloadGcashQr()">
+                  <x-icon name="download" size="13"/> Download
+                </button>
+              </div>
+            </div>
+            <div class="gcash-info-col">
+              <div class="pay-instructions-title">Payment Instructions</div>
+              <div class="pay-steps-list">
+                <div class="pay-step-row">
+                  <span class="pay-step-badge">1</span>
+                  <span>Open your GCash application.</span>
+                </div>
+                <div class="pay-step-row">
+                  <span class="pay-step-badge">2</span>
+                  <span>Scan the HOA QR code or send to the account above.</span>
+                </div>
+                <div class="pay-step-row">
+                  <span class="pay-step-badge">3</span>
+                  <span>Enter the correct payment amount.</span>
+                </div>
+                <div class="pay-step-row">
+                  <span class="pay-step-badge">4</span>
+                  <span>Complete the transaction.</span>
+                </div>
+                <div class="pay-step-row">
+                  <span class="pay-step-badge">5</span>
+                  <span>Save your payment receipt.</span>
+                </div>
+                <div class="pay-step-row">
+                  <span class="pay-step-badge">6</span>
+                  <span>Submit the receipt and reference number through SubSync.</span>
+                </div>
+              </div>
+              <div class="gcash-acc-card" id="gcashPayDetails">
+                <div style="font-size:12px;color:var(--text-dim);">Loading account details…</div>
+              </div>
+              <div class="pay-reminder-box">
+                <x-icon name="info" size="16"/>
+                <span><strong>Reminder:</strong> Please verify the recipient's account details before sending your payment.</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div id="gcashPayDetails" style="font-size:14px;color:var(--text-mid);line-height:1.7;"></div>
-      </div>
-    </div>
 
-    <div class="card" id="payFormCard" style="margin-bottom:12px;">
-      <div class="card-title" style="margin:0 0 12px;">Submit Payment for Validation</div>
-      <div class="f-row">
-        <div class="f-field" style="width:100%;">
-          <span class="f-label">Receipt Screenshot (photo, max 8 MB) — <em style="font-weight:normal;color:var(--accent);">Auto-reads Ref No. &amp; Amount</em></span>
-          <input type="file" id="payReceipt" accept="image/*" onchange="onReceiptFileSelected(this)">
-          <div id="ocrStatus" style="display:none;margin-top:8px;font-size:12px;padding:8px 12px;border-radius:6px;border:1px solid transparent;line-height:1.4;"></div>
+        <!-- Right: Submit Payment for Validation Card -->
+        <div class="pay-card" id="payFormCard">
+          <div class="pay-card-header">
+            <div class="pay-card-icon orange">
+              <x-icon name="file-text" size="20"/>
+            </div>
+            <div class="pay-card-title-wrap">
+              <h3 class="pay-card-title">Submit Payment for Validation</h3>
+              <p class="pay-card-sub">Upload your receipt and enter the payment details below.</p>
+            </div>
+          </div>
+          <!-- Receipt Screenshot Upload -->
+          <div class="receipt-upload-box">
+            <label class="pay-form-label" style="display:block;margin-bottom:8px;">
+              Receipt Screenshot <span style="font-size:12px;font-weight:normal;color:var(--text-dim);">(JPG, JPEG, PNG – Max 8 MB)</span> <span class="req">*</span>
+            </label>
+            <div class="receipt-drop-zone" id="receiptDropZone" onclick="document.getElementById('payReceipt').click()">
+              <div class="receipt-drop-icon"><x-icon name="upload-cloud" size="32"/></div>
+              <div class="receipt-drop-title">Click to upload <span style="font-weight:normal;color:var(--text-dim);">or drag and drop</span></div>
+              <div class="receipt-drop-sub">JPG, JPEG, PNG (Max 8 MB)</div>
+            </div>
+            <div class="receipt-preview-box" id="receiptPreviewBox" style="display:none;">
+              <img id="receiptThumbPreview" class="receipt-thumb" src="" alt="Receipt Preview">
+              <div class="receipt-info">
+                <div class="receipt-name" id="receiptFileName">receipt.jpg</div>
+                <div class="receipt-size" id="receiptFileSize">0 KB</div>
+              </div>
+              <div class="receipt-btn-group">
+                <button type="button" class="btn btn-sm btn-subtle" onclick="document.getElementById('payReceipt').click()">Replace</button>
+                <button type="button" class="btn btn-sm btn-subtle" onclick="clearReceiptUpload()" style="color:#EF4444;">Remove</button>
+              </div>
+            </div>
+            <input type="file" id="payReceipt" accept="image/jpeg,image/png,image/jpg" onchange="onReceiptFileSelected(this)" style="display:none;">
+            <div id="ocrStatus" style="display:none;margin-top:10px;font-size:12.5px;padding:9px 14px;border-radius:8px;border:1px solid transparent;line-height:1.45;"></div>
+          </div>
+
+          <!-- Form Fields Grid -->
+          <div class="pay-form-grid">
+            <div class="pay-form-group">
+              <label class="pay-form-label" for="payAmount">Amount (₱) <span class="req">*</span></label>
+              <div class="currency-field-wrap">
+                <span class="currency-tag">₱</span>
+                <input type="number" id="payAmount" class="pay-input" min="1" step="0.01" placeholder="0.00" required>
+              </div>
+            </div>
+            <div class="pay-form-group">
+              <label class="pay-form-label" for="payReference">GCash Reference No. <span class="req">*</span></label>
+              <input type="text" id="payReference" class="pay-input" maxlength="100" placeholder="e.g. 1002 3456 78901 (13 digits)" required>
+            </div>
+            <div class="pay-form-group">
+              <label class="pay-form-label" for="paySender">Sender Name <span class="req">*</span></label>
+              <input type="text" id="paySender" class="pay-input" maxlength="150" placeholder="Resident Name" required>
+            </div>
+            <div class="pay-form-group">
+              <label class="pay-form-label" for="payDate">Date Paid <span class="req">*</span></label>
+              <input type="date" id="payDate" class="pay-input" max="{{ date('Y-m-d') }}" required>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="button" class="pay-submit-btn" id="paySubmitBtn" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitPayment):submitPayment()">
+            <x-icon name="send" size="16"/> Submit Payment
+          </button>
         </div>
       </div>
-      <div class="f-row">
-        <div class="f-field"><span class="f-label">Amount (₱)</span><input type="number" id="payAmount" min="1" step="0.01" placeholder="0.00"></div>
-        <div class="f-field"><span class="f-label">GCash Reference No.</span><input type="text" id="payReference" maxlength="100" placeholder="e.g. 1002 3456 78901 (13 digits)"></div>
+
+      <!-- Bottom Card: Recent Payment Submissions -->
+      <div class="pay-table-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;">
+          <div class="pay-card-header" style="margin-bottom:0;">
+            <div class="pay-card-icon orange"><x-icon name="clock" size="18"/></div>
+            <div class="pay-card-title-wrap">
+              <h3 class="pay-card-title">Recent Payment Submissions</h3>
+              <p class="pay-card-sub">Track the status of your submitted payments.</p>
+            </div>
+          </div>
+          <a href="javascript:void(0)" onclick="payTab('history')" class="pay-view-all-link">
+            View All History <x-icon name="arrow-right" size="14"/>
+          </a>
+        </div>
+        <div class="pay-table-wrap">
+          <table class="pay-table" id="recentPaymentsTable">
+            <thead>
+              <tr>
+                <th>Date Submitted</th>
+                <th>Reference No.</th>
+                <th>Amount</th>
+                <th>Date Paid</th>
+                <th>Status</th>
+                <th>Remarks</th>
+                <th style="text-align:center;">Receipt</th>
+              </tr>
+            </thead>
+            <tbody id="recentPaymentsTbody">
+              <tr><td colspan="7" class="empty-state" style="text-align:center;padding:24px;">Loading submissions…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div class="f-row">
-        <div class="f-field"><span class="f-label">Sender Name</span><input type="text" id="paySender" maxlength="150"></div>
-        <div class="f-field"><span class="f-label">Date Paid</span><input type="date" id="payDate"></div>
-      </div>
-      <button class="btn btn-full" onclick="SubUI&&SubUI.busyClick?SubUI.busyClick(this,submitPayment):submitPayment()">Submit Payment</button>
-    </div>
     </div><!-- /pay -->
 
+    <!-- ── TAB 2: MY STATEMENT ── -->
     <div class="fin-section" data-pay="statement">
-    <div class="card" style="margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
-        <div class="card-title" style="margin:0;">My Statement</div>
-        <div style="text-align:right;">
-          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;">Balance</div>
-          <div id="statementBalance" style="font-size:22px;font-weight:700;color:var(--text);">₱0.00</div>
+      <div class="pay-table-card" style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px;border-bottom:1px solid var(--glass-border);padding-bottom:16px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:#F58B1F;text-transform:uppercase;letter-spacing:.06em;">Official Record</div>
+            <h3 class="pay-card-title" style="font-size:20px;margin-top:2px;">My Statement of Account</h3>
+            <div style="font-size:13px;color:var(--text-dim);margin-top:3px;">
+              Resident: <strong>{{ $residentName }}</strong> · Block/Lot: <strong>{{ $blockLot }}</strong>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="text-align:right;">
+              <div style="font-size:11.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;">Remaining Balance</div>
+              <div id="statementBalance" style="font-size:26px;font-weight:800;color:var(--text);letter-spacing:-0.02em;">₱0.00</div>
+            </div>
+            <button type="button" class="pay-btn-subtle" onclick="window.print()" title="Print financial statement">
+              <x-icon name="printer" size="14"/> Print Statement
+            </button>
+          </div>
         </div>
+        <div id="statementAging" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;"></div>
+        <div id="statementTable"><div class="empty-state">Loading statement…</div></div>
       </div>
-      <div id="statementAging" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;"></div>
-      <div id="statementTable"><div class="empty-state">Loading statement…</div></div>
-    </div>
     </div><!-- /statement -->
 
+    <!-- ── TAB 3: TRANSPARENCY ── -->
     <div class="fin-section" data-pay="transparency">
-    <div class="card" style="margin-bottom:12px;">
-      <div class="card-title" style="margin:0 0 12px;">Transparency — Where Your Money Goes</div>
-      <div id="transparencySummary" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
-    </div>
+      <div class="pay-table-card" style="margin-bottom:16px;">
+        <div class="pay-card-header">
+          <div class="pay-card-icon orange"><x-icon name="bar-chart-2" size="20"/></div>
+          <div class="pay-card-title-wrap">
+            <h3 class="pay-card-title">Transparency — Where Your Money Goes</h3>
+            <p class="pay-card-sub">Official HOA financial transparency report and expenditures breakdown.</p>
+          </div>
+        </div>
+        <div id="transparencySummary"></div>
+      </div>
     </div><!-- /transparency -->
 
+    <!-- ── TAB 4: HISTORY ── -->
     <div class="fin-section" data-pay="history">
-    <div class="card">
-      <div class="card-title" style="margin:0 0 12px;">My Payments</div>
-      <div id="myPaymentsList"><div class="empty-state">Loading…</div></div>
-    </div>
+      <div class="pay-table-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
+          <div class="pay-card-header" style="margin-bottom:0;">
+            <div class="pay-card-icon orange"><x-icon name="clock" size="18"/></div>
+            <div class="pay-card-title-wrap">
+              <h3 class="pay-card-title">Payment History</h3>
+              <p class="pay-card-sub">Complete record of your submitted payments and their validation statuses.</p>
+            </div>
+          </div>
+          <div class="history-filter-bar" style="margin-bottom:0;">
+            <input type="text" id="payHistorySearch" class="history-search-input" placeholder="Search reference, amount, or date..." oninput="filterPaymentHistory()">
+            <div class="history-filter-pills" id="historyFilterPills">
+              <button type="button" class="history-pill active" onclick="setHistoryFilter('all', this)">All</button>
+              <button type="button" class="history-pill" onclick="setHistoryFilter('Validated', this)">Validated</button>
+              <button type="button" class="history-pill" onclick="setHistoryFilter('Pending', this)">Under Review</button>
+              <button type="button" class="history-pill" onclick="setHistoryFilter('Rejected', this)">Rejected</button>
+            </div>
+          </div>
+        </div>
+        <div class="pay-table-wrap">
+          <div id="myPaymentsList"><div class="empty-state">Loading history…</div></div>
+        </div>
+      </div>
     </div><!-- /history -->
   </div>
 
@@ -595,7 +1050,7 @@
   </div>
 
 </main>
-<script>window.__RESIDENT = { id: {{ $residentId ?? 'null' }}, houseId: {{ $houseId ?? 'null' }}, name: @json($residentName), balance: {{ (float)($balance ?? 0) }} };</script>
+<script>window.__RESIDENT = { id: {{ $residentId ?? 'null' }}, houseId: {{ $houseId ?? 'null' }}, name: @json($residentName), balance: {{ (float)($balance ?? 0) }}, blockLot: @json($blockLot ?? '') };</script>
 <script src="{{ asset('js/residents.js') . '?v=' . filemtime(public_path('js/residents.js')) }}"></script>
 <script src="{{ asset('js/notifications.js') . '?v=' . filemtime(public_path('js/notifications.js')) }}"></script>
 
@@ -644,11 +1099,238 @@ function loadLeaflet(){
 /* ══ RESIDENT MAP ══ */
 const RES_CENTER = [10.62269, 122.96134];
 let resMapInst = null;
+let resBlocksLayer = null;
+let resFacilitiesLayer = null;
+let resIssuesLayer = null;
+let resHouseholdLayer = null;
+let resHeatLayer = null;
+let resHeatCanvasLayer = null;
+let resBlocksData = [];
+let resActiveBlock = '';
+let resBlockPolygons = {};
+let resMapIssuesData = [];
+
+function toggleResidentFacilities(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('res-layer-facilities')?.checked);
+  const toggle = document.getElementById('res-layer-facilities');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!resMapInst || !resFacilitiesLayer) return;
+  if (isChecked) {
+    if (!resMapInst.hasLayer(resFacilitiesLayer)) resMapInst.addLayer(resFacilitiesLayer);
+  } else {
+    if (resMapInst.hasLayer(resFacilitiesLayer)) resMapInst.removeLayer(resFacilitiesLayer);
+  }
+}
+
+function toggleResidentIssues(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('res-layer-issues')?.checked);
+  const toggle = document.getElementById('res-layer-issues');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  if (!resMapInst || !resIssuesLayer) return;
+  if (isChecked) {
+    if (!resMapInst.hasLayer(resIssuesLayer)) resMapInst.addLayer(resIssuesLayer);
+  } else {
+    if (resMapInst.hasLayer(resIssuesLayer)) resMapInst.removeLayer(resIssuesLayer);
+  }
+}
+
+function toggleResidentHeatmap(show) {
+  const isChecked = typeof show === 'boolean' ? show : Boolean(document.getElementById('res-layer-heat')?.checked);
+  const toggle = document.getElementById('res-layer-heat');
+  if (toggle && toggle.checked !== isChecked) toggle.checked = isChecked;
+  const analysisCard = document.getElementById('res-heatmap-analysis-card');
+  const catEl = document.getElementById('res-heat-category');
+  if (!resMapInst) return;
+  if (!resHeatLayer) {
+    resHeatLayer = L.layerGroup();
+  }
+  if (isChecked) {
+    if (!resMapInst.hasLayer(resHeatLayer)) resMapInst.addLayer(resHeatLayer);
+    if (analysisCard) analysisCard.style.display = 'block';
+    if (catEl) catEl.style.display = 'inline-block';
+    renderResidentHeatmap();
+  } else {
+    if (resMapInst.hasLayer(resHeatLayer)) resMapInst.removeLayer(resHeatLayer);
+    if (analysisCard) analysisCard.style.display = 'none';
+    if (catEl) catEl.style.display = 'none';
+  }
+}
+
+async function ensureResidentLeafletHeat() {
+  if (typeof L !== 'undefined' && typeof L.heatLayer === 'function') return;
+  return new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = (window.APP_URL || '') + '/vendor/leaflet/leaflet-heat.js';
+    s.onload = () => resolve();
+    s.onerror = () => { console.warn('Could not load leaflet-heat.js'); resolve(); };
+    document.head.appendChild(s);
+  });
+}
+
+async function renderResidentHeatmap() {
+  if (!resMapInst || !resHeatLayer) return;
+  resHeatLayer.clearLayers();
+  resHeatCanvasLayer = null;
+
+  const analysisCard = document.getElementById('res-heatmap-analysis-card');
+  if (!resMapInst.hasLayer(resHeatLayer)) {
+    if (analysisCard) analysisCard.style.display = 'none';
+    return;
+  }
+  if (analysisCard) analysisCard.style.display = 'block';
+
+  await ensureResidentLeafletHeat();
+
+  const catEl = document.getElementById('res-heat-category');
+  const selectedCat = catEl ? catEl.value : '';
+  const allIssues = (resMapIssuesData || []).filter(i => {
+    const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
+    return !isNaN(lat) && !isNaN(lng);
+  });
+
+  const overallCategoryCounts = {};
+  allIssues.forEach(i => {
+    const c = i.category || 'Other';
+    overallCategoryCounts[c] = (overallCategoryCounts[c] || 0) + 1;
+  });
+
+  const sortedOverallCats = Object.entries(overallCategoryCounts).sort((a, b) => b[1] - a[1]);
+  const totalMappedIssues = allIssues.length;
+
+  if (catEl) {
+    const prevVal = catEl.value;
+    catEl.innerHTML = `<option value="">All categories (${totalMappedIssues} total)</option>`;
+    sortedOverallCats.forEach(([catName, count], idx) => {
+      const opt = document.createElement('option');
+      opt.value = catName;
+      opt.textContent = `${idx === 0 ? '★ ' : ''}#${idx + 1} ${catName} (${count}${idx === 0 ? ' — Most Frequent' : ''})`;
+      catEl.appendChild(opt);
+    });
+    catEl.value = prevVal;
+  }
+
+  const pillsContainer = document.getElementById('res-heatmap-category-pills');
+  if (pillsContainer) {
+    let pillsHtml = `
+      <span style="font-size:11px;font-weight:700;color:var(--text-dim);margin-right:4px;">Filter Heatmap:</span>
+      <button class="heatmap-pill-btn ${!selectedCat ? 'active' : ''}" onclick="filterResidentHeatmapToCategory('')" title="Show all issue categories">
+        All Issues <span class="pill-count">${totalMappedIssues}</span>
+      </button>
+    `;
+    sortedOverallCats.forEach(([catName, count], idx) => {
+      const isSel = selectedCat === catName;
+      const rankBadge = idx === 0 ? '★ ' : `#${idx + 1} `;
+      pillsHtml += `
+        <button class="heatmap-pill-btn ${isSel ? 'active' : ''}" onclick="filterResidentHeatmapToCategory('${catName.replace(/'/g, "\\'")}')" title="Filter to ${catName}">
+          ${rankBadge}${typeof escHtml === 'function' ? escHtml(catName) : catName} <span class="pill-count">${count}</span>
+        </button>
+      `;
+    });
+    pillsContainer.innerHTML = pillsHtml;
+  }
+
+  const activeIssues = allIssues.filter(i => !selectedCat || i.category === selectedCat);
+  const heatPoints = [];
+  activeIssues.forEach(i => {
+    const lat = parseFloat(i.latitude), lng = parseFloat(i.longitude);
+    let intensity = 0.85;
+    const st = (i.status || '').toLowerCase();
+    if (st === 'in progress') intensity = 0.65;
+    else if (st === 'resolved') intensity = 0.28;
+    const pr = (i.priority || '').toLowerCase();
+    if (pr === 'critical') intensity *= 1.4;
+    else if (pr === 'high') intensity *= 1.2;
+    else if (pr === 'low') intensity *= 0.8;
+    heatPoints.push([lat, lng, intensity]);
+  });
+
+  if (typeof L.heatLayer === 'function' && heatPoints.length > 0) {
+    resHeatCanvasLayer = L.heatLayer(heatPoints, {
+      radius: 35,
+      blur: 24,
+      maxZoom: 18,
+      max: 1.5,
+      minOpacity: 0.35,
+      gradient: {
+        0.2: '#38bdf8',
+        0.45: '#34d399',
+        0.65: '#facc15',
+        0.82: '#fb923c',
+        1.0: '#ef4444'
+      }
+    });
+    resHeatLayer.addLayer(resHeatCanvasLayer);
+  }
+
+  const summaryEl = document.getElementById('res-heatmap-summary-line');
+  if (summaryEl) {
+    if (!totalMappedIssues) {
+      summaryEl.textContent = 'No reported concerns recorded in the subdivision boundary yet.';
+    } else {
+      const topCat = sortedOverallCats.length ? sortedOverallCats[0][0] : 'None';
+      const topCount = sortedOverallCats.length ? sortedOverallCats[0][1] : 0;
+      const safeCat = typeof escHtml === 'function' ? escHtml(topCat) : topCat;
+      summaryEl.innerHTML = `<strong>${activeIssues.length} issues</strong> thermal mapped. Most reported category: <strong>${safeCat}</strong> (${topCount} reports).`;
+    }
+  }
+}
+
+function filterResidentHeatmapToCategory(category) {
+  const catEl = document.getElementById('res-heat-category');
+  if (catEl) catEl.value = category;
+  renderResidentHeatmap();
+}
+
+window.toggleResidentFacilities = toggleResidentFacilities;
+window.toggleResidentIssues = toggleResidentIssues;
+window.toggleResidentHeatmap = toggleResidentHeatmap;
+window.renderResidentHeatmap = renderResidentHeatmap;
+window.filterResidentHeatmapToCategory = filterResidentHeatmapToCategory;
+
+function refreshResidentMapLayers() {
+  if (!resMapInst) return;
+  fetch('/api/map/all').then(r=>r.json()).then(data=>{
+    resMapIssuesData = data.issues || [];
+    if (resBlocksLayer) {
+      resBlocksData = data.blocks || [];
+      renderResidentBlocks();
+    }
+    if (resFacilitiesLayer) {
+      resFacilitiesLayer.clearLayers();
+      (data.facilities || []).forEach(f=>{
+        let popupContent = '<strong>' + (typeof escHtml === 'function' ? escHtml(f.name) : f.name) + '</strong>';
+        if (f.description) popupContent += '<br><small>' + (typeof escHtml === 'function' ? escHtml(f.description) : f.description) + '</small>';
+        L.marker([parseFloat(f.latitude),parseFloat(f.longitude)],{icon:makeResCircle('#4CAF50')}).bindPopup(popupContent).addTo(resFacilitiesLayer);
+      });
+    }
+    if (resIssuesLayer) {
+      resIssuesLayer.clearLayers();
+      const ownIssueIds=new Set((typeof issues!=='undefined'&&Array.isArray(issues)?issues:[]).map(x=>String(x.id)));
+      (data.issues || []).forEach((i, index)=>{
+        const color = i.status==='Resolved' ? '#888' : (i.status==='In Progress'?'#f5a623':'#e05555');
+        const mine=ownIssueIds.has(String(i.id));
+        const num = i.id != null ? i.id : (index + 1);
+        const safeTitle = typeof escHtml === 'function' ? escHtml(i.title) : i.title;
+        const safeStatus = typeof escHtml === 'function' ? escHtml(i.status) : i.status;
+        let popupContent = '<strong>' + (mine?'Your report':'Report') + ' #' + num + ': ' + safeTitle + '</strong><br><small>' + safeStatus + '</small>';
+        L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon:makeResIssueIcon(color, num, mine)}).bindPopup(popupContent).addTo(resIssuesLayer);
+      });
+    }
+    if (resHouseholdLayer) {
+      resHouseholdLayer.clearLayers();
+      // Individual household lot pins omitted to keep map focused on block boundaries, lot counts, and Lot 1 direction
+    }
+    if (resHeatLayer && resMapInst && resMapInst.hasLayer(resHeatLayer)) {
+      renderResidentHeatmap();
+    }
+  }).catch(err => console.error('Map data fetch error:', err));
+}
+window.refreshResidentMapLayers = refreshResidentMapLayers;
 
 function makeResCircle(color) {
   return L.divIcon({
     className: '',
-    html: `<div style="width:13px;height:13px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.85);box-shadow:0 1px 5px rgba(0,0,0,.5);"></div>`,
+    html: `<div class="sub-map-dot" style="width:13px;height:13px;border-radius:50%;background:${color};border:2px solid rgba(255,255,255,0.85);box-shadow:0 1px 5px rgba(0,0,0,.5);"></div>`,
     iconSize:[13,13], iconAnchor:[6,6], popupAnchor:[0,-9]
   });
 }
@@ -656,8 +1338,8 @@ function makeResCircle(color) {
 function makeResIssueIcon(color, num, mine) {
   return L.divIcon({
     className: '',
-    html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid ${mine?'#FFD700':'rgba(255,255,255,0.9)'};box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
-    iconSize:[24,24], iconAnchor:[12,12], popupAnchor:[0,-12]
+    html: `<div class="sub-map-pin" style="width:24px;height:24px;border-radius:50%;background:${color};border:2px solid ${mine?'#FFD700':'rgba(255,255,255,0.9)'};box-shadow:0 2px 6px rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;font-family:sans-serif;">${num}</div>`,
+    iconSize:[24,24], iconAnchor:[12,12], popupAnchor:[0,-14]
   });
 }
 
@@ -686,6 +1368,7 @@ function initResidentMap() {
       maxBounds: mapBounds,
       maxBoundsViscosity: 1.0,
     }).fitBounds(mapBounds, {padding: [12, 12]});
+    if (window.SubUI && SubUI.enableDynamicPinScaling) SubUI.enableDynamicPinScaling(resMapInst);
     
     // Using OpenStreetMap tiles
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -693,32 +1376,230 @@ function initResidentMap() {
       maxZoom: 19
     }).addTo(resMapInst);
 
-    // Fetch all map data in a single request to prevent connection queuing
-    fetch('/api/map/all').then(r=>r.json()).then(data=>{
-      (data.facilities || []).forEach(f=>{
-        let popupContent = '<strong>' + f.name + '</strong>';
-        if (f.description) popupContent += '<br><small>' + f.description + '</small>';
-        L.marker([parseFloat(f.latitude),parseFloat(f.longitude)],{icon:makeResCircle('#4CAF50')}).bindPopup(popupContent).addTo(resMapInst);
-      });
+    const resBlocksChecked = Boolean(document.getElementById('res-layer-blocks')?.checked);
+    resBlocksLayer = L.layerGroup();
+    if (resBlocksChecked) resBlocksLayer.addTo(resMapInst);
 
-      const ownIssueIds=new Set((typeof issues!=='undefined'&&Array.isArray(issues)?issues:[]).map(x=>String(x.id)));
-      (data.issues || []).forEach((i, index)=>{
-        const color = i.status==='Resolved' ? '#888' : (i.status==='In Progress'?'#f5a623':'#e05555');
-        const mine=ownIssueIds.has(String(i.id));
-        let popupContent = '<strong>' + (mine?'Your report':'Report') + ' #' + (index + 1) + ': ' + i.title + '</strong><br><small>' + i.status + '</small>';
-        L.marker([parseFloat(i.latitude),parseFloat(i.longitude)],{icon:makeResIssueIcon(color, index + 1, mine)}).bindPopup(popupContent).addTo(resMapInst);
-      });
+    const resFacChecked = document.getElementById('res-layer-facilities') ? document.getElementById('res-layer-facilities').checked : true;
+    resFacilitiesLayer = L.layerGroup();
+    if (resFacChecked) resFacilitiesLayer.addTo(resMapInst);
 
-      if(HOUSE_ID){
-        const own = (data.households || []).find(h=>h.id===HOUSE_ID);
-        if(own && own.latitude && own.longitude){
-          L.marker([parseFloat(own.latitude),parseFloat(own.longitude)],{icon:makeResCircle('#4287f5')})
-            .bindPopup('<strong>My Household</strong><br><small>'+(own.block_lot_number||'')+'</small>')
-            .addTo(resMapInst);
+    const resIssuesChecked = document.getElementById('res-layer-issues') ? document.getElementById('res-layer-issues').checked : true;
+    resIssuesLayer = L.layerGroup();
+    if (resIssuesChecked) resIssuesLayer.addTo(resMapInst);
+
+    resHeatLayer = L.layerGroup();
+    if (document.getElementById('res-layer-heat')?.checked) resHeatLayer.addTo(resMapInst);
+
+    resHouseholdLayer = L.layerGroup().addTo(resMapInst);
+
+    if (s && s.overlay_enabled !== false && s.overlay_url) {
+      const oMinLat = s.overlay_min_lat ?? s.min_lat;
+      const oMaxLat = s.overlay_max_lat ?? s.max_lat;
+      const oMinLng = s.overlay_min_lng ?? s.min_lng;
+      const oMaxLng = s.overlay_max_lng ?? s.max_lng;
+      const oBounds = L.latLngBounds([[oMinLat, oMinLng], [oMaxLat, oMaxLng]]);
+      const resOverlay = L.imageOverlay(s.overlay_url, oBounds, {
+        opacity: typeof s.overlay_opacity === 'number' ? s.overlay_opacity : 0.65,
+        interactive: false,
+        className: 'subdivision-blueprint-overlay'
+      }).addTo(resMapInst);
+      if (resOverlay.bringToBack) resOverlay.bringToBack();
+      const applyRot = () => {
+        const el = resOverlay.getElement();
+        if (el && typeof s.overlay_rotation === 'number') {
+          el.style.transformOrigin = 'center center';
+          el.style.rotate = `${s.overlay_rotation}deg`;
         }
-      }
-    }).catch(err => console.error('Map data fetch error:', err));
+      };
+      setTimeout(applyRot, 40);
+      resMapInst.on('zoomend moveend', applyRot);
+    }
+
+    refreshResidentMapLayers();
+    setTimeout(() => { if (resMapInst) resMapInst.invalidateSize(); }, 200);
     });
+}
+
+async function loadResidentBlocks() {
+  try {
+    const res = await fetch('/api/map/blocks');
+    if (res.ok) {
+      resBlocksData = await res.json();
+      renderResidentBlocks();
+    }
+  } catch (e) {
+    console.error('Failed to load blocks:', e);
+  }
+}
+window.loadResidentBlocks = loadResidentBlocks;
+
+function getBlockStartInfo(b){
+  const lbl = String(b.start_label || '').trim();
+  let code = 'N', label = 'North', arrow = '↑';
+  if (/east/i.test(lbl)) { code = 'E'; label = 'East'; arrow = '→'; }
+  else if (/west/i.test(lbl)) { code = 'W'; label = 'West'; arrow = '←'; }
+  else if (/north/i.test(lbl)) { code = 'N'; label = 'North'; arrow = '↑'; }
+  else if (/south/i.test(lbl)) { code = 'S'; label = 'South'; arrow = '↓'; }
+  else if (String(b.block_number) === '1') { code = 'E'; label = 'East'; arrow = '→'; }
+  else if (String(b.block_number) === '2') { code = 'E'; label = 'East'; arrow = '→'; }
+  const matchLot = lbl.match(/Lot\s*(\d+)/i);
+  const startLot = matchLot ? `Lot ${matchLot[1]}` : 'Lot 1';
+  return { code, label, arrow, startLot };
+}
+
+function renderResidentBlocks() {
+  if (!resMapInst || !resBlocksLayer) return;
+  resBlocksLayer.clearLayers();
+  resBlockPolygons = {};
+
+  (resBlocksData || []).forEach(b => {
+    if (!b.coordinates || !b.coordinates.length) return;
+    const isFiltered = resActiveBlock && String(resActiveBlock) !== String(b.block_number);
+    const isBlock3 = String(b.block_number) === '3';
+    const isBlock2 = String(b.block_number) === '2';
+
+    const poly = L.polygon(b.coordinates, {
+      color: b.color || '#2563eb',
+      weight: isFiltered ? 1 : 2.5,
+      dashArray: isBlock3 ? '6 4' : null,
+      opacity: isFiltered ? 0.2 : 0.9,
+      fillColor: b.color || '#2563eb',
+      fillOpacity: isFiltered ? 0.03 : (isBlock3 ? 0.08 : 0.18),
+      className: 'subdivision-block-poly'
+    });
+
+    if (isBlock3 && poly.bringToBack) {
+      poly.bringToBack();
+    }
+
+    const center = poly.getBounds().getCenter();
+    const labelPos = (b.label_lat && b.label_lng) ? [b.label_lat, b.label_lng] : center;
+    const blockDisplayName = isBlock2 ? '🏛 Clubhouse & Pool' : b.name;
+    const lotCountText = isBlock2 ? 'Lot 15' : (b.total_lots ? `${b.total_lots} Lots` : '');
+    const labelIcon = L.divIcon({
+      className: 'sub-block-div-icon',
+      html: `<div class="sub-block-pill${isBlock2 ? ' sub-block-pill-clubhouse' : ''}" style="background:${b.color || '#2563eb'};" title="${blockDisplayName}${lotCountText ? ' • ' + lotCountText : ''}"><span class="sub-block-name">${blockDisplayName}</span>${lotCountText ? `<span class="sub-block-count">• ${lotCountText}</span>` : ''}</div>`,
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+    const labelMarker = L.marker(labelPos, { icon: labelIcon, interactive: true });
+    labelMarker.on('click', () => poly.openPopup(labelMarker.getLatLng()));
+
+    let startMarker = null;
+    if (b.start_lat && b.start_lng) {
+      const info = getBlockStartInfo(b);
+      const startTitle = `${b.name} • Starting ${info.startLot} (${info.label})`;
+      const startIcon = L.divIcon({
+        className: 'sub-block-div-icon',
+        html: `<div class="sub-start-dir-marker" style="border-color:${b.color || '#ffffff'};" title="${startTitle}"><span class="start-dir-arrow">${info.arrow}</span><span class="start-dir-code">${info.code}</span></div>`,
+        iconSize: [0, 0],
+        iconAnchor: [0, 0]
+      });
+      startMarker = L.marker([b.start_lat, b.start_lng], { icon: startIcon, interactive: true, zIndexOffset: 1350 });
+
+      const startPopupHtml = `
+        <div class="sub-start-popup" style="min-width:145px;padding:3px 2px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid rgba(148,163,184,0.25);">
+            <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:${b.color || '#0f172a'};color:#fff;font-size:10px;font-weight:800;">${info.code}</span>
+            <div>
+              <strong style="font-size:12px;color:var(--text, #0f172a);display:block;line-height:1.2;">${b.name}</strong>
+              <span style="font-size:10px;color:var(--text-dim, #64748b);">Starting Point</span>
+            </div>
+          </div>
+          <div style="font-size:11px;line-height:1.5;color:var(--text, #334155);">
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+              <span style="color:var(--text-dim, #64748b);">Starting Lot:</span>
+              <strong style="color:var(--text, #0f172a);">${info.startLot}</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;">
+              <span style="color:var(--text-dim, #64748b);">Starting Direction:</span>
+              <strong style="color:var(--text, #0f172a);">${info.label} (${info.code})</strong>
+            </div>
+            ${b.total_lots ? `
+            <div style="display:flex;justify-content:space-between;gap:8px;margin-top:2px;padding-top:2px;border-top:1px dashed rgba(148,163,184,0.2);">
+              <span style="color:var(--text-dim, #64748b);">Total Lots:</span>
+              <span style="font-weight:600;">${b.total_lots} lots</span>
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+      startMarker.bindPopup(startPopupHtml, { maxWidth: 220, offset: [0, -4] });
+    }
+
+    const lotRangeHtml = b.lot_range 
+      ? `<div style="font-size:12px;font-weight:700;color:#1e293b;margin:4px 0 2px;">Lot Range: <strong>${b.lot_range}</strong> (${b.total_lots || ''} lots)</div>` 
+      : '';
+    const popupContent = `
+      <div style="min-width:180px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+          <span style="width:12px;height:12px;border-radius:3px;background:${b.color};display:inline-block;"></span>
+          <strong style="font-size:13px;">${b.name}</strong>
+        </div>
+        ${lotRangeHtml}
+        <div style="font-size:11px;color:#64748b;margin-bottom:6px;">${b.description || ''}</div>
+        <div style="font-size:11px;color:#475569;margin-top:2px;">
+          <strong>Numbering:</strong> Starts at ${b.start_label || 'Lot 1'}
+        </div>
+        <button onclick="filterResidentBlocks('${b.block_number}')" style="margin-top:8px;width:100%;padding:4px 8px;font-size:11px;border-radius:4px;border:1px solid ${b.color};background:${b.color};color:#fff;cursor:pointer;font-weight:700;">Filter to ${b.name}</button>
+      </div>
+    `;
+    poly.bindPopup(popupContent);
+
+    poly.addTo(resBlocksLayer);
+    if (!isFiltered) {
+      labelMarker.addTo(resBlocksLayer);
+      if (startMarker) startMarker.addTo(resBlocksLayer);
+    }
+
+    resBlockPolygons[b.block_number] = poly;
+  });
+
+  const toggle = document.getElementById('res-layer-blocks');
+  if (toggle && resMapInst && resBlocksLayer) {
+    if (toggle.checked) {
+      if (!resMapInst.hasLayer(resBlocksLayer)) resMapInst.addLayer(resBlocksLayer);
+    } else {
+      if (resMapInst.hasLayer(resBlocksLayer)) resMapInst.removeLayer(resBlocksLayer);
+    }
+  }
+}
+
+function toggleResidentBlocks(show) {
+  if (!resMapInst || !resBlocksLayer) return;
+  if (show) {
+    if (!resMapInst.hasLayer(resBlocksLayer)) resMapInst.addLayer(resBlocksLayer);
+  } else {
+    if (resMapInst.hasLayer(resBlocksLayer)) resMapInst.removeLayer(resBlocksLayer);
+  }
+}
+
+function filterResidentBlocks(blockNum) {
+  resActiveBlock = blockNum || '';
+  const sel = document.getElementById('res-filter-block');
+  if (sel) sel.value = resActiveBlock;
+
+  if (resActiveBlock) {
+    const toggle = document.getElementById('res-layer-blocks');
+    if (toggle && !toggle.checked) {
+      toggle.checked = true;
+      if (resMapInst && resBlocksLayer && !resMapInst.hasLayer(resBlocksLayer)) {
+        resMapInst.addLayer(resBlocksLayer);
+      }
+    }
+  }
+
+  renderResidentBlocks();
+
+  if (resActiveBlock && resBlockPolygons[resActiveBlock] && resMapInst) {
+    const b = resBlockPolygons[resActiveBlock].getBounds();
+    resMapInst.fitBounds(b, { padding: [30, 30], maxZoom: 19 });
+  } else if (resMapInst && mapSettings) {
+    resMapInst.fitBounds([
+      [+mapSettings.min_lat, +mapSettings.min_lng],
+      [+mapSettings.max_lat, +mapSettings.max_lng]
+    ], { padding: [12, 12] });
+  }
 }
 
 let issuePickerMap = null, issuePickerPin = null;
@@ -775,7 +1656,7 @@ function pickerPinIcon(){
   // loading (lazy-loaded here), which showed a broken-image pin.
   return L.divIcon({
     className:'',
-    html:'<div style="width:20px;height:20px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#A07D53;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
+    html:'<div class="sub-map-picker-pin" style="width:20px;height:20px;border-radius:50% 50% 50% 0;background:#FA7D09;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.4);"></div>',
     iconSize:[20,20], iconAnchor:[10,20], popupAnchor:[0,-18]
   });
 }
@@ -810,7 +1691,30 @@ function openIssuePicker() {
         maxBounds: mapBounds,
         maxBoundsViscosity: 1.0,
       }).fitBounds(mapBounds, {padding: [8, 8]});
+      if (window.SubUI && SubUI.enableDynamicPinScaling) SubUI.enableDynamicPinScaling(issuePickerMap);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(issuePickerMap);
+      if (s && s.overlay_enabled !== false && s.overlay_url) {
+        const oMinLat = s.overlay_min_lat ?? s.min_lat;
+        const oMaxLat = s.overlay_max_lat ?? s.max_lat;
+        const oMinLng = s.overlay_min_lng ?? s.min_lng;
+        const oMaxLng = s.overlay_max_lng ?? s.max_lng;
+        const oBounds = L.latLngBounds([[oMinLat, oMinLng], [oMaxLat, oMaxLng]]);
+        const pickerOverlay = L.imageOverlay(s.overlay_url, oBounds, {
+          opacity: typeof s.overlay_opacity === 'number' ? s.overlay_opacity : 0.65,
+          interactive: false,
+          className: 'subdivision-blueprint-overlay'
+        }).addTo(issuePickerMap);
+        if (pickerOverlay.bringToBack) pickerOverlay.bringToBack();
+        const applyRot = () => {
+          const el = pickerOverlay.getElement();
+          if (el && typeof s.overlay_rotation === 'number') {
+            el.style.transformOrigin = 'center center';
+            el.style.rotate = `${s.overlay_rotation}deg`;
+          }
+        };
+        setTimeout(applyRot, 40);
+        issuePickerMap.on('zoomend moveend', applyRot);
+      }
       issuePickerMap.on('click', function(e){
         const lat = e.latlng.lat;
         const lng = e.latlng.lng;
@@ -864,6 +1768,53 @@ function closeIssuePicker() {
     </div>
     <div class="modal-actions">
       <button class="btn btn-sm" onclick="document.getElementById('modal-annView').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Receipt View Modal -->
+<div class="modal-overlay" id="modal-receiptView" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="pay-modal-box">
+    <div class="pay-modal-header">
+      <div>
+        <h4 class="pay-modal-title" id="receiptModalTitle">Payment Receipt</h4>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;" id="receiptModalSubtitle">—</div>
+      </div>
+      <button type="button" class="pay-modal-close" onclick="document.getElementById('modal-receiptView').classList.remove('open')">&times;</button>
+    </div>
+    <div class="receipt-modal-view-wrap">
+      <img id="receiptModalImg" src="" alt="Payment Receipt" style="display:none;" onload="this.style.display='block';document.getElementById('receiptModalLoading').style.display='none';">
+      <div id="receiptModalLoading" style="color:#FFFFFF;font-size:13px;padding:30px;">Loading receipt image…</div>
+    </div>
+    <div class="pay-modal-meta" id="receiptModalMeta"></div>
+    <div class="pay-modal-actions">
+      <a id="receiptModalDownloadBtn" href="#" download="payment_receipt.jpg" class="pay-btn-subtle" target="_blank" rel="noopener">
+        <x-icon name="download" size="14"/> Download
+      </a>
+      <button type="button" class="btn btn-sm" onclick="document.getElementById('modal-receiptView').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- GCash QR Enlarge Modal -->
+<div class="modal-overlay" id="modal-gcashQrEnlarge" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="pay-modal-box" style="max-width:440px;text-align:center;">
+    <div class="pay-modal-header">
+      <div style="text-align:left;">
+        <h4 class="pay-modal-title">Official HOA GCash QR Code</h4>
+        <div style="font-size:12px;color:var(--text-dim);margin-top:2px;">Scan with your GCash app to pay</div>
+      </div>
+      <button type="button" class="pay-modal-close" onclick="document.getElementById('modal-gcashQrEnlarge').classList.remove('open')">&times;</button>
+    </div>
+    <div style="background:#FFFFFF;border-radius:12px;padding:16px;margin:12px auto;display:inline-block;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
+      <img id="gcashQrEnlargeImg" src="" alt="Enlarged GCash QR Code" style="max-width:280px;max-height:280px;display:block;">
+    </div>
+    <div style="margin-top:10px;font-size:13.5px;color:var(--text-mid);line-height:1.6;" id="gcashQrModalDetails"></div>
+    <div class="pay-modal-actions" style="justify-content:center;">
+      <a id="gcashQrDownloadLink" href="#" download="HOA_GCash_QR.jpg" class="pay-btn-subtle" target="_blank" rel="noopener">
+        <x-icon name="download" size="14"/> Download QR
+      </a>
+      <button type="button" class="btn btn-sm" onclick="document.getElementById('modal-gcashQrEnlarge').classList.remove('open')">Close</button>
     </div>
   </div>
 </div>

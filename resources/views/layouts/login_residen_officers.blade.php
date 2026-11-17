@@ -21,13 +21,41 @@
             justify-content: center;
             min-height: 100vh;
             overflow-y: auto;
-            padding: 20px 0;
+            padding: 24px 0;
             background: #FAF6F0;
             color: #2B2927;
+            position: relative;
+            background-image: 
+                radial-gradient(circle at 100% 0%, rgba(250, 125, 9, 0.22) 0%, rgba(255, 196, 128, 0.12) 35%, transparent 65%),
+                radial-gradient(circle at 0% 100%, rgba(250, 125, 9, 0.18) 0%, rgba(255, 217, 168, 0.10) 35%, transparent 60%);
+            background-attachment: fixed;
         }
 
-        /* Animated BG particles (hidden in minimalist style) */
+        /* Abstract warm corner waves */
         .bg-orb {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .bg-orb-1 {
+            top: -140px;
+            right: -120px;
+            width: 460px;
+            height: 460px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 45% 45%, rgba(250, 125, 9, 0.38) 0%, rgba(255, 180, 90, 0.20) 45%, rgba(250, 246, 240, 0) 70%);
+            filter: blur(32px);
+        }
+        .bg-orb-2 {
+            bottom: -160px;
+            left: -140px;
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 55% 55%, rgba(250, 125, 9, 0.34) 0%, rgba(255, 200, 120, 0.18) 45%, rgba(250, 246, 240, 0) 70%);
+            filter: blur(36px);
+        }
+        .bg-orb-3 {
             display: none;
         }
 
@@ -37,10 +65,11 @@
             max-width: 95vw;
             background: #FFFFFF;
             border: 1px solid #E6DFD5;
-            box-shadow: 0 10px 30px rgba(43, 41, 39, 0.04);
+            box-shadow: 0 16px 44px rgba(43, 41, 39, 0.05);
             border-radius: 24px;
             padding: 44px 38px 36px;
             position: relative;
+            z-index: 1;
             animation: cardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
             overflow: hidden;
         }
@@ -55,25 +84,37 @@
         /* ── LOGO ── */
         .portal-logo {
             text-align: center;
-            margin-bottom: 28px;
+            margin-bottom: 26px;
         }
         .portal-logo img {
-            width: 72px;
+            width: 68px;
             filter: none;
         }
         .portal-logo h1 {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 700;
             margin-top: 10px;
-            letter-spacing: 0.04em;
-            color: #2B2927;
+            letter-spacing: 0.02em;
+            color: #1C1917;
+            font-family: 'DM Serif Display', Georgia, serif;
         }
         .portal-logo p {
-            font-size: 12px;
-            opacity: 0.6;
-            color: #7D7975;
-            letter-spacing: 0.05em;
-            margin-top: 2px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #FA7D09;
+            letter-spacing: 0.12em;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .portal-logo p::before, .portal-logo p::after {
+            content: '';
+            width: 26px;
+            height: 2px;
+            background: #FA7D09;
+            border-radius: 2px;
         }
 
         /* ── ROLE TABS ── */
@@ -82,39 +123,39 @@
             gap: 6px;
             background: #FAF6F0;
             border: 1px solid #E6DFD5;
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 5px;
-            margin-bottom: 26px;
+            margin-bottom: 20px;
         }
         .role-tab {
             flex: 1;
-            padding: 9px 10px;
-            border-radius: 9px;
+            padding: 10px 12px;
+            border-radius: 10px;
             border: 1px solid transparent;
             background: transparent;
             color: #7D7975;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.22s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
             margin-bottom: 0;
         }
-        .role-tab:hover { color: #2B2927; background: rgba(0,0,0,0.02); }
-        .role-tab.active {
-            background: #FFFFFF;
-            border-color: #E6DFD5;
-            color: #A07D53;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(43,41,39,0.04);
-        }
+        .role-tab:hover { color: #1C1917; background: rgba(0,0,0,0.02); }
+        .role-tab.active,
         .role-tab.officer-active {
-            background: #FFFFFF;
-            border-color: #E6DFD5;
-            color: #A07D53;
+            background: #FFF0DD;
+            border-color: #FA7D09;
+            color: #C85E00;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(250, 125, 9, 0.12);
+        }
+        .role-tab.active svg,
+        .role-tab.officer-active svg {
+            color: #FA7D09;
         }
 
         /* ── FORM SWITCH TABS (Login / Register) ── */
@@ -126,20 +167,20 @@
         }
         .form-tab {
             flex: 1;
-            padding: 9px;
+            padding: 10px;
             background: transparent;
             border: none;
             color: #7D7975;
-            font-size: 13px;
+            font-size: 13.5px;
             font-weight: 500;
             cursor: pointer;
             border-bottom: 2px solid transparent;
             margin-bottom: -1px;
             transition: all 0.2s;
-            letter-spacing: 0.03em;
+            letter-spacing: 0.02em;
         }
-        .form-tab:hover { color: #2B2927; background: transparent; }
-        .form-tab.active { color: #A07D53; border-bottom-color: #A07D53; font-weight: 600; background: transparent; }
+        .form-tab:hover { color: #1C1917; background: transparent; }
+        .form-tab.active { color: #FA7D09; border-bottom-color: #FA7D09; font-weight: 700; background: transparent; }
 
         /* ── FORM PANELS ── */
         .form-panel { display: none; animation: fadeSlide 0.28s ease both; }
@@ -158,23 +199,23 @@
             width: 100%;
             background: #FAF6F0;
             border: 1px solid #E6DFD5;
-            color: #2B2927;
+            color: #1C1917;
             padding: 12px 15px;
-            border-radius: 11px;
+            border-radius: 12px;
             outline: none;
             transition: all 0.22s;
             font-size: 13.5px;
-            font-family: "Segoe UI", sans-serif;
-            margin-bottom: 11px;
+            font-family: inherit;
+            margin-bottom: 12px;
         }
         .portal-card input:focus,
         .portal-card select:focus {
             background: #FFFFFF;
-            border-color: #A07D53;
-            box-shadow: 0 0 0 3px rgba(160,125,83,0.08);
+            border-color: #FA7D09;
+            box-shadow: 0 0 0 3px rgba(250, 125, 9, 0.15);
         }
         .portal-card input::placeholder { color: #9C9790; }
-        .portal-card select option { background: #FFFFFF; color: #2B2927; }
+        .portal-card select option { background: #FFFFFF; color: #1C1917; }
 
         .input-row {
             display: flex;
@@ -183,10 +224,14 @@
         .input-row input { flex: 1; }
 
         /* ── INPUT WITH ICON ── */
-        .input-group { position: relative; margin-bottom: 11px; }
+        .input-group { position: relative; margin-bottom: 12px; }
         .input-group input, .input-group select {
             margin-bottom: 0 !important;
             padding-left: 42px !important;
+        }
+        .input-group:has(.eye-btn) input,
+        .input-group input[type="password"] {
+            padding-right: 42px !important;
         }
         .input-icon {
             position: absolute;
@@ -195,53 +240,67 @@
             transform: translateY(-50%);
             font-size: 16px;
             pointer-events: none;
-            opacity: 0.45;
+            opacity: 0.55;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            z-index: 2;
+            color: #716B64;
         }
 
         /* ── SUBMIT BTN ── */
         .portal-btn {
             width: 100%;
             padding: 13px;
-            border-radius: 11px;
+            border-radius: 12px;
             border: none;
-            font-size: 14px;
+            font-size: 14.5px;
             font-weight: 700;
             cursor: pointer;
-            transition: all 0.25s;
+            transition: all 0.22s ease;
             margin-top: 6px;
             margin-bottom: 0;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.03em;
             position: relative;
             overflow: hidden;
+            background: #FA7D09;
+            color: #FFFFFF;
+            box-shadow: 0 4px 14px rgba(250, 125, 9, 0.32);
         }
         .portal-btn::after {
             content: '';
             position: absolute;
             inset: 0;
-            background: rgba(255,255,255,0);
+            background: rgba(255, 255, 255, 0);
             transition: background 0.2s;
         }
-        .portal-btn:hover::after { background: rgba(255,255,255,0.08); }
-        .portal-btn:active { transform: scale(0.98); }
-
-        .btn-resident {
-            background: #2B2927;
-            color: #FFFFFF;
-            box-shadow: none;
+        .portal-btn:hover::after {
+            background: rgba(255, 255, 255, 0.08);
         }
-        .btn-resident:hover { background: #4A4744; transform: translateY(-1px); }
-
-        .btn-officer {
-            background: #A07D53;
+        .portal-btn:hover {
+            background: #E56F05;
             color: #FFFFFF;
-            box-shadow: none;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(250, 125, 9, 0.42);
         }
-        .btn-officer:hover { background: #B6966E; transform: translateY(-1px); }
+        .portal-btn:active { transform: scale(0.98); background: #D46603; }
+
+        .btn-resident, .btn-officer {
+            background: #FA7D09;
+            border: none;
+            color: #FFFFFF;
+        }
+        .btn-resident:hover, .btn-officer:hover {
+            background: #E56F05;
+            color: #FFFFFF;
+        }
 
         /* ── DIVIDER ── */
         .divider {
             display: flex; align-items: center; gap: 12px;
-            font-size: 11px; opacity: 0.5; color: #7D7975;
+            font-size: 11px; opacity: 0.55; color: #7D7975;
             margin: 14px 0;
             letter-spacing: 0.06em;
             text-transform: uppercase;
@@ -255,25 +314,33 @@
         .role-badge {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 11px 14px;
-            border-radius: 11px;
-            margin-bottom: 18px;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 14px;
+            margin-bottom: 20px;
             font-size: 13px;
+            background: #FFF8F0;
+            border: 1px solid #FFE2C6;
         }
-        .role-badge-resident {
-            background: #FAF6F0;
-            border: 1px solid #E6DFD5;
-            color: #2B2927;
-        }
+        .role-badge-resident,
         .role-badge-officer {
-            background: #FAF3E5;
-            border: 1px solid #E6DFD5;
-            color: #A07D53;
+            background: #FFF8F0;
+            border: 1px solid #FFE2C6;
+            color: #1C1917;
         }
-        .role-badge-icon { font-size: 20px; }
-        .role-badge-text { font-weight: 600; }
-        .role-badge-sub { font-size: 11px; opacity: 0.7; margin-top: 1px; }
+        .role-badge-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #FFE7CC;
+            color: #FA7D09;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .role-badge-text { font-weight: 700; color: #1C1917; font-size: 13.5px; }
+        .role-badge-sub { font-size: 11.5px; color: #716B64; margin-top: 2px; }
 
         /* ── FOOTER LINK ── */
         .portal-footer {
@@ -284,12 +351,12 @@
             color: #7D7975;
         }
         .portal-footer a {
-            color: #A07D53;
+            color: #FA7D09;
             text-decoration: none;
             opacity: 1;
             font-weight: 600;
         }
-        .portal-footer a:hover { text-decoration: underline; }
+        .portal-footer a:hover { text-decoration: underline; color: #E56F05; }
 
         /* ── ADMIN LINK ── */
         .admin-link {
@@ -336,6 +403,10 @@
             padding: 0; margin: 0;
             transition: color 0.2s;
             width: auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
         }
         .input-group .eye-btn:hover { color: #2B2927; background: none; box-shadow: none; }
         .eye-btn .eye-off { display: none; }
@@ -423,7 +494,7 @@
         </div>
 
         <div style="text-align:right;margin:-4px 0 14px;">
-            <a href="#" style="font-size:12px;color:#A07D53;text-decoration:none;" onclick="event.preventDefault();showMsg('To reset your password, please contact the HOA office.','success')">Forgot password?</a>
+            <a href="#" style="font-size:12px;color:#FA7D09;text-decoration:none;" onclick="event.preventDefault();showMsg('To reset your password, please contact the HOA office.','success')">Forgot password?</a>
         </div>
 
         <button class="portal-btn btn-resident" id="loginBtn" type="submit">Sign In</button>
